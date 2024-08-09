@@ -1,11 +1,13 @@
 bl_info = {
-    "name": "Simple Collection Exporter",
+    "name": "Custom Collection Exporter",
     "blender": (4, 2, 0),
     "category": "Scene",
 }
 
 import bpy
 import os
+import subprocess
+import platform
 
 
 # Operator to set the exporter path based on the provided script
@@ -70,18 +72,110 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
         print(f"Set export path to: {export_path}")
 
 
+class SCENE_OT_ExportCollection(bpy.types.Operator):
+    bl_idname = "scene.export_collection"
+    bl_label = "Export Collection"
+
+    collection_name: bpy.props.StringProperty()
+
+    def execute(self, context):
+        collection = bpy.data.collections.get(self.collection_name)
+        if collection and len(collection.exporters) > 0:
+            # Set the collection as the active collection
+            layer_collection = bpy.context.view_layer.layer_collection
+            for layer in layer_collection.children:
+                if layer.name == collection.name:
+                    bpy.context.view_layer.active_layer_collection = layer
+                    break
+
+            # Get the export path and ensure the directory exists
+            exporter = collection.exporters[0]
+            export_path = exporter.export_properties.filepath
+            export_dir = os.path.dirname(export_path)
+            if not os.path.exists(export_dir):
+                os.makedirs(export_dir)
+                self.report({'INFO'}, f"Created directory: {export_dir}")
+
+            # Use the Blender 4.2 method to export the collection
+            bpy.ops.collection.exporter_export(index=0)
+            self.report({'INFO'}, f"Exported collection '{self.collection_name}' to {export_path}")
+        else:
+            self.report({'WARNING'}, f"No valid exporter found for collection '{self.collection_name}'")
+        return {'FINISHED'}
+
+
+class SCENE_OT_ExportAllCollections(bpy.types.Operator):
+    bl_idname = "scene.export_all_collections"
+    bl_label = "Export All Collections"
+
+    def execute(self, context):
+        for collection in bpy.data.collections:
+            if len(collection.exporters) > 0:
+                # Set the collection as the active collection
+                layer_collection = bpy.context.view_layer.layer_collection
+                for layer in layer_collection.children:
+                    if layer.name == collection.name:
+                        bpy.context.view_layer.active_layer_collection = layer
+                        break
+
+                # Get the export path and ensure the directory exists
+                exporter = collection.exporters[0]
+                export_path = exporter.export_properties.filepath
+                export_dir = os.path.dirname(export_path)
+                if not os.path.exists(export_dir):
+                    os.makedirs(export_dir)
+                    self.report({'INFO'}, f"Created directory: {export_dir}")
+
+                # Use the Blender 4.2 method to export the collection
+                bpy.ops.collection.exporter_export(index=0)
+                self.report({'INFO'}, f"Exported collection '{collection.name}' to {export_path}")
+        return {'FINISHED'}
+
+
+class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
+    bl_idname = "scene.open_export_directory"
+    bl_label = "Open Export Directory"
+
+    def execute(self, context):
+        scene = context.scene
+        collection = bpy.data.collections[scene.collection_index]
+
+        if collection and len(collection.exporters) > 0:
+            exporter = collection.exporters[0]
+            export_path = exporter.export_properties.filepath
+            export_dir = os.path.dirname(export_path)
+
+            if os.path.exists(export_dir):
+                if platform.system() == "Windows":
+                    subprocess.Popen(f'explorer "{export_dir}"')
+                elif platform.system() == "Darwin":
+                    subprocess.Popen(["open", export_dir])
+                else:  # Linux and other platforms
+                    subprocess.Popen(["xdg-open", export_dir])
+                self.report({'INFO'}, f"Opened directory: {export_dir}")
+            else:
+                self.report({'WARNING'}, f"Directory does not exist: {export_dir}")
+        else:
+            self.report({'WARNING'}, "No valid exporter found for the active collection.")
+        return {'FINISHED'}
+
+
 # UI List of all collections with an exporter
 class SCENE_UL_CollectionList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         collection = item
-        row = layout.row(align=True)
         if collection:
+            row = layout.row()
             row.label(text=collection.name, icon='OUTLINER_COLLECTION')
 
             # Assuming the first exporter is being shown (customize as needed)
             if len(collection.exporters) > 0:
                 exporter = collection.exporters[0]
                 row.label(text=exporter.export_properties.filepath)
+
+                # Add export button for each collection
+                op = row.operator("scene.export_collection", text="", icon='EXPORT')
+                op.collection_name = collection.name
 
     def filter_items(self, context, data, propname):
         flt_flags = []
@@ -112,19 +206,25 @@ class SCENE_PT_CollectionExportPanel(bpy.types.Panel):
         row = layout.row()
         row.template_list("SCENE_UL_CollectionList", "", bpy.data, "collections", scene, "collection_index")
 
-        # Draw string inputs for Path original_path and replacement_path
+        # Draw string inputs for Original Path and Replacement Path
         layout.prop(scene, "original_path")
         layout.prop(scene, "replacement_path")
 
-        # Draw export button
+        # Draw button to set exporter path
         layout.operator("scene.set_exporter_path", text="Set Exporter Path")
 
+        # Draw button to export all collections
+        layout.operator("scene.export_all_collections", text="Export All Collections")
 
-# Scene properties to define path original_path and replacement_path
+        # Draw button to open the export directory
+        layout.operator("scene.open_export_directory", text="Open Export Directory")
+
+
+# Scene properties to define original_path and replacement_path
 def register_scene_properties():
     bpy.types.Scene.original_path = bpy.props.StringProperty(
         name="Original Path",
-        description="The path part to be replaced.",
+        description="The path to be replaced.",
         default="workdata"
     )
     bpy.types.Scene.replacement_path = bpy.props.StringProperty(
@@ -148,6 +248,9 @@ def unregister_scene_properties():
 # Register and Unregister classes
 classes = (
     SCENE_OT_SetExporterPath,
+    SCENE_OT_ExportCollection,
+    SCENE_OT_ExportAllCollections,
+    SCENE_OT_OpenExportDirectory,
     SCENE_UL_CollectionList,
     SCENE_PT_CollectionExportPanel,
 )
