@@ -9,7 +9,6 @@ import os
 import subprocess
 import platform
 
-
 # Operator to set the exporter path based on the provided script
 class SCENE_OT_SetExporterPath(bpy.types.Operator):
     bl_idname = "scene.set_exporter_path"
@@ -34,92 +33,6 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
 
         self.set_exporter_path(collection.name, exporter, original_path, replacement_path)
         return {'FINISHED'}
-
-    def add_custom_exporter_to_collection(self, collection_name, exporter_name):
-        collection = bpy.data.collections.get(collection_name)
-        if not collection:
-            return None
-
-        for exporter in collection.exporters:
-            if exporter.name == exporter_name:
-                return exporter
-
-        return None
-
-    def set_exporter_path(self, collection_name, exporter, original_path, replacement_path):
-        blend_filepath = bpy.data.filepath
-        if not blend_filepath:
-            self.report({'ERROR'}, "Save the Blender file before running the script.")
-            return
-
-        blend_dir = os.path.dirname(blend_filepath)
-        export_name = collection_name + ".fbx"
-        export_path = os.path.join(blend_dir, export_name)
-
-        if original_path in export_path:
-            export_path = export_path.replace(original_path, replacement_path)
-
-        export_dir = os.path.dirname(export_path)
-        if not os.path.exists(export_dir):
-            os.makedirs(export_dir)
-
-        exporter.export_properties.filepath = export_path
-
-
-# Operator to set the exporter path based on the provided script
-class SCENE_OT_SetExporterPath(bpy.types.Operator):
-    bl_idname = "scene.set_exporter_path"
-    bl_label = "Set Exporter Path"
-
-    def execute(self, context):
-        scene = context.scene
-        collection_index = scene.collection_index
-
-        if collection_index < 0 or collection_index >= len(bpy.data.collections):
-            self.report({'ERROR'}, "Invalid collection index.")
-            return {'CANCELLED'}
-
-        collection = bpy.data.collections[collection_index]
-        original_path = scene.original_path
-        replacement_path = scene.replacement_path
-
-        exporter = self.add_custom_exporter_to_collection(collection.name, "FBX")
-        if not exporter:
-            self.report({'ERROR'}, f"Could not add exporter to collection '{collection.name}'.")
-            return {'CANCELLED'}
-
-        self.set_exporter_path(collection.name, exporter, original_path, replacement_path)
-        return {'FINISHED'}
-
-    def add_custom_exporter_to_collection(self, collection_name, exporter_name):
-        collection = bpy.data.collections.get(collection_name)
-        if not collection:
-            return None
-
-        for exporter in collection.exporters:
-            if exporter.name == exporter_name:
-                return exporter
-
-        return None
-
-    def set_exporter_path(self, collection_name, exporter, original_path, replacement_path):
-        blend_filepath = bpy.data.filepath
-        if not blend_filepath:
-            self.report({'ERROR'}, "Save the Blender file before running the script.")
-            return
-
-        blend_dir = os.path.dirname(blend_filepath)
-        export_name = collection_name + ".fbx"
-        export_path = os.path.join(blend_dir, export_name)
-
-        if original_path in export_path:
-            export_path = export_path.replace(original_path, replacement_path)
-
-        export_dir = os.path.dirname(export_path)
-        if not os.path.exists(export_dir):
-            os.makedirs(export_dir)
-
-        exporter.export_properties.filepath = export_path
 
     def add_custom_exporter_to_collection(self, collection_name, exporter_name):
         collection = bpy.data.collections.get(collection_name)
@@ -290,7 +203,13 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         if len(collection.exporters) > 0:
             exporter = collection.exporters[0]
-            row.label(text=exporter.export_properties.filepath)
+            export_path = exporter.export_properties.filepath
+
+            # Determine if the file is locked or read-only
+            is_locked = os.path.exists(export_path) and not os.access(export_path, os.W_OK)
+            lock_icon = 'LOCKED' if is_locked else 'UNLOCKED'
+
+            row.label(text=exporter.export_properties.filepath, icon=lock_icon)
             op = row.operator("scene.export_collection", text="", icon='EXPORT')
             op.collection_name = collection.name
 
