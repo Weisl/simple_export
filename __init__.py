@@ -132,6 +132,35 @@ class SCENE_OT_ExportAllCollections(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
+    bl_idname = "scene.export_selected_collections"
+    bl_label = "Export Selected Collections"
+
+    def execute(self, context):
+        scene = context.scene
+        for collection in bpy.data.collections:
+            if collection.my_export_select and len(collection.exporters) > 0:
+                # Set the collection as the active collection
+                layer_collection = bpy.context.view_layer.layer_collection
+                for layer in layer_collection.children:
+                    if layer.name == collection.name:
+                        bpy.context.view_layer.active_layer_collection = layer
+                        break
+
+                # Get the export path and ensure the directory exists
+                exporter = collection.exporters[0]
+                export_path = exporter.export_properties.filepath
+                export_dir = os.path.dirname(export_path)
+                if not os.path.exists(export_dir):
+                    os.makedirs(export_dir)
+                    self.report({'INFO'}, f"Created directory: {export_dir}")
+
+                # Use the Blender 4.2 method to export the collection
+                bpy.ops.collection.exporter_export(index=0)
+                self.report({'INFO'}, f"Exported collection '{collection.name}' to {export_path}")
+        return {'FINISHED'}
+
+
 class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
     bl_idname = "scene.open_export_directory"
     bl_label = "Open Export Directory"
@@ -165,7 +194,8 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         collection = item
         if collection:
-            row = layout.row()
+            row = layout.row(align=True)
+            row.prop(collection, "my_export_select", text="")
             row.label(text=collection.name, icon='OUTLINER_COLLECTION')
 
             # Assuming the first exporter is being shown (customize as needed)
@@ -216,6 +246,9 @@ class SCENE_PT_CollectionExportPanel(bpy.types.Panel):
         # Draw button to export all collections
         layout.operator("scene.export_all_collections", text="Export All Collections")
 
+        # Draw button to export selected collections
+        layout.operator("scene.export_selected_collections", text="Export Selected Collections")
+
         # Draw button to open the export directory
         layout.operator("scene.open_export_directory", text="Open Export Directory")
 
@@ -237,19 +270,26 @@ def register_scene_properties():
         description="Index of the active collection in the list",
         default=0
     )
+    bpy.types.Collection.my_export_select = bpy.props.BoolProperty(
+        name="Select for Export",
+        description="Select this collection for export",
+        default=False
+    )
 
 
 def unregister_scene_properties():
     del bpy.types.Scene.original_path
     del bpy.types.Scene.replacement_path
     del bpy.types.Scene.collection_index
+    del bpy.types.Collection.my_export_select
 
 
 # Register and Unregister classes
 classes = (
     SCENE_OT_SetExporterPath,
     SCENE_OT_ExportCollection,
-    SCENE_OT_ExportAllCollections,
+    SCENE_OT_ExportAllCollections,  # Re-added this class to handle export of all collections
+    SCENE_OT_ExportSelectedCollections,
     SCENE_OT_OpenExportDirectory,
     SCENE_UL_CollectionList,
     SCENE_PT_CollectionExportPanel,
