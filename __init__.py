@@ -16,8 +16,8 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
     def execute(self, context):
         scene = context.scene
         collection = bpy.data.collections[scene.collection_index]
-        original_path = scene.path_a
-        replacement_path = scene.path_b
+        original_path = scene.original_path
+        replacement_path = scene.replacement_path
 
         if collection:
             exporter_name = "FBX"
@@ -74,8 +74,14 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
 class SCENE_UL_CollectionList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         collection = item
+        row = layout.row(align=True)
         if collection:
-            layout.label(text=collection.name, icon='OUTLINER_COLLECTION')
+            row.label(text=collection.name, icon='OUTLINER_COLLECTION')
+
+            # Assuming the first exporter is being shown (customize as needed)
+            if len(collection.exporters) > 0:
+                exporter = collection.exporters[0]
+                row.label(text=exporter.export_properties.filepath)
 
     def filter_items(self, context, data, propname):
         flt_flags = []
@@ -107,8 +113,8 @@ class SCENE_PT_CollectionExportPanel(bpy.types.Panel):
         row.template_list("SCENE_UL_CollectionList", "", bpy.data, "collections", scene, "collection_index")
 
         # Draw string inputs for Path original_path and replacement_path
-        layout.prop(scene, "path_a")
-        layout.prop(scene, "path_b")
+        layout.prop(scene, "original_path")
+        layout.prop(scene, "replacement_path")
 
         # Draw export button
         layout.operator("scene.set_exporter_path", text="Set Exporter Path")
@@ -116,12 +122,12 @@ class SCENE_PT_CollectionExportPanel(bpy.types.Panel):
 
 # Scene properties to define path original_path and replacement_path
 def register_scene_properties():
-    bpy.types.Scene.path_a = bpy.props.StringProperty(
+    bpy.types.Scene.original_path = bpy.props.StringProperty(
         name="Original Path",
         description="The path part to be replaced.",
         default="workdata"
     )
-    bpy.types.Scene.path_b = bpy.props.StringProperty(
+    bpy.types.Scene.replacement_path = bpy.props.StringProperty(
         name="Replacement Path",
         description="The path to replace with.",
         default="sourcedata"
@@ -134,8 +140,8 @@ def register_scene_properties():
 
 
 def unregister_scene_properties():
-    del bpy.types.Scene.path_a
-    del bpy.types.Scene.path_b
+    del bpy.types.Scene.original_path
+    del bpy.types.Scene.replacement_path
     del bpy.types.Scene.collection_index
 
 
