@@ -17,59 +17,139 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
 
     def execute(self, context):
         scene = context.scene
-        collection = bpy.data.collections[scene.collection_index]
+        collection_index = scene.collection_index
+
+        if collection_index < 0 or collection_index >= len(bpy.data.collections):
+            self.report({'ERROR'}, "Invalid collection index.")
+            return {'CANCELLED'}
+
+        collection = bpy.data.collections[collection_index]
         original_path = scene.original_path
         replacement_path = scene.replacement_path
 
-        if collection:
-            exporter_name = "FBX"
-            exporter = self.add_custom_exporter_to_collection(collection.name, exporter_name)
-            if exporter:
-                self.set_exporter_path(collection.name, exporter, original_path, replacement_path)
+        exporter = self.add_custom_exporter_to_collection(collection.name, "FBX")
+        if not exporter:
+            self.report({'ERROR'}, f"Could not add exporter to collection '{collection.name}'.")
+            return {'CANCELLED'}
+
+        self.set_exporter_path(collection.name, exporter, original_path, replacement_path)
         return {'FINISHED'}
 
     def add_custom_exporter_to_collection(self, collection_name, exporter_name):
-        # Get the collection
         collection = bpy.data.collections.get(collection_name)
         if not collection:
-            print(f"Error: Collection '{collection_name}' not found.")
             return None
 
-        # Check if the custom exporter property already exists
         for exporter in collection.exporters:
             if exporter.name == exporter_name:
-                print(f"Custom exporter '{exporter_name}' already exists in the collection.")
                 return exporter
+
         return None
 
     def set_exporter_path(self, collection_name, exporter, original_path, replacement_path):
-        # Get the current Blender file directory
         blend_filepath = bpy.data.filepath
-        blend_dir = os.path.dirname(blend_filepath)
-
-        # Ensure the Blender file is saved
         if not blend_filepath:
             self.report({'ERROR'}, "Save the Blender file before running the script.")
             return
 
-        # Create the export path with the collection name as the file name
+        blend_dir = os.path.dirname(blend_filepath)
         export_name = collection_name + ".fbx"
         export_path = os.path.join(blend_dir, export_name)
 
-        # Replace part of the path if original_path is found
         if original_path in export_path:
             export_path = export_path.replace(original_path, replacement_path)
 
-        # Ensure the directory exists, create if not
         export_dir = os.path.dirname(export_path)
         if not os.path.exists(export_dir):
             os.makedirs(export_dir)
-            print(f"Created directory: {export_dir}")
 
         exporter.export_properties.filepath = export_path
 
-        # Print the export path for debugging
-        print(f"Set export path to: {export_path}")
+
+# Operator to set the exporter path based on the provided script
+class SCENE_OT_SetExporterPath(bpy.types.Operator):
+    bl_idname = "scene.set_exporter_path"
+    bl_label = "Set Exporter Path"
+
+    def execute(self, context):
+        scene = context.scene
+        collection_index = scene.collection_index
+
+        if collection_index < 0 or collection_index >= len(bpy.data.collections):
+            self.report({'ERROR'}, "Invalid collection index.")
+            return {'CANCELLED'}
+
+        collection = bpy.data.collections[collection_index]
+        original_path = scene.original_path
+        replacement_path = scene.replacement_path
+
+        exporter = self.add_custom_exporter_to_collection(collection.name, "FBX")
+        if not exporter:
+            self.report({'ERROR'}, f"Could not add exporter to collection '{collection.name}'.")
+            return {'CANCELLED'}
+
+        self.set_exporter_path(collection.name, exporter, original_path, replacement_path)
+        return {'FINISHED'}
+
+    def add_custom_exporter_to_collection(self, collection_name, exporter_name):
+        collection = bpy.data.collections.get(collection_name)
+        if not collection:
+            return None
+
+        for exporter in collection.exporters:
+            if exporter.name == exporter_name:
+                return exporter
+
+        return None
+
+    def set_exporter_path(self, collection_name, exporter, original_path, replacement_path):
+        blend_filepath = bpy.data.filepath
+        if not blend_filepath:
+            self.report({'ERROR'}, "Save the Blender file before running the script.")
+            return
+
+        blend_dir = os.path.dirname(blend_filepath)
+        export_name = collection_name + ".fbx"
+        export_path = os.path.join(blend_dir, export_name)
+
+        if original_path in export_path:
+            export_path = export_path.replace(original_path, replacement_path)
+
+        export_dir = os.path.dirname(export_path)
+        if not os.path.exists(export_dir):
+            os.makedirs(export_dir)
+
+        exporter.export_properties.filepath = export_path
+
+    def add_custom_exporter_to_collection(self, collection_name, exporter_name):
+        collection = bpy.data.collections.get(collection_name)
+        if not collection:
+            return None
+
+        for exporter in collection.exporters:
+            if exporter.name == exporter_name:
+                return exporter
+
+        return None
+
+    def set_exporter_path(self, collection_name, exporter, original_path, replacement_path):
+        blend_filepath = bpy.data.filepath
+        if not blend_filepath:
+            self.report({'ERROR'}, "Save the Blender file before running the script.")
+            return
+
+        blend_dir = os.path.dirname(blend_filepath)
+        export_name = collection_name + ".fbx"
+        export_path = os.path.join(blend_dir, export_name)
+
+        if original_path in export_path:
+            export_path = export_path.replace(original_path, replacement_path)
+
+        export_dir = os.path.dirname(export_path)
+        if not os.path.exists(export_dir):
+            os.makedirs(export_dir)
+
+        exporter.export_properties.filepath = export_path
 
 
 class SCENE_OT_ExportCollection(bpy.types.Operator):
@@ -80,28 +160,28 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
 
     def execute(self, context):
         collection = bpy.data.collections.get(self.collection_name)
-        if collection and len(collection.exporters) > 0:
-            # Set the collection as the active collection
-            layer_collection = bpy.context.view_layer.layer_collection
-            for layer in layer_collection.children:
-                if layer.name == collection.name:
-                    bpy.context.view_layer.active_layer_collection = layer
-                    break
+        if not collection or len(collection.exporters) == 0:
+            self.report({'WARNING'}, f"No valid exporter found for collection '{self.collection_name}'.")
+            return {'CANCELLED'}
 
-            # Get the export path and ensure the directory exists
-            exporter = collection.exporters[0]
-            export_path = exporter.export_properties.filepath
-            export_dir = os.path.dirname(export_path)
-            if not os.path.exists(export_dir):
-                os.makedirs(export_dir)
-                self.report({'INFO'}, f"Created directory: {export_dir}")
-
-            # Use the Blender 4.2 method to export the collection
-            bpy.ops.collection.exporter_export(index=0)
-            self.report({'INFO'}, f"Exported collection '{self.collection_name}' to {export_path}")
-        else:
-            self.report({'WARNING'}, f"No valid exporter found for collection '{self.collection_name}'")
+        self.set_active_collection(collection.name)
+        self.ensure_export_directory(collection.exporters[0])
+        bpy.ops.collection.exporter_export(index=0)
+        self.report({'INFO'}, f"Exported collection '{self.collection_name}'.")
         return {'FINISHED'}
+
+    def set_active_collection(self, collection_name):
+        layer_collection = bpy.context.view_layer.layer_collection
+        for layer in layer_collection.children:
+            if layer.name == collection_name:
+                bpy.context.view_layer.active_layer_collection = layer
+                return
+
+    def ensure_export_directory(self, exporter):
+        export_path = exporter.export_properties.filepath
+        export_dir = os.path.dirname(export_path)
+        if not os.path.exists(export_dir):
+            os.makedirs(export_dir)
 
 
 class SCENE_OT_ExportAllCollections(bpy.types.Operator):
@@ -110,26 +190,28 @@ class SCENE_OT_ExportAllCollections(bpy.types.Operator):
 
     def execute(self, context):
         for collection in bpy.data.collections:
-            if len(collection.exporters) > 0:
-                # Set the collection as the active collection
-                layer_collection = bpy.context.view_layer.layer_collection
-                for layer in layer_collection.children:
-                    if layer.name == collection.name:
-                        bpy.context.view_layer.active_layer_collection = layer
-                        break
+            if len(collection.exporters) == 0:
+                continue
 
-                # Get the export path and ensure the directory exists
-                exporter = collection.exporters[0]
-                export_path = exporter.export_properties.filepath
-                export_dir = os.path.dirname(export_path)
-                if not os.path.exists(export_dir):
-                    os.makedirs(export_dir)
-                    self.report({'INFO'}, f"Created directory: {export_dir}")
+            self.set_active_collection(collection.name)
+            self.ensure_export_directory(collection.exporters[0])
+            bpy.ops.collection.exporter_export(index=0)
+            self.report({'INFO'}, f"Exported collection '{collection.name}'.")
 
-                # Use the Blender 4.2 method to export the collection
-                bpy.ops.collection.exporter_export(index=0)
-                self.report({'INFO'}, f"Exported collection '{collection.name}' to {export_path}")
         return {'FINISHED'}
+
+    def set_active_collection(self, collection_name):
+        layer_collection = bpy.context.view_layer.layer_collection
+        for layer in layer_collection.children:
+            if layer.name == collection_name:
+                bpy.context.view_layer.active_layer_collection = layer
+                return
+
+    def ensure_export_directory(self, exporter):
+        export_path = exporter.export_properties.filepath
+        export_dir = os.path.dirname(export_path)
+        if not os.path.exists(export_dir):
+            os.makedirs(export_dir)
 
 
 class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
@@ -137,28 +219,29 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
     bl_label = "Export Selected Collections"
 
     def execute(self, context):
-        scene = context.scene
         for collection in bpy.data.collections:
-            if collection.my_export_select and len(collection.exporters) > 0:
-                # Set the collection as the active collection
-                layer_collection = bpy.context.view_layer.layer_collection
-                for layer in layer_collection.children:
-                    if layer.name == collection.name:
-                        bpy.context.view_layer.active_layer_collection = layer
-                        break
+            if not collection.my_export_select or len(collection.exporters) == 0:
+                continue
 
-                # Get the export path and ensure the directory exists
-                exporter = collection.exporters[0]
-                export_path = exporter.export_properties.filepath
-                export_dir = os.path.dirname(export_path)
-                if not os.path.exists(export_dir):
-                    os.makedirs(export_dir)
-                    self.report({'INFO'}, f"Created directory: {export_dir}")
+            self.set_active_collection(collection.name)
+            self.ensure_export_directory(collection.exporters[0])
+            bpy.ops.collection.exporter_export(index=0)
+            self.report({'INFO'}, f"Exported collection '{collection.name}'.")
 
-                # Use the Blender 4.2 method to export the collection
-                bpy.ops.collection.exporter_export(index=0)
-                self.report({'INFO'}, f"Exported collection '{collection.name}' to {export_path}")
         return {'FINISHED'}
+
+    def set_active_collection(self, collection_name):
+        layer_collection = bpy.context.view_layer.layer_collection
+        for layer in layer_collection.children:
+            if layer.name == collection_name:
+                bpy.context.view_layer.active_layer_collection = layer
+                return
+
+    def ensure_export_directory(self, exporter):
+        export_path = exporter.export_properties.filepath
+        export_dir = os.path.dirname(export_path)
+        if not os.path.exists(export_dir):
+            os.makedirs(export_dir)
 
 
 class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
@@ -169,50 +252,53 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
         scene = context.scene
         collection = bpy.data.collections[scene.collection_index]
 
-        if collection and len(collection.exporters) > 0:
-            exporter = collection.exporters[0]
-            export_path = exporter.export_properties.filepath
-            export_dir = os.path.dirname(export_path)
-
-            if os.path.exists(export_dir):
-                if platform.system() == "Windows":
-                    subprocess.Popen(f'explorer "{export_dir}"')
-                elif platform.system() == "Darwin":
-                    subprocess.Popen(["open", export_dir])
-                else:  # Linux and other platforms
-                    subprocess.Popen(["xdg-open", export_dir])
-                self.report({'INFO'}, f"Opened directory: {export_dir}")
-            else:
-                self.report({'WARNING'}, f"Directory does not exist: {export_dir}")
-        else:
+        if not collection or len(collection.exporters) == 0:
             self.report({'WARNING'}, "No valid exporter found for the active collection.")
+            return {'CANCELLED'}
+
+        exporter = collection.exporters[0]
+        export_path = exporter.export_properties.filepath
+        export_dir = os.path.dirname(export_path)
+
+        if not os.path.exists(export_dir):
+            self.report({'WARNING'}, f"Directory does not exist: {export_dir}")
+            return {'CANCELLED'}
+
+        self.open_directory(export_dir)
+        self.report({'INFO'}, f"Opened directory: {export_dir}")
         return {'FINISHED'}
+
+    def open_directory(self, export_dir):
+        if platform.system() == "Windows":
+            subprocess.Popen(f'explorer "{export_dir}"')
+        elif platform.system() == "Darwin":
+            subprocess.Popen(["open", export_dir])
+        else:  # Linux and other platforms
+            subprocess.Popen(["xdg-open", export_dir])
 
 
 # UI List of all collections with an exporter
 class SCENE_UL_CollectionList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         collection = item
-        if collection:
-            row = layout.row(align=True)
-            row.prop(collection, "my_export_select", text="")
-            row.label(text=collection.name, icon='OUTLINER_COLLECTION')
+        if not collection:
+            return
 
-            # Assuming the first exporter is being shown (customize as needed)
-            if len(collection.exporters) > 0:
-                exporter = collection.exporters[0]
-                row.label(text=exporter.export_properties.filepath)
+        row = layout.row(align=True)
+        row.prop(collection, "my_export_select", text="")
+        row.label(text=collection.name, icon='OUTLINER_COLLECTION')
 
-                # Add export button for each collection
-                op = row.operator("scene.export_collection", text="", icon='EXPORT')
-                op.collection_name = collection.name
+        if len(collection.exporters) > 0:
+            exporter = collection.exporters[0]
+            row.label(text=exporter.export_properties.filepath)
+            op = row.operator("scene.export_collection", text="", icon='EXPORT')
+            op.collection_name = collection.name
 
     def filter_items(self, context, data, propname):
         flt_flags = []
         flt_neworder = []
 
-        for i, collection in enumerate(bpy.data.collections):
-            # Check if the collection has exporters
+        for collection in bpy.data.collections:
             if len(collection.exporters) > 0:
                 flt_flags.append(self.bitflag_filter_item)
             else:
@@ -232,24 +318,12 @@ class SCENE_PT_CollectionExportPanel(bpy.types.Panel):
         layout = self.layout
         scene = context.scene
 
-        # Draw the collection list
-        row = layout.row()
-        row.template_list("SCENE_UL_CollectionList", "", bpy.data, "collections", scene, "collection_index")
-
-        # Draw string inputs for Original Path and Replacement Path
+        layout.template_list("SCENE_UL_CollectionList", "", bpy.data, "collections", scene, "collection_index")
         layout.prop(scene, "original_path")
         layout.prop(scene, "replacement_path")
-
-        # Draw button to set exporter path
         layout.operator("scene.set_exporter_path", text="Set Exporter Path")
-
-        # Draw button to export all collections
         layout.operator("scene.export_all_collections", text="Export All Collections")
-
-        # Draw button to export selected collections
         layout.operator("scene.export_selected_collections", text="Export Selected Collections")
-
-        # Draw button to open the export directory
         layout.operator("scene.open_export_directory", text="Open Export Directory")
 
 
@@ -288,7 +362,7 @@ def unregister_scene_properties():
 classes = (
     SCENE_OT_SetExporterPath,
     SCENE_OT_ExportCollection,
-    SCENE_OT_ExportAllCollections,  # Re-added this class to handle export of all collections
+    SCENE_OT_ExportAllCollections,
     SCENE_OT_ExportSelectedCollections,
     SCENE_OT_OpenExportDirectory,
     SCENE_UL_CollectionList,
