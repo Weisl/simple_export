@@ -1,5 +1,5 @@
 bl_info = {
-    "name": "Custom Collection Exporter",
+    "name": "Simple Export",
     "blender": (4, 2, 0),
     "category": "Scene",
 }
@@ -8,6 +8,14 @@ import bpy
 import os
 import subprocess
 import platform
+
+
+# needed for adding direct link to settings
+def get_addon_name():
+    """
+    Returns the addon name as a string.
+    """
+    return "Simple Export"
 
 
 def ensure_export_directory(exporter):
@@ -116,6 +124,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
             original_path (str): The original path to be replaced.
             replacement_path (str): The replacement path to be applied.
         """
+
         blend_filepath = bpy.data.filepath
         if not blend_filepath:
             self.report({'ERROR'}, "Save the Blender file before running the script.")
@@ -267,23 +276,41 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
 
 class SCENE_PT_CollectionExportPanel(bpy.types.Panel):
-    bl_label = "Collection Exporter"
+    bl_label = "Simple Exporter"
     bl_idname = "SCENE_PT_collection_export_panel"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "scene"
 
+    def draw_header(self, context):
+        layout = self.layout
+        row = layout.row(align=True)
+        row.operator("wm.url_open", text="", icon='HELP').url = "https://weisl.github.io/exportin/"
+        addon_name = get_addon_name()
+
+        op = row.operator("preferences.rename_addon_search", text="", icon='PREFERENCES')
+        op.addon_name = addon_name
+        op.prefs_tabs = 'UI'
+
     def draw(self, context):
         layout = self.layout
         scene = context.scene
 
+        box = layout.box()
+        box.label(text='Export Path')
+        box.prop(scene, "original_path")
+        box.prop(scene, "replacement_path")
+        box.operator("scene.set_exporter_path", text="Set Exporter Path")
+
         layout.template_list("SCENE_UL_CollectionList", "", bpy.data, "collections", scene, "collection_index")
-        layout.prop(scene, "original_path")
-        layout.prop(scene, "replacement_path")
-        layout.operator("scene.set_exporter_path", text="Set Exporter Path")
-        layout.operator("scene.export_all_collections", text="Export All Collections")
-        layout.operator("scene.export_selected_collections", text="Export Selected Collections")
-        layout.operator("scene.open_export_directory", text="Open Export Directory")
+
+        col = layout.column(align=True)
+        row = col.row()
+        row.operator("scene.export_all_collections", text="Export All Collections")
+        row = col.row()
+        row.operator("scene.export_selected_collections", text="Export Selected Collections")
+        row = col.row()
+        row.operator("scene.open_export_directory", text="Open Export Directory")
 
 
 # Scene properties to define original_path and replacement_path
