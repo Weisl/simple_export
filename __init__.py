@@ -10,35 +10,47 @@ import subprocess
 import platform
 
 
-class ExportUtility:
-    """Utility class containing shared methods for exporting operations."""
+def ensure_export_directory(exporter):
+    """
+    Ensure the directory for the export path exists, creating it if necessary.
 
-    @staticmethod
-    def ensure_export_directory(exporter):
-        """
-        Ensure the directory for the export path exists, creating it if necessary.
+    Args:
+        exporter (bpy.types.PropertyGroup): The exporter containing the export path.
+    """
+    export_path = exporter.export_properties.filepath
+    export_dir = os.path.dirname(export_path)
+    if not os.path.exists(export_dir):
+        os.makedirs(export_dir)
 
-        Args:
-            exporter (bpy.types.PropertyGroup): The exporter containing the export path.
-        """
-        export_path = exporter.export_properties.filepath
-        export_dir = os.path.dirname(export_path)
-        if not os.path.exists(export_dir):
-            os.makedirs(export_dir)
 
-    @staticmethod
-    def set_active_collection(collection_name):
-        """
-        Set the given collection as the active collection.
+def set_active_collection(collection_name):
+    """
+    Set the given collection as the active collection.
 
-        Args:
-            collection_name (str): The name of the collection to set as active.
-        """
-        layer_collection = bpy.context.view_layer.layer_collection
-        for layer in layer_collection.children:
-            if layer.name == collection_name:
-                bpy.context.view_layer.active_layer_collection = layer
-                return
+    Args:
+        collection_name (str): The name of the collection to set as active.
+    """
+    layer_collection = bpy.context.view_layer.layer_collection
+    for layer in layer_collection.children:
+        if layer.name == collection_name:
+            bpy.context.view_layer.active_layer_collection = layer
+            return
+
+
+def open_directory(export_dir):
+    """
+    Open the given directory in the file explorer.
+
+    Args:
+        export_dir (str): The directory to open.
+    """
+    if platform.system() == "Windows":
+        subprocess.Popen(f'explorer "{export_dir}"')
+    elif platform.system() == "Darwin":
+        subprocess.Popen(["open", export_dir])
+    else:  # Linux and other platforms
+        subprocess.Popen(["xdg-open", export_dir])
+
 
 # Operator to set the exporter path based on the provided script
 class SCENE_OT_SetExporterPath(bpy.types.Operator):
@@ -139,13 +151,12 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
             self.report({'WARNING'}, f"No valid exporter found for collection '{self.collection_name}'.")
             return {'CANCELLED'}
 
-        ExportUtility.set_active_collection(collection.name)
-        ExportUtility.ensure_export_directory(collection.exporters[0])
+        set_active_collection(collection.name)
+        ensure_export_directory(collection.exporters[0])
 
         bpy.ops.collection.exporter_export(index=0)
         self.report({'INFO'}, f"Exported collection '{self.collection_name}'.")
         return {'FINISHED'}
-
 
 
 class SCENE_OT_ExportAllCollections(bpy.types.Operator):
@@ -161,8 +172,8 @@ class SCENE_OT_ExportAllCollections(bpy.types.Operator):
             if len(collection.exporters) == 0:
                 continue
 
-            ExportUtility.set_active_collection(collection.name)
-            ExportUtility.ensure_export_directory(collection.exporters[0])
+            set_active_collection(collection.name)
+            ensure_export_directory(collection.exporters[0])
 
             bpy.ops.collection.exporter_export(index=0)
             self.report({'INFO'}, f"Exported collection '{collection.name}'.")
@@ -183,8 +194,8 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
             if not collection.my_export_select or len(collection.exporters) == 0:
                 continue
 
-            ExportUtility.set_active_collection(collection.name)
-            ExportUtility.ensure_export_directory(collection.exporters[0])
+            set_active_collection(collection.name)
+            ensure_export_directory(collection.exporters[0])
             bpy.ops.collection.exporter_export(index=0)
             self.report({'INFO'}, f"Exported collection '{collection.name}'.")
 
@@ -214,17 +225,9 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
             self.report({'WARNING'}, f"Directory does not exist: {export_dir}")
             return {'CANCELLED'}
 
-        self.open_directory(export_dir)
+        open_directory(export_dir)
         self.report({'INFO'}, f"Opened directory: {export_dir}")
         return {'FINISHED'}
-
-    def open_directory(self, export_dir):
-        if platform.system() == "Windows":
-            subprocess.Popen(f'explorer "{export_dir}"')
-        elif platform.system() == "Darwin":
-            subprocess.Popen(["open", export_dir])
-        else:  # Linux and other platforms
-            subprocess.Popen(["xdg-open", export_dir])
 
 
 # UI List of all collections with an exporter
