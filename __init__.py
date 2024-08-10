@@ -115,6 +115,18 @@ class SCENE_OT_UnselectAllCollections(bpy.types.Operator):
 class CustomExporterPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
+    show_lock_icons: bpy.props.BoolProperty(
+        name="Show Lock Icons",
+        description="Show or hide the LOCKED/UNLOCKED icons in the UIList.",
+        default=True
+    )
+
+    show_edit_icons: bpy.props.BoolProperty(
+        name="Show Edit Icons",
+        description="Show or hide the EDIT/New icons in the UIList.",
+        default=True
+    )
+
     use_blender_file_location: bpy.props.BoolProperty(
         name="Use Blender File Location",
         description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
@@ -178,6 +190,9 @@ class CustomExporterPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "custom_prefix")
         layout.prop(self, "custom_suffix")
         layout.prop(self, "default_export_format")
+        layout.prop(self, "show_edit_icons")
+        layout.prop(self, "show_lock_icons")
+
 
 
 class SCENE_OT_SetExporterPath(bpy.types.Operator):
@@ -390,6 +405,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         row.operator("scene.unselect_all_collections", text="Unselect All", icon='CHECKBOX_DEHLT')
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        prefs = context.preferences.addons[__package__].preferences
         collection = item
         if not collection:
             return
@@ -404,23 +420,29 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         file_exists = os.path.exists(export_path)
         is_locked = file_exists and not os.access(export_path, os.W_OK)
 
-        # Icons for lock status and file existence
-        lock_icon = 'LOCKED' if is_locked else 'UNLOCKED'
-        file_icon = 'CURRENT_FILE' if file_exists else 'FILE_NEW'
-        row.label(icon=lock_icon)
-        row.label(icon=file_icon)
+        # Conditionally show icons based on preferences
+        if prefs.show_lock_icons:
+            lock_icon = 'LOCKED' if is_locked else 'UNLOCKED'
+            row.label(icon=lock_icon)
+
+        if prefs.show_edit_icons:
+            file_icon = 'CURRENT_FILE' if file_exists else 'FILE_NEW'
+            row.label(icon=file_icon)
 
         # Display collection name
-        row.label(text=collection.name, icon='OUTLINER_COLLECTION')
+        # row.label(text=collection.name, icon='OUTLINER_COLLECTION')
+        # Display collection name as a prop
+        row.prop(collection, "name", text="", icon='OUTLINER_COLLECTION')
 
         # Filepath with more space
-        row.prop(exporter.export_properties, "filepath", text="", expand=True)  # Editable filepath
+        row.label(text=export_path)  # Full path as a label
+        # row.prop(exporter.export_properties, "filepath", text="", expand=True)  # Filename as editable prop
 
         # Buttons for setting export path and opening the directory
-        op = row.operator("scene.set_exporter_path", text="", icon='FILE_TEXT')
+        op = row.operator("scene.set_exporter_path", text="", icon='FILE_REFRESH')
         op.collection_name = collection.name
 
-        if file_exists:
+        if not file_exists:
             op = row.operator("scene.create_export_directory", text="", icon='FILE_FOLDER')
             op.collection_name = collection.name
 
@@ -487,6 +509,8 @@ def register_scene_properties():
         description="Index of the active collection in the list",
         default=0
     )
+
+
     bpy.types.Collection.my_export_select = bpy.props.BoolProperty(
         name="Select for Export",
         description="Select this collection for export",
@@ -520,6 +544,7 @@ def unregister_scene_properties():
 
 # Register and Unregister classes
 classes = (
+    SCENE_OT_CreateExportDirectory,
     SCENE_OT_SetExporterPath,
     CustomExporterPreferences,
     SCENE_OT_ExportCollection,
@@ -530,6 +555,7 @@ classes = (
     SCENE_OT_SelectAllCollections,
     SCENE_OT_UnselectAllCollections,
 )
+
 
 
 def register():
