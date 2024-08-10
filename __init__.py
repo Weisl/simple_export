@@ -4,10 +4,11 @@ bl_info = {
     "category": "Scene",
 }
 
-import bpy
 import os
 import platform
 import subprocess
+
+import bpy
 
 
 # needed for adding direct link to settings
@@ -99,6 +100,7 @@ class SCENE_OT_SelectAllCollections(bpy.types.Operator):
         for collection in bpy.data.collections:
             collection.my_export_select = True
         return {'FINISHED'}
+
 
 class SCENE_OT_UnselectAllCollections(bpy.types.Operator):
     bl_idname = "scene.unselect_all_collections"
@@ -276,7 +278,6 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
         exporter.export_properties.filepath = export_path
 
 
-
 class SCENE_OT_ExportCollection(bpy.types.Operator):
     """
      Operator to export a single collection.
@@ -329,7 +330,7 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
     """
 
     bl_idname = "scene.export_selected_collections"
-    bl_label = "Export Selected Collections"
+    bl_label = "Export Collections"
 
     def execute(self, context):
         for collection in bpy.data.collections:
@@ -377,10 +378,16 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
         return {'FINISHED'}
 
 
-# UI List of all collections with an exporter
 class SCENE_UL_CollectionList(bpy.types.UIList):
+    """
+    UIList displaying all collections with an exporter matching the selected export type.
+    """
+
     def draw_filter(self, context, layout):
         layout.prop(context.scene, "export_format", text="Export Format")
+        row = layout.row(align=True)
+        row.operator("scene.select_all_collections", text="Select All", icon='CHECKBOX_HLT')
+        row.operator("scene.unselect_all_collections", text="Unselect All", icon='CHECKBOX_DEHLT')
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         collection = item
@@ -388,33 +395,38 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             return
 
         row = layout.row(align=True)
+
+        # Checkbox as the first item
         row.prop(collection, "my_export_select", text="")
+
+        exporter = collection.exporters[0]
+        export_path = exporter.export_properties.filepath
+        file_exists = os.path.exists(export_path)
+        is_locked = file_exists and not os.access(export_path, os.W_OK)
+
+        # Icons for lock status and file existence
+        lock_icon = 'LOCKED' if is_locked else 'UNLOCKED'
+        file_icon = 'CURRENT_FILE' if file_exists else 'FILE_NEW'
+        row.label(icon=lock_icon)
+        row.label(icon=file_icon)
+
+        # Display collection name
         row.label(text=collection.name, icon='OUTLINER_COLLECTION')
 
-        if len(collection.exporters) > 0:
-            exporter = collection.exporters[0]
-            export_path = exporter.export_properties.filepath
-            # Determine if file exists
-            file_exists = os.path.exists(export_path)
-            # Determine if the file is locked or read-only
-            is_locked = file_exists and not os.access(export_path, os.W_OK)
+        # Filepath with more space
+        row.prop(exporter.export_properties, "filepath", text="", expand=True)  # Editable filepath
 
-            # icons
-            file_icon = 'CURRENT_FILE' if file_exists else 'FILE_NEW'
-            lock_icon = 'LOCKED' if is_locked else 'UNLOCKED'
+        # Buttons for setting export path and opening the directory
+        op = row.operator("scene.set_exporter_path", text="", icon='FILE_TEXT')
+        op.collection_name = collection.name
 
-            row.label(text=exporter.export_properties.filepath)
-            row.label(text='', icon=lock_icon)
-            row.label(text='', icon=file_icon)
-
-            # Set Export Path Button
-            op = row.operator("scene.set_exporter_path", text="", icon='FILEBROWSER')
+        if file_exists:
+            op = row.operator("scene.create_export_directory", text="", icon='FILE_FOLDER')
             op.collection_name = collection.name
 
-            # Add "Open File in Explorer" button if the export path exists
-            if file_exists:
-                op = row.operator("scene.create_export_directory", text="", icon='FILE_FOLDER')
-                op.collection_name = collection.name
+        # Add the Export Collection button
+        op = row.operator("scene.export_collection", text="", icon='EXPORT')
+        op.collection_name = collection.name
 
     def filter_items(self, context, data, propname):
         flt_flags = []
@@ -422,11 +434,12 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         export_format = context.scene.export_format
 
-        for collection in bpy.data.collections:
-            # Filter by exporter type
+        for i, collection in enumerate(bpy.data.collections):
+            # Filter out collections without exporters or without matching exporters
             has_matching_exporter = any(
                 exporter.name == export_format for exporter in collection.exporters
             )
+
             if has_matching_exporter:
                 flt_flags.append(self.bitflag_filter_item)
             else:
@@ -434,6 +447,9 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         return flt_flags, flt_neworder
 
+
+# Removed the SCENE_OT_ExportAllCollections class
+# Removed "Export All Collections" button from the panel
 
 class SCENE_PT_CollectionExportPanel(bpy.types.Panel):
     bl_label = "Simple Exporter"
@@ -456,17 +472,12 @@ class SCENE_PT_CollectionExportPanel(bpy.types.Panel):
         layout = self.layout
         scene = context.scene
 
+        # Draw the UIList without the invalid keyword argument
         layout.template_list("SCENE_UL_CollectionList", "", bpy.data, "collections", scene, "collection_index")
 
         col = layout.column(align=True)
         row = col.row()
-        row.operator("scene.select_all_collections", text="Select All")
-        row.operator("scene.unselect_all_collections", text="Unselect All")
-
-        row = col.row()
-        row.operator("scene.export_all_collections", text="Export All Collections")
-        row = col.row()
-        row.operator("scene.export_selected_collections", text="Export Selected Collections")
+        row.operator("scene.export_selected_collections", text="Export Collections")
 
 
 # Scene properties to define original_path and replacement_path
@@ -512,7 +523,6 @@ classes = (
     SCENE_OT_SetExporterPath,
     CustomExporterPreferences,
     SCENE_OT_ExportCollection,
-    SCENE_OT_ExportAllCollections,
     SCENE_OT_ExportSelectedCollections,
     SCENE_OT_OpenExportDirectory,
     SCENE_UL_CollectionList,
