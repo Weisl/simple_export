@@ -4,10 +4,11 @@ bl_info = {
     "category": "Scene",
 }
 
-import bpy
 import os
-import subprocess
 import platform
+import subprocess
+
+import bpy
 
 
 # needed for adding direct link to settings
@@ -27,7 +28,7 @@ def ensure_export_directory(exporter):
     """
     export_path = exporter.export_properties.filepath
     export_dir = os.path.dirname(export_path)
-    if not os.path.exists(export_dir):
+    if export_dir and not os.path.exists(export_dir):
         os.makedirs(export_dir)
 
 
@@ -89,7 +90,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
             self.report({'ERROR'}, f"Could not add exporter to collection '{collection.name}'.")
             return {'CANCELLED'}
 
-        self.set_exporter_path(collection.name, exporter, original_path, replacement_path)
+        self.set_exporter_path(context, collection.name, exporter, original_path, replacement_path)
         return {'FINISHED'}
 
     def get_custom_exporter_for_collection(self, collection_name, exporter_name):
@@ -114,7 +115,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
 
         return None
 
-    def set_exporter_path(self, collection_name, exporter, original_path, replacement_path):
+    def set_exporter_path(self, context, collection_name, exporter, original_path, replacement_path):
         """
         Set the export path for a given collection's exporter.
 
@@ -124,23 +125,39 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
             original_path (str): The original path to be replaced.
             replacement_path (str): The replacement path to be applied.
         """
+        scene = context.scene
 
-        blend_filepath = bpy.data.filepath
-        if not blend_filepath:
-            self.report({'ERROR'}, "Save the Blender file before running the script.")
-            return
+        if scene.use_blender_file_location:
+            blend_filepath = bpy.data.filepath
+            if not blend_filepath:
+                self.report({'ERROR'}, "Save the Blender file before running the script.")
+                return
+            export_dir = os.path.dirname(blend_filepath)
+        else:
+            export_dir = scene.custom_export_path
 
-        blend_dir = os.path.dirname(blend_filepath)
-        export_name = collection_name + ".fbx"
-        export_path = os.path.join(blend_dir, export_name)
+        # Construct the export file name
+        export_name = ""
+
+        if scene.use_blend_file_name_as_prefix:
+            blend_file_name = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
+            export_name += blend_file_name + "_"
+
+        if scene.custom_prefix:
+            export_name += scene.custom_prefix + "_"
+
+        export_name += collection_name
+
+        if scene.custom_suffix:
+            export_name += "_" + scene.custom_suffix
+
+        export_name += ".fbx"
+        export_path = os.path.join(export_dir, export_name)
 
         if original_path in export_path:
             export_path = export_path.replace(original_path, replacement_path)
 
-        export_dir = os.path.dirname(export_path)
-        if not os.path.exists(export_dir):
-            os.makedirs(export_dir)
-
+        ensure_export_directory(exporter)
         exporter.export_properties.filepath = export_path
 
 
@@ -267,10 +284,12 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         flt_neworder = []
 
         for collection in bpy.data.collections:
-            if len(collection.exporters) > 0:
-                flt_flags.append(self.bitflag_filter_item)
-            else:
+            if len(collection.exporters) == 0:
                 flt_flags.append(0)
+            else:
+                flt_flags.append(self.bitflag_filter_item)
+
+
 
         return flt_flags, flt_neworder
 
@@ -296,11 +315,7 @@ class SCENE_PT_CollectionExportPanel(bpy.types.Panel):
         layout = self.layout
         scene = context.scene
 
-        box = layout.box()
-        box.label(text='Export Path')
-        box.prop(scene, "original_path")
-        box.prop(scene, "replacement_path")
-        box.operator("scene.set_exporter_path", text="Set Exporter Path")
+
 
         layout.template_list("SCENE_UL_CollectionList", "", bpy.data, "collections", scene, "collection_index")
 
@@ -312,9 +327,52 @@ class SCENE_PT_CollectionExportPanel(bpy.types.Panel):
         row = col.row()
         row.operator("scene.open_export_directory", text="Open Export Directory")
 
+        box = layout.box()
+        box.label(text='Export Path')
+
+        box.prop(scene, "use_blender_file_location")  # Checkbox to use Blender file location
+        if not scene.use_blender_file_location:
+            box.prop(scene, "custom_export_path")  # Only show if the checkbox is unchecked
+
+        box.prop(scene, "original_path")
+        box.prop(scene, "replacement_path")
+
+        box = layout.box()
+        box.label(text='File Name')
+        box.prop(scene, "use_blend_file_name_as_prefix")  # Option to use Blender file name as prefix
+        box.prop(scene, "custom_prefix")  # Custom prefix input
+        box.prop(scene, "custom_suffix")  # Custom suffix input
+        box.operator("scene.set_exporter_path", text="Set Exporter Path")
+
 
 # Scene properties to define original_path and replacement_path
 def register_scene_properties():
+    bpy.types.Scene.use_blender_file_location = bpy.props.BoolProperty(
+        name="Path from Blend File",
+        description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
+        default=True
+    )
+    bpy.types.Scene.use_blend_file_name_as_prefix = bpy.props.BoolProperty(
+        name="Use Blend File Name as Prefix",
+        description="If checked, the Blender file name will be used as a prefix for the export file name.",
+        default=False
+    )
+
+    bpy.types.Scene.custom_prefix = bpy.props.StringProperty(
+        name="Prefix",
+        description="Custom prefix to add to the export file name."
+    )
+
+    bpy.types.Scene.custom_suffix = bpy.props.StringProperty(
+        name="Suffix",
+        description="Custom suffix to add to the export file name."
+    )
+    bpy.types.Scene.custom_export_path = bpy.props.StringProperty(
+        name="Custom Export Path",
+        description="Custom directory to export files to.",
+        subtype='DIR_PATH'
+    )
+
     bpy.types.Scene.original_path = bpy.props.StringProperty(
         name="Original Path",
         description="The path to be replaced.",
@@ -341,6 +399,8 @@ def unregister_scene_properties():
     del bpy.types.Scene.original_path
     del bpy.types.Scene.replacement_path
     del bpy.types.Scene.collection_index
+    del bpy.types.Scene.use_blender_file_location
+    del bpy.types.Scene.custom_export_path
     del bpy.types.Collection.my_export_select
 
 
