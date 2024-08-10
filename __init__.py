@@ -9,8 +9,13 @@ import os
 import subprocess
 import platform
 
+
 # Operator to set the exporter path based on the provided script
 class SCENE_OT_SetExporterPath(bpy.types.Operator):
+    """
+    Operator to set the exporter path for a collection based on the original and replacement paths defined in the scene properties.
+    """
+
     bl_idname = "scene.set_exporter_path"
     bl_label = "Set Exporter Path"
 
@@ -23,10 +28,13 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
             return {'CANCELLED'}
 
         collection = bpy.data.collections[collection_index]
+
+        # Path variables
         original_path = scene.original_path
         replacement_path = scene.replacement_path
 
-        exporter = self.add_custom_exporter_to_collection(collection.name, "FBX")
+        # Add custom exporter
+        exporter = self.get_custom_exporter_for_collection(collection.name, "FBX")
         if not exporter:
             self.report({'ERROR'}, f"Could not add exporter to collection '{collection.name}'.")
             return {'CANCELLED'}
@@ -34,7 +42,18 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
         self.set_exporter_path(collection.name, exporter, original_path, replacement_path)
         return {'FINISHED'}
 
-    def add_custom_exporter_to_collection(self, collection_name, exporter_name):
+    def get_custom_exporter_for_collection(self, collection_name, exporter_name):
+        """
+        Retrieve the custom exporter for a given collection.
+
+        Args:
+            collection_name (str): The name of the collection.
+            exporter_name (str): The name of the exporter.
+
+        Returns:
+            bpy.types.PropertyGroup or None: The exporter if found, otherwise None.
+        """
+
         collection = bpy.data.collections.get(collection_name)
         if not collection:
             return None
@@ -46,6 +65,15 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
         return None
 
     def set_exporter_path(self, collection_name, exporter, original_path, replacement_path):
+        """
+        Set the export path for a given collection's exporter.
+
+        Args:
+            collection_name (str): The name of the collection.
+            exporter (bpy.types.PropertyGroup): The exporter for the collection.
+            original_path (str): The original path to be replaced.
+            replacement_path (str): The replacement path to be applied.
+        """
         blend_filepath = bpy.data.filepath
         if not blend_filepath:
             self.report({'ERROR'}, "Save the Blender file before running the script.")
@@ -66,6 +94,10 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
 
 
 class SCENE_OT_ExportCollection(bpy.types.Operator):
+    """
+     Operator to export a single collection.
+     """
+
     bl_idname = "scene.export_collection"
     bl_label = "Export Collection"
 
@@ -84,6 +116,12 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
         return {'FINISHED'}
 
     def set_active_collection(self, collection_name):
+        """
+        Set the given collection as the active collection.
+
+        Args:
+            collection_name (str): The name of the collection to set as active.
+        """
         layer_collection = bpy.context.view_layer.layer_collection
         for layer in layer_collection.children:
             if layer.name == collection_name:
@@ -91,6 +129,12 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
                 return
 
     def ensure_export_directory(self, exporter):
+        """
+        Ensure the directory for the export path exists, creating it if necessary.
+
+        Args:
+            exporter (bpy.types.PropertyGroup): The exporter containing the export path.
+        """
         export_path = exporter.export_properties.filepath
         export_dir = os.path.dirname(export_path)
         if not os.path.exists(export_dir):
@@ -98,6 +142,10 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
 
 
 class SCENE_OT_ExportAllCollections(bpy.types.Operator):
+    """
+    Operator to export all collections in the scene that have an exporter.
+    """
+
     bl_idname = "scene.export_all_collections"
     bl_label = "Export All Collections"
 
@@ -114,6 +162,12 @@ class SCENE_OT_ExportAllCollections(bpy.types.Operator):
         return {'FINISHED'}
 
     def set_active_collection(self, collection_name):
+        """
+        Set the given collection as the active collection.
+
+        Args:
+            collection_name (str): The name of the collection to set as active.
+        """
         layer_collection = bpy.context.view_layer.layer_collection
         for layer in layer_collection.children:
             if layer.name == collection_name:
@@ -121,6 +175,12 @@ class SCENE_OT_ExportAllCollections(bpy.types.Operator):
                 return
 
     def ensure_export_directory(self, exporter):
+        """
+        Ensure the directory for the export path exists, creating it if necessary.
+
+        Args:
+            exporter (bpy.types.PropertyGroup): The exporter containing the export path.
+        """
         export_path = exporter.export_properties.filepath
         export_dir = os.path.dirname(export_path)
         if not os.path.exists(export_dir):
@@ -128,6 +188,10 @@ class SCENE_OT_ExportAllCollections(bpy.types.Operator):
 
 
 class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
+    """
+    Operator to export only the collections that have been selected by the user.
+    """
+
     bl_idname = "scene.export_selected_collections"
     bl_label = "Export Selected Collections"
 
@@ -144,6 +208,12 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
         return {'FINISHED'}
 
     def set_active_collection(self, collection_name):
+        """
+        Set the given collection as the active collection.
+
+        Args:
+            collection_name (str): The name of the collection to set as active.
+        """
         layer_collection = bpy.context.view_layer.layer_collection
         for layer in layer_collection.children:
             if layer.name == collection_name:
@@ -151,6 +221,12 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
                 return
 
     def ensure_export_directory(self, exporter):
+        """
+        Ensure the directory for the export path exists, creating it if necessary.
+
+        Args:
+            exporter (bpy.types.PropertyGroup): The exporter containing the export path.
+        """
         export_path = exporter.export_properties.filepath
         export_dir = os.path.dirname(export_path)
         if not os.path.exists(export_dir):
@@ -158,6 +234,9 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
 
 
 class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
+    """
+    Operator to open the export directory of the currently selected collection in the file explorer.
+    """
     bl_idname = "scene.open_export_directory"
     bl_label = "Open Export Directory"
 
