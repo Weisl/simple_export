@@ -60,6 +60,56 @@ def open_directory(export_dir):
         subprocess.Popen(["xdg-open", export_dir])
 
 
+class SCENE_OT_CreateExportDirectory(bpy.types.Operator):
+    bl_idname = "scene.create_export_directory"
+    bl_label = "Create Export Directory"
+
+    collection_name: bpy.props.StringProperty()
+
+    def execute(self, context):
+        scene = context.scene
+
+        collection = bpy.data.collections[scene.collection_index]
+        if self.collection_name:
+            collection = bpy.data.collections.get(self.collection_name)
+
+        if not collection or len(collection.exporters) == 0:
+            self.report({'WARNING'}, "No valid exporter found for the active collection.")
+            return {'CANCELLED'}
+
+        exporter = collection.exporters[0]
+        export_path = exporter.export_properties.filepath
+        export_dir = os.path.dirname(export_path)
+
+        if not os.path.exists(export_dir):
+            os.makedirs(export_dir)
+            self.report({'INFO'}, f"Created directory: {export_dir}")
+        else:
+            open_directory(export_dir)
+            self.report({'INFO'}, f"Opened directory: {export_dir}")
+
+        return {'FINISHED'}
+
+
+class SCENE_OT_SelectAllCollections(bpy.types.Operator):
+    bl_idname = "scene.select_all_collections"
+    bl_label = "Select All Collections"
+
+    def execute(self, context):
+        for collection in bpy.data.collections:
+            collection.my_export_select = True
+        return {'FINISHED'}
+
+class SCENE_OT_UnselectAllCollections(bpy.types.Operator):
+    bl_idname = "scene.unselect_all_collections"
+    bl_label = "Unselect All Collections"
+
+    def execute(self, context):
+        for collection in bpy.data.collections:
+            collection.my_export_select = False
+        return {'FINISHED'}
+
+
 class CustomExporterPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
@@ -91,14 +141,19 @@ class CustomExporterPreferences(bpy.types.AddonPreferences):
         description="Custom suffix to add to the export file name."
     )
 
-    export_format: bpy.props.EnumProperty(
-        name="Export Format",
-        description="Choose the format for exporting collections.",
+    default_export_format: bpy.props.EnumProperty(
+        name="Default Export Format",
+        description="Default format for exporting collections.",
         items=[
+            ('Universal Scene Description', "USD (.usd)", "Export to USD format"),
+            ('Alembic', "Alembic (.abc)", "Export to Alembic format"),
+            ('Wavefront OBJ', "OBJ (.obj)", "Export to OBJ format"),
+            ('Stanford PLY', "PLY (.ply)", "Export to PLY format"),
+            ('STL', "STL (.stl)", "Export to STL format"),
             ('FBX', "FBX (.fbx)", "Export to FBX format"),
-            ('USD', "USD (.usd)", "Export to USD format"),
+            ('glTF 2.0', "glTF (.gltf)", "Export to glTF format"),
         ],
-        default='FBX'
+        default='FBX'  # Default value set to FBX
     )
 
     original_path: bpy.props.StringProperty(
@@ -120,7 +175,7 @@ class CustomExporterPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "use_blend_file_name_as_prefix")
         layout.prop(self, "custom_prefix")
         layout.prop(self, "custom_suffix")
-        layout.prop(self, "export_format")
+        layout.prop(self, "default_export_format")
 
 
 # Operator to set the exporter path based on the provided script
@@ -325,9 +380,11 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
         return {'FINISHED'}
 
 
-
 # UI List of all collections with an exporter
 class SCENE_UL_CollectionList(bpy.types.UIList):
+    def draw_filter(self, context, layout):
+        layout.prop(context.scene, "export_format", text="Export Format")
+
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         collection = item
         if not collection:
@@ -352,24 +409,31 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             row.label(text=exporter.export_properties.filepath)
             row.label(text='', icon=lock_icon)
             row.label(text='', icon=file_icon)
-            op = row.operator("scene.export_collection", text="", icon='EXPORT')
+
+            # Set Export Path Button
+            op = row.operator("scene.set_exporter_path", text="", icon='FILEBROWSER')
+            op.collection_name = collection.name
 
             # Add "Open File in Explorer" button if the export path exists
-            if os.path.exists(export_path):
-                op = row.operator("scene.open_export_directory", text="", icon='FILE_FOLDER')
+            if file_exists:
+                op = row.operator("scene.create_export_directory", text="", icon='FILE_FOLDER')
                 op.collection_name = collection.name
-
-            op.collection_name = collection.name
 
     def filter_items(self, context, data, propname):
         flt_flags = []
         flt_neworder = []
 
+        export_format = context.scene.export_format
+
         for collection in bpy.data.collections:
-            if len(collection.exporters) == 0:
-                flt_flags.append(0)
-            else:
+            # Filter by exporter type
+            has_matching_exporter = any(
+                exporter.name == export_format for exporter in collection.exporters
+            )
+            if has_matching_exporter:
                 flt_flags.append(self.bitflag_filter_item)
+            else:
+                flt_flags.append(0)
 
         return flt_flags, flt_neworder
 
@@ -399,12 +463,13 @@ class SCENE_PT_CollectionExportPanel(bpy.types.Panel):
 
         col = layout.column(align=True)
         row = col.row()
+        row.operator("scene.select_all_collections", text="Select All")
+        row.operator("scene.unselect_all_collections", text="Unselect All")
+
+        row = col.row()
         row.operator("scene.export_all_collections", text="Export All Collections")
         row = col.row()
         row.operator("scene.export_selected_collections", text="Export Selected Collections")
-        row = col.row()
-        row.operator("scene.open_export_directory", text="Open Export Directory")
-
 
 
 # Scene properties to define original_path and replacement_path
@@ -418,6 +483,21 @@ def register_scene_properties():
         name="Select for Export",
         description="Select this collection for export",
         default=False
+    )
+
+    bpy.types.Scene.export_format = bpy.props.EnumProperty(
+        name="Export Format",
+        description="Filter collections by export format.",
+        items=[
+            ('Universal Scene Description', "USD (.usd)", "Export to USD format"),
+            ('Alembic', "Alembic (.abc)", "Export to Alembic format"),
+            ('Wavefront OBJ', "OBJ (.obj)", "Export to OBJ format"),
+            ('Stanford PLY', "PLY (.ply)", "Export to PLY format"),
+            ('STL', "STL (.stl)", "Export to STL format"),
+            ('FBX', "FBX (.fbx)", "Export to FBX format"),
+            ('glTF 2.0', "glTF (.gltf)", "Export to glTF format"),
+        ],
+        default=bpy.context.preferences.addons[__package__].preferences.default_export_format
     )
 
 
@@ -440,6 +520,8 @@ classes = (
     SCENE_OT_OpenExportDirectory,
     SCENE_UL_CollectionList,
     SCENE_PT_CollectionExportPanel,
+    SCENE_OT_SelectAllCollections,
+    SCENE_OT_UnselectAllCollections,
 )
 
 
