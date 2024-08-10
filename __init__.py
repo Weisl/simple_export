@@ -178,32 +178,30 @@ class CustomExporterPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "default_export_format")
 
 
-# Operator to set the exporter path based on the provided script
 class SCENE_OT_SetExporterPath(bpy.types.Operator):
     """
     Operator to set the exporter path for a collection based on the original and replacement paths defined in the scene properties.
     """
-
     bl_idname = "scene.set_exporter_path"
     bl_label = "Set Exporter Path"
+
+    collection_name: bpy.props.StringProperty()
 
     def execute(self, context):
         scene = context.scene
         prefs = bpy.context.preferences.addons[__name__].preferences
-        collection_index = scene.collection_index
 
-        if collection_index < 0 or collection_index >= len(bpy.data.collections):
-            self.report({'ERROR'}, "Invalid collection index.")
+        collection = bpy.data.collections.get(self.collection_name)
+        if not collection:
+            self.report({'ERROR'}, f"Collection '{self.collection_name}' not found.")
             return {'CANCELLED'}
-
-        collection = bpy.data.collections[collection_index]
 
         # Path variables
         original_path = prefs.original_path
         replacement_path = prefs.replacement_path
 
         # Add custom exporter
-        exporter = self.get_custom_exporter_for_collection(collection.name, "FBX")
+        exporter = self.get_custom_exporter_for_collection(collection.name, prefs.default_export_format)
         if not exporter:
             self.report({'ERROR'}, f"Could not add exporter to collection '{collection.name}'.")
             return {'CANCELLED'}
@@ -222,7 +220,6 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
         Returns:
             bpy.types.PropertyGroup or None: The exporter if found, otherwise None.
         """
-
         collection = bpy.data.collections.get(collection_name)
         if not collection:
             return None
@@ -243,7 +240,6 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
             original_path (str): The original path to be replaced.
             replacement_path (str): The replacement path to be applied.
         """
-        scene = context.scene
         prefs = bpy.context.preferences.addons[__name__].preferences
 
         if prefs.use_blender_file_location:
@@ -270,7 +266,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
         if prefs.custom_suffix:
             export_name += "_" + prefs.custom_suffix
 
-        export_name += ".fbx"
+        export_name += ".fbx"  # or use prefs.export_format to determine extension
         export_path = os.path.join(export_dir, export_name)
 
         if original_path in export_path:
@@ -278,6 +274,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
 
         ensure_export_directory(exporter)
         exporter.export_properties.filepath = export_path
+
 
 
 class SCENE_OT_ExportCollection(bpy.types.Operator):
