@@ -10,6 +10,36 @@ import subprocess
 import platform
 
 
+class ExportUtility:
+    """Utility class containing shared methods for exporting operations."""
+
+    @staticmethod
+    def ensure_export_directory(exporter):
+        """
+        Ensure the directory for the export path exists, creating it if necessary.
+
+        Args:
+            exporter (bpy.types.PropertyGroup): The exporter containing the export path.
+        """
+        export_path = exporter.export_properties.filepath
+        export_dir = os.path.dirname(export_path)
+        if not os.path.exists(export_dir):
+            os.makedirs(export_dir)
+
+    @staticmethod
+    def set_active_collection(collection_name):
+        """
+        Set the given collection as the active collection.
+
+        Args:
+            collection_name (str): The name of the collection to set as active.
+        """
+        layer_collection = bpy.context.view_layer.layer_collection
+        for layer in layer_collection.children:
+            if layer.name == collection_name:
+                bpy.context.view_layer.active_layer_collection = layer
+                return
+
 # Operator to set the exporter path based on the provided script
 class SCENE_OT_SetExporterPath(bpy.types.Operator):
     """
@@ -109,36 +139,13 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
             self.report({'WARNING'}, f"No valid exporter found for collection '{self.collection_name}'.")
             return {'CANCELLED'}
 
-        self.set_active_collection(collection.name)
-        self.ensure_export_directory(collection.exporters[0])
+        ExportUtility.set_active_collection(collection.name)
+        ExportUtility.ensure_export_directory(collection.exporters[0])
+
         bpy.ops.collection.exporter_export(index=0)
         self.report({'INFO'}, f"Exported collection '{self.collection_name}'.")
         return {'FINISHED'}
 
-    def set_active_collection(self, collection_name):
-        """
-        Set the given collection as the active collection.
-
-        Args:
-            collection_name (str): The name of the collection to set as active.
-        """
-        layer_collection = bpy.context.view_layer.layer_collection
-        for layer in layer_collection.children:
-            if layer.name == collection_name:
-                bpy.context.view_layer.active_layer_collection = layer
-                return
-
-    def ensure_export_directory(self, exporter):
-        """
-        Ensure the directory for the export path exists, creating it if necessary.
-
-        Args:
-            exporter (bpy.types.PropertyGroup): The exporter containing the export path.
-        """
-        export_path = exporter.export_properties.filepath
-        export_dir = os.path.dirname(export_path)
-        if not os.path.exists(export_dir):
-            os.makedirs(export_dir)
 
 
 class SCENE_OT_ExportAllCollections(bpy.types.Operator):
@@ -154,37 +161,13 @@ class SCENE_OT_ExportAllCollections(bpy.types.Operator):
             if len(collection.exporters) == 0:
                 continue
 
-            self.set_active_collection(collection.name)
-            self.ensure_export_directory(collection.exporters[0])
+            ExportUtility.set_active_collection(collection.name)
+            ExportUtility.ensure_export_directory(collection.exporters[0])
+
             bpy.ops.collection.exporter_export(index=0)
             self.report({'INFO'}, f"Exported collection '{collection.name}'.")
 
         return {'FINISHED'}
-
-    def set_active_collection(self, collection_name):
-        """
-        Set the given collection as the active collection.
-
-        Args:
-            collection_name (str): The name of the collection to set as active.
-        """
-        layer_collection = bpy.context.view_layer.layer_collection
-        for layer in layer_collection.children:
-            if layer.name == collection_name:
-                bpy.context.view_layer.active_layer_collection = layer
-                return
-
-    def ensure_export_directory(self, exporter):
-        """
-        Ensure the directory for the export path exists, creating it if necessary.
-
-        Args:
-            exporter (bpy.types.PropertyGroup): The exporter containing the export path.
-        """
-        export_path = exporter.export_properties.filepath
-        export_dir = os.path.dirname(export_path)
-        if not os.path.exists(export_dir):
-            os.makedirs(export_dir)
 
 
 class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
@@ -200,37 +183,12 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
             if not collection.my_export_select or len(collection.exporters) == 0:
                 continue
 
-            self.set_active_collection(collection.name)
-            self.ensure_export_directory(collection.exporters[0])
+            ExportUtility.set_active_collection(collection.name)
+            ExportUtility.ensure_export_directory(collection.exporters[0])
             bpy.ops.collection.exporter_export(index=0)
             self.report({'INFO'}, f"Exported collection '{collection.name}'.")
 
         return {'FINISHED'}
-
-    def set_active_collection(self, collection_name):
-        """
-        Set the given collection as the active collection.
-
-        Args:
-            collection_name (str): The name of the collection to set as active.
-        """
-        layer_collection = bpy.context.view_layer.layer_collection
-        for layer in layer_collection.children:
-            if layer.name == collection_name:
-                bpy.context.view_layer.active_layer_collection = layer
-                return
-
-    def ensure_export_directory(self, exporter):
-        """
-        Ensure the directory for the export path exists, creating it if necessary.
-
-        Args:
-            exporter (bpy.types.PropertyGroup): The exporter containing the export path.
-        """
-        export_path = exporter.export_properties.filepath
-        export_dir = os.path.dirname(export_path)
-        if not os.path.exists(export_dir):
-            os.makedirs(export_dir)
 
 
 class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
