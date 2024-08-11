@@ -21,33 +21,36 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         row = layout.row(align=True)
 
-        # Checkbox as the first item
+        # Checkbox for selecting the collection for export
         row.prop(collection, "my_export_select", text="")
 
+        # Ensure there's at least one exporter in the collection
+        if not collection.exporters:
+            return
+
+        # Get exporter details
         exporter = collection.exporters[0]
         export_path = exporter.export_properties.filepath
         file_exists = os.path.exists(export_path)
         is_locked = file_exists and not os.access(export_path, os.W_OK)
 
-        # Conditionally show icons based on preferences
+        # Show lock icon based on file permissions
         if prefs.show_lock_icons:
             lock_icon = 'LOCKED' if is_locked else 'UNLOCKED'
             row.label(icon=lock_icon)
 
+        # Show edit icon based on whether the file exists
         if prefs.show_edit_icons:
             file_icon = 'CURRENT_FILE' if file_exists else 'FILE_NEW'
             row.label(icon=file_icon)
 
-        # Display collection name
+        # Display the collection name
         row.label(text=collection.name, icon='OUTLINER_COLLECTION')
-        # Display collection name as a prop
-        # row.prop(collection, "name", text="", icon='OUTLINER_COLLECTION')
 
-        # Filepath with more space
-        # row.label(text=export_path)  # Full path as a label
-        row.prop(exporter.export_properties, "filepath", text="", expand=True)  # Filename as editable prop
+        # Display the export file path as an editable property
+        row.prop(exporter.export_properties, "filepath", text="", expand=True)
 
-        # Buttons for setting export path and opening the directory
+        # Buttons for setting the export path and opening the directory
         op = row.operator("scene.set_exporter_path", text="", icon='FILE_REFRESH')
         op.collection_name = collection.name
 
@@ -65,8 +68,8 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         export_format = context.scene.export_format
 
-        for i, collection in enumerate(bpy.data.collections):
-            # Filter out collections without exporters or without matching exporters
+        for collection in bpy.data.collections:
+            # Filter collections based on whether they have an exporter with the matching format
             has_matching_exporter = any(
                 exporter.name == export_format for exporter in collection.exporters
             )
