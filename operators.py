@@ -1,5 +1,7 @@
 import os
+
 import bpy
+
 from .utils import open_directory, ensure_export_directory, export_collection
 
 
@@ -78,14 +80,15 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
         # Path variables
         original_path = prefs.original_path
         replacement_path = prefs.replacement_path
+        default_export_format = prefs.default_export_format
 
         # Add custom exporter
-        exporter = self.get_custom_exporter_for_collection(collection.name, prefs.default_export_format)
+        exporter = self.get_custom_exporter_for_collection(collection.name, default_export_format)
         if not exporter:
             self.report({'ERROR'}, f"Could not add exporter to collection '{collection.name}'.")
             return {'CANCELLED'}
 
-        self.set_exporter_path(context, collection.name, exporter, prefs.original_path, prefs.replacement_path)
+        self.set_exporter_path(context, collection.name, exporter, original_path, replacement_path)
         return {'FINISHED'}
 
     def get_custom_exporter_for_collection(self, collection_name, exporter_name):

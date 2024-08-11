@@ -1,5 +1,7 @@
 import bpy
+
 from .utils import get_addon_name
+
 
 class SCENE_PT_CollectionExportPanel(bpy.types.Panel):
     bl_label = "Simple Exporter"
