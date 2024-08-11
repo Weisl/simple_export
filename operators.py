@@ -1,8 +1,6 @@
 import os
-
 import bpy
-
-from .utils import open_directory, set_active_collection, ensure_export_directory, export_collection
+from .utils import open_directory, ensure_export_directory, export_collection
 
 
 class SCENE_OT_CreateExportDirectory(bpy.types.Operator):
@@ -70,10 +68,9 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
     collection_name: bpy.props.StringProperty()
 
     def execute(self, context):
-        scene = context.scene
         prefs = bpy.context.preferences.addons[__package__].preferences
-
         collection = bpy.data.collections.get(self.collection_name)
+
         if not collection:
             self.report({'ERROR'}, f"Collection '{self.collection_name}' not found.")
             return {'CANCELLED'}
@@ -88,7 +85,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
             self.report({'ERROR'}, f"Could not add exporter to collection '{collection.name}'.")
             return {'CANCELLED'}
 
-        self.set_exporter_path(context, collection.name, exporter, original_path, replacement_path)
+        self.set_exporter_path(context, collection.name, exporter, prefs.original_path, prefs.replacement_path)
         return {'FINISHED'}
 
     def get_custom_exporter_for_collection(self, collection_name, exporter_name):
@@ -156,6 +153,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
 
         ensure_export_directory(exporter)
         exporter.export_properties.filepath = export_path
+        print(f"Set export path: {export_path}")
 
 
 class SCENE_OT_ExportCollection(bpy.types.Operator):
@@ -171,23 +169,21 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
 
     def execute(self, context):
         collection = bpy.data.collections.get(self.collection_name)
+        print(f'Executing export on collection: {collection.name}')
+
         if not collection or len(collection.exporters) == 0:
             self.report({'WARNING'}, f"No valid exporter found for collection '{self.collection_name}'.")
             return {'CANCELLED'}
 
         export_collection(collection, context)
+        self.report({'INFO'}, f"Exported collection '{collection.name}'.")
 
-        self.report({'INFO'}, f"Exported collection '{self.collection_name}'.")
         return {'FINISHED'}
 
 
 class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
-    """
-    Operator to export only the collections that have been selected by the user.
-    """
-
     bl_idname = "scene.export_selected_collections"
-    bl_label = "Export Collections"
+    bl_label = "Export Selected Collections"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -195,6 +191,7 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
             if not collection.my_export_select or len(collection.exporters) == 0:
                 continue
 
+            print(f'Starting export for collection: {collection.name}')
             export_collection(collection, context)
             self.report({'INFO'}, f"Exported collection '{collection.name}'.")
 
@@ -212,12 +209,7 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
     collection_name: bpy.props.StringProperty()
 
     def execute(self, context):
-        scene = context.scene
-
-        collection = bpy.data.collections[scene.collection_index]
-        if self.collection_name:
-            collection = bpy.data.collections.get(self.collection_name)
-
+        collection = bpy.data.collections.get(self.collection_name)
         if not collection or len(collection.exporters) == 0:
             self.report({'WARNING'}, "No valid exporter found for the active collection.")
             return {'CANCELLED'}
