@@ -8,6 +8,7 @@ from .utils import open_directory, set_active_collection, ensure_export_director
 class SCENE_OT_CreateExportDirectory(bpy.types.Operator):
     bl_idname = "scene.create_export_directory"
     bl_label = "Create Export Directory"
+    bl_options = {'REGISTER', 'UNDO'}
 
     collection_name: bpy.props.StringProperty()
 
@@ -39,6 +40,7 @@ class SCENE_OT_CreateExportDirectory(bpy.types.Operator):
 class SCENE_OT_SelectAllCollections(bpy.types.Operator):
     bl_idname = "scene.select_all_collections"
     bl_label = "Select All Collections"
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         for collection in bpy.data.collections:
@@ -49,6 +51,7 @@ class SCENE_OT_SelectAllCollections(bpy.types.Operator):
 class SCENE_OT_UnselectAllCollections(bpy.types.Operator):
     bl_idname = "scene.unselect_all_collections"
     bl_label = "Unselect All Collections"
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         for collection in bpy.data.collections:
@@ -62,6 +65,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
     """
     bl_idname = "scene.set_exporter_path"
     bl_label = "Set Exporter Path"
+    bl_options = {'REGISTER', 'UNDO'}
 
     collection_name: bpy.props.StringProperty()
 
@@ -161,6 +165,7 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
 
     bl_idname = "scene.export_collection"
     bl_label = "Export Collection"
+    bl_options = {'REGISTER', 'UNDO'}
 
     collection_name: bpy.props.StringProperty()
 
@@ -183,6 +188,7 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
 
     bl_idname = "scene.export_selected_collections"
     bl_label = "Export Collections"
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         for collection in bpy.data.collections:
@@ -201,6 +207,7 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
     """
     bl_idname = "scene.open_export_directory"
     bl_label = "Open Export Directory"
+    bl_options = {'REGISTER', 'UNDO'}
 
     collection_name: bpy.props.StringProperty()
 
