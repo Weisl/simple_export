@@ -55,18 +55,15 @@ def ensure_export_directory(exporter):
 def set_active_collection(collection_name):
     """
     Set the given collection as the active collection.
+
+    Args:
+        collection_name (str): The name of the collection to set as active.
     """
     layer_collection = bpy.context.view_layer.layer_collection
     for layer in layer_collection.children:
         if layer.name == collection_name:
             bpy.context.view_layer.active_layer_collection = layer
-            found = True
-            print(f"Set active collection to: {collection_name}")
-            break
-    if not found:
-        print(f"Collection not found: {collection_name}")
-        raise ValueError(f"Collection '{collection_name}' not found.")
-
+            return
 
 def export_collection(collection, context):
     """
