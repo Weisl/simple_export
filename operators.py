@@ -2,7 +2,7 @@ import os
 
 import bpy
 
-from .utils import open_directory, set_active_collection, ensure_export_directory
+from .utils import open_directory, set_active_collection, ensure_export_directory, export_collection
 
 
 class SCENE_OT_CreateExportDirectory(bpy.types.Operator):
@@ -170,33 +170,9 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
             self.report({'WARNING'}, f"No valid exporter found for collection '{self.collection_name}'.")
             return {'CANCELLED'}
 
-        set_active_collection(collection.name)
-        ensure_export_directory(collection.exporters[0])
+        export_collection(collection, context)
 
-        bpy.ops.collection.exporter_export(index=0)
         self.report({'INFO'}, f"Exported collection '{self.collection_name}'.")
-        return {'FINISHED'}
-
-
-class SCENE_OT_ExportAllCollections(bpy.types.Operator):
-    """
-    Operator to export all collections in the scene that have an exporter.
-    """
-
-    bl_idname = "scene.export_all_collections"
-    bl_label = "Export All Collections"
-
-    def execute(self, context):
-        for collection in bpy.data.collections:
-            if len(collection.exporters) == 0:
-                continue
-
-            set_active_collection(collection.name)
-            ensure_export_directory(collection.exporters[0])
-
-            bpy.ops.collection.exporter_export(index=0)
-            self.report({'INFO'}, f"Exported collection '{collection.name}'.")
-
         return {'FINISHED'}
 
 
@@ -213,9 +189,7 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
             if not collection.my_export_select or len(collection.exporters) == 0:
                 continue
 
-            set_active_collection(collection.name)
-            ensure_export_directory(collection.exporters[0])
-            bpy.ops.collection.exporter_export(index=0)
+            export_collection(collection, context)
             self.report({'INFO'}, f"Exported collection '{collection.name}'.")
 
         return {'FINISHED'}

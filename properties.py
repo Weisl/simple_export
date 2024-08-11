@@ -117,6 +117,8 @@ class CustomExporterPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "use_blend_file_name_as_prefix")
         layout.prop(self, "custom_prefix")
         layout.prop(self, "custom_suffix")
+        layout.prop(self, "original_path")
+        layout.prop(self, "replacement_path")
         layout.prop(self, "default_export_format")
         layout.prop(self, "show_edit_icons")
         layout.prop(self, "show_lock_icons")

@@ -38,6 +38,21 @@ def set_active_collection(collection_name):
             bpy.context.view_layer.active_layer_collection = layer
             return
 
+def export_collection(collection, context):
+    """
+    Handles the export logic for a single collection.
+    Args:
+        collection (bpy.types.Collection): The collection to export.
+        context (bpy.types.Context): The current context.
+    """
+
+    set_active_collection(collection.name)
+    ensure_export_directory(collection.exporters[0])
+
+    # Perform the export
+    bpy.ops.collection.exporter_export(index=0)
+
+
 
 def open_directory(export_dir):
     """
