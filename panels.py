@@ -5,7 +5,7 @@ from .utils import get_addon_name
 
 class SCENE_PT_CollectionExportPanel(bpy.types.Panel):
     bl_label = "Simple Exporter"
-    bl_idname = "SCENE_PT_collection_export_panel"
+    bl_idname = "SCENE_PT_simple_exporter"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "scene"
