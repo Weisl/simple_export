@@ -1,15 +1,15 @@
 schema_version = "1.0.0"
 
 id = "simple_export"
-version = "2.0.0"
+version = "0.5.0"
 name = "Simple Export"
-tagline = ""
+tagline = "Simple Export is an extension to export collections."
 maintainer = "Matthias Patscheider <patscheider.matthias@gmail.com>"
 type = "add-on"
 
 website = "https://weisl.github.io/collider-tools_overview/"
 
-tags = ["3D View", "Scene", "User Interface"]
+tags = ["3D View", "Camera", "User Interface"]
 
 blender_version_min = "4.2.0"
 
@@ -19,4 +19,11 @@ license = [
 
 copyright = [
     "2023 Matthias Patscheider",
+]
+
+[build]
+paths_exclude_pattern = [
+    "__pycache__/",
+    "/.git/",
+    "/*.zip",
 ]
