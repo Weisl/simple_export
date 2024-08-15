@@ -5,6 +5,7 @@ import subprocess
 import bpy
 from mathutils import Matrix
 
+from .collection_offset import update_collection_offset
 
 def apply_location_offset(obj, collection_offset, inverse=False):
     """
@@ -74,23 +75,33 @@ def export_collection(collection, context):
     """
     prefs = bpy.context.preferences.addons[__package__].preferences
 
-    if prefs.use_instance_offset:
-        apply_collection_offset(collection)
+    # Temporarily remove the collection offset update handler
+    if update_collection_offset in bpy.app.handlers.depsgraph_update_post:
+        bpy.app.handlers.depsgraph_update_post.remove(update_collection_offset)
 
-    set_active_collection(collection.name)
-    ensure_export_directory(collection.exporters[0])
-    exporter = collection.exporters[0]
-    export_path = exporter.export_properties.filepath
-    print(f"Preparing to export collection: {collection.name} to {export_path}")
+    try:
+        # Apply the instance offset if the preference is enabled
+        if prefs.use_instance_offset:
+            apply_collection_offset(collection)
 
-    ensure_export_directory(exporter)
-    bpy.ops.collection.exporter_export(index=0)
+        set_active_collection(collection.name)
+        ensure_export_directory(collection.exporters[0])
+        exporter = collection.exporters[0]
+        export_path = exporter.export_properties.filepath
+        print(f"Preparing to export collection: {collection.name} to {export_path}")
 
-    print(f"Exported collection '{collection.name}' to '{export_path}'")
+        ensure_export_directory(exporter)
+        bpy.ops.collection.exporter_export(index=0)
 
-    if prefs.use_instance_offset:
-        apply_collection_offset(collection, inverse=True)
+        print(f"Exported collection '{collection.name}' to '{export_path}'")
 
+        if prefs.use_instance_offset:
+            apply_collection_offset(collection, inverse=True)
+
+    finally:
+        # Re-enable the collection offset update handler
+        if update_collection_offset not in bpy.app.handlers.depsgraph_update_post:
+            bpy.app.handlers.depsgraph_update_post.append(update_collection_offset)
 
 def open_directory(export_dir):
     """
