@@ -61,6 +61,12 @@ class CustomExporterPreferences(bpy.types.AddonPreferences):
         default=True
     )
 
+    use_instance_offset: bpy.props.BoolProperty(
+        name="Move to Collection Offset",
+        description="Use the collection offset for the exported collection",
+        default=True
+    )
+
     custom_export_path: bpy.props.StringProperty(
         name="Custom Export Path",
         description="Custom directory to export files to.",
@@ -115,6 +121,7 @@ class CustomExporterPreferences(bpy.types.AddonPreferences):
         if not self.use_blender_file_location:
             layout.prop(self, "custom_export_path")
         layout.prop(self, "use_blend_file_name_as_prefix")
+        layout.prop(self, "use_instance_offset")
         layout.prop(self, "custom_prefix")
         layout.prop(self, "custom_suffix")
         layout.prop(self, "original_path")
