@@ -39,7 +39,4 @@ def draw_custom_collection_ui(self, context):
     # Add the Object Picker
     layout.prop(collection, "offset_object", text="Offset Object")
 
-    # Add an operator button to manually update the offset if needed
-    layout.operator("object.set_collection_offset", text="Set Collection Offset")
-
 

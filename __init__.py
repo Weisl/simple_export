@@ -14,7 +14,6 @@ from .operators import (
     SCENE_OT_OpenExportDirectory,
     SCENE_OT_SelectAllCollections,
     SCENE_OT_UnselectAllCollections,
-    OBJECT_OT_set_collection_offset,
 )
 from .panels import SCENE_PT_CollectionExportPanel, draw_custom_collection_ui
 from .properties import CustomExporterPreferences, register_scene_properties, unregister_scene_properties, \
@@ -31,7 +30,6 @@ classes = (
     SCENE_UL_CollectionList,
     SCENE_OT_SelectAllCollections,
     SCENE_OT_UnselectAllCollections,
-    OBJECT_OT_set_collection_offset,
     SCENE_PT_CollectionExportPanel,
     CustomExporterPreferences,
 )

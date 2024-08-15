@@ -228,22 +228,3 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
         open_directory(export_dir)
         self.report({'INFO'}, f"Opened directory: {export_dir}")
         return {'FINISHED'}
-
-
-class OBJECT_OT_set_collection_offset(bpy.types.Operator):
-    """Set the collection offset to the selected object's location."""
-    bl_idname = "object.set_collection_offset"
-    bl_label = "Set Collection Offset"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        collection = context.collection
-        obj = collection.offset_object
-        if not obj:
-            self.report({'WARNING'}, "No object selected")
-            return {'CANCELLED'}
-
-        # Set the collection offset
-        set_collection_offset_from_object(collection, obj)
-
-        return {'FINISHED'}
