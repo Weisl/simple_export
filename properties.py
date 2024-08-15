@@ -9,12 +9,6 @@ def register_scene_properties():
         default=0
     )
 
-    bpy.types.Collection.my_export_select = bpy.props.BoolProperty(
-        name="Select for Export",
-        description="Select this collection for export",
-        default=False
-    )
-
     bpy.types.Scene.export_format = bpy.props.EnumProperty(
         name="Export Format",
         description="Filter collections by export format.",
@@ -30,6 +24,18 @@ def register_scene_properties():
         default=bpy.context.preferences.addons[__package__].preferences.default_export_format
     )
 
+def register_collection_properties():
+    bpy.types.Collection.my_export_select = bpy.props.BoolProperty(
+        name="Select for Export",
+        description="Select this collection for export",
+        default=False
+    )
+
+    bpy.types.Collection.offset_object = bpy.props.PointerProperty(
+        name="Offset Object",
+        type=bpy.types.Object,
+        description="Object to be used for setting the collection offset"
+    )
 
 def unregister_scene_properties():
     del bpy.types.Scene.original_path
@@ -37,7 +43,10 @@ def unregister_scene_properties():
     del bpy.types.Scene.collection_index
     del bpy.types.Scene.use_blender_file_location
     del bpy.types.Scene.custom_export_path
+
+def unregister_collection_properties():
     del bpy.types.Collection.my_export_select
+    del bpy.types.Collection.offset_object
 
 
 class CustomExporterPreferences(bpy.types.AddonPreferences):

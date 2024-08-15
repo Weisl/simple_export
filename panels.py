@@ -4,8 +4,8 @@ from .utils import get_addon_name
 
 
 class SCENE_PT_CollectionExportPanel(bpy.types.Panel):
-    bl_label = "Simple Exporter"
-    bl_idname = "SCENE_PT_simple_exporter"
+    bl_label = "Simple Export"
+    bl_idname = "SCENE_PT_simple_export"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "scene"
@@ -30,3 +30,16 @@ class SCENE_PT_CollectionExportPanel(bpy.types.Panel):
         col = layout.column(align=True)
         row = col.row()
         row.operator("scene.export_selected_collections", text="Export Collections")
+
+def draw_custom_collection_ui(self, context):
+    """Draw custom UI in the COLLECTION_PT_instancing panel."""
+    layout = self.layout
+    collection = context.collection
+
+    # Add the Object Picker
+    layout.prop(collection, "offset_object", text="Offset Object")
+
+    # Add an operator button to manually update the offset if needed
+    layout.operator("object.set_collection_offset", text="Set Collection Offset")
+
+

@@ -1,9 +1,9 @@
 schema_version = "1.0.0"
 
-id = "simple_exporter"
+id = "simple_export"
 version = "0.5.0"
-name = "Simple Exporter"
-tagline = "Simple Exporter is a tool to batch export collections"
+name = "Simple Export"
+tagline = "Simple Export is a tool to batch export collections"
 maintainer = "Matthias Patscheider <patscheider.matthias@gmail.com>"
 type = "add-on"
 
