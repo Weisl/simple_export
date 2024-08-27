@@ -5,6 +5,25 @@ import bpy
 from .utils import open_directory, ensure_export_directory, export_collection
 
 
+def recurLayerCollection(layerColl, collName):
+    # print(f"Checking collection: {layerColl.name}")  # Debug print
+    if layerColl.name == collName:
+        # print(f"Found collection: {collName}")  # Debug print
+        return layerColl
+    for layer in layerColl.children:
+        found = recurLayerCollection(layer, collName)
+        if found:
+            return found
+    return None
+
+
+def set_active_layer_Collection(collection_name):
+    # Switching active Collection to active Object selected
+    layer_collection = bpy.context.view_layer.layer_collection
+    layerColl = recurLayerCollection(layer_collection, collection_name)
+    bpy.context.view_layer.active_layer_collection = layerColl
+
+
 class SCENE_OT_CreateExportDirectory(bpy.types.Operator):
     bl_idname = "scene.create_export_directory"
     bl_label = "Create Export Directory"
@@ -177,6 +196,8 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
         if not collection or len(collection.exporters) == 0:
             self.report({'WARNING'}, f"No valid exporter found for collection '{self.collection_name}'.")
             return {'CANCELLED'}
+
+        set_active_layer_Collection(self.collection_name)
 
         export_collection(collection, context)
         self.report({'INFO'}, f"Exported collection '{collection.name}'.")
