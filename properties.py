@@ -52,17 +52,6 @@ def unregister_collection_properties():
 class CustomExporterPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
-    show_lock_icons: bpy.props.BoolProperty(
-        name="Show Lock Icons",
-        description="Show or hide the LOCKED/UNLOCKED icons in the UIList.",
-        default=True
-    )
-
-    show_edit_icons: bpy.props.BoolProperty(
-        name="Show Edit Icons",
-        description="Show or hide the EDIT/New icons in the UIList.",
-        default=True
-    )
 
     use_blender_file_location: bpy.props.BoolProperty(
         name="Use Blender File Location",
@@ -136,5 +125,3 @@ class CustomExporterPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "original_path")
         layout.prop(self, "replacement_path")
         layout.prop(self, "default_export_format")
-        layout.prop(self, "show_edit_icons")
-        layout.prop(self, "show_lock_icons")

@@ -35,7 +35,6 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         is_locked = file_exists and not os.access(export_path, os.W_OK)
 
         # Show lock icon based on file permissions
-        # if prefs.show_lock_icons:
         if is_locked:
             icon = 'LOCKED'
         elif file_exists:
