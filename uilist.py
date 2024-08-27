@@ -1,5 +1,4 @@
 import os
-
 import bpy
 
 
@@ -45,8 +44,25 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             file_icon = 'CURRENT_FILE' if file_exists else 'FILE_NEW'
             row.label(icon=file_icon)
 
-        # Display the collection name
-        row.label(text=collection.name, icon='OUTLINER_COLLECTION')
+        # Map color_tag to icons
+        color_tag_icons = {
+            'NONE': 'OUTLINER_COLLECTION',
+            'COLOR_01': 'COLLECTION_COLOR_01',
+            'COLOR_02': 'COLLECTION_COLOR_02',
+            'COLOR_03': 'COLLECTION_COLOR_03',
+            'COLOR_04': 'COLLECTION_COLOR_04',
+            'COLOR_05': 'COLLECTION_COLOR_05',
+            'COLOR_06': 'COLLECTION_COLOR_06',
+            'COLOR_07': 'COLLECTION_COLOR_07',
+            'COLOR_08': 'COLLECTION_COLOR_08',
+        }
+
+        # Determine the icon based on the collection's color_tag
+        color_tag = collection.color_tag
+        icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
+
+        # Display the collection name with the color icon
+        row.label(text=collection.name, icon=icon)
 
         # Display the export file path as an editable property
         row.prop(exporter.export_properties, "filepath", text="", expand=True)
