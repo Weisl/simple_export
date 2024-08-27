@@ -215,7 +215,8 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
             if not collection.my_export_select or len(collection.exporters) == 0:
                 continue
 
-            print(f'Starting export for collection: {collection.name}')
+            set_active_layer_Collection(collection.name)
+
             export_collection(collection, context)
             self.report({'INFO'}, f"Exported collection '{collection.name}'.")
 
