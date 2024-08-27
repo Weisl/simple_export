@@ -35,15 +35,16 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         is_locked = file_exists and not os.access(export_path, os.W_OK)
 
         # Show lock icon based on file permissions
-        if prefs.show_lock_icons:
-            lock_icon = 'LOCKED' if is_locked else 'UNLOCKED'
-            row.label(icon=lock_icon)
+        # if prefs.show_lock_icons:
+        if is_locked:
+            icon = 'LOCKED'
+        elif file_exists:
+            icon = 'CURRENT_FILE'
+        else:
+            icon ='FILE_NEW'
 
-        # Show edit icon based on whether the file exists
-        if prefs.show_edit_icons:
-            file_icon = 'CURRENT_FILE' if file_exists else 'FILE_NEW'
-            row.label(icon=file_icon)
 
+        row.label(icon=icon)
         # Map color_tag to icons
         color_tag_icons = {
             'NONE': 'OUTLINER_COLLECTION',
