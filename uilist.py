@@ -9,9 +9,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
     def draw_filter(self, context, layout):
         layout.prop(context.scene, "export_format", text="Export Format")
-        row = layout.row(align=True)
-        row.operator("scene.select_all_collections", text="Select All", icon='CHECKBOX_HLT')
-        row.operator("scene.unselect_all_collections", text="Unselect All", icon='CHECKBOX_DEHLT')
+
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         prefs = context.preferences.addons[__package__].preferences

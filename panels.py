@@ -1,6 +1,18 @@
 import bpy
 from .utils import get_addon_name
 
+class EXPOTR_MT_context_menu(bpy.types.Menu):
+    bl_label = "Custom Collection Menu"
+    bl_idname = "EXPOTR_MT_context_menu"
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.operator("scene.select_all_collections", text="Select All", icon='CHECKBOX_HLT')
+        row = layout.row()
+        row.operator("scene.unselect_all_collections", text="Unselect All", icon='CHECKBOX_DEHLT')
+
+
 class CollectionExportPanelBase:
     bl_label = "Simple Export"
 
@@ -18,12 +30,18 @@ class CollectionExportPanelBase:
         layout = self.layout
         scene = context.scene
 
+
+        row = layout.row()
         # Draw the UIList without the invalid keyword argument
-        layout.template_list("SCENE_UL_CollectionList", "", bpy.data, "collections", scene, "collection_index")
+        row.template_list("SCENE_UL_CollectionList", "", bpy.data, "collections", scene, "collection_index")
+        col = row.column(align=True)
+        col.menu("EXPOTR_MT_context_menu", icon='DOWNARROW_HLT', text="")
 
         col = layout.column(align=True)
         row = col.row()
         row.operator("scene.export_selected_collections", text="Export Collections")
+
+
 
 
 class SCENE_PT_CollectionExportPanel(CollectionExportPanelBase, bpy.types.Panel):
