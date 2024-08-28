@@ -1,9 +1,3 @@
-bl_info = {
-    "name": "Simple Export",
-    "blender": (4, 2, 0),
-    "category": "Scene",
-}
-
 import bpy
 
 from .operators import (
