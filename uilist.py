@@ -21,33 +21,53 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         row = layout.row(align=True)
 
-        # Checkbox as the first item
+        # Checkbox for selecting the collection for export
         row.prop(collection, "my_export_select", text="")
 
+        # Ensure there's at least one exporter in the collection
+        if not collection.exporters:
+            return
+
+        # Get exporter details
         exporter = collection.exporters[0]
         export_path = exporter.export_properties.filepath
         file_exists = os.path.exists(export_path)
         is_locked = file_exists and not os.access(export_path, os.W_OK)
 
-        # Conditionally show icons based on preferences
-        if prefs.show_lock_icons:
-            lock_icon = 'LOCKED' if is_locked else 'UNLOCKED'
-            row.label(icon=lock_icon)
+        # Show lock icon based on file permissions
+        if is_locked:
+            icon = 'LOCKED'
+        elif file_exists:
+            icon = 'CURRENT_FILE'
+        else:
+            icon ='FILE_NEW'
 
-        if prefs.show_edit_icons:
-            file_icon = 'CURRENT_FILE' if file_exists else 'FILE_NEW'
-            row.label(icon=file_icon)
 
-        # Display collection name
-        row.label(text=collection.name, icon='OUTLINER_COLLECTION')
-        # Display collection name as a prop
-        # row.prop(collection, "name", text="", icon='OUTLINER_COLLECTION')
+        row.label(icon=icon)
+        # Map color_tag to icons
+        color_tag_icons = {
+            'NONE': 'OUTLINER_COLLECTION',
+            'COLOR_01': 'COLLECTION_COLOR_01',
+            'COLOR_02': 'COLLECTION_COLOR_02',
+            'COLOR_03': 'COLLECTION_COLOR_03',
+            'COLOR_04': 'COLLECTION_COLOR_04',
+            'COLOR_05': 'COLLECTION_COLOR_05',
+            'COLOR_06': 'COLLECTION_COLOR_06',
+            'COLOR_07': 'COLLECTION_COLOR_07',
+            'COLOR_08': 'COLLECTION_COLOR_08',
+        }
 
-        # Filepath with more space
-        # row.label(text=export_path)  # Full path as a label
-        row.prop(exporter.export_properties, "filepath", text="", expand=True)  # Filename as editable prop
+        # Determine the icon based on the collection's color_tag
+        color_tag = collection.color_tag
+        icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
 
-        # Buttons for setting export path and opening the directory
+        # Display the collection name with the color icon
+        row.label(text=collection.name, icon=icon)
+
+        # Display the export file path as an editable property
+        row.prop(exporter.export_properties, "filepath", text="", expand=True)
+
+        # Buttons for setting the export path and opening the directory
         op = row.operator("scene.set_exporter_path", text="", icon='FILE_REFRESH')
         op.collection_name = collection.name
 
@@ -65,8 +85,8 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         export_format = context.scene.export_format
 
-        for i, collection in enumerate(bpy.data.collections):
-            # Filter out collections without exporters or without matching exporters
+        for collection in bpy.data.collections:
+            # Filter collections based on whether they have an exporter with the matching format
             has_matching_exporter = any(
                 exporter.name == export_format for exporter in collection.exporters
             )

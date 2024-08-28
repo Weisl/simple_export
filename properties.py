@@ -9,12 +9,6 @@ def register_scene_properties():
         default=0
     )
 
-    bpy.types.Collection.my_export_select = bpy.props.BoolProperty(
-        name="Select for Export",
-        description="Select this collection for export",
-        default=False
-    )
-
     bpy.types.Scene.export_format = bpy.props.EnumProperty(
         name="Export Format",
         description="Filter collections by export format.",
@@ -30,6 +24,18 @@ def register_scene_properties():
         default=bpy.context.preferences.addons[__package__].preferences.default_export_format
     )
 
+def register_collection_properties():
+    bpy.types.Collection.my_export_select = bpy.props.BoolProperty(
+        name="Select for Export",
+        description="Select this collection for export",
+        default=False
+    )
+
+    bpy.types.Collection.offset_object = bpy.props.PointerProperty(
+        name="Offset Object",
+        type=bpy.types.Object,
+        description="Object to be used for setting the collection offset"
+    )
 
 def unregister_scene_properties():
     del bpy.types.Scene.original_path
@@ -37,27 +43,25 @@ def unregister_scene_properties():
     del bpy.types.Scene.collection_index
     del bpy.types.Scene.use_blender_file_location
     del bpy.types.Scene.custom_export_path
+
+def unregister_collection_properties():
     del bpy.types.Collection.my_export_select
+    del bpy.types.Collection.offset_object
 
 
 class CustomExporterPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
-    show_lock_icons: bpy.props.BoolProperty(
-        name="Show Lock Icons",
-        description="Show or hide the LOCKED/UNLOCKED icons in the UIList.",
-        default=True
-    )
-
-    show_edit_icons: bpy.props.BoolProperty(
-        name="Show Edit Icons",
-        description="Show or hide the EDIT/New icons in the UIList.",
-        default=True
-    )
 
     use_blender_file_location: bpy.props.BoolProperty(
         name="Use Blender File Location",
         description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
+        default=True
+    )
+
+    use_instance_offset: bpy.props.BoolProperty(
+        name="Move to Collection Offset",
+        description="Use the collection offset for the exported collection",
         default=True
     )
 
@@ -115,10 +119,9 @@ class CustomExporterPreferences(bpy.types.AddonPreferences):
         if not self.use_blender_file_location:
             layout.prop(self, "custom_export_path")
         layout.prop(self, "use_blend_file_name_as_prefix")
+        layout.prop(self, "use_instance_offset")
         layout.prop(self, "custom_prefix")
         layout.prop(self, "custom_suffix")
         layout.prop(self, "original_path")
         layout.prop(self, "replacement_path")
         layout.prop(self, "default_export_format")
-        layout.prop(self, "show_edit_icons")
-        layout.prop(self, "show_lock_icons")

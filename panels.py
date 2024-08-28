@@ -1,12 +1,8 @@
 import bpy
 from .utils import get_addon_name
 
-class SCENE_PT_CollectionExportPanel(bpy.types.Panel):
-    bl_label = "Simple Exporter"
-    bl_idname = "SCENE_PT_collection_export_panel"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = "scene"
+class CollectionExportPanelBase:
+    bl_label = "Simple Export"
 
     def draw_header(self, context):
         layout = self.layout
@@ -28,3 +24,44 @@ class SCENE_PT_CollectionExportPanel(bpy.types.Panel):
         col = layout.column(align=True)
         row = col.row()
         row.operator("scene.export_selected_collections", text="Export Collections")
+
+
+class SCENE_PT_CollectionExportPanel(CollectionExportPanelBase, bpy.types.Panel):
+    bl_idname = "SCENE_PT_simple_export"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "scene"
+
+    def draw(self, context):
+        super().draw(context)
+        layout = self.layout
+
+        # Add a button to open the panel as a popup
+        op = layout.operator("wm.call_panel", text="Open Export Popup")
+        op.name = "POPUP_PT_simple_export"
+
+class EXPORT_PT_CollectionExportPanel(CollectionExportPanelBase, bpy.types.Panel):
+    bl_idname = "POPUP_PT_simple_export"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'WINDOW'
+    bl_context = "empty"
+    bl_ui_units_x = 45
+
+    def draw(self, context):
+        layout = self.layout
+
+        row = layout.row()
+        row.label(text="Simple Export")
+
+        super().draw(context)
+
+
+def draw_custom_collection_ui(self, context):
+    """Draw custom UI in the COLLECTION_PT_instancing panel."""
+    layout = self.layout
+    collection = context.collection
+
+    # Add the Object Picker
+    layout.prop(collection, "offset_object", text="Offset Object")
+
+
