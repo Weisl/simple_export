@@ -31,7 +31,7 @@ class SIMPLE_EEXPORTER_menu_base:
 
         row = layout.row()
         # Draw the UIList without the invalid keyword argument
-        row.template_list("SCENE_UL_CollectionList", "", bpy.data, "collections", scene, "collection_index")
+        row.template_list("SCENE_UL_CollectionList", '', bpy.data, "collections", scene, "collection_index")
         col = row.column(align=True)
         col.menu("SIMPLE_EXPORTER_MT_context_menu", icon='DOWNARROW_HLT', text="")
 

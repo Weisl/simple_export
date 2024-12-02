@@ -210,12 +210,18 @@ def register():
 
     from .keymap import add_keymap
     add_keymap()
+    register_scene_properties()
+    register_collection_properties()
 
 def unregister():
+    from .keymap import remove_keymap
+    remove_keymap()
+
+    unregister_collection_properties()
+    unregister_scene_properties()
+    
     from bpy.utils import unregister_class
 
     for cls in reversed(classes):
         unregister_class(cls)
 
-    from .keymap import remove_keymap
-    remove_keymap()

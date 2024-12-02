@@ -100,6 +100,8 @@ classes = (
 def register():
     from bpy.utils import register_class
 
+    bpy.types.Scene.collection_index = bpy.props.IntProperty()
+
     for cls in classes:
         register_class(cls)
 
