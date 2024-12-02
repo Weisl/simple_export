@@ -1,8 +1,45 @@
 import bpy
-from.keymap import remove_key
+from .keymap import remove_key
 
-def add_key(self, km, idname, properties_name, collision_pie_type, collision_pie_ctrl, collision_pie_shift,
-            collision_pie_alt, collision_pie_active):
+class BUTTON_OT_change_key(bpy.types.Operator):
+    """UI button to assign a new key to an addon hotkey"""
+    bl_idname = "simple_export.key_selection_button"
+    bl_label = "Press the button you want to assign to this operation."
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    menu_id: bpy.props.StringProperty()
+
+    def __init__(self):
+        self.my_event = ''
+
+    def invoke(self, context, event):
+        prefs = context.preferences.addons[__package__].preferences
+        self.prefs = prefs
+        if self.menu_id == 'simple_export_panel':
+            self.prefs.collision_pie_type = 'NONE'
+
+        context.window_manager.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
+
+    def modal(self, context, event):
+        self.my_event = 'NONE'
+
+        if event.type and event.value == 'RELEASE':  # Apply
+            self.my_event = event.type
+
+            if self.menu_id == 'collision_pie':
+                self.prefs.collision_pie_type = self.my_event
+
+            self.execute(context)
+            return {'FINISHED'}
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        self.report({'INFO'}, "Key change: " + bpy.types.Event.bl_rna.properties['type'].enum_items[self.my_event].name)
+        return {'FINISHED'}
+
+def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_export_panel_ctrl, simple_export_panel_shift,
+            simple_export_panel_alt, simple_export_panel_active):
     """
     Add a new keymap item to the specified keymap.
 
@@ -10,19 +47,19 @@ def add_key(self, km, idname, properties_name, collision_pie_type, collision_pie
         km (bpy.types.KeyMap): The keymap to which the new keymap item will be added.
         idname (str): The operator identifier.
         properties_name (str): The name property for the keymap item.
-        collision_pie_type (str): The type of key (e.g., 'A', 'B', etc.).
-        collision_pie_ctrl (bool): Whether the Ctrl key is pressed.
-        collision_pie_shift (bool): Whether the Shift key is pressed.
-        collision_pie_alt (bool): Whether the Alt key is pressed.
-        collision_pie_active (bool): Whether the keymap item is active.
+        simple_export_panel_type (str): The type of key (e.g., 'A', 'B', etc.).
+        simple_export_panel_ctrl (bool): Whether the Ctrl key is pressed.
+        simple_export_panel_shift (bool): Whether the Shift key is pressed.
+        simple_export_panel_alt (bool): Whether the Alt key is pressed.
+        simple_export_panel_active (bool): Whether the keymap item is active.
 
     Returns:
         None
     """
-    kmi = km.keymap_items.new(idname=idname, type=collision_pie_type, value='PRESS',
-                              ctrl=collision_pie_ctrl, shift=collision_pie_shift, alt=collision_pie_alt)
+    kmi = km.keymap_items.new(idname=idname, type=simple_export_panel_type, value='PRESS',
+                              ctrl=simple_export_panel_ctrl, shift=simple_export_panel_shift, alt=simple_export_panel_alt)
     kmi.properties.name = properties_name
-    kmi.active = collision_pie_active
+    kmi.active = simple_export_panel_active
 
 # Scene properties to define original_path and replacement_path
 def register_scene_properties():
@@ -132,12 +169,12 @@ class CustomExporterPreferences(bpy.types.AddonPreferences):
     ###################################################################
     # KEYMAP
 
-    simple_export_panel_type: bpy.props.StringProperty(name="Collider Pie Menu", default="E", update=update_simple_export_panel_key)
+    simple_export_panel_type: bpy.props.StringProperty(name="Export Popup Menu", default="E", update=update_simple_export_panel_key)
 
-    simple_export_panel_ctrl: bpy.props.BoolProperty(name="Ctrl", default=True, update=update_simple_export_panel_key)
+    simple_export_panel_ctrl: bpy.props.BoolProperty(name="Ctrl", default=False, update=update_simple_export_panel_key)
 
     simple_export_panel_shift: bpy.props.BoolProperty(name="Shift", default=True, update=update_simple_export_panel_key)
-    simple_export_panel_alt: bpy.props.BoolProperty(name="Alt", default=False, update=update_simple_export_panel_key)
+    simple_export_panel_alt: bpy.props.BoolProperty(name="Alt", default=True, update=update_simple_export_panel_key)
 
     simple_export_panel_active: bpy.props.BoolProperty(name="Active", default=True, update=update_simple_export_panel_key)
 
@@ -158,8 +195,9 @@ class CustomExporterPreferences(bpy.types.AddonPreferences):
         text = (bpy.types.Event.bl_rna.properties['type'].enum_items[
             key_type].name if key_type != 'NONE' else 'Press a key')
 
-        op = row.operator("collider.key_selection_button", text=text)
+        op = row.operator("simple_export.key_selection_button", text=text)
         op.menu_id = property_prefix
+
         # row.prop(self, f'{property_prefix}_type', text="")
         op = row.operator("simple_export.remove_hotkey", text="", icon="X")
         op.idname = id_name

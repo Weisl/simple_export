@@ -1,10 +1,8 @@
 import bpy
 
-from .. import __package__ as base_package
-
 def add_keymap():
     km = bpy.context.window_manager.keyconfigs.addon.keymaps.new(name="Window")
-    prefs = bpy.context.preferences.addons[base_package].preferences
+    prefs = bpy.context.preferences.addons[__package__].preferences
 
     kmi = km.keymap_items.new(idname='wm.call_panel', type=prefs.simple_export_panel_type, value='PRESS',
                               ctrl=prefs.simple_export_panel_ctrl, shift=prefs.simple_export_panel_shift,
@@ -38,8 +36,6 @@ def remove_keymap():
         if hasattr(kmi.properties, 'name') and kmi.properties.name in ['POPUP_PT_simple_export']:
             km.keymap_items.remove(kmi)
 
-
-
 class REMOVE_OT_hotkey(bpy.types.Operator):
     """Tooltip"""
     bl_idname = "simple_export.remove_hotkey"
@@ -54,7 +50,7 @@ class REMOVE_OT_hotkey(bpy.types.Operator):
     def execute(self, context):
         remove_key(context, self.idname, self.properties_name)
 
-        prefs = context.preferences.addons[base_package].preferences
+        prefs = context.preferences.addons[__package__].preferences
         setattr(prefs, f'{self.property_prefix}_type', "NONE")
         setattr(prefs, f'{self.property_prefix}_ctrl', False)
         setattr(prefs, f'{self.property_prefix}_shift', False)

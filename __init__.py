@@ -8,14 +8,14 @@ from .operators import SCENE_OT_CreateExportDirectory, SCENE_OT_SetExporterPath,
     SCENE_OT_UnselectAllCollections
 from .panels import SCENE_PT_CollectionExportPanel, POPUP_PT_simple_export, draw_custom_collection_ui, \
     EXPOTR_MT_context_menu
-from .preferenecs import CustomExporterPreferences, register_scene_properties, unregister_scene_properties, \
+from .preferenecs import CustomExporterPreferences, BUTTON_OT_change_key, register_scene_properties, unregister_scene_properties, \
     register_collection_properties, unregister_collection_properties
 from .uilist import SCENE_UL_CollectionList
 
 classes = (REMOVE_OT_hotkey, SCENE_OT_CreateExportDirectory, SCENE_OT_SetExporterPath, SCENE_OT_ExportCollection,
            SCENE_OT_ExportSelectedCollections, SCENE_OT_OpenExportDirectory, SCENE_UL_CollectionList,
            SCENE_OT_SelectAllCollections, SCENE_OT_UnselectAllCollections, SCENE_PT_CollectionExportPanel,
-           POPUP_PT_simple_export, EXPOTR_MT_context_menu, CustomExporterPreferences)
+           POPUP_PT_simple_export, EXPOTR_MT_context_menu, CustomExporterPreferences, BUTTON_OT_change_key)
 
 
 def register():
