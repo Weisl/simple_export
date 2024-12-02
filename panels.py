@@ -1,19 +1,18 @@
 import bpy
-from .utils import get_addon_name
 
-class EXPOTR_MT_context_menu(bpy.types.Menu):
-    bl_label = "Custom Collection Menu"
-    bl_idname = "EXPOTR_MT_context_menu"
-
-    def draw(self, context):
-        layout = self.layout
-        row = layout.row()
-        row.operator("scene.select_all_collections", text="Select All", icon='CHECKBOX_HLT')
-        row = layout.row()
-        row.operator("scene.unselect_all_collections", text="Unselect All", icon='CHECKBOX_DEHLT')
+from .functions import get_addon_name
 
 
-class CollectionExportPanelBase:
+def draw_custom_collection_ui(self, context):
+    """Draw custom UI in the COLLECTION_PT_instancing panel."""
+    layout = self.layout
+    collection = context.collection
+
+    # Add the Object Picker
+    layout.prop(collection, "offset_object", text="Offset Object")
+
+
+class SIMPLE_EEXPORTER_menu_base:
     bl_label = "Simple Export"
 
     def draw_header(self, context):
@@ -30,21 +29,30 @@ class CollectionExportPanelBase:
         layout = self.layout
         scene = context.scene
 
-
         row = layout.row()
         # Draw the UIList without the invalid keyword argument
         row.template_list("SCENE_UL_CollectionList", "", bpy.data, "collections", scene, "collection_index")
         col = row.column(align=True)
-        col.menu("EXPOTR_MT_context_menu", icon='DOWNARROW_HLT', text="")
+        col.menu("SIMPLE_EXPORTER_MT_context_menu", icon='DOWNARROW_HLT', text="")
 
         col = layout.column(align=True)
         row = col.row()
         row.operator("scene.export_selected_collections", text="Export Collections")
 
 
+class SIMPLE_EXPORTER_MT_context_menu(bpy.types.Menu):
+    bl_label = "Custom Collection Menu"
+    bl_idname = "SIMPLE_EXPORTER_MT_context_menu"
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.operator("scene.select_all_collections", text="Select All", icon='CHECKBOX_HLT')
+        row = layout.row()
+        row.operator("scene.unselect_all_collections", text="Unselect All", icon='CHECKBOX_DEHLT')
 
 
-class SCENE_PT_CollectionExportPanel(CollectionExportPanelBase, bpy.types.Panel):
+class SIMPLE_EXPORTER_PT_CollectionExportPanel(SIMPLE_EEXPORTER_menu_base, bpy.types.Panel):
     bl_idname = "SCENE_PT_simple_export"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
@@ -56,10 +64,11 @@ class SCENE_PT_CollectionExportPanel(CollectionExportPanelBase, bpy.types.Panel)
 
         # Add a button to open the panel as a popup
         op = layout.operator("wm.call_panel", text="Open Export Popup")
-        op.name = "POPUP_PT_simple_export"
+        op.name = "SIMPLE_EXPORTER_PT_simple_export"
 
-class POPUP_PT_simple_export(CollectionExportPanelBase, bpy.types.Panel):
-    bl_idname = "POPUP_PT_simple_export"
+
+class SIMPLE_EXPORTER_PT_simple_export(SIMPLE_EEXPORTER_menu_base, bpy.types.Panel):
+    bl_idname = "SIMPLE_EXPORTER_PT_simple_export"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'WINDOW'
     bl_context = "empty"
@@ -74,12 +83,18 @@ class POPUP_PT_simple_export(CollectionExportPanelBase, bpy.types.Panel):
         super().draw(context)
 
 
-def draw_custom_collection_ui(self, context):
-    """Draw custom UI in the COLLECTION_PT_instancing panel."""
-    layout = self.layout
-    collection = context.collection
+classes = ( SIMPLE_EXPORTER_MT_context_menu, SIMPLE_EXPORTER_PT_CollectionExportPanel,
+           SIMPLE_EXPORTER_PT_simple_export)
 
-    # Add the Object Picker
-    layout.prop(collection, "offset_object", text="Offset Object")
+def register():
+    from bpy.utils import register_class
+
+    for cls in classes:
+        register_class(cls)
 
 
+def unregister():
+    from bpy.utils import unregister_class
+
+    for cls in reversed(classes):
+        unregister_class(cls)

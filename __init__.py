@@ -1,48 +1,42 @@
-import bpy
-
+# support reloading sub-modules
+# if "bpy" in locals():
+#     import importlib
+#
+#     importlib.reload(uilist)
+#     importlib.reload(collection_utils)
+#     importlib.reload(operators)
+#     importlib.reload(panels)
+#     importlib.reload(keymap)
+#     importlib.reload(preferences)
+#
+# else:
+from . import preferenecs
+from . import collection_utils
+from . import operators
+from . import uilist
+from . import panels
 from . import keymap
-from .collection_offset import update_collection_offset
-from .keymap import REMOVE_OT_hotkey
-from .operators import SCENE_OT_CreateExportDirectory, SCENE_OT_SetExporterPath, SCENE_OT_ExportCollection, \
-    SCENE_OT_ExportSelectedCollections, SCENE_OT_OpenExportDirectory, SCENE_OT_SelectAllCollections, \
-    SCENE_OT_UnselectAllCollections
-from .panels import SCENE_PT_CollectionExportPanel, POPUP_PT_simple_export, draw_custom_collection_ui, \
-    EXPOTR_MT_context_menu
-from .preferenecs import CustomExporterPreferences, BUTTON_OT_change_key, register_scene_properties, unregister_scene_properties, \
-    register_collection_properties, unregister_collection_properties
-from .uilist import SCENE_UL_CollectionList
 
-classes = (REMOVE_OT_hotkey, SCENE_OT_CreateExportDirectory, SCENE_OT_SetExporterPath, SCENE_OT_ExportCollection,
-           SCENE_OT_ExportSelectedCollections, SCENE_OT_OpenExportDirectory, SCENE_UL_CollectionList,
-           SCENE_OT_SelectAllCollections, SCENE_OT_UnselectAllCollections, SCENE_PT_CollectionExportPanel,
-           POPUP_PT_simple_export, EXPOTR_MT_context_menu, CustomExporterPreferences, BUTTON_OT_change_key)
+
+files = [
+    collection_utils,
+    operators,
+    uilist,
+    panels,
+
+    # keymap and preferences should be last
+    keymap,
+    preferenecs, ]
 
 
 def register():
-    for cls in classes:
-        bpy.utils.register_class(cls)
-    register_scene_properties()
-    register_collection_properties()
-
-    if update_collection_offset not in bpy.app.handlers.depsgraph_update_post:
-        bpy.app.handlers.depsgraph_update_post.append(update_collection_offset)
-
-    keymap.add_keymap()
+    for file in files:
+        file.register()
 
 
 def unregister():
-    for cls in classes:
-        bpy.utils.unregister_class(cls)
-    unregister_scene_properties()
-    unregister_collection_properties()
-
-    if update_collection_offset in bpy.app.handlers.depsgraph_update_post:
-        bpy.app.handlers.depsgraph_update_post.remove(update_collection_offset)
-
-    keymap.remove_keymap()
-
-    # Remove the custom UI from the COLLECTION_PT_instancing_offset panel
-    bpy.types.COLLECTION_PT_instancing.remove(draw_custom_collection_ui)
+    for file in files.reverse():
+        file.unregister()
 
 
 if __name__ == "__main__":

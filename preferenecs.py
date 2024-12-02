@@ -1,42 +1,4 @@
 import bpy
-from .keymap import remove_key
-
-class BUTTON_OT_change_key(bpy.types.Operator):
-    """UI button to assign a new key to an addon hotkey"""
-    bl_idname = "simple_export.key_selection_button"
-    bl_label = "Press the button you want to assign to this operation."
-    bl_options = {'REGISTER', 'INTERNAL'}
-
-    menu_id: bpy.props.StringProperty()
-
-    def __init__(self):
-        self.my_event = ''
-
-    def invoke(self, context, event):
-        prefs = context.preferences.addons[__package__].preferences
-        self.prefs = prefs
-        if self.menu_id == 'simple_export_panel':
-            self.prefs.collision_pie_type = 'NONE'
-
-        context.window_manager.modal_handler_add(self)
-        return {'RUNNING_MODAL'}
-
-    def modal(self, context, event):
-        self.my_event = 'NONE'
-
-        if event.type and event.value == 'RELEASE':  # Apply
-            self.my_event = event.type
-
-            if self.menu_id == 'collision_pie':
-                self.prefs.collision_pie_type = self.my_event
-
-            self.execute(context)
-            return {'FINISHED'}
-        return {'RUNNING_MODAL'}
-
-    def execute(self, context):
-        self.report({'INFO'}, "Key change: " + bpy.types.Event.bl_rna.properties['type'].enum_items[self.my_event].name)
-        return {'FINISHED'}
 
 def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_export_panel_ctrl, simple_export_panel_shift,
             simple_export_panel_alt, simple_export_panel_active):
@@ -97,7 +59,7 @@ def unregister_collection_properties():
     del bpy.types.Collection.offset_object
 
 
-class CustomExporterPreferences(bpy.types.AddonPreferences):
+class SIMPLE_EXPORTER_preferemces(bpy.types.AddonPreferences):
     bl_idname = __package__
 
     def update_simple_export_panel_key(self, context):
@@ -118,8 +80,8 @@ class CustomExporterPreferences(bpy.types.AddonPreferences):
         simple_export_panel_type = self.simple_export_panel_type.upper()
 
         # Remove previous key assignment
-        remove_key(context, 'wm.call_panel', "POPUP_PT_simple_export")
-        add_key(self, km, 'wm.call_panel', "POPUP_PT_simple_export", simple_export_panel_type, self.simple_export_panel_ctrl,
+        remove_key(context, 'wm.call_panel', "SIMPLE_EXPORTER_PT_simple_export")
+        add_key(self, km, 'wm.call_panel', "SIMPLE_EXPORTER_PT_simple_export", simple_export_panel_type, self.simple_export_panel_ctrl,
                 self.simple_export_panel_shift, self.simple_export_panel_alt, self.simple_export_panel_active)
         self.simple_export_panel_type = simple_export_panel_type
 
@@ -192,11 +154,14 @@ class CustomExporterPreferences(bpy.types.AddonPreferences):
         col = split.column()
         row = col.row(align=True)
         key_type = getattr(self, f'{property_prefix}_type')
-        text = (bpy.types.Event.bl_rna.properties['type'].enum_items[
-            key_type].name if key_type != 'NONE' else 'Press a key')
+        text = (
+            bpy.types.Event.bl_rna.properties['type'].enum_items[key_type].name
+            if key_type != 'NONE'
+            else 'Press a key'
+        )
 
         op = row.operator("simple_export.key_selection_button", text=text)
-        op.menu_id = property_prefix
+        op.property_prefix = property_prefix
 
         # row.prop(self, f'{property_prefix}_type', text="")
         op = row.operator("simple_export.remove_hotkey", text="", icon="X")
@@ -229,4 +194,28 @@ class CustomExporterPreferences(bpy.types.AddonPreferences):
             layout.prop(self, "use_blender_file_location")
 
         elif self.prefs_tabs == 'KEYMAP':
-            self.keymap_ui(layout, 'Export Popup', 'simple_export_panel', 'wm.call_panel', "POPUP_PT_simple_export")
+            self.keymap_ui(layout, 'Export Popup', 'simple_export_panel', 'wm.call_panel', "SIMPLE_EXPORTER_PT_simple_export")
+
+
+classes = (
+    SIMPLE_EXPORTER_preferemces,
+)
+
+
+def register():
+    from bpy.utils import register_class
+
+    for cls in classes:
+        register_class(cls)
+
+    from .keymap import add_keymap
+    add_keymap()
+
+def unregister():
+    from bpy.utils import unregister_class
+
+    for cls in reversed(classes):
+        unregister_class(cls)
+
+    from .keymap import remove_keymap
+    remove_keymap()

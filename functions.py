@@ -5,7 +5,8 @@ import subprocess
 import bpy
 from mathutils import Matrix
 
-from .collection_offset import update_collection_offset
+from .collection_utils import update_collection_offset
+
 
 def apply_location_offset(obj, collection_offset, inverse=False):
     """
@@ -66,6 +67,7 @@ def set_active_collection(collection_name):
             bpy.context.view_layer.active_layer_collection = layer
             return
 
+
 def export_collection(collection, context):
     """
     Handles the export logic for a single collection.
@@ -102,6 +104,7 @@ def export_collection(collection, context):
         # Re-enable the collection offset update handler
         if update_collection_offset not in bpy.app.handlers.depsgraph_update_post:
             bpy.app.handlers.depsgraph_update_post.append(update_collection_offset)
+
 
 def open_directory(export_dir):
     """

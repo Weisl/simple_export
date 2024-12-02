@@ -91,3 +91,20 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 flt_flags.append(0)
 
         return flt_flags, flt_neworder
+
+
+classes = (
+    SCENE_UL_CollectionList,
+)
+
+def register():
+    from bpy.utils import register_class
+
+    for cls in classes:
+        register_class(cls)
+
+def unregister():
+    from bpy.utils import unregister_class
+
+    for cls in reversed(classes):
+        unregister_class(cls)

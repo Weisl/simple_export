@@ -1,8 +1,7 @@
 import os
-
 import bpy
 
-from .utils import open_directory, ensure_export_directory, export_collection
+from .functions import open_directory, ensure_export_directory, export_collection
 
 
 def recurLayerCollection(layerColl, collName):
@@ -250,3 +249,22 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
         open_directory(export_dir)
         self.report({'INFO'}, f"Opened directory: {export_dir}")
         return {'FINISHED'}
+
+
+classes = (SCENE_OT_CreateExportDirectory, SCENE_OT_SelectAllCollections, SCENE_OT_UnselectAllCollections,
+           SCENE_OT_SetExporterPath, SCENE_OT_ExportCollection, SCENE_OT_ExportSelectedCollections,
+           SCENE_OT_OpenExportDirectory,)
+
+
+def register():
+    from bpy.utils import register_class
+
+    for cls in classes:
+        register_class(cls)
+
+
+def unregister():
+    from bpy.utils import unregister_class
+
+    for cls in reversed(classes):
+        unregister_class(cls)
