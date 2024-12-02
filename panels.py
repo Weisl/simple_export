@@ -58,7 +58,7 @@ class SCENE_PT_CollectionExportPanel(CollectionExportPanelBase, bpy.types.Panel)
         op = layout.operator("wm.call_panel", text="Open Export Popup")
         op.name = "POPUP_PT_simple_export"
 
-class EXPORT_PT_CollectionExportPanel(CollectionExportPanelBase, bpy.types.Panel):
+class POPUP_PT_simple_export(CollectionExportPanelBase, bpy.types.Panel):
     bl_idname = "POPUP_PT_simple_export"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'WINDOW'

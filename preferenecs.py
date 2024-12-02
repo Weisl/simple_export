@@ -1,5 +1,28 @@
 import bpy
+from.keymap import remove_key
 
+def add_key(self, km, idname, properties_name, collision_pie_type, collision_pie_ctrl, collision_pie_shift,
+            collision_pie_alt, collision_pie_active):
+    """
+    Add a new keymap item to the specified keymap.
+
+    Args:
+        km (bpy.types.KeyMap): The keymap to which the new keymap item will be added.
+        idname (str): The operator identifier.
+        properties_name (str): The name property for the keymap item.
+        collision_pie_type (str): The type of key (e.g., 'A', 'B', etc.).
+        collision_pie_ctrl (bool): Whether the Ctrl key is pressed.
+        collision_pie_shift (bool): Whether the Shift key is pressed.
+        collision_pie_alt (bool): Whether the Alt key is pressed.
+        collision_pie_active (bool): Whether the keymap item is active.
+
+    Returns:
+        None
+    """
+    kmi = km.keymap_items.new(idname=idname, type=collision_pie_type, value='PRESS',
+                              ctrl=collision_pie_ctrl, shift=collision_pie_shift, alt=collision_pie_alt)
+    kmi.properties.name = properties_name
+    kmi.active = collision_pie_active
 
 # Scene properties to define original_path and replacement_path
 def register_scene_properties():
@@ -62,6 +85,14 @@ class CustomExporterPreferences(bpy.types.AddonPreferences):
         add_key(self, km, 'wm.call_panel', "POPUP_PT_simple_export", simple_export_panel_type, self.simple_export_panel_ctrl,
                 self.simple_export_panel_shift, self.simple_export_panel_alt, self.simple_export_panel_active)
         self.simple_export_panel_type = simple_export_panel_type
+
+        return
+
+    prefs_tabs: bpy.props.EnumProperty(
+        name='Export Preferences',
+        items=(('SETTINGS', "Settings", "General addon settings"),('KEYMAP', "Keymap","Change the hotkeys for tools associated with this addon.")),
+        default='SETTINGS',
+        description='Settings category:')
 
     use_blender_file_location: bpy.props.BoolProperty(name="Use Blender File Location",
         description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
@@ -142,17 +173,22 @@ class CustomExporterPreferences(bpy.types.AddonPreferences):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "use_blender_file_location")
-        if not self.use_blender_file_location:
-            layout.prop(self, "custom_export_path")
-        layout.prop(self, "use_blend_file_name_as_prefix")
-        layout.prop(self, "use_instance_offset")
-        layout.prop(self, "custom_prefix")
-        layout.prop(self, "custom_suffix")
-        layout.prop(self, "original_path")
-        layout.prop(self, "replacement_path")
-        layout.prop(self, "default_export_format")
-        layout.prop(self, "use_blender_file_location")
 
-        box = layout.box()
-        self.keymap_ui(box, '', 'simple_export_panel', 'wm.call_panel', "POPUP_PT_simple_export")
+        row = layout.row(align=True)
+        row.prop(self, "prefs_tabs", expand=True)
+
+        if self.prefs_tabs == 'SETTINGS':
+            layout.prop(self, "use_blender_file_location")
+            if not self.use_blender_file_location:
+                layout.prop(self, "custom_export_path")
+            layout.prop(self, "use_blend_file_name_as_prefix")
+            layout.prop(self, "use_instance_offset")
+            layout.prop(self, "custom_prefix")
+            layout.prop(self, "custom_suffix")
+            layout.prop(self, "original_path")
+            layout.prop(self, "replacement_path")
+            layout.prop(self, "default_export_format")
+            layout.prop(self, "use_blender_file_location")
+
+        elif self.prefs_tabs == 'KEYMAP':
+            self.keymap_ui(layout, 'Export Popup', 'simple_export_panel', 'wm.call_panel', "POPUP_PT_simple_export")
