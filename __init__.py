@@ -42,7 +42,7 @@ def register():
         bpy.app.handlers.depsgraph_update_post.append(update_collection_offset)
 
     # Append the custom UI to the COLLECTION_PT_instancing_offset panel
-    bpy.types.COLLECTION_PT_instancing.append(draw_custom_collection_ui)
+    # bpy.types.COLLECTION_PT_instancing.append(draw_custom_collection_ui)
 
 
 def unregister():

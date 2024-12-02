@@ -19,7 +19,7 @@ class CollectionExportPanelBase:
     def draw_header(self, context):
         layout = self.layout
         row = layout.row(align=True)
-        row.operator("wm.url_open", text="", icon='HELP').url = "https://weisl.github.io/exportin/"
+        row.operator("wm.url_open", text="", icon='HELP').url = "https://weisl.github.io/exporter_overview/"
         addon_name = get_addon_name()
 
         op = row.operator("preferences.rename_addon_search", text="", icon='PREFERENCES')
