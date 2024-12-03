@@ -1,6 +1,30 @@
 import bpy
+from bpy.types import Menu
 
 from .functions import get_addon_name
+from .presets.naming_preset import get_preset_folder_path
+
+
+def draw_naming_presets(self, context):
+    """
+    Draw the naming presets menu in the layout.
+
+    Args:
+        self (UILayout): The UI layout.
+        context (Context): The current context.
+    """
+    layout = self.layout
+    row = layout.row(align=True)
+
+    row.menu(EXPORT_MT_presets.__name__, text=EXPORT_MT_presets.bl_label)
+    addon_name = get_addon_name()
+
+    op = row.operator("explorer.open_in_explorer", text="", icon='FILE_FOLDER')
+    op.dirpath = get_preset_folder_path()
+
+    op = row.operator("preferences.addon_search", text="", icon='PREFERENCES')
+    op.addon_name = addon_name
+    op.prefs_tabs = 'NAMING'
 
 
 def draw_custom_collection_ui(self, context):
@@ -10,6 +34,19 @@ def draw_custom_collection_ui(self, context):
 
     # Add the Object Picker
     layout.prop(collection, "offset_object", text="Offset Object")
+
+
+############## PRESET ##############################
+
+class EXPORT_MT_presets(Menu):
+    """Collider preset dropdown"""
+
+    bl_label = "Export Presets"
+    bl_description = "Specify export preset"
+    preset_subdir = "simple_export"
+    preset_operator = "simple_export.load_simple_export_preset"
+    subclass = 'PresetMenu'
+    draw = Menu.draw_preset
 
 
 class SIMPLE_EEXPORTER_menu_base:
@@ -66,6 +103,8 @@ class SIMPLE_EXPORTER_PT_CollectionExportPanel(SIMPLE_EEXPORTER_menu_base, bpy.t
         op = layout.operator("wm.call_panel", text="Open Export Popup")
         op.name = "SIMPLE_EXPORTER_PT_simple_export"
 
+        draw_naming_presets(self, context)
+
 
 class SIMPLE_EXPORTER_PT_simple_export(SIMPLE_EEXPORTER_menu_base, bpy.types.Panel):
     bl_idname = "SIMPLE_EXPORTER_PT_simple_export"
@@ -83,9 +122,11 @@ class SIMPLE_EXPORTER_PT_simple_export(SIMPLE_EEXPORTER_menu_base, bpy.types.Pan
         super().draw(context)
 
 
-classes = (SIMPLE_EXPORTER_MT_context_menu,
-           SIMPLE_EXPORTER_PT_CollectionExportPanel,
-           SIMPLE_EXPORTER_PT_simple_export)
+classes = (EXPORT_MT_presets,
+    SIMPLE_EXPORTER_MT_context_menu,
+    SIMPLE_EXPORTER_PT_CollectionExportPanel,
+    SIMPLE_EXPORTER_PT_simple_export)
+
 
 def register():
     from bpy.utils import register_class
