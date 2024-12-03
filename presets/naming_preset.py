@@ -50,23 +50,21 @@ def get_preset_folder_path():
 class PRESET_OT_load_preset(Operator):
     """Presets for collider creation"""
     bl_idname = "export.load_simple_export_preset"
-    bl_label = "Load Collider Preset"
+    bl_label = "Load Export Preset"
 
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
 
     def execute(self, context):
         try:
-            bpy.ops.script.execute_preset(filepath=self.filepath, menu_idname="OBJECT_MT_simple_export_presets")
+            bpy.ops.script.execute_preset(filepath=self.filepath, menu_idname="OBJECT_MT_collision_presets")
             self.report({'INFO'}, "Preset loaded successfully.")
         except:
             print('preset_update')
-            bpy.ops.preset.upgrade_simple_export_presets()
-            bpy.ops.script.execute_preset(filepath=self.filepath, menu_idname="OBJECT_MT_simple_export_presets")
+            bpy.ops.object.upgrade_simple_collider_presets()
+            bpy.ops.script.execute_preset(filepath=self.filepath, menu_idname="OBJECT_MT_collision_presets")
             self.report({'INFO'}, "Updated and loaded preset successfully")
 
         return {'FINISHED'}
-
-
 
 class SIMPLE_EXPORT_preset(AddPresetBase, Operator):
     """Presets for collider creation"""
@@ -124,3 +122,18 @@ class SIMPLE_EXPORT_preset(AddPresetBase, Operator):
 
     # Directory to store the presets
     preset_subdir = folder_name
+
+
+classes = (PRESET_OT_load_preset, SIMPLE_EXPORT_preset)
+
+
+def register():
+    from bpy.utils import register_class
+    for cls in classes:
+        register_class(cls)
+
+
+def unregister():
+    from bpy.utils import unregister_class
+    for cls in reversed(classes):
+        unregister_class(cls)
