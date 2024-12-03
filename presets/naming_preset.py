@@ -1,6 +1,6 @@
-import bpy
 import os
 
+import bpy
 from bl_operators.presets import AddPresetBase
 from bpy.types import Operator
 
@@ -25,7 +25,6 @@ def get_preset_folder_path():
     if (export_preset_directory not in export_preset_paths) and (not os.path.exists(export_preset_directory)):
         os.makedirs(export_preset_directory)
 
-
     '''
         The preset folder is apparently the operator class name
         >>> type(C.collection.exporters['FBX'].export_properties)
@@ -47,6 +46,7 @@ def get_preset_folder_path():
 
     return export_preset_directory
 
+
 class PRESET_OT_load_preset(Operator):
     """Presets for collider creation"""
     bl_idname = "export.load_simple_export_preset"
@@ -56,15 +56,16 @@ class PRESET_OT_load_preset(Operator):
 
     def execute(self, context):
         try:
-            bpy.ops.script.execute_preset(filepath=self.filepath, menu_idname="OBJECT_MT_collision_presets")
+            bpy.ops.script.execute_preset(filepath=self.filepath, menu_idname="EXPORT_MT_collision_presets")
             self.report({'INFO'}, "Preset loaded successfully.")
         except:
             print('preset_update')
             bpy.ops.object.upgrade_simple_collider_presets()
-            bpy.ops.script.execute_preset(filepath=self.filepath, menu_idname="OBJECT_MT_collision_presets")
+            bpy.ops.script.execute_preset(filepath=self.filepath, menu_idname="EXPORT_MT_collision_presets")
             self.report({'INFO'}, "Updated and loaded preset successfully")
 
         return {'FINISHED'}
+
 
 class SIMPLE_EXPORT_preset(AddPresetBase, Operator):
     """Presets for collider creation"""

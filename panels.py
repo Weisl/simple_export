@@ -16,7 +16,7 @@ def draw_naming_presets(self, context):
     layout = self.layout
     row = layout.row(align=True)
 
-    row.menu(OBJECT_MT_collision_presets.__name__, text=OBJECT_MT_collision_presets.bl_label)
+    row.menu(EXPORT_MT_collision_presets.__name__, text=EXPORT_MT_collision_presets.bl_label)
     addon_name = get_addon_name()
 
     op = row.operator("explorer.open_in_explorer", text="", icon='FILE_FOLDER')
@@ -38,7 +38,7 @@ def draw_custom_collection_ui(self, context):
 
 ############## PRESET ##############################
 
-class OBJECT_MT_collision_presets(Menu):
+class EXPORT_MT_collision_presets(Menu):
     """Collider preset dropdown"""
 
     bl_label = "Export Presets"
@@ -49,7 +49,7 @@ class OBJECT_MT_collision_presets(Menu):
     draw = Menu.draw_preset
 
 
-class SIMPLE_EEXPORTER_menu_base:
+class SIMPLE_EXPORTER_menu_base:
     bl_label = "Simple Export"
 
     def draw_header(self, context):
@@ -91,7 +91,7 @@ class SIMPLE_EXPORTER_MT_context_menu(bpy.types.Menu):
         row.operator("scene.unselect_all_collections", text="Unselect All", icon='CHECKBOX_DEHLT')
 
 
-class SIMPLE_EXPORTER_PT_CollectionExportPanel(SIMPLE_EEXPORTER_menu_base, bpy.types.Panel):
+class SIMPLE_EXPORTER_PT_CollectionExportPanel(SIMPLE_EXPORTER_menu_base, bpy.types.Panel):
     bl_idname = "SCENE_PT_simple_export"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
@@ -108,7 +108,7 @@ class SIMPLE_EXPORTER_PT_CollectionExportPanel(SIMPLE_EEXPORTER_menu_base, bpy.t
         draw_naming_presets(self, context)
 
 
-class SIMPLE_EXPORTER_PT_simple_export(SIMPLE_EEXPORTER_menu_base, bpy.types.Panel):
+class SIMPLE_EXPORTER_PT_simple_export(SIMPLE_EXPORTER_menu_base, bpy.types.Panel):
     bl_idname = "SIMPLE_EXPORTER_PT_simple_export"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'WINDOW'
@@ -124,7 +124,7 @@ class SIMPLE_EXPORTER_PT_simple_export(SIMPLE_EEXPORTER_menu_base, bpy.types.Pan
         super().draw(context)
 
 
-classes = (OBJECT_MT_collision_presets,
+classes = (EXPORT_MT_collision_presets,
            SIMPLE_EXPORTER_MT_context_menu,
            SIMPLE_EXPORTER_PT_CollectionExportPanel,
            SIMPLE_EXPORTER_PT_simple_export)
