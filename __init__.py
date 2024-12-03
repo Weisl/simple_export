@@ -35,7 +35,7 @@ def register():
 
 
 def unregister():
-    for file in files.reverse():
+    for file in reversed(files):
         file.unregister()
 
 
