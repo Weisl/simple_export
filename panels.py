@@ -16,7 +16,7 @@ def draw_naming_presets(self, context):
     layout = self.layout
     row = layout.row(align=True)
 
-    row.menu(EXPORT_MT_collision_presets.__name__, text=EXPORT_MT_collision_presets.bl_label)
+    row.menu(EXPORT_MT_export_presets.__name__, text=EXPORT_MT_export_presets.bl_label)
     addon_name = get_addon_name()
 
     op = row.operator("explorer.open_in_explorer", text="", icon='FILE_FOLDER')
@@ -38,13 +38,13 @@ def draw_custom_collection_ui(self, context):
 
 ############## PRESET ##############################
 
-class EXPORT_MT_collision_presets(Menu):
-    """Collider preset dropdown"""
+class EXPORT_MT_export_presets(Menu):
+    """Export preset dropdown"""
 
     bl_label = "Export Presets"
     bl_description = "Specify export preset"
     preset_subdir = "simple_export"
-    preset_operator = "collision.load_collision_preset"
+    preset_operator = "export.load_collision_preset"
     subclass = 'PresetMenu'
     draw = Menu.draw_preset
 
@@ -124,7 +124,7 @@ class SIMPLE_EXPORTER_PT_simple_export(SIMPLE_EXPORTER_menu_base, bpy.types.Pane
         super().draw(context)
 
 
-classes = (EXPORT_MT_collision_presets,
+classes = (EXPORT_MT_export_presets,
            SIMPLE_EXPORTER_MT_context_menu,
            SIMPLE_EXPORTER_PT_CollectionExportPanel,
            SIMPLE_EXPORTER_PT_simple_export)
