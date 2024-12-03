@@ -49,7 +49,7 @@ def get_preset_folder_path():
 
 class PRESET_OT_load_preset(Operator):
     """Presets for collider creation"""
-    bl_idname = "simple_export.load_simple_export_preset"
+    bl_idname = "export.load_simple_export_preset"
     bl_label = "Load Collider Preset"
 
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")

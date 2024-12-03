@@ -16,7 +16,7 @@ def draw_naming_presets(self, context):
     layout = self.layout
     row = layout.row(align=True)
 
-    row.menu(EXPORT_MT_presets.__name__, text=EXPORT_MT_presets.bl_label)
+    row.menu(OBJECT_MT_presets.__name__, text=OBJECT_MT_presets.bl_label)
     addon_name = get_addon_name()
 
     op = row.operator("explorer.open_in_explorer", text="", icon='FILE_FOLDER')
@@ -38,29 +38,31 @@ def draw_custom_collection_ui(self, context):
 
 ############## PRESET ##############################
 
-class EXPORT_MT_presets(Menu):
+class OBJECT_MT_presets(Menu):
     """Collider preset dropdown"""
 
     bl_label = "Export Presets"
     bl_description = "Specify export preset"
     preset_subdir = "simple_export"
-    preset_operator = "simple_export.load_simple_export_preset"
+    preset_operator = "export.load_simple_export_preset"
     subclass = 'PresetMenu'
     draw = Menu.draw_preset
 
 
-class SIMPLE_EEXPORTER_menu_base:
+class Simple_exporter_menu_base:
     bl_label = "Simple Export"
 
     def draw_header(self, context):
         layout = self.layout
         row = layout.row(align=True)
-        row.operator("wm.url_open", text="", icon='HELP').url = "https://weisl.github.io/exporter_overview/"
-        addon_name = get_addon_name()
 
+        # Open documentation
+        row.operator("wm.url_open", text="", icon='HELP').url = "https://weisl.github.io/exporter_overview/"
+
+        # Open Preferences
+        addon_name = get_addon_name()
         op = row.operator("preferences.rename_addon_search", text="", icon='PREFERENCES')
         op.addon_name = addon_name
-        op.prefs_tabs = 'UI'
 
     def draw(self, context):
         layout = self.layout
@@ -89,7 +91,7 @@ class SIMPLE_EXPORTER_MT_context_menu(bpy.types.Menu):
         row.operator("scene.unselect_all_collections", text="Unselect All", icon='CHECKBOX_DEHLT')
 
 
-class SIMPLE_EXPORTER_PT_CollectionExportPanel(SIMPLE_EEXPORTER_menu_base, bpy.types.Panel):
+class SIMPLE_EXPORTER_PT_CollectionExportPanel(Simple_exporter_menu_base, bpy.types.Panel):
     bl_idname = "SCENE_PT_simple_export"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
@@ -106,7 +108,7 @@ class SIMPLE_EXPORTER_PT_CollectionExportPanel(SIMPLE_EEXPORTER_menu_base, bpy.t
         draw_naming_presets(self, context)
 
 
-class SIMPLE_EXPORTER_PT_simple_export(SIMPLE_EEXPORTER_menu_base, bpy.types.Panel):
+class SIMPLE_EXPORTER_PT_simple_export(Simple_exporter_menu_base, bpy.types.Panel):
     bl_idname = "SIMPLE_EXPORTER_PT_simple_export"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'WINDOW'
@@ -122,7 +124,7 @@ class SIMPLE_EXPORTER_PT_simple_export(SIMPLE_EEXPORTER_menu_base, bpy.types.Pan
         super().draw(context)
 
 
-classes = (EXPORT_MT_presets,
+classes = (OBJECT_MT_presets,
     SIMPLE_EXPORTER_MT_context_menu,
     SIMPLE_EXPORTER_PT_CollectionExportPanel,
     SIMPLE_EXPORTER_PT_simple_export)
