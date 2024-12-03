@@ -1,7 +1,7 @@
 import bpy
 
 keymaps_items_dict = {"Simple Export Popup": {"name": 'simple_export_panel', "idname": 'wm.call_panel',
-                                              "operator": 'SCENE_PT_simple_export', "type": 'E',
+                                              "operator": 'SIMPLE_EXPORTER_PT_simple_export', "type": 'E',
                                               "value": 'PRESS', "ctrl": False, "shift": True, "alt": True,
                                               "active": True}, }
 

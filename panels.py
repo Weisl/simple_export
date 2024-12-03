@@ -78,12 +78,13 @@ class SIMPLE_EXPORTER_PT_simple_export(SIMPLE_EEXPORTER_menu_base, bpy.types.Pan
         layout = self.layout
 
         row = layout.row()
-        row.label(text="Simple Export")
+        row.label(text="Simple Export Popup")
 
         super().draw(context)
 
 
-classes = ( SIMPLE_EXPORTER_MT_context_menu, SIMPLE_EXPORTER_PT_CollectionExportPanel,
+classes = (SIMPLE_EXPORTER_MT_context_menu,
+           SIMPLE_EXPORTER_PT_CollectionExportPanel,
            SIMPLE_EXPORTER_PT_simple_export)
 
 def register():
