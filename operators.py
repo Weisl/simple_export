@@ -251,8 +251,12 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
         return {'FINISHED'}
 
 
-classes = (SCENE_OT_CreateExportDirectory, SCENE_OT_SelectAllCollections, SCENE_OT_UnselectAllCollections,
-           SCENE_OT_SetExporterPath, SCENE_OT_ExportCollection, SCENE_OT_ExportSelectedCollections,
+classes = (SCENE_OT_CreateExportDirectory,
+           SCENE_OT_SelectAllCollections,
+           SCENE_OT_UnselectAllCollections,
+           SCENE_OT_SetExporterPath,
+           SCENE_OT_ExportCollection,
+           SCENE_OT_ExportSelectedCollections,
            SCENE_OT_OpenExportDirectory,)
 
 

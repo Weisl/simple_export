@@ -47,11 +47,8 @@ def register_collection_properties():
 
 
 def unregister_scene_properties():
-    del bpy.types.Scene.original_path
-    del bpy.types.Scene.replacement_path
     del bpy.types.Scene.collection_index
-    del bpy.types.Scene.use_blender_file_location
-    del bpy.types.Scene.custom_export_path
+    del bpy.types.Scene.export_format
 
 
 def unregister_collection_properties():
@@ -219,7 +216,7 @@ def unregister():
 
     unregister_collection_properties()
     unregister_scene_properties()
-    
+
     from bpy.utils import unregister_class
 
     for cls in reversed(classes):
