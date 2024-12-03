@@ -1,9 +1,9 @@
 import bpy
-from bpy.types import Menu
+
 
 from .functions import get_addon_name
 from .presets.naming_preset import get_preset_folder_path
-
+from .presets.naming_preset import EXPORT_MT_export_presets
 
 def draw_naming_presets(self, context):
     """
@@ -17,8 +17,8 @@ def draw_naming_presets(self, context):
     row = layout.row(align=True)
 
     row.menu(EXPORT_MT_export_presets.__name__, text=EXPORT_MT_export_presets.bl_label)
-    addon_name = get_addon_name()
 
+    addon_name = get_addon_name()
     op = row.operator("explorer.open_in_explorer", text="", icon='FILE_FOLDER')
     op.dirpath = get_preset_folder_path()
 
@@ -34,19 +34,6 @@ def draw_custom_collection_ui(self, context):
 
     # Add the Object Picker
     layout.prop(collection, "offset_object", text="Offset Object")
-
-
-############## PRESET ##############################
-
-class EXPORT_MT_export_presets(Menu):
-    """Export preset dropdown"""
-
-    bl_label = "Export Presets"
-    bl_description = "Specify export preset"
-    preset_subdir = "simple_export"
-    preset_operator = "export.load_collision_preset"
-    subclass = 'PresetMenu'
-    draw = Menu.draw_preset
 
 
 class SIMPLE_EXPORTER_menu_base:
@@ -67,6 +54,8 @@ class SIMPLE_EXPORTER_menu_base:
     def draw(self, context):
         layout = self.layout
         scene = context.scene
+
+        draw_naming_presets(self, context)
 
         row = layout.row()
         # Draw the UIList without the invalid keyword argument
@@ -101,11 +90,12 @@ class SIMPLE_EXPORTER_PT_CollectionExportPanel(SIMPLE_EXPORTER_menu_base, bpy.ty
         super().draw(context)
         layout = self.layout
 
+
         # Add a button to open the panel as a popup
         op = layout.operator("wm.call_panel", text="Open Export Popup")
         op.name = "SIMPLE_EXPORTER_PT_simple_export"
 
-        draw_naming_presets(self, context)
+
 
 
 class SIMPLE_EXPORTER_PT_simple_export(SIMPLE_EXPORTER_menu_base, bpy.types.Panel):
@@ -124,8 +114,7 @@ class SIMPLE_EXPORTER_PT_simple_export(SIMPLE_EXPORTER_menu_base, bpy.types.Pane
         super().draw(context)
 
 
-classes = (EXPORT_MT_export_presets,
-           SIMPLE_EXPORTER_MT_context_menu,
+classes = (SIMPLE_EXPORTER_MT_context_menu,
            SIMPLE_EXPORTER_PT_CollectionExportPanel,
            SIMPLE_EXPORTER_PT_simple_export)
 

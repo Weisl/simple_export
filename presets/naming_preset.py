@@ -2,6 +2,7 @@ import os
 
 import bpy
 from bl_operators.presets import AddPresetBase
+from bpy.types import Menu
 from bpy.types import Operator
 
 from .. import __package__ as base_package
@@ -49,23 +50,35 @@ def get_preset_folder_path():
 
 class PRESET_OT_load_preset(Operator):
     """Presets for collider creation"""
-    bl_idname = "export.load_simple_export_preset"
+    bl_idname = "export.load_export_preset"
     bl_label = "Load Collider Preset"
 
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
 
     def execute(self, context):
         try:
-            bpy.ops.script.execute_preset(filepath=self.filepath, menu_idname="OBJECT_MT_collision_presets")
+            bpy.ops.script.execute_preset(filepath=self.filepath, menu_idname="EXPORT_MT_export_presets")
             self.report({'INFO'}, "Preset loaded successfully.")
-        except:
-            print('preset_update')
-            bpy.ops.object.upgrade_simple_collider_presets()
-            bpy.ops.script.execute_preset(filepath=self.filepath, menu_idname="OBJECT_MT_collision_presets")
+        except: # upgrade preset before trying it
+            # print('preset_update')
+            # bpy.ops.object.upgrade_simple_collider_presets()
+            bpy.ops.script.execute_preset(filepath=self.filepath, menu_idname="EXPORT_MT_export_presets")
             self.report({'INFO'}, "Updated and loaded preset successfully")
 
         return {'FINISHED'}
 
+
+############## PRESET ##############################
+
+class EXPORT_MT_export_presets(Menu):
+    """Export preset dropdown"""
+
+    bl_label = "Export Presets"
+    bl_description = "Specify export preset"
+    preset_subdir = "simple_export"
+    preset_operator = "export.load_export_preset"
+    subclass = 'PresetMenu'
+    draw = Menu.draw_preset
 
 
 class SIMPLE_EXPORT_preset(AddPresetBase, Operator):
@@ -126,7 +139,7 @@ class SIMPLE_EXPORT_preset(AddPresetBase, Operator):
     preset_subdir = folder_name
 
 
-classes = (PRESET_OT_load_preset, SIMPLE_EXPORT_preset,)
+classes = (PRESET_OT_load_preset, EXPORT_MT_export_presets, SIMPLE_EXPORT_preset,)
 
 
 def register():
