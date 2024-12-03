@@ -4,7 +4,6 @@ from . import preset_operator
 from . import convert_old_presets
 
 files = (
-    presets_data,
     naming_preset,
     preset_operator,
     convert_old_presets

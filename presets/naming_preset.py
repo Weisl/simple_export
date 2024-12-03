@@ -126,7 +126,7 @@ class SIMPLE_EXPORT_preset(AddPresetBase, Operator):
     preset_subdir = folder_name
 
 
-classes = (PRESET_OT_load_preset, SIMPLE_EXPORT_preset)
+classes = (PRESET_OT_load_preset, SIMPLE_EXPORT_preset,)
 
 
 def register():

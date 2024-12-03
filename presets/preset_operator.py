@@ -26,7 +26,7 @@ class EXPORT_OT_ApplyPreset(bpy.types.Operator):
         return {'FINISHED'}
 
 
-classes = (EXPORT_OT_ApplyPreset)
+classes = (EXPORT_OT_ApplyPreset,)
 
 
 def register():

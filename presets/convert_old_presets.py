@@ -79,3 +79,16 @@ class UpgradeSimpleExportPresetsOperator(Operator):
         # Write the upgraded preset back to the file
         with open(file_path, 'w') as file:
             file.writelines(new_lines)
+
+classes = (UpgradeSimpleExportPresetsOperator,)
+
+def register():
+    from bpy.utils import register_class
+    for cls in classes:
+        register_class(cls)
+
+
+def unregister():
+    from bpy.utils import unregister_class
+    for cls in reversed(classes):
+        unregister_class(cls)
