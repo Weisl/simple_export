@@ -1,40 +1,56 @@
+import os
+
 import bpy
 
 from .functions import get_addon_name
-from .presets.naming_preset import EXPORT_MT_export_presets
 from .presets.naming_preset import get_preset_folder_path
 
 
-def draw_export_preset(self, context):
-    """
-    Draw the naming presets menu in the layout.
+def get_presets_folder():
+    """Retrieve the base path for Blender's presets folder."""
+    # Get the user scripts folder dynamically
+    return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets", "operator")
 
-    Args:
-        self (UILayout): The UI layout.
-        context (Context): The current context.
-    """
+
+EXPORT_PRESET_FOLDERS = {
+    "FBX": os.path.join(get_presets_folder(), "export_scene.fbx"),
+    "OBJ": os.path.join(get_presets_folder(), "wm.obj_export"),
+    "GLTF": os.path.join(get_presets_folder(), "export_scene.gltf"),
+    "USD": os.path.join(get_presets_folder(), "wm.usd_export"),
+    "ALEMBIC": os.path.join(get_presets_folder(), "wm.alembic_export"),
+}
+
+
+def draw_export_preset(self, context):
+
     layout = self.layout
     scene = context.scene
+    props = context.scene.simple_export_props
 
-    row = layout.row(align=True)
-    row.label(text="Select Export Preset")
+    box = layout.box()
+    box.prop(props, "export_format", text="Export Format")
+    box.prop(props, "override_path", text="Override Preset Folder")
 
-    row = layout.row(align=True)
-    row.menu(EXPORT_MT_export_presets.__name__, text=EXPORT_MT_export_presets.bl_label)
+    row = box.row(align=True)
+    row.enabled = props.override_path  # Only enable preset_path editing if override_path is true
+    row.prop(props, "preset_path", text="Preset Folder")
 
-    addon_name = get_addon_name()
-    op = row.operator("explorer.open_in_explorer", text="", icon='FILE_FOLDER')
-    op.dirpath = get_preset_folder_path()
+    box.prop(props, "simple_export_preset_path", text="Preset File")
 
-    op = row.operator("preferences.addon_search", text="", icon='PREFERENCES')
-    op.addon_name = addon_name
-    op.prefs_tabs = 'NAMING'
+    # row = box.row(align=True)
+    # addon_name = get_addon_name()
+    # op = row.operator("explorer.open_in_explorer", text="", icon='FILE_FOLDER')
+    # op.dirpath = get_preset_folder_path()
+    #
+    # op = row.operator("preferences.addon_search", text="", icon='PREFERENCES')
+    # op.addon_name = addon_name
+    # op.prefs_tabs = 'NAMING'
 
-    row = layout.row(align=True)
+    row = box.row(align=True)
     row.label(text='Active Preset')
-    row = layout.row(align=True)
+    row = box.row(align=True)
     row.enabled = False  # Makes the field non-editable
-    row.prop(scene, "simple_exporter_preset_path", text='')
+    row.prop(scene, "simple_export_preset_path", text='')
 
 
 def draw_custom_collection_ui(self, context):
@@ -46,7 +62,59 @@ def draw_custom_collection_ui(self, context):
     layout.prop(collection, "offset_object", text="Offset Object")
 
 
-class SIMPLE_EXPORTER_menu_base:
+class SimpleExporterProperties(bpy.types.PropertyGroup):
+    export_format: bpy.props.EnumProperty(
+        name="Export Format",
+        description="Select the export format",
+        items=[
+            ("FBX", "FBX", "FBX Export"),
+            ("OBJ", "OBJ", "OBJ Export"),
+            ("GLTF", "glTF", "glTF Export"),
+            ("USD", "USD", "USD Export"),
+            ("ALEMBIC", "Alembic", "Alembic Export"),
+        ],
+        default="FBX",
+        update=lambda self, context: self.update_preset_path()
+    )
+    preset_path: bpy.props.StringProperty(
+        name="Preset Folder Path",
+        description="Path to the folder containing .py files",
+        default="",
+        subtype='DIR_PATH',
+    )
+    simple_export_preset_path: bpy.props.EnumProperty(
+        name="Preset File",
+        description="Select a .py file",
+        items=lambda self, context: self.get_py_files(),
+    )
+    override_path: bpy.props.BoolProperty(
+        name="Override Preset Folder",
+        description="Manually override the automatically set preset folder",
+        default=False,
+    )
+
+    def update_preset_path(self):
+        """Automatically set the preset path based on the export format unless overridden."""
+        if not self.override_path:
+            self.preset_path = EXPORT_PRESET_FOLDERS.get(self.export_format, "")
+
+    def get_py_files(self):
+        """Retrieve all .py files from the specified folder."""
+        if not self.preset_path:
+            return [("", "No Path", "No path specified")]
+
+        try:
+            files = [
+                (os.path.join(self.preset_path, f), f, "")
+                for f in os.listdir(self.preset_path)
+                if f.endswith(".py")
+            ]
+            return files if files else [("", "No Files", "No .py files found")]
+        except Exception as e:
+            return [("", "Error", str(e))]
+
+
+class SIMPLE_EXPORT_menu_base:
     bl_label = "Simple Export"
 
     def draw_header(self, context):
@@ -73,16 +141,16 @@ class SIMPLE_EXPORTER_menu_base:
         # Draw the UIList without the invalid keyword argument
         row.template_list("SCENE_UL_CollectionList", '', bpy.data, "collections", scene, "collection_index")
         col = row.column(align=True)
-        col.menu("SIMPLE_EXPORTER_MT_context_menu", icon='DOWNARROW_HLT', text="")
+        col.menu("SIMPLE_EXPORT_MT_context_menu", icon='DOWNARROW_HLT', text="")
 
         col = layout.column(align=True)
         row = col.row()
         row.operator("scene.export_selected_collections", text="Export Collections")
 
 
-class SIMPLE_EXPORTER_MT_context_menu(bpy.types.Menu):
+class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
     bl_label = "Custom Collection Menu"
-    bl_idname = "SIMPLE_EXPORTER_MT_context_menu"
+    bl_idname = "SIMPLE_EXPORT_MT_context_menu"
 
     def draw(self, context):
         layout = self.layout
@@ -92,7 +160,7 @@ class SIMPLE_EXPORTER_MT_context_menu(bpy.types.Menu):
         row.operator("scene.unselect_all_collections", text="Unselect All", icon='CHECKBOX_DEHLT')
 
 
-class SIMPLE_EXPORTER_PT_CollectionExportPanel(SIMPLE_EXPORTER_menu_base, bpy.types.Panel):
+class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
     bl_idname = "SCENE_PT_simple_export"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
@@ -104,11 +172,11 @@ class SIMPLE_EXPORTER_PT_CollectionExportPanel(SIMPLE_EXPORTER_menu_base, bpy.ty
 
         # Add a button to open the panel as a popup
         op = layout.operator("wm.call_panel", text="Open Export Popup")
-        op.name = "SIMPLE_EXPORTER_PT_simple_export"
+        op.name = "SIMPLE_EXPORT_PT_simple_export"
 
 
-class SIMPLE_EXPORTER_PT_simple_export(SIMPLE_EXPORTER_menu_base, bpy.types.Panel):
-    bl_idname = "SIMPLE_EXPORTER_PT_simple_export"
+class SIMPLE_EXPORT_PT_simple_export(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
+    bl_idname = "SIMPLE_EXPORT_PT_simple_export"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'WINDOW'
     bl_context = "empty"
@@ -123,13 +191,15 @@ class SIMPLE_EXPORTER_PT_simple_export(SIMPLE_EXPORTER_menu_base, bpy.types.Pane
         super().draw(context)
 
 
-classes = (SIMPLE_EXPORTER_MT_context_menu,
-           SIMPLE_EXPORTER_PT_CollectionExportPanel,
-           SIMPLE_EXPORTER_PT_simple_export)
+classes = (SimpleExporterProperties,
+           SIMPLE_EXPORT_MT_context_menu,
+           SIMPLE_EXPORT_PT_CollectionExportPanel,
+           SIMPLE_EXPORT_PT_simple_export)
 
 
 def register():
-    bpy.types.Scene.simple_exporter_preset_path = bpy.props.StringProperty(
+    Scene = bpy.types.Scene
+    Scene.simple_export_preset_path = bpy.props.StringProperty(
         name="Simple Exporter Preset",
         description="Path for Simple Exporter preset",
         default=''
@@ -140,6 +210,8 @@ def register():
     for cls in classes:
         register_class(cls)
 
+    Scene.simple_export_props = bpy.props.PointerProperty(type=SimpleExporterProperties)
+
 
 def unregister():
     from bpy.utils import unregister_class
@@ -147,5 +219,6 @@ def unregister():
     for cls in reversed(classes):
         unregister_class(cls)
 
-    scene = bpy.types.Scene
-    del scene.simple_exporter_preset_path
+    Scene = bpy.types.Scene
+    del Scene.simple_export_preset_path
+    del Scene.simple_export_props

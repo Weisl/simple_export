@@ -8,7 +8,7 @@ from bpy.types import Operator
 from .. import __package__ as base_package
 
 ADDON_NAME = base_package if base_package else "Simple Export"
-folder_name = 'simple_exporter'
+folder_name = 'simple_export'
 
 
 def get_preset_folder_path():

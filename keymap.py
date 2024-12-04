@@ -1,7 +1,7 @@
 import bpy
 
 keymaps_items_dict = {"Simple Export Popup": {"name": 'simple_export_panel', "idname": 'wm.call_panel',
-                                              "operator": 'SIMPLE_EXPORTER_PT_simple_export', "type": 'E',
+                                              "operator": 'SIMPLE_EXPORT_PT_simple_export', "type": 'E',
                                               "value": 'PRESS', "ctrl": False, "shift": True, "alt": True,
                                               "active": True}, }
 
@@ -71,7 +71,7 @@ def remove_keymap():
         addon_keymaps.keymap_items.remove(kmi)
 
 
-class SIMPLE_EXPORTER_OT_hotkey(bpy.types.Operator):
+class SIMPLE_EXPORT_OT_hotkey(bpy.types.Operator):
     """Tooltip"""
     bl_idname = "simple_export.remove_hotkey"
     bl_label = "Remove hotkey"
@@ -94,7 +94,7 @@ class SIMPLE_EXPORTER_OT_hotkey(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class SIMPLE_EXPORTER_OT_change_key(bpy.types.Operator):
+class SIMPLE_EXPORT_OT_change_key(bpy.types.Operator):
     """UI button to assign a new key to an addon hotkey"""
     bl_idname = "simple_export.key_selection_button"
     bl_label = "Press the button you want to assign to this operation."
@@ -130,7 +130,7 @@ class SIMPLE_EXPORTER_OT_change_key(bpy.types.Operator):
         return {'FINISHED'}
 
 
-classes = (SIMPLE_EXPORTER_OT_change_key, SIMPLE_EXPORTER_OT_hotkey,)
+classes = (SIMPLE_EXPORT_OT_change_key, SIMPLE_EXPORT_OT_hotkey,)
 
 
 def register():
