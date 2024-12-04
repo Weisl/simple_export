@@ -70,6 +70,7 @@ def remove_keymap():
     for kmi in items_to_remove:
         addon_keymaps.keymap_items.remove(kmi)
 
+
 class SIMPLE_EXPORTER_OT_hotkey(bpy.types.Operator):
     """Tooltip"""
     bl_idname = "simple_export.remove_hotkey"

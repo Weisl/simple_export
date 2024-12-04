@@ -1,11 +1,11 @@
 import bpy
 
-
 from .functions import get_addon_name
-from .presets.naming_preset import get_preset_folder_path
 from .presets.naming_preset import EXPORT_MT_export_presets
+from .presets.naming_preset import get_preset_folder_path
 
-def draw_naming_presets(self, context):
+
+def draw_export_preset(self, context):
     """
     Draw the naming presets menu in the layout.
 
@@ -14,8 +14,12 @@ def draw_naming_presets(self, context):
         context (Context): The current context.
     """
     layout = self.layout
-    row = layout.row(align=True)
+    scene = context.scene
 
+    row = layout.row(align=True)
+    row.label(text="Select Export Preset")
+
+    row = layout.row(align=True)
     row.menu(EXPORT_MT_export_presets.__name__, text=EXPORT_MT_export_presets.bl_label)
 
     addon_name = get_addon_name()
@@ -25,6 +29,12 @@ def draw_naming_presets(self, context):
     op = row.operator("preferences.addon_search", text="", icon='PREFERENCES')
     op.addon_name = addon_name
     op.prefs_tabs = 'NAMING'
+
+    row = layout.row(align=True)
+    row.label(text='Active Preset')
+    row = layout.row(align=True)
+    row.enabled = False  # Makes the field non-editable
+    row.prop(scene, "simple_exporter_preset_path", text='')
 
 
 def draw_custom_collection_ui(self, context):
@@ -55,8 +65,10 @@ class SIMPLE_EXPORTER_menu_base:
         layout = self.layout
         scene = context.scene
 
-        draw_naming_presets(self, context)
+        draw_export_preset(self, context)
 
+        row = layout.row()
+        row.label(text='Export List')
         row = layout.row()
         # Draw the UIList without the invalid keyword argument
         row.template_list("SCENE_UL_CollectionList", '', bpy.data, "collections", scene, "collection_index")
@@ -90,12 +102,9 @@ class SIMPLE_EXPORTER_PT_CollectionExportPanel(SIMPLE_EXPORTER_menu_base, bpy.ty
         super().draw(context)
         layout = self.layout
 
-
         # Add a button to open the panel as a popup
         op = layout.operator("wm.call_panel", text="Open Export Popup")
         op.name = "SIMPLE_EXPORTER_PT_simple_export"
-
-
 
 
 class SIMPLE_EXPORTER_PT_simple_export(SIMPLE_EXPORTER_menu_base, bpy.types.Panel):
@@ -120,6 +129,12 @@ classes = (SIMPLE_EXPORTER_MT_context_menu,
 
 
 def register():
+    bpy.types.Scene.simple_exporter_preset_path = bpy.props.StringProperty(
+        name="Simple Exporter Preset",
+        description="Path for Simple Exporter preset",
+        default=''
+    )
+
     from bpy.utils import register_class
 
     for cls in classes:
@@ -131,3 +146,6 @@ def unregister():
 
     for cls in reversed(classes):
         unregister_class(cls)
+
+    scene = bpy.types.Scene
+    del scene.simple_exporter_preset_path
