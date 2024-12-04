@@ -25,9 +25,10 @@ def draw_export_preset(self, context):
     scene = context.scene
     props = context.scene.simple_export_props
 
+    layout.prop(props, "export_format", text="Export Format")
+
     box = layout.box()
     box.label(text="Presets")
-    box.prop(props, "export_format", text="Export Format")
     box.prop(props, "override_path", text="Override Preset Folder")
 
     row = box.row(align=True)
@@ -72,7 +73,7 @@ class SimpleExporterProperties(bpy.types.PropertyGroup):
     preset_path: bpy.props.StringProperty(
         name="Preset Folder Path",
         description="Path to the folder containing .py files",
-        default="",
+        default=EXPORT_PRESET_FOLDERS["FBX"],  # Use the folder for the default format
         subtype="DIR_PATH",
     )
     simple_export_preset_path: bpy.props.EnumProperty(
@@ -86,6 +87,7 @@ class SimpleExporterProperties(bpy.types.PropertyGroup):
         description="Manually override the automatically set preset folder",
         default=False,
     )
+
 
     def update_preset_path(self):
         """Automatically set the preset path based on the export format unless overridden."""
