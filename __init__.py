@@ -3,7 +3,6 @@ if "bpy" in locals():
     import importlib
 
     importlib.reload(uilist)
-    importlib.reload(presets)
     importlib.reload(collection_utils)
     importlib.reload(operators)
     importlib.reload(panels)
@@ -13,7 +12,6 @@ if "bpy" in locals():
 else:
     from . import preferenecs
     from . import collection_utils
-    from . import presets
     from . import operators
     from . import uilist
     from . import panels
@@ -22,7 +20,6 @@ else:
 
 files = [
     collection_utils,
-    presets,
     operators,
     uilist,
     panels,

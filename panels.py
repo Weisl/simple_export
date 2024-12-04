@@ -3,7 +3,6 @@ import os
 import bpy
 
 from .functions import get_addon_name
-from .presets.naming_preset import get_preset_folder_path
 
 
 def get_presets_folder():
@@ -36,15 +35,6 @@ def draw_export_preset(self, context):
     row.prop(props, "preset_path", text="Preset Folder")
 
     box.prop(props, "simple_export_preset_path", text="Preset File")
-
-    # row = box.row(align=True)
-    # addon_name = get_addon_name()
-    # op = row.operator("explorer.open_in_explorer", text="", icon='FILE_FOLDER')
-    # op.dirpath = get_preset_folder_path()
-    #
-    # op = row.operator("preferences.addon_search", text="", icon='PREFERENCES')
-    # op.addon_name = addon_name
-    # op.prefs_tabs = 'NAMING'
 
     row = box.row(align=True)
     row.label(text='Active Preset')
