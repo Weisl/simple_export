@@ -126,8 +126,9 @@ class SIMPLE_EXPORT_menu_base:
 
         # Open Preferences
         addon_name = get_addon_name()
-        op = row.operator("preferences.rename_addon_search", text="", icon="PREFERENCES")
+        op = row.operator("simple_export.open_preferenecs", text="", icon="PREFERENCES")
         op.addon_name = addon_name
+        op.prefs_tabs = 'SETTINGS'
 
     def draw(self, context):
         layout = self.layout
