@@ -21,12 +21,12 @@ EXPORT_PRESET_FOLDERS = {
 
 
 def draw_export_preset(self, context):
-
     layout = self.layout
     scene = context.scene
     props = context.scene.simple_export_props
 
     box = layout.box()
+    box.label(text="Presets")
     box.prop(props, "export_format", text="Export Format")
     box.prop(props, "override_path", text="Override Preset Folder")
 
@@ -37,10 +37,10 @@ def draw_export_preset(self, context):
     box.prop(props, "simple_export_preset_path", text="Preset File")
 
     row = box.row(align=True)
-    row.label(text='Active Preset')
+    row.label(text="Active Preset")
     row = box.row(align=True)
     row.enabled = False  # Makes the field non-editable
-    row.prop(scene, "simple_export_preset_path", text='')
+    row.prop(scene, "simple_export_preset_path", text="")
 
 
 def draw_custom_collection_ui(self, context):
@@ -64,18 +64,19 @@ class SimpleExporterProperties(bpy.types.PropertyGroup):
             ("ALEMBIC", "Alembic", "Alembic Export"),
         ],
         default="FBX",
-        update=lambda self, context: self.update_preset_path()
+        update=lambda self, context: self.update_preset_path(),
     )
     preset_path: bpy.props.StringProperty(
         name="Preset Folder Path",
         description="Path to the folder containing .py files",
         default="",
-        subtype='DIR_PATH',
+        subtype="DIR_PATH",
     )
     simple_export_preset_path: bpy.props.EnumProperty(
         name="Preset File",
         description="Select a .py file",
         items=lambda self, context: self.get_py_files(),
+        update=lambda self, context: self.update_scene_preset_path(context),
     )
     override_path: bpy.props.BoolProperty(
         name="Override Preset Folder",
@@ -87,6 +88,10 @@ class SimpleExporterProperties(bpy.types.PropertyGroup):
         """Automatically set the preset path based on the export format unless overridden."""
         if not self.override_path:
             self.preset_path = EXPORT_PRESET_FOLDERS.get(self.export_format, "")
+
+    def update_scene_preset_path(self, context):
+        """Update the full path of the selected preset in the scene property."""
+        context.scene.simple_export_preset_path = self.simple_export_preset_path
 
     def get_py_files(self):
         """Retrieve all .py files from the specified folder."""
@@ -112,11 +117,11 @@ class SIMPLE_EXPORT_menu_base:
         row = layout.row(align=True)
 
         # Open documentation
-        row.operator("wm.url_open", text="", icon='HELP').url = "https://weisl.github.io/exporter_overview/"
+        row.operator("wm.url_open", text="", icon="HELP").url = "https://weisl.github.io/exporter_overview/"
 
         # Open Preferences
         addon_name = get_addon_name()
-        op = row.operator("preferences.rename_addon_search", text="", icon='PREFERENCES')
+        op = row.operator("preferences.rename_addon_search", text="", icon="PREFERENCES")
         op.addon_name = addon_name
 
     def draw(self, context):
@@ -126,12 +131,11 @@ class SIMPLE_EXPORT_menu_base:
         draw_export_preset(self, context)
 
         row = layout.row()
-        row.label(text='Export List')
+        row.label(text="Export List")
         row = layout.row()
-        # Draw the UIList without the invalid keyword argument
-        row.template_list("SCENE_UL_CollectionList", '', bpy.data, "collections", scene, "collection_index")
+        row.template_list("SCENE_UL_CollectionList", "", bpy.data, "collections", scene, "collection_index")
         col = row.column(align=True)
-        col.menu("SIMPLE_EXPORT_MT_context_menu", icon='DOWNARROW_HLT', text="")
+        col.menu("SIMPLE_EXPORT_MT_context_menu", icon="DOWNARROW_HLT", text="")
 
         col = layout.column(align=True)
         row = col.row()
@@ -145,15 +149,15 @@ class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        row.operator("scene.select_all_collections", text="Select All", icon='CHECKBOX_HLT')
+        row.operator("scene.select_all_collections", text="Select All", icon="CHECKBOX_HLT")
         row = layout.row()
-        row.operator("scene.unselect_all_collections", text="Unselect All", icon='CHECKBOX_DEHLT')
+        row.operator("scene.unselect_all_collections", text="Unselect All", icon="CHECKBOX_DEHLT")
 
 
 class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
     bl_idname = "SCENE_PT_simple_export"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
     bl_context = "scene"
 
     def draw(self, context):
@@ -167,8 +171,8 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
 
 class SIMPLE_EXPORT_PT_simple_export(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
     bl_idname = "SIMPLE_EXPORT_PT_simple_export"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'WINDOW'
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "WINDOW"
     bl_context = "empty"
     bl_ui_units_x = 45
 
@@ -181,10 +185,12 @@ class SIMPLE_EXPORT_PT_simple_export(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         super().draw(context)
 
 
-classes = (SimpleExporterProperties,
-           SIMPLE_EXPORT_MT_context_menu,
-           SIMPLE_EXPORT_PT_CollectionExportPanel,
-           SIMPLE_EXPORT_PT_simple_export)
+classes = (
+    SimpleExporterProperties,
+    SIMPLE_EXPORT_MT_context_menu,
+    SIMPLE_EXPORT_PT_CollectionExportPanel,
+    SIMPLE_EXPORT_PT_simple_export,
+)
 
 
 def register():
@@ -192,7 +198,7 @@ def register():
     Scene.simple_export_preset_path = bpy.props.StringProperty(
         name="Simple Exporter Preset",
         description="Path for Simple Exporter preset",
-        default=''
+        default="",
     )
 
     from bpy.utils import register_class
