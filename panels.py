@@ -42,6 +42,9 @@ def draw_export_preset(self, context):
     row.enabled = False  # Makes the field non-editable
     row.prop(scene, "simple_export_preset_path", text="")
 
+    row = layout.row(align=True)
+    row.operator("simple_export.apply_preset", text="Apply Preset")
+
 
 def draw_custom_collection_ui(self, context):
     """Draw custom UI in the COLLECTION_PT_instancing panel."""
