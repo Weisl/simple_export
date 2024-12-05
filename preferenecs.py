@@ -2,6 +2,7 @@ import bpy
 
 from .keymap import remove_key
 
+
 def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_export_panel_ctrl,
             simple_export_panel_shift,
             simple_export_panel_alt, simple_export_panel_active):
@@ -43,11 +44,12 @@ def register_scene_properties():
                                                                   ('Wavefront OBJ', "OBJ (.obj)",
                                                                    "Export to OBJ format"),
                                                                   (
-                                                                  'Stanford PLY', "PLY (.ply)", "Export to PLY format"),
+                                                                      'Stanford PLY', "PLY (.ply)",
+                                                                      "Export to PLY format"),
                                                                   ('STL', "STL (.stl)", "Export to STL format"),
                                                                   ('FBX', "FBX (.fbx)", "Export to FBX format"), (
-                                                                  'glTF 2.0', "glTF (.gltf)",
-                                                                  "Export to glTF format"), ],
+                                                                      'glTF 2.0', "glTF (.gltf)",
+                                                                      "Export to glTF format"), ],
                                                            default=bpy.context.preferences.addons[
                                                                __package__].preferences.default_export_format)
 
@@ -71,7 +73,7 @@ def unregister_collection_properties():
     del bpy.types.Collection.offset_object
 
 
-class SIMPLE_EXPORT_preferemces(bpy.types.AddonPreferences):
+class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
     def update_simple_export_panel_key(self, context):
@@ -106,6 +108,10 @@ class SIMPLE_EXPORT_preferemces(bpy.types.AddonPreferences):
                ('KEYMAP', "Keymap", "Change the hotkeys for tools associated with this addon.")),
         default='SETTINGS',
         description='Settings category:')
+
+    simple_export_debug: bpy.props.BoolProperty(name="Debug Mode",
+                                                description="Debug mode only used for development",
+                                                default=True)
 
     use_blender_file_location: bpy.props.BoolProperty(name="Use Blender File Location",
                                                       description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
@@ -219,7 +225,7 @@ class SIMPLE_EXPORT_preferemces(bpy.types.AddonPreferences):
 
 
 classes = (
-    SIMPLE_EXPORT_preferemces,
+    SIMPLE_EXPORT_preferences,
 )
 
 
