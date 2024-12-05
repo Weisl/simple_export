@@ -83,14 +83,16 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
         export_collection.color_tag = color_tag
 
         # Assign exporter
-        # Make current collection the active collection
+        # Not sure if this is needed.
         set_active_layer_Collection(collection_name)
 
-        # Find the proper exporter operator
+        # Assigning the correct format exporter
         props = context.scene.simple_export_props
         export_data = EXPORT_FORMATS.get(props.export_format)
-
         bpy.ops.collection.exporter_add(name=export_data["op_name"])
+
+        # Assign the preset
+        # I need to find the exporter
 
         self.report({'INFO'}, f"Export collection '{export_collection.name}' created successfully.")
         return {'FINISHED'}

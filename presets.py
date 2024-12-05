@@ -40,6 +40,22 @@ def apply_preset_to_exporter(properties, exporter):
         except Exception as e:
             print(f"Error setting property '{prop_name}': {e}")
 
+def assign_preset(collection, preset_path):
+    # Ensure the collection has exporters
+    if not hasattr(collection, "exporters") or len(collection.exporters) == 0:
+        return False
+
+    exporter = collection.exporters[0]
+
+    # Parse the preset file
+    preset_properties = parse_preset_file(preset_path)
+
+    # Apply the properties to the exporter
+    apply_preset_to_exporter(preset_properties, exporter)
+
+    return True
+
+
 
 class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
     """Operator to apply the preset"""
@@ -52,7 +68,6 @@ class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
 
         collection = bpy.data.collections.get(self.collection_name)
         props = context.scene.simple_export_props
-        # I need to force it to be a raw string to work with paths
         preset_path = props.simple_export_preset_file
 
         if not collection:
@@ -64,23 +79,14 @@ class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
             return {'CANCELLED'}
 
 
-        # Ensure the collection has exporters
-        if hasattr(collection, "exporters") and len(collection.exporters) > 0:
-            exporter = collection.exporters[0]
+        preset_name = os.path.basename(preset_path)
+        suceess = assign_preset(collection, preset_path)
 
-            # Parse the preset file
-            preset_properties = parse_preset_file(preset_path)
-
-            # Apply the properties to the exporter
-            apply_preset_to_exporter(preset_properties, exporter)
-
-            preset_name = os.path.basename(preset_path)
-            self.report({'INFO'}, f"Applied preset '{preset_name}' to {self.collection_name}.")
-
-        else:
+        if not suceess:
             self.report({'ERROR'}, "No exporters found in the current collection.")
             return {'CANCELLED'}
 
+        self.report({'INFO'}, f"Applied preset '{preset_name}' to {self.collection_name}.")
         return {'FINISHED'}
 
 
