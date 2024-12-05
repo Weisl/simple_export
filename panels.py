@@ -178,8 +178,6 @@ class SIMPLE_EXPORT_menu_base:
         layout = self.layout
         scene = context.scene
 
-        draw_export_preset(self, context)
-
         # Export List
         row = layout.row()
         row.label(text="Export List")
@@ -192,17 +190,11 @@ class SIMPLE_EXPORT_menu_base:
         col = layout.column(align=True)
         row = col.row()
         row.operator("scene.export_selected_collections", text="Export Collections")
-        row = col.row()
-        row.operator("simple_export.apply_preset", text="TODO: Assign Presets")
-        row = col.row()
-        row.operator("scene.export_selected_collections", text="TODO: Assign Paths")
 
-        # Collection Creation
-        layout.label(text='Export Collection')
-        row = layout.row()
-        row.prop(context.scene, "parent_collection", text="Parent Collection")
-        row = layout.row()
-        row.operator("simple_export.create_export_collection", icon='COLLECTION_NEW')
+        # row = col.row()
+        # row.operator("simple_export.apply_preset", text="TODO: Assign Presets")
+        # row = col.row()
+        # row.operator("scene.export_selected_collections", text="TODO: Assign Paths")
 
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
@@ -224,12 +216,23 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
     bl_context = "scene"
 
     def draw(self, context):
+        draw_export_preset(self, context)
+
         super().draw(context)
+
         layout = self.layout
 
         # Add a button to open the panel as a popup
         op = layout.operator("wm.call_panel", text="Open Export Popup")
         op.name = "SIMPLE_EXPORT_PT_simple_export"
+
+        # Collection Creation
+        box = layout.box()
+        box.label(text='Export Collection')
+        row = box.row()
+        row.prop(context.scene, "parent_collection", text="Parent Collection")
+        row = box.row()
+        row.operator("simple_export.create_export_collection", icon='COLLECTION_NEW')
 
 
 class SIMPLE_EXPORT_PT_simple_export(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
