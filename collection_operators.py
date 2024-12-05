@@ -1,5 +1,8 @@
 import bpy
 
+from .operators import set_active_layer_Collection
+from .panels import EXPORT_FORMATS
+
 class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
     """
     Create a new collection for the active object and its children.
@@ -35,8 +38,9 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
                     parent_collection.children.link(col)
             return col
 
+        collection_name = active_object.name
         # Create or get the export collection
-        export_collection = make_collection(active_object.name, parent_collection)
+        export_collection = make_collection(collection_name, parent_collection)
 
         # Recursive function to find all children of an object
         def find_children(parent_object, child_stack):
@@ -78,12 +82,24 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
         # Directly set the collection color tag
         export_collection.color_tag = color_tag
 
+        # Assign exporter
+        # Make current collection the active collection
+        set_active_layer_Collection(collection_name)
+
+        # Find the proper exporter operator
+        props = context.scene.simple_export_props
+        export_data = EXPORT_FORMATS.get(props.export_format)
+
+        bpy.ops.collection.exporter_add(name=export_data["op_name"])
+
         self.report({'INFO'}, f"Export collection '{export_collection.name}' created successfully.")
         return {'FINISHED'}
+
 
 classes = (
     EXPORT_OT_CreateExportCollection,
 )
+
 
 # Register the scene property
 def register():
@@ -97,11 +113,10 @@ def register():
     for cls in classes:
         register_class(cls)
 
+
 def unregister():
     from bpy.utils import unregister_class
     Scene = bpy.types.Scene
     del Scene.parent_collection
     for cls in reversed(classes):
         unregister_class(cls)
-
-
