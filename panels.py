@@ -24,27 +24,36 @@ def draw_export_preset(self, context):
     layout = self.layout
     scene = context.scene
     props = context.scene.simple_export_props
+    prefs = context.preferences.addons[__package__].preferences
 
     layout.prop(props, "export_format", text="Export Format")
 
     box = layout.box()
     box.label(text="Presets")
-    box.prop(props, "override_path", text="Override Preset Folder")
 
+    # Active Preset
     row = box.row(align=True)
-    row.enabled = props.override_path  # Only enable preset_path editing if override_path is true
-    row.prop(props, "preset_path", text="Preset Folder")
+    row.label(text="Active")
+    preset_name = os.path.basename(scene.simple_export_preset_file)
+    row.label(text=preset_name)
 
-    box.prop(props, "simple_export_preset_path", text="Preset File")
+    # Select preset
+    box.prop(props, "simple_export_preset_file", text="Select")
 
-    row = box.row(align=True)
-    row.label(text="Active Preset")
-    row = box.row(align=True)
-    row.enabled = False  # Makes the field non-editable
-    row.prop(scene, "simple_export_preset_path", text="")
 
-    row = layout.row(align=True)
-    row.operator("simple_export.apply_preset", text="Apply Preset")
+
+    if prefs.simple_export_debug:
+        box_debug = box.box()
+        row = box_debug.row(align=True)
+        row.enabled = False  # Makes the field non-editable
+        row.prop(scene, "simple_export_preset_file", text="")
+        box_debug.label(text='Debug')
+
+        box_debug.prop(props, "override_path", text="Override Preset Folder")
+
+        row = box_debug.row(align=True)
+        row.enabled = props.override_path  # Only enable preset_path editing if override_path is true
+        row.prop(props, "preset_path", text="Preset Folder")
 
 
 def draw_custom_collection_ui(self, context):
@@ -76,7 +85,7 @@ class SimpleExporterProperties(bpy.types.PropertyGroup):
         default=EXPORT_PRESET_FOLDERS["FBX"],  # Use the folder for the default format
         subtype="DIR_PATH",
     )
-    simple_export_preset_path: bpy.props.EnumProperty(
+    simple_export_preset_file: bpy.props.EnumProperty(
         name="Preset File",
         description="Select a .py file",
         items=lambda self, context: self.get_py_files(),
@@ -88,7 +97,6 @@ class SimpleExporterProperties(bpy.types.PropertyGroup):
         default=False,
     )
 
-
     def update_preset_path(self):
         """Automatically set the preset path based on the export format unless overridden."""
         if not self.override_path:
@@ -96,7 +104,7 @@ class SimpleExporterProperties(bpy.types.PropertyGroup):
 
     def update_scene_preset_path(self, context):
         """Update the full path of the selected preset in the scene property."""
-        context.scene.simple_export_preset_path = self.simple_export_preset_path
+        context.scene.simple_export_preset_file = self.simple_export_preset_file
 
     def get_py_files(self):
         """Retrieve all .py files from the specified folder."""
@@ -146,6 +154,11 @@ class SIMPLE_EXPORT_menu_base:
         col = layout.column(align=True)
         row = col.row()
         row.operator("scene.export_selected_collections", text="Export Collections")
+        row = col.row()
+        row.operator("simple_export.apply_preset", text="TODO: Assign Presets")
+
+        row = col.row()
+        row.operator("scene.export_selected_collections", text="TODO: Assign Paths")
 
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
@@ -201,7 +214,7 @@ classes = (
 
 def register():
     Scene = bpy.types.Scene
-    Scene.simple_export_preset_path = bpy.props.StringProperty(
+    Scene.simple_export_preset_file = bpy.props.StringProperty(
         name="Simple Exporter Preset",
         description="Path for Simple Exporter preset",
         default="",
@@ -222,5 +235,5 @@ def unregister():
         unregister_class(cls)
 
     Scene = bpy.types.Scene
-    del Scene.simple_export_preset_path
+    del Scene.simple_export_preset_file
     del Scene.simple_export_props

@@ -1,4 +1,5 @@
 import os
+
 import bpy
 
 
@@ -9,7 +10,6 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
     def draw_filter(self, context, layout):
         layout.prop(context.scene, "export_format", text="Export Format")
-
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         prefs = context.preferences.addons[__package__].preferences
@@ -38,8 +38,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         elif file_exists:
             icon = 'CURRENT_FILE'
         else:
-            icon ='FILE_NEW'
-
+            icon = 'FILE_NEW'
 
         row.label(icon=icon)
         # Map color_tag to icons
@@ -66,8 +65,13 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         row.prop(exporter.export_properties, "filepath", text="", expand=True)
 
         # Buttons for setting the export path and opening the directory
-        op = row.operator("scene.set_exporter_path", text="", icon='FILE_BLANK')
+        # Assign Path
+        op = row.operator("scene.set_exporter_path", text="", icon='FOLDER_REDIRECT')
         op.collection_name = collection.name
+
+        # TODO: Implement features
+        # Assign Preset
+        row.operator("scene.export_selected_collections", text="", icon='PRESET')
 
         # Add the Export Collection button
         op = row.operator("scene.export_collection", text="", icon='EXPORT')
@@ -97,6 +101,7 @@ classes = (
     SCENE_UL_CollectionList,
 )
 
+
 def register():
     from bpy.utils import register_class
 
@@ -104,6 +109,7 @@ def register():
 
     for cls in classes:
         register_class(cls)
+
 
 def unregister():
     from bpy.utils import unregister_class
