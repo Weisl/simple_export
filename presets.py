@@ -46,10 +46,23 @@ class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
     bl_idname = "simple_export.apply_preset"
     bl_label = "Apply Preset"
 
+    collection_name: bpy.props.StringProperty()
+
     def execute(self, context):
-        preset_path = r"C:\Users\weisl\AppData\Roaming\Blender Foundation\Blender\4.3\scripts\presets\operator\export_scene.fbx\a7.py"
-        scene = bpy.context.scene
-        collection = bpy.context.collection
+
+        collection = bpy.data.collections.get(self.collection_name)
+        props = context.scene.simple_export_props
+        # I need to force it to be a raw string to work with paths
+        preset_path = props.simple_export_preset_file
+
+        if not collection:
+            self.report({'ERROR'}, f"Collection '{self.collection_name}' not found.")
+            return {'CANCELLED'}
+
+        if not preset_path:
+            self.report({'ERROR'}, f"Preset path {props.preset_path}' not found.")
+            return {'CANCELLED'}
+
 
         # Ensure the collection has exporters
         if hasattr(collection, "exporters") and len(collection.exporters) > 0:
@@ -61,6 +74,7 @@ class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
             # Apply the properties to the exporter
             apply_preset_to_exporter(preset_properties, exporter)
             self.report({'INFO'}, "Preset applied successfully.")
+
         else:
             self.report({'ERROR'}, "No exporters found in the current collection.")
             return {'CANCELLED'}

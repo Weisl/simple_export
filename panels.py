@@ -92,8 +92,8 @@ def draw_export_preset(self, context):
         row.prop(props, "preset_path", text="Preset Folder")
 
         row = box_debug.row()
-        row.operator("simple_export.apply_preset", text="Apply Preset")
-
+        op = row.operator("simple_export.apply_preset", text="Apply Preset")
+        op.collection_name = context.collection.name
 
 def draw_custom_collection_ui(self, context):
     """Draw custom UI in the COLLECTION_PT_instancing panel."""
