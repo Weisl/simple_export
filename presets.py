@@ -73,7 +73,9 @@ class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
 
             # Apply the properties to the exporter
             apply_preset_to_exporter(preset_properties, exporter)
-            self.report({'INFO'}, "Preset applied successfully.")
+
+            preset_name = os.path.basename(preset_path)
+            self.report({'INFO'}, f"Applied preset '{preset_name}' to {self.collection_name}.")
 
         else:
             self.report({'ERROR'}, "No exporters found in the current collection.")
