@@ -106,7 +106,8 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
             self.report({'ERROR'}, f"Could not add exporter to collection '{collection.name}'.")
             return {'CANCELLED'}
 
-        self.set_exporter_path(context, collection.name, exporter, original_path, replacement_path)
+        export_path = self.set_exporter_path(context, collection.name, exporter, original_path, replacement_path)
+        self.report({'INFO'}, f"Export path set to {export_path}")
         return {'FINISHED'}
 
     def get_custom_exporter_for_collection(self, collection_name, exporter_name):
@@ -175,6 +176,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
         ensure_export_directory(exporter)
         exporter.export_properties.filepath = export_path
         print(f"Set export path: {export_path}")
+        return export_path
 
 
 class SCENE_OT_ExportCollection(bpy.types.Operator):

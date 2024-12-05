@@ -57,7 +57,6 @@ EXPORT_FORMATS = {
 }
 
 
-
 def draw_export_preset(self, context):
     layout = self.layout
     scene = context.scene
@@ -104,8 +103,10 @@ def draw_custom_collection_ui(self, context):
     # Add the Object Picker
     layout.prop(collection, "offset_object", text="Offset Object")
 
+
 def get_export_format_items():
     return [(key, value["label"], value["description"]) for key, value in EXPORT_FORMATS.items()]
+
 
 class SimpleExporterProperties(bpy.types.PropertyGroup):
     def update_preset_path(self, context):
@@ -136,7 +137,6 @@ class SimpleExporterProperties(bpy.types.PropertyGroup):
         description="Manually override the automatically set preset folder",
         default=False,
     )
-
 
     def update_scene_preset_path(self, context):
         """Update the full path of the selected preset in the scene property."""
@@ -197,12 +197,12 @@ class SIMPLE_EXPORT_menu_base:
         row = col.row()
         row.operator("scene.export_selected_collections", text="TODO: Assign Paths")
 
-        #Collection Creation
+        # Collection Creation
         layout.label(text='Export Collection')
         row = layout.row()
         row.prop(context.scene, "parent_collection", text="Parent Collection")
         row = layout.row()
-        row.operator("simple_export.create_export_collection",  icon='COLLECTION_NEW')
+        row.operator("simple_export.create_export_collection", icon='COLLECTION_NEW')
 
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
