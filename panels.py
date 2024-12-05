@@ -146,6 +146,7 @@ class SIMPLE_EXPORT_menu_base:
 
         draw_export_preset(self, context)
 
+        # Export List
         row = layout.row()
         row.label(text="Export List")
         row = layout.row()
@@ -153,14 +154,21 @@ class SIMPLE_EXPORT_menu_base:
         col = row.column(align=True)
         col.menu("SIMPLE_EXPORT_MT_context_menu", icon="DOWNARROW_HLT", text="")
 
+        # List Operators
         col = layout.column(align=True)
         row = col.row()
         row.operator("scene.export_selected_collections", text="Export Collections")
         row = col.row()
         row.operator("simple_export.apply_preset", text="TODO: Assign Presets")
-
         row = col.row()
         row.operator("scene.export_selected_collections", text="TODO: Assign Paths")
+
+        #Collection Creation
+        layout.label(text='Export Collection')
+        row = layout.row()
+        row.prop(context.scene, "parent_collection", text="Parent Collection")
+        row = layout.row()
+        row.operator("simple_export.create_export_collection",  icon='COLLECTION_NEW')
 
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):

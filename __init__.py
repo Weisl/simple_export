@@ -6,6 +6,7 @@ if "bpy" in locals():
     importlib.reload(ui_helpers)
     importlib.reload(presets)
     importlib.reload(collection_utils)
+    importlib.reload(collection_operators)
     importlib.reload(operators)
     importlib.reload(panels)
     importlib.reload(keymap)
@@ -14,6 +15,7 @@ if "bpy" in locals():
 else:
     from . import preferenecs
     from . import ui_helpers
+    from . import collection_operators
     from . import presets
     from . import collection_utils
     from . import operators
@@ -24,6 +26,7 @@ else:
 
 files = [
     collection_utils,
+    collection_operators,
     ui_helpers,
     presets,
     operators,
