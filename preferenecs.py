@@ -218,6 +218,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             layout.prop(self, "replacement_path")
             layout.prop(self, "default_export_format")
             layout.prop(self, "use_blender_file_location")
+            layout.prop(self, "simple_export_debug")
 
         elif self.prefs_tabs == 'KEYMAP':
             self.keymap_ui(layout, 'Export Popup', 'simple_export_panel', 'wm.call_panel',
