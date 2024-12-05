@@ -1,8 +1,7 @@
 import bpy
 
 from .keymap import remove_key
-
-
+from .panels import get_export_format_items
 def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_export_panel_ctrl,
             simple_export_panel_shift,
             simple_export_panel_alt, simple_export_panel_active):
@@ -30,28 +29,27 @@ def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_
 
 
 # Scene properties to define original_path and replacement_path
-def register_scene_properties():
-    bpy.types.Scene.collection_index = bpy.props.IntProperty(name="Collection Index",
-                                                             description="Index of the active collection in the list",
-                                                             default=0)
 
-    bpy.types.Scene.export_format = bpy.props.EnumProperty(name="Export Format",
-                                                           description="Filter collections by export format.",
-                                                           items=[('Universal Scene Description', "USD (.usd)",
-                                                                   "Export to USD format"),
-                                                                  ('Alembic', "Alembic (.abc)",
-                                                                   "Export to Alembic format"),
-                                                                  ('Wavefront OBJ', "OBJ (.obj)",
-                                                                   "Export to OBJ format"),
-                                                                  (
-                                                                      'Stanford PLY', "PLY (.ply)",
-                                                                      "Export to PLY format"),
-                                                                  ('STL', "STL (.stl)", "Export to STL format"),
-                                                                  ('FBX', "FBX (.fbx)", "Export to FBX format"), (
-                                                                      'glTF 2.0', "glTF (.gltf)",
-                                                                      "Export to glTF format"), ],
-                                                           default=bpy.context.preferences.addons[
-                                                               __package__].preferences.default_export_format)
+def get_default_export_format():
+    """Fetch default export format from add-on preferences or fallback to FBX."""
+    try:
+        return bpy.context.preferences.addons[__package__].preferences.default_export_format
+    except (AttributeError, KeyError):
+        return "FBX"  # Fallback default
+
+def register_scene_properties():
+    bpy.types.Scene.collection_index = bpy.props.IntProperty(
+        name="Collection Index",
+        description="Index of the active collection in the list",
+        default=0
+    )
+
+    bpy.types.Scene.export_format = bpy.props.EnumProperty(
+        name="Export Format",
+        description="Filter collections by export format.",
+        items=get_export_format_items(),
+        default=get_default_export_format(),
+    )
 
 
 def register_collection_properties():
@@ -134,18 +132,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     custom_suffix: bpy.props.StringProperty(name="Custom Suffix",
                                             description="Custom suffix to add to the export file name.")
 
-    default_export_format: bpy.props.EnumProperty(name="Default Export Format",
-                                                  description="Default format for exporting collections.",
-                                                  items=[('Universal Scene Description', "USD (.usd)",
-                                                          "Export to USD format"),
-                                                         ('Alembic', "Alembic (.abc)", "Export to Alembic format"),
-                                                         ('Wavefront OBJ', "OBJ (.obj)", "Export to OBJ format"),
-                                                         ('Stanford PLY', "PLY (.ply)", "Export to PLY format"),
-                                                         ('STL', "STL (.stl)", "Export to STL format"),
-                                                         ('FBX', "FBX (.fbx)", "Export to FBX format"),
-                                                         ('glTF 2.0', "glTF (.gltf)", "Export to glTF format"), ],
-                                                  default='FBX'  # Default value set to FBX
-                                                  )
+    default_export_format: bpy.props.EnumProperty(
+        name="Default Export Format",
+        description="Default format for exporting collections.",
+        items=get_export_format_items(),
+        default="FBX",  # Default value
+    )
 
     original_path: bpy.props.StringProperty(name="Original Path", description="The path to be replaced.",
                                             default="workdata")

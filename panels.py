@@ -11,13 +11,51 @@ def get_presets_folder():
     return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets", "operator")
 
 
-EXPORT_PRESET_FOLDERS = {
-    "FBX": os.path.join(get_presets_folder(), "export_scene.fbx"),
-    "OBJ": os.path.join(get_presets_folder(), "wm.obj_export"),
-    "GLTF": os.path.join(get_presets_folder(), "export_scene.gltf"),
-    "USD": os.path.join(get_presets_folder(), "wm.usd_export"),
-    "ALEMBIC": os.path.join(get_presets_folder(), "wm.alembic_export"),
+EXPORT_FORMATS = {
+    "FBX": {
+        "op_name": "IO_FH_fbx",
+        "label": "FBX",
+        "description": "FBX Export",
+        "preset_folder": os.path.join(get_presets_folder(), "export_scene.fbx"),
+    },
+    "OBJ": {
+        "op_name": "IO_FH_obj",
+        "label": "OBJ",
+        "description": "Wavefront OBJ Export",
+        "preset_folder": os.path.join(get_presets_folder(), "wm.obj_export"),
+    },
+    "GLTF": {
+        "op_name": "IO_FH_gltf2",
+        "label": "glTF",
+        "description": "glTF 2.0 Export",
+        "preset_folder": os.path.join(get_presets_folder(), "export_scene.gltf"),
+    },
+    "USD": {
+        "op_name": "IO_FH_usd",
+        "label": "USD",
+        "description": "Universal Scene Description Export",
+        "preset_folder": os.path.join(get_presets_folder(), "wm.usd_export"),
+    },
+    "ALEMBIC": {
+        "op_name": "IO_FH_alembic",
+        "label": "Alembic",
+        "description": "Alembic Export",
+        "preset_folder": os.path.join(get_presets_folder(), "wm.alembic_export"),
+    },
+    "PLY": {
+        "op_name": "IO_FH_ply",
+        "label": "PLY",
+        "description": "Stanford PLY Export",
+        "preset_folder": os.path.join(get_presets_folder(), "wm.ply_export"),
+    },
+    "STL": {
+        "op_name": "IO_FH_stl",
+        "label": "STL",
+        "description": "STL Export",
+        "preset_folder": os.path.join(get_presets_folder(), "wm.stl_export"),
+    },
 }
+
 
 
 def draw_export_preset(self, context):
@@ -66,25 +104,25 @@ def draw_custom_collection_ui(self, context):
     # Add the Object Picker
     layout.prop(collection, "offset_object", text="Offset Object")
 
+def get_export_format_items():
+    return [(key, value["label"], value["description"]) for key, value in EXPORT_FORMATS.items()]
 
 class SimpleExporterProperties(bpy.types.PropertyGroup):
+    def update_preset_path(self, context):
+        self.preset_path = EXPORT_FORMATS[self.export_format]["preset_folder"]
+
     export_format: bpy.props.EnumProperty(
         name="Export Format",
         description="Select the export format",
-        items=[
-            ("FBX", "FBX", "FBX Export"),
-            ("OBJ", "OBJ", "OBJ Export"),
-            ("GLTF", "glTF", "glTF Export"),
-            ("USD", "USD", "USD Export"),
-            ("ALEMBIC", "Alembic", "Alembic Export"),
-        ],
+        items=get_export_format_items(),  # Dynamically generated items from EXPORT_FORMATS
         default="FBX",
-        update=lambda self, context: self.update_preset_path(),
+        update=update_preset_path,  # Update the preset path when export format changes
     )
+
     preset_path: bpy.props.StringProperty(
         name="Preset Folder Path",
         description="Path to the folder containing .py files",
-        default=EXPORT_PRESET_FOLDERS["FBX"],  # Use the folder for the default format
+        default=EXPORT_FORMATS["FBX"]["preset_folder"],  # Dynamically fetch from EXPORT_FORMATS
         subtype="DIR_PATH",
     )
     simple_export_preset_file: bpy.props.EnumProperty(
@@ -99,10 +137,6 @@ class SimpleExporterProperties(bpy.types.PropertyGroup):
         default=False,
     )
 
-    def update_preset_path(self):
-        """Automatically set the preset path based on the export format unless overridden."""
-        if not self.override_path:
-            self.preset_path = EXPORT_PRESET_FOLDERS.get(self.export_format, "")
 
     def update_scene_preset_path(self, context):
         """Update the full path of the selected preset in the scene property."""
