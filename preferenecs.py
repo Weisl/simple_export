@@ -166,6 +166,29 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     simple_export_panel_active: bpy.props.BoolProperty(name="Active", default=True,
                                                        update=update_simple_export_panel_key)
 
+    # Collections
+
+    create_set_location_offset: bpy.props.BoolProperty(name="Set Location Offset",
+                                                       description="Set Location Offset",
+                                                       default=True)
+
+    collection_color: bpy.props.EnumProperty(
+        name="Collection Color Tag",
+        description="Choose a color tag for collections",
+        items=[
+            ('DEFAULT', "Default", ""),
+            ('COLOR_01', "Color 1", ""),
+            ('COLOR_02', "Color 2", ""),
+            ('COLOR_03', "Color 3", ""),
+            ('COLOR_04', "Color 4", ""),
+            ('COLOR_05', "Color 5", ""),
+            ('COLOR_06', "Color 6", ""),
+            ('COLOR_07', "Color 7", ""),
+            ('COLOR_08', "Color 8", ""),
+        ],
+        default='DEFAULT',
+    )
+
     def keymap_ui(self, layout, title, property_prefix, id_name, properties_name):
         box = layout.box()
         split = box.split(align=True, factor=0.5)
@@ -218,6 +241,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             layout.prop(self, "replacement_path")
             layout.prop(self, "default_export_format")
             layout.prop(self, "use_blender_file_location")
+            layout.prop(self, "create_set_location_offset")
+            layout.prop(self, "collection_color")
             layout.prop(self, "simple_export_debug")
 
         elif self.prefs_tabs == 'KEYMAP':

@@ -62,8 +62,21 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
                 if col != export_collection:
                     col.objects.unlink(ob)
 
+        prefs = bpy.context.preferences.addons[__package__].preferences
+
         # Set instance offset
-        export_collection.instance_offset = active_object.location
+        if prefs.create_set_location_offset:
+            export_collection.instance_offset = active_object.location
+
+        # Set collection Color:
+        color_tag = prefs.collection_color
+
+        if not export_collection:
+            self.report({'WARNING'}, "No active collection")
+            return {'CANCELLED'}
+
+        # Directly set the collection color tag
+        export_collection.color_tag = color_tag
 
         self.report({'INFO'}, f"Export collection '{export_collection.name}' created successfully.")
         return {'FINISHED'}
