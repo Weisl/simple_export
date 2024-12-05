@@ -40,6 +40,7 @@ def apply_preset_to_exporter(properties, exporter):
         except Exception as e:
             print(f"Error setting property '{prop_name}': {e}")
 
+
 def assign_preset(collection, preset_path):
     # Ensure the collection has exporters
     if not hasattr(collection, "exporters") or len(collection.exporters) == 0:
@@ -54,7 +55,6 @@ def assign_preset(collection, preset_path):
     apply_preset_to_exporter(preset_properties, exporter)
 
     return True
-
 
 
 class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
@@ -77,7 +77,6 @@ class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
         if not preset_path:
             self.report({'ERROR'}, f"Preset path {props.preset_path}' not found.")
             return {'CANCELLED'}
-
 
         preset_name = os.path.basename(preset_path)
         suceess = assign_preset(collection, preset_path)

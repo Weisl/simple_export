@@ -2,6 +2,7 @@ import bpy
 
 from .operators import set_active_layer_Collection
 from .panels import EXPORT_FORMATS
+from .presets import assign_preset
 
 class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
     """
@@ -93,6 +94,14 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
 
         # Assign the preset
         # I need to find the exporter
+        props = context.scene.simple_export_props
+        preset_path = props.simple_export_preset_file
+
+        if not preset_path:
+            self.report({'WARNING'}, f"No Preset.")
+            return {'CANCELLED'}
+
+        assign_preset(export_collection, preset_path)
 
         self.report({'INFO'}, f"Export collection '{export_collection.name}' created successfully.")
         return {'FINISHED'}
