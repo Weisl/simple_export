@@ -1,6 +1,9 @@
 import bpy
 
-def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_export_panel_ctrl, simple_export_panel_shift,
+from .keymap import remove_key
+from .panels import get_export_format_items
+def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_export_panel_ctrl,
+            simple_export_panel_shift,
             simple_export_panel_alt, simple_export_panel_active):
     """
     Add a new keymap item to the specified keymap.
@@ -19,31 +22,43 @@ def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_
         None
     """
     kmi = km.keymap_items.new(idname=idname, type=simple_export_panel_type, value='PRESS',
-                              ctrl=simple_export_panel_ctrl, shift=simple_export_panel_shift, alt=simple_export_panel_alt)
+                              ctrl=simple_export_panel_ctrl, shift=simple_export_panel_shift,
+                              alt=simple_export_panel_alt)
     kmi.properties.name = properties_name
     kmi.active = simple_export_panel_active
 
-# Scene properties to define original_path and replacement_path
-def register_scene_properties():
-    bpy.types.Scene.collection_index = bpy.props.IntProperty(name="Collection Index",
-        description="Index of the active collection in the list", default=0)
 
-    bpy.types.Scene.export_format = bpy.props.EnumProperty(name="Export Format",
+# Scene properties to define original_path and replacement_path
+
+def get_default_export_format():
+    """Fetch default export format from add-on preferences or fallback to FBX."""
+    try:
+        return bpy.context.preferences.addons[__package__].preferences.default_export_format
+    except (AttributeError, KeyError):
+        return "FBX"  # Fallback default
+
+def register_scene_properties():
+    bpy.types.Scene.collection_index = bpy.props.IntProperty(
+        name="Collection Index",
+        description="Index of the active collection in the list",
+        default=0
+    )
+
+    bpy.types.Scene.export_format = bpy.props.EnumProperty(
+        name="Export Format",
         description="Filter collections by export format.",
-        items=[('Universal Scene Description', "USD (.usd)", "Export to USD format"),
-            ('Alembic', "Alembic (.abc)", "Export to Alembic format"),
-            ('Wavefront OBJ', "OBJ (.obj)", "Export to OBJ format"),
-            ('Stanford PLY', "PLY (.ply)", "Export to PLY format"), ('STL', "STL (.stl)", "Export to STL format"),
-            ('FBX', "FBX (.fbx)", "Export to FBX format"), ('glTF 2.0', "glTF (.gltf)", "Export to glTF format"), ],
-        default=bpy.context.preferences.addons[__package__].preferences.default_export_format)
+        items=get_export_format_items(),
+        default=get_default_export_format(),
+    )
 
 
 def register_collection_properties():
     bpy.types.Collection.my_export_select = bpy.props.BoolProperty(name="Select for Export",
-        description="Select this collection for export", default=False)
+                                                                   description="Select this collection for export",
+                                                                   default=False)
 
     bpy.types.Collection.offset_object = bpy.props.PointerProperty(name="Offset Object", type=bpy.types.Object,
-        description="Object to be used for setting the collection offset")
+                                                                   description="Object to be used for setting the collection offset")
 
 
 def unregister_scene_properties():
@@ -56,7 +71,7 @@ def unregister_collection_properties():
     del bpy.types.Collection.offset_object
 
 
-class SIMPLE_EXPORTER_preferemces(bpy.types.AddonPreferences):
+class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
     def update_simple_export_panel_key(self, context):
@@ -77,8 +92,9 @@ class SIMPLE_EXPORTER_preferemces(bpy.types.AddonPreferences):
         simple_export_panel_type = self.simple_export_panel_type.upper()
 
         # Remove previous key assignment
-        remove_key(context, 'wm.call_panel', "SIMPLE_EXPORTER_PT_simple_export")
-        add_key(self, km, 'wm.call_panel', "SIMPLE_EXPORTER_PT_simple_export", simple_export_panel_type, self.simple_export_panel_ctrl,
+        remove_key(context, 'wm.call_panel', "SIMPLE_EXPORT_PT_simple_export")
+        add_key(self, km, 'wm.call_panel', "SIMPLE_EXPORT_PT_simple_export", simple_export_panel_type,
+                self.simple_export_panel_ctrl,
                 self.simple_export_panel_shift, self.simple_export_panel_alt, self.simple_export_panel_active)
         self.simple_export_panel_type = simple_export_panel_type
 
@@ -86,56 +102,84 @@ class SIMPLE_EXPORTER_preferemces(bpy.types.AddonPreferences):
 
     prefs_tabs: bpy.props.EnumProperty(
         name='Export Preferences',
-        items=(('SETTINGS', "Settings", "General addon settings"),('KEYMAP', "Keymap","Change the hotkeys for tools associated with this addon.")),
+        items=(('SETTINGS', "Settings", "General addon settings"),
+               ('KEYMAP', "Keymap", "Change the hotkeys for tools associated with this addon.")),
         default='SETTINGS',
         description='Settings category:')
 
+    simple_export_debug: bpy.props.BoolProperty(name="Debug Mode",
+                                                description="Debug mode only used for development",
+                                                default=True)
+
     use_blender_file_location: bpy.props.BoolProperty(name="Use Blender File Location",
-        description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
-        default=True)
+                                                      description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
+                                                      default=True)
 
     use_instance_offset: bpy.props.BoolProperty(name="Move to Collection Offset",
-        description="Use the collection offset for the exported collection", default=True)
+                                                description="Use the collection offset for the exported collection",
+                                                default=True)
 
     custom_export_path: bpy.props.StringProperty(name="Custom Export Path",
-        description="Custom directory to export files to.", subtype='DIR_PATH')
+                                                 description="Custom directory to export files to.", subtype='DIR_PATH')
 
     use_blend_file_name_as_prefix: bpy.props.BoolProperty(name="Use Blend File Name as Prefix",
-        description="If checked, the Blender file name will be used as a prefix for the export file name.",
-        default=False)
+                                                          description="If checked, the Blender file name will be used as a prefix for the export file name.",
+                                                          default=False)
 
     custom_prefix: bpy.props.StringProperty(name="Custom Prefix",
-        description="Custom prefix to add to the export file name.")
+                                            description="Custom prefix to add to the export file name.")
 
     custom_suffix: bpy.props.StringProperty(name="Custom Suffix",
-        description="Custom suffix to add to the export file name.")
+                                            description="Custom suffix to add to the export file name.")
 
-    default_export_format: bpy.props.EnumProperty(name="Default Export Format",
+    default_export_format: bpy.props.EnumProperty(
+        name="Default Export Format",
         description="Default format for exporting collections.",
-        items=[('Universal Scene Description', "USD (.usd)", "Export to USD format"),
-            ('Alembic', "Alembic (.abc)", "Export to Alembic format"),
-            ('Wavefront OBJ', "OBJ (.obj)", "Export to OBJ format"),
-            ('Stanford PLY', "PLY (.ply)", "Export to PLY format"), ('STL', "STL (.stl)", "Export to STL format"),
-            ('FBX', "FBX (.fbx)", "Export to FBX format"), ('glTF 2.0', "glTF (.gltf)", "Export to glTF format"), ],
-        default='FBX'  # Default value set to FBX
+        items=get_export_format_items(),
+        default="FBX",  # Default value
     )
 
     original_path: bpy.props.StringProperty(name="Original Path", description="The path to be replaced.",
-        default="workdata")
+                                            default="workdata")
     replacement_path: bpy.props.StringProperty(name="Replacement Path", description="The path to replace with.",
-        default="sourcedata")
+                                               default="sourcedata")
 
     ###################################################################
     # KEYMAP
 
-    simple_export_panel_type: bpy.props.StringProperty(name="Export Popup Menu", default="E", update=update_simple_export_panel_key)
+    simple_export_panel_type: bpy.props.StringProperty(name="Export Popup Menu", default="E",
+                                                       update=update_simple_export_panel_key)
 
     simple_export_panel_ctrl: bpy.props.BoolProperty(name="Ctrl", default=False, update=update_simple_export_panel_key)
 
     simple_export_panel_shift: bpy.props.BoolProperty(name="Shift", default=True, update=update_simple_export_panel_key)
     simple_export_panel_alt: bpy.props.BoolProperty(name="Alt", default=True, update=update_simple_export_panel_key)
 
-    simple_export_panel_active: bpy.props.BoolProperty(name="Active", default=True, update=update_simple_export_panel_key)
+    simple_export_panel_active: bpy.props.BoolProperty(name="Active", default=True,
+                                                       update=update_simple_export_panel_key)
+
+    # Collections
+
+    create_set_location_offset: bpy.props.BoolProperty(name="Set Location Offset",
+                                                       description="Set Location Offset",
+                                                       default=True)
+
+    collection_color: bpy.props.EnumProperty(
+        name="Collection Color Tag",
+        description="Choose a color tag for collections",
+        items=[
+            ('DEFAULT', "Default", "Default color tag", 'COLLECTION_COLOR', 0),
+            ('COLOR_01', "Color 1", "Red tag", 'COLLECTION_COLOR_01', 1),
+            ('COLOR_02', "Color 2", "Orange tag", 'COLLECTION_COLOR_02', 2),
+            ('COLOR_03', "Color 3", "Yellow tag", 'COLLECTION_COLOR_03', 3),
+            ('COLOR_04', "Color 4", "Green tag", 'COLLECTION_COLOR_04', 4),
+            ('COLOR_05', "Color 5", "Blue tag", 'COLLECTION_COLOR_05', 5),
+            ('COLOR_06', "Color 6", "Purple tag", 'COLLECTION_COLOR_06', 6),
+            ('COLOR_07', "Color 7", "Pink tag", 'COLLECTION_COLOR_07', 7),
+            ('COLOR_08', "Color 8", "Gray tag", 'COLLECTION_COLOR_08', 8),
+        ],
+        default='DEFAULT',
+    )
 
     def keymap_ui(self, layout, title, property_prefix, id_name, properties_name):
         box = layout.box()
@@ -189,13 +233,17 @@ class SIMPLE_EXPORTER_preferemces(bpy.types.AddonPreferences):
             layout.prop(self, "replacement_path")
             layout.prop(self, "default_export_format")
             layout.prop(self, "use_blender_file_location")
+            layout.prop(self, "create_set_location_offset")
+            layout.prop(self, "collection_color")
+            layout.prop(self, "simple_export_debug")
 
         elif self.prefs_tabs == 'KEYMAP':
-            self.keymap_ui(layout, 'Export Popup', 'simple_export_panel', 'wm.call_panel', "SIMPLE_EXPORTER_PT_simple_export")
+            self.keymap_ui(layout, 'Export Popup', 'simple_export_panel', 'wm.call_panel',
+                           "SIMPLE_EXPORT_PT_simple_export")
 
 
 classes = (
-    SIMPLE_EXPORTER_preferemces,
+    SIMPLE_EXPORT_preferences,
 )
 
 
@@ -210,6 +258,7 @@ def register():
     register_scene_properties()
     register_collection_properties()
 
+
 def unregister():
     from .keymap import remove_keymap
     remove_keymap()
@@ -221,4 +270,3 @@ def unregister():
 
     for cls in reversed(classes):
         unregister_class(cls)
-
