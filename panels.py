@@ -40,20 +40,22 @@ def draw_export_preset(self, context):
     # Select preset
     box.prop(props, "simple_export_preset_file", text="Select")
 
-
-
     if prefs.simple_export_debug:
         box_debug = box.box()
+
+        box_debug.label(text='Debug')
+
         row = box_debug.row(align=True)
         row.enabled = False  # Makes the field non-editable
         row.prop(scene, "simple_export_preset_file", text="")
-        box_debug.label(text='Debug')
-
         box_debug.prop(props, "override_path", text="Override Preset Folder")
 
         row = box_debug.row(align=True)
         row.enabled = props.override_path  # Only enable preset_path editing if override_path is true
         row.prop(props, "preset_path", text="Preset Folder")
+
+        row = box_debug.row()
+        row.operator("simple_export.apply_preset", text="Apply Preset")
 
 
 def draw_custom_collection_ui(self, context):
