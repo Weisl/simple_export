@@ -4,6 +4,7 @@ from .operators import set_active_layer_Collection
 from .panels import EXPORT_FORMATS
 from .presets import assign_preset
 
+
 class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
     """
     Create a new collection for the active object and its children.
@@ -70,7 +71,7 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
         prefs = bpy.context.preferences.addons[__package__].preferences
 
         # Set instance offset
-        if prefs.create_set_location_offset:
+        if prefs.set_location_offset_on_creation:
             export_collection.instance_offset = active_object.location
 
         # Set collection Color:
@@ -121,6 +122,10 @@ def register():
         description="Choose the parent collection to link the new collection to",
         type=bpy.types.Collection
     )
+    Scene.set_filepath_on_creation = bpy.props.BoolProperty(
+        name="Set Filepath",
+        description="Set filepath based on blend file location",
+    )
     for cls in classes:
         register_class(cls)
 
@@ -128,6 +133,10 @@ def register():
 def unregister():
     from bpy.utils import unregister_class
     Scene = bpy.types.Scene
-    del Scene.parent_collection
+
     for cls in reversed(classes):
         unregister_class(cls)
+
+    del Scene.parent_collection
+    del Scene.set_filepath_on_creation
+

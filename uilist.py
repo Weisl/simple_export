@@ -9,7 +9,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
     """
 
     def draw_filter(self, context, layout):
-        layout.prop(context.scene, "export_format", text="Export Format")
+        layout.prop(context.scene, "export_format", text="Format")
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         prefs = context.preferences.addons[__package__].preferences
@@ -20,7 +20,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         row = layout.row(align=True)
 
         # Checkbox for selecting the collection for export
-        row.prop(collection, "my_export_select", text="")
+        row.prop(collection, "simple_export_selected", text="")
 
         # Ensure there's at least one exporter in the collection
         if not collection.exporters:

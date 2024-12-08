@@ -63,7 +63,7 @@ def draw_export_preset(self, context):
     props = context.scene.simple_export_props
     prefs = context.preferences.addons[__package__].preferences
 
-    layout.prop(props, "export_format", text="Export Format")
+    layout.prop(props, "export_format", text="Format")
 
     box = layout.box()
     box.label(text="Presets")

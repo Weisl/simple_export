@@ -53,13 +53,16 @@ def register_scene_properties():
 
 
 def register_collection_properties():
-    bpy.types.Collection.my_export_select = bpy.props.BoolProperty(name="Select for Export",
+    bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty(name="Selected Collection",
                                                                    description="Select this collection for export",
                                                                    default=False)
 
     bpy.types.Collection.offset_object = bpy.props.PointerProperty(name="Offset Object", type=bpy.types.Object,
                                                                    description="Object to be used for setting the collection offset")
 
+    bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty(name="Select for Export",
+                                                                   description="Select this collection for export",
+                                                                   default=False)
 
 def unregister_scene_properties():
     del bpy.types.Scene.collection_index
@@ -67,7 +70,7 @@ def unregister_scene_properties():
 
 
 def unregister_collection_properties():
-    del bpy.types.Collection.my_export_select
+    del bpy.types.Collection.simple_export_selected
     del bpy.types.Collection.offset_object
 
 
@@ -115,9 +118,9 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                                                       description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
                                                       default=True)
 
-    use_instance_offset: bpy.props.BoolProperty(name="Move to Collection Offset",
+    use_instance_offset: bpy.props.BoolProperty(name="(BETA) Move to Collection Offset",
                                                 description="Use the collection offset for the exported collection",
-                                                default=True)
+                                                default=False)
 
     custom_export_path: bpy.props.StringProperty(name="Custom Export Path",
                                                  description="Custom directory to export files to.", subtype='DIR_PATH')
@@ -160,7 +163,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
     # Collections
 
-    create_set_location_offset: bpy.props.BoolProperty(name="Set Location Offset",
+    set_location_offset_on_creation: bpy.props.BoolProperty(name="Set Location Offset",
                                                        description="Set Location Offset",
                                                        default=True)
 
@@ -222,19 +225,30 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         row.prop(self, "prefs_tabs", expand=True)
 
         if self.prefs_tabs == 'SETTINGS':
-            layout.prop(self, "use_blender_file_location")
-            if not self.use_blender_file_location:
-                layout.prop(self, "custom_export_path")
-            layout.prop(self, "use_blend_file_name_as_prefix")
-            layout.prop(self, "use_instance_offset")
-            layout.prop(self, "custom_prefix")
-            layout.prop(self, "custom_suffix")
-            layout.prop(self, "original_path")
-            layout.prop(self, "replacement_path")
             layout.prop(self, "default_export_format")
-            layout.prop(self, "use_blender_file_location")
-            layout.prop(self, "create_set_location_offset")
-            layout.prop(self, "collection_color")
+
+            box = layout.box()
+            box.label(text="Export Path")
+            box.prop(self, "use_blender_file_location")
+            if not self.use_blender_file_location:
+                box.prop(self, "custom_export_path")
+            box.prop(self, "use_blend_file_name_as_prefix")
+            box.prop(self, "original_path")
+            box.prop(self, "replacement_path")
+            box.prop(self, "custom_prefix")
+            box.prop(self, "custom_suffix")
+
+            box = layout.box()
+            box.label(text="Export Collection Offset")
+            box.prop(self, "set_location_offset_on_creation")
+            box.prop(self, "collection_color")
+
+            box = layout.box()
+            box.label(text="Export Settings")
+            box.prop(self, "use_instance_offset")
+
+
+            layout.separator()
             layout.prop(self, "simple_export_debug")
 
         elif self.prefs_tabs == 'KEYMAP':

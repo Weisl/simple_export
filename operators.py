@@ -88,7 +88,7 @@ class SCENE_OT_SelectAllCollections(bpy.types.Operator):
 
     def execute(self, context):
         for collection in bpy.data.collections:
-            collection.my_export_select = True
+            collection.simple_export_selected = True
         return {'FINISHED'}
 
 
@@ -99,7 +99,7 @@ class SCENE_OT_UnselectAllCollections(bpy.types.Operator):
 
     def execute(self, context):
         for collection in bpy.data.collections:
-            collection.my_export_select = False
+            collection.simple_export_selected = False
         return {'FINISHED'}
 
 
@@ -242,7 +242,7 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
         export_results = []  # Store results
 
         for collection in bpy.data.collections:
-            if not getattr(collection, "my_export_select", False) or len(collection.exporters) == 0:
+            if not getattr(collection, "simple_export_selected", False) or len(collection.exporters) == 0:
                 continue
 
             set_active_layer_Collection(collection.name)
