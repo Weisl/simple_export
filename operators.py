@@ -1,4 +1,5 @@
 import os
+
 import bpy
 
 from .functions import open_directory, ensure_export_directory, export_collection
@@ -21,6 +22,31 @@ def set_active_layer_Collection(collection_name):
     layer_collection = bpy.context.view_layer.layer_collection
     layerColl = recurLayerCollection(layer_collection, collection_name)
     bpy.context.view_layer.active_layer_collection = layerColl
+
+
+# Popup to show export results
+class SCENE_OT_ExportResultsPopup(bpy.types.Operator):
+    bl_idname = "scene.export_results_popup"
+    bl_label = "Export Results"
+
+    export_results: bpy.props.StringProperty()  # JSON-like string to hold results
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="Export Results:")
+
+        # Parse export results from JSON-like string
+        results = eval(self.export_results)  # Safe since we control input
+        for result in results:
+            row = layout.row()
+            icon = 'CHECKMARK' if result['success'] else 'CANCEL'
+            row.label(text=f"{result['name']}: {result['message']}", icon=icon)
 
 
 class SCENE_OT_CreateExportDirectory(bpy.types.Operator):
@@ -206,23 +232,32 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# Operator to export selected collections
 class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
     bl_idname = "scene.export_selected_collections"
     bl_label = "Export Selected Collections"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        export_results = []  # Store results
+
         for collection in bpy.data.collections:
-            if not collection.my_export_select or len(collection.exporters) == 0:
+            if not getattr(collection, "my_export_select", False) or len(collection.exporters) == 0:
                 continue
 
             set_active_layer_Collection(collection.name)
+            result = export_collection(collection, context)
 
-            export_collection(collection, context)
-            self.report({'INFO'}, f"Exported collection '{collection.name}'.")
+            export_results.append({
+                'name': collection.name,
+                'success': result['success'],
+                'message': result['message']
+            })
+
+        # Create and invoke the popup operator instance
+        bpy.ops.scene.export_results_popup('INVOKE_DEFAULT', export_results=str(export_results))
 
         return {'FINISHED'}
-
 
 class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
     """
@@ -254,6 +289,7 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
 
 
 classes = (SCENE_OT_CreateExportDirectory,
+           SCENE_OT_ExportResultsPopup,
            SCENE_OT_SelectAllCollections,
            SCENE_OT_UnselectAllCollections,
            SCENE_OT_SetExporterPath,
