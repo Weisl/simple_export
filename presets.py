@@ -1,6 +1,5 @@
-import os
-
 import bpy
+import os
 
 
 def parse_preset_file(preset_path):
@@ -48,8 +47,15 @@ def assign_preset(collection, preset_path):
 
     exporter = collection.exporters[0]
 
+
     # Parse the preset file
     preset_properties = parse_preset_file(preset_path)
+    print("ORIGINAL")
+    print(preset_properties)
+
+    del preset_properties['filepath']
+    print("DELETED")
+    print(preset_properties)
 
     # Apply the properties to the exporter
     apply_preset_to_exporter(preset_properties, exporter)
