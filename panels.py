@@ -108,7 +108,7 @@ def get_export_format_items():
     return [(key, value["label"], value["description"]) for key, value in EXPORT_FORMATS.items()]
 
 
-class SimpleExporterProperties(bpy.types.PropertyGroup):
+class SimpleExportProperties(bpy.types.PropertyGroup):
     def update_preset_path(self, context):
         self.preset_path = EXPORT_FORMATS[self.export_format]["preset_folder"]
 
@@ -252,7 +252,7 @@ class SIMPLE_EXPORT_PT_simple_export(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
 
 
 classes = (
-    SimpleExporterProperties,
+    SimpleExportProperties,
     SIMPLE_EXPORT_MT_context_menu,
     SIMPLE_EXPORT_PT_CollectionExportPanel,
     SIMPLE_EXPORT_PT_simple_export,
@@ -262,8 +262,8 @@ classes = (
 def register():
     Scene = bpy.types.Scene
     Scene.simple_export_preset_file = bpy.props.StringProperty(
-        name="Simple Exporter Preset",
-        description="Path for Simple Exporter preset",
+        name="Simple Export Preset",
+        description="Path for Simple Export preset",
         default="",
     )
 
@@ -272,7 +272,7 @@ def register():
     for cls in classes:
         register_class(cls)
 
-    Scene.simple_export_props = bpy.props.PointerProperty(type=SimpleExporterProperties)
+    Scene.simple_export_props = bpy.props.PointerProperty(type=SimpleExportProperties)
 
 
 def unregister():

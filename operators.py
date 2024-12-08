@@ -108,7 +108,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
     Operator to set the exporter path for a collection based on the original and replacement paths defined in the scene properties.
     """
     bl_idname = "scene.set_exporter_path"
-    bl_label = "Set Exporter Path"
+    bl_label = "Set Export Path"
     bl_options = {'REGISTER', 'UNDO'}
 
     collection_name: bpy.props.StringProperty()
