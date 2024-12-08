@@ -168,7 +168,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         name="Collection Color Tag",
         description="Choose a color tag for collections",
         items=[
-            ('DEFAULT', "Default", "Default color tag", 'COLLECTION_COLOR', 0),
+            ('NONE', "Default", "Default color tag", 'COLLECTION_COLOR', 0),
             ('COLOR_01', "Color 1", "Red tag", 'COLLECTION_COLOR_01', 1),
             ('COLOR_02', "Color 2", "Orange tag", 'COLLECTION_COLOR_02', 2),
             ('COLOR_03', "Color 3", "Yellow tag", 'COLLECTION_COLOR_03', 3),
@@ -178,7 +178,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             ('COLOR_07', "Color 7", "Pink tag", 'COLLECTION_COLOR_07', 7),
             ('COLOR_08', "Color 8", "Gray tag", 'COLLECTION_COLOR_08', 8),
         ],
-        default='DEFAULT',
+        default='NONE',
     )
 
     def keymap_ui(self, layout, title, property_prefix, id_name, properties_name):
