@@ -109,7 +109,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
     simple_export_debug: bpy.props.BoolProperty(name="Debug Mode",
                                                 description="Debug mode only used for development",
-                                                default=True)
+                                                default=False)
 
     use_blender_file_location: bpy.props.BoolProperty(name="Use Blender File Location",
                                                       description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
@@ -168,7 +168,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         name="Collection Color Tag",
         description="Choose a color tag for collections",
         items=[
-            ('NONE', "Default", "Default color tag", 'COLLECTION_COLOR', 0),
+            ('NONE', "Default", "Default color tag", 'OUTLINER_COLLECTION', 0),
             ('COLOR_01', "Color 1", "Red tag", 'COLLECTION_COLOR_01', 1),
             ('COLOR_02', "Color 2", "Orange tag", 'COLLECTION_COLOR_02', 2),
             ('COLOR_03', "Color 3", "Yellow tag", 'COLLECTION_COLOR_03', 3),
