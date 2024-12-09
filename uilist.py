@@ -9,7 +9,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
     """
 
     def draw_filter(self, context, layout):
-        layout.prop(context.scene, "export_format", text="Format")
+        layout.prop(context.scene.simple_export_props, "export_format", text="Filter Format")
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         prefs = context.preferences.addons[__package__].preferences
@@ -82,7 +82,8 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         flt_flags = []
         flt_neworder = []
 
-        export_format = context.scene.export_format
+        props = context.scene.simple_export_props
+        export_format = props.export_format
 
         for collection in bpy.data.collections:
             # Filter collections based on whether they have an exporter with the matching format
