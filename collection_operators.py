@@ -33,7 +33,7 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
 
         # Ensure export collection does not yet exist.
         if active_object.name in bpy.data.collections:
-            self.report({'WARNING'}, "No active collection")
+            self.report({'WARNING'}, "Collection already exists")
             return {'CANCELLED'}
 
         # Make sure that blend file exists to retrieve the file path
