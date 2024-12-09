@@ -30,7 +30,7 @@ def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_
     kmi.active = simple_export_panel_active
 
 
-# Scene properties to define original_path and replacement_path
+# Scene properties to define search_path and replacement_path
 
 def get_default_export_format():
     """Fetch default export format from add-on preferences or fallback to FBX."""
@@ -146,7 +146,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default="FBX",  # Default value
     )
 
-    original_path: bpy.props.StringProperty(name="Original Path", description="The path to be replaced.",
+    search_path: bpy.props.StringProperty(name="Search Path", description="The path to be replaced.",
                                             default="workdata")
     replacement_path: bpy.props.StringProperty(name="Replacement Path", description="The path to replace with.",
                                                default="sourcedata")
@@ -245,7 +245,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.prop(self, "use_blender_file_location")
             if not self.use_blender_file_location:
                 box.prop(self, "custom_export_path")
-            box.prop(self, "original_path")
+            box.prop(self, "search_path")
             box.prop(self, "replacement_path")
 
             box = layout.box()
