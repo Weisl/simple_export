@@ -223,8 +223,8 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
 
 class SCENE_OT_ExportCollection(bpy.types.Operator):
     """
-     Operator to export a single collection.
-     """
+    Operator to export a single collection with post-export validations and results popup.
+    """
 
     bl_idname = "scene.export_collection"
     bl_label = "Export Collection"
@@ -233,82 +233,105 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
     collection_name: bpy.props.StringProperty()
 
     def cancel(self, context):
+        """Cancel the operation."""
         reenable_offset_handler()
         return {'CANCELLED'}
 
+    def validate_collection(self):
+        """Validate the collection and return it if valid."""
+        collection_name = self.collection_name
+        if not collection_name or not bpy.data.collections.get(collection_name):
+            return None, "Invalid export collection."
+        return bpy.data.collections.get(collection_name), None
+
+    def find_exporter(self, collection, export_format):
+        """Find the appropriate exporter for the given collection and format."""
+        for exporter in collection.exporters:
+            if str(type(exporter.export_properties)) == EXPORT_FORMATS[export_format]["op_type"]:
+                return exporter, None
+        return None, f"No {export_format} exporter found for collection '{self.collection_name}'."
+
+    def get_exporter_id(self, collection, exporter):
+        """Get the exporter ID within the collection."""
+        for idx, exp in enumerate(collection.exporters):
+            if exp == exporter:
+                return idx, None
+        return -1, f"{exporter.name} not found in the exporters of collection '{self.collection_name}'."
+
+    def pre_export_checks(self, export_path):
+        """Perform pre-export checks and return file existence and timestamp."""
+        file_exists = os.path.exists(export_path)
+        file_timestamp = os.path.getmtime(export_path) if file_exists else None
+        ensure_export_folder_exists(export_path)
+        return file_exists, file_timestamp
+
+    def post_export_checks(self, export_path, file_exists_before, file_timestamp_before):
+        """Validate the exported file."""
+        if not os.path.exists(export_path):
+            return False, f"File '{export_path}' was not created."
+        if not os.access(export_path, os.W_OK):
+            return False, f"File '{export_path}' is read-only."
+        if file_exists_before and os.path.getmtime(export_path) <= file_timestamp_before:
+            return False, f"File '{export_path}' was not updated."
+        return True, f"Exported successfully to '{export_path}'."
+
     def execute(self, context):
-        # Disable offset handler if exporter is active
+        # Initialize results
+        export_results = []
         temporarily_disable_offset_handler()
         prefs = bpy.context.preferences.addons[__package__].preferences
 
-        # TODO: extract to function - Validate Collection
-        collection_name = self.collection_name
-        if not collection_name or not bpy.data.collections.get(collection_name):
-            self.report({'ERROR'}, f"Invalid export collection.")
+        # Validate collection
+        collection, error = self.validate_collection()
+        if error:
+            export_results.append({'name': self.collection_name or "Unknown Collection", 'success': False, 'message': error})
+            bpy.ops.scene.export_results_popup('INVOKE_DEFAULT', export_results=str(export_results))
             return self.cancel(context)
 
-        export_collection = bpy.data.collections.get(collection_name)
-        set_active_layer_Collection(export_collection.name)
+        # Set active layer collection
+        set_active_layer_Collection(collection.name)
 
-        # TODO: extract to function - Find valid Exporter
-        if len(export_collection.exporters) == 0:
-            self.report({'ERROR'}, f"No exporter found for collection '{collection_name}'.")
-            return self.cancel(context)
-
-        # Validate exporter type
+        # Validate exporter
         props = context.scene.simple_export_props
-        export_format = props.export_format
-        exporter = None
-
-        # find exporter
-        for exp in export_collection.exporters:
-            exp_class_str = str(type(exp.export_properties))
-            print(f'debug class "{exp_class_str}"')
-            if exp_class_str == EXPORT_FORMATS[export_format]["op_type"]:
-                exporter = exp
-
-        if exporter == None:
-            self.report({'ERROR'}, f"No {export_format} exporter found for collection {collection_name}'.")
+        exporter, error = self.find_exporter(collection, props.export_format)
+        if error:
+            export_results.append({'name': collection.name, 'success': False, 'message': error})
+            bpy.ops.scene.export_results_popup('INVOKE_DEFAULT', export_results=str(export_results))
             return self.cancel(context)
 
-        # TODO: extract to function - Find Exporter id
-
-        # find exporter id
-        exporter_id = -1
-        for idx, exp in enumerate(export_collection.exporters):
-            if exp == exporter:
-                exporter_id = idx
-
-        if exporter_id == -1:
-            self.report({'ERROR'}, f" {exporter.name} not found in the exporters of collection {collection_name}'.")
+        # Get exporter ID
+        exporter_id, error = self.get_exporter_id(collection, exporter)
+        if error:
+            export_results.append({'name': collection.name, 'success': False, 'message': error})
+            bpy.ops.scene.export_results_popup('INVOKE_DEFAULT', export_results=str(export_results))
             return self.cancel(context)
 
-
-        #TODO: extract to function - Validate Export path
+        # Validate export path
         export_path = exporter.export_properties.filepath
-        print(f'Exporter Path: {export_path}')
+        file_exists_before, file_timestamp_before = self.pre_export_checks(export_path)
 
-        # Ensure the export directory exists
-        ensure_export_folder_exists(export_path)
-
-        # Apply instance offset if the preference is enabled
+        # Apply instance offset if enabled
         if prefs.use_instance_offset:
-            apply_collection_offset(export_collection)
+            apply_collection_offset(collection)
 
-
-        # export
+        # Try exporting
         try:
             bpy.ops.collection.exporter_export(index=exporter_id)
         except Exception as e:
-            self.report({'ERROR'}, f" {exporter.name} not found in the exporters of collection {collection_name}'.")
-            apply_collection_offset(export_collection, inverse=True)
+            export_results.append({'name': collection.name, 'success': False, 'message': f"Error during export: {str(e)}"})
+            apply_collection_offset(collection, inverse=True)
+            bpy.ops.scene.export_results_popup('INVOKE_DEFAULT', export_results=str(export_results))
             return self.cancel(context)
 
+        # Post-export validation
+        success, message = self.post_export_checks(export_path, file_exists_before, file_timestamp_before)
+        export_results.append({'name': collection.name, 'success': success, 'message': message})
 
-        apply_collection_offset(export_collection, inverse=True)
-        # Create and invoke the popup operator instance
-        # bpy.ops.scene.export_results_popup('INVOKE_DEFAULT', export_results=str(export_results))
+        # Revert instance offset
+        apply_collection_offset(collection, inverse=True)
 
+        # Show results popup
+        bpy.ops.scene.export_results_popup('INVOKE_DEFAULT', export_results=str(export_results))
         return {'FINISHED'}
 
 
