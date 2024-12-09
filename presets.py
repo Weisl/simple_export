@@ -33,13 +33,12 @@ def apply_preset_to_exporter(properties, exporter):
         try:
             if hasattr(exporter.export_properties, prop_name):
                 setattr(exporter.export_properties, prop_name, prop_value)
-                print(f"Applied {prop_name} = {prop_value}")
             else:
                 print(f"Exporter property '{prop_name}' not found.")
         except Exception as e:
             print(f"Error setting property '{prop_name}': {e}")
 
-
+#TODO: This should work based on the exporter not the collection
 def assign_preset(collection, preset_path):
     # Ensure the collection has exporters
     if not hasattr(collection, "exporters") or len(collection.exporters) == 0:
@@ -50,12 +49,8 @@ def assign_preset(collection, preset_path):
 
     # Parse the preset file
     preset_properties = parse_preset_file(preset_path)
-    print("ORIGINAL")
-    print(preset_properties)
 
     del preset_properties['filepath']
-    print("DELETED")
-    print(preset_properties)
 
     # Apply the properties to the exporter
     apply_preset_to_exporter(preset_properties, exporter)

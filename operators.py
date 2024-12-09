@@ -2,16 +2,16 @@ import os
 
 import bpy
 
-from .functions import open_directory, ensure_export_directory, export_collection
-
-
-def recurLayerCollection(layerColl, collName):
+from .functions import open_directory, ensure_export_folder_exists, export_collection, apply_collection_offset
+from .collection_utils import update_collection_offset
+from .panels import EXPORT_FORMATS
+def recursiceLayerCollection(layerColl, collName):
     # print(f"Checking collection: {layerColl.name}")  # Debug print
     if layerColl.name == collName:
         # print(f"Found collection: {collName}")  # Debug print
         return layerColl
     for layer in layerColl.children:
-        found = recurLayerCollection(layer, collName)
+        found = recursiceLayerCollection(layer, collName)
         if found:
             return found
     return None
@@ -20,14 +20,67 @@ def recurLayerCollection(layerColl, collName):
 def set_active_layer_Collection(collection_name):
     # Switching active Collection to active Object selected
     layer_collection = bpy.context.view_layer.layer_collection
-    layerColl = recurLayerCollection(layer_collection, collection_name)
+    layerColl = recursiceLayerCollection(layer_collection, collection_name)
     bpy.context.view_layer.active_layer_collection = layerColl
 
+
+def generate_export_path(collection_name, export_dir, original_path, replacement_path):
+    """
+    Set the export path for a given collection's exporter.
+
+    Args:
+        collection_name (str): The name of the collection.
+        exporter_dir (str): Path to the export folder.
+        original_path (str): The original path to be replaced.
+        replacement_path (str): The replacement path to be applied.
+    """
+    prefs = bpy.context.preferences.addons[__package__].preferences
+
+    # Construct the export file name
+    export_name = ""
+
+    if prefs.use_blend_file_name_as_prefix:
+        blend_file_name = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
+        export_name += blend_file_name + "_"
+
+    if prefs.custom_prefix:
+        export_name += prefs.custom_prefix + "_"
+
+    export_name += collection_name
+
+    if prefs.custom_suffix:
+        export_name += "_" + prefs.custom_suffix
+
+    export_name += ".fbx"  # or use prefs.export_format to determine extension
+    export_path = os.path.join(export_dir, export_name)
+
+    if original_path in export_path:
+        export_path = export_path.replace(original_path, replacement_path)
+    return export_path
+
+
+def assign_exporter_path(exporter, export_path):
+    ensure_export_folder_exists(export_path)
+    exporter.export_properties.filepath = export_path
+    return export_path
+
+
+def temporarily_disable_offset_handler():
+    """Temporarily removes the collection offset update handler."""
+    if update_collection_offset in bpy.app.handlers.depsgraph_update_post:
+        bpy.app.handlers.depsgraph_update_post.remove(update_collection_offset)
+
+
+def reenable_offset_handler():
+    """Re-enables the collection offset update handler."""
+    if update_collection_offset not in bpy.app.handlers.depsgraph_update_post:
+        bpy.app.handlers.depsgraph_update_post.append(update_collection_offset)
 
 # Popup to show export results
 class SCENE_OT_ExportResultsPopup(bpy.types.Operator):
     bl_idname = "scene.export_results_popup"
     bl_label = "Export Results"
+    bl_ui_units_x = 50
 
     export_results: bpy.props.StringProperty()  # JSON-like string to hold results
 
@@ -86,20 +139,11 @@ class SCENE_OT_SelectAllCollections(bpy.types.Operator):
     bl_label = "Select All Collections"
     bl_options = {'REGISTER', 'UNDO'}
 
-    def execute(self, context):
-        for collection in bpy.data.collections:
-            collection.simple_export_selected = True
-        return {'FINISHED'}
-
-
-class SCENE_OT_UnselectAllCollections(bpy.types.Operator):
-    bl_idname = "scene.unselect_all_collections"
-    bl_label = "Unselect All Collections"
-    bl_options = {'REGISTER', 'UNDO'}
+    invert: bpy.props.BoolProperty()
 
     def execute(self, context):
         for collection in bpy.data.collections:
-            collection.simple_export_selected = False
+            collection.simple_export_selected = not self.invert
         return {'FINISHED'}
 
 
@@ -107,7 +151,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
     """
     Operator to set the exporter path for a collection based on the original and replacement paths defined in the scene properties.
     """
-    bl_idname = "scene.set_exporter_path"
+    bl_idname = "scene.set_export_path"
     bl_label = "Set Export Path"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -117,6 +161,19 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
         prefs = bpy.context.preferences.addons[__package__].preferences
         collection = bpy.data.collections.get(self.collection_name)
 
+        prefs = bpy.context.preferences.addons[__package__].preferences
+
+        if prefs.use_blender_file_location:
+            blend_filepath = bpy.data.filepath
+            # Return if Blend File hasn't been saved
+            if not blend_filepath:
+                self.report({'ERROR'}, f"Save the Blend file before calling this operator.")
+                return {'CANCELLED'}
+            export_dir = os.path.dirname(blend_filepath)
+        else:
+            export_dir = prefs.custom_export_path
+
+        # Return if collection not found
         if not collection:
             self.report({'ERROR'}, f"Collection '{self.collection_name}' not found.")
             return {'CANCELLED'}
@@ -128,14 +185,20 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
 
         # Add custom exporter
         exporter = self.get_custom_exporter_for_collection(collection.name, default_export_format)
+
+        # Return
         if not exporter:
             self.report({'ERROR'}, f"Could not add exporter to collection '{collection.name}'.")
             return {'CANCELLED'}
 
-        export_path = self.set_exporter_path(context, collection.name, exporter, original_path, replacement_path)
+        # Set export Path
+        export_path = generate_export_path(collection.name, export_dir, original_path, replacement_path)
+        export_path = assign_exporter_path(exporter, export_path)
+
         self.report({'INFO'}, f"Export path set to {export_path}")
         return {'FINISHED'}
 
+    # TODO: improve finding custom exporters
     def get_custom_exporter_for_collection(self, collection_name, exporter_name):
         """
         Retrieve the custom exporter for a given collection.
@@ -157,53 +220,6 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
 
         return None
 
-    def set_exporter_path(self, context, collection_name, exporter, original_path, replacement_path):
-        """
-        Set the export path for a given collection's exporter.
-
-        Args:
-            collection_name (str): The name of the collection.
-            exporter (bpy.types.PropertyGroup): The exporter for the collection.
-            original_path (str): The original path to be replaced.
-            replacement_path (str): The replacement path to be applied.
-        """
-        prefs = bpy.context.preferences.addons[__package__].preferences
-
-        if prefs.use_blender_file_location:
-            blend_filepath = bpy.data.filepath
-            if not blend_filepath:
-                self.report({'ERROR'}, "Save the Blender file before running the script.")
-                return
-            export_dir = os.path.dirname(blend_filepath)
-        else:
-            export_dir = prefs.custom_export_path
-
-        # Construct the export file name
-        export_name = ""
-
-        if prefs.use_blend_file_name_as_prefix:
-            blend_file_name = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
-            export_name += blend_file_name + "_"
-
-        if prefs.custom_prefix:
-            export_name += prefs.custom_prefix + "_"
-
-        export_name += collection_name
-
-        if prefs.custom_suffix:
-            export_name += "_" + prefs.custom_suffix
-
-        export_name += ".fbx"  # or use prefs.export_format to determine extension
-        export_path = os.path.join(export_dir, export_name)
-
-        if original_path in export_path:
-            export_path = export_path.replace(original_path, replacement_path)
-
-        ensure_export_directory(exporter)
-        exporter.export_properties.filepath = export_path
-        print(f"Set export path: {export_path}")
-        return export_path
-
 
 class SCENE_OT_ExportCollection(bpy.types.Operator):
     """
@@ -216,18 +232,82 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
 
     collection_name: bpy.props.StringProperty()
 
+    def cancel(self, context):
+        reenable_offset_handler()
+        return {'CANCELLED'}
+
     def execute(self, context):
-        collection = bpy.data.collections.get(self.collection_name)
-        print(f'Executing export on collection: {collection.name}')
+        # Disable offset handler if exporter is active
+        temporarily_disable_offset_handler()
+        prefs = bpy.context.preferences.addons[__package__].preferences
 
-        if not collection or len(collection.exporters) == 0:
-            self.report({'WARNING'}, f"No valid exporter found for collection '{self.collection_name}'.")
-            return {'CANCELLED'}
+        # TODO: extract to function - Validate Collection
+        collection_name = self.collection_name
+        if not collection_name or not bpy.data.collections.get(collection_name):
+            self.report({'ERROR'}, f"Invalid export collection.")
+            return self.cancel(context)
 
-        set_active_layer_Collection(self.collection_name)
+        export_collection = bpy.data.collections.get(collection_name)
+        set_active_layer_Collection(export_collection.name)
 
-        export_collection(collection, context)
-        self.report({'INFO'}, f"Exported collection '{collection.name}'.")
+        # TODO: extract to function - Find valid Exporter
+        if len(export_collection.exporters) == 0:
+            self.report({'ERROR'}, f"No exporter found for collection '{collection_name}'.")
+            return self.cancel(context)
+
+        # Validate exporter type
+        props = context.scene.simple_export_props
+        export_format = props.export_format
+        exporter = None
+
+        # find exporter
+        for exp in export_collection.exporters:
+            exp_class_str = str(type(exp.export_properties))
+            print(f'debug class "{exp_class_str}"')
+            if exp_class_str == EXPORT_FORMATS[export_format]["op_type"]:
+                exporter = exp
+
+        if exporter == None:
+            self.report({'ERROR'}, f"No {export_format} exporter found for collection {collection_name}'.")
+            return self.cancel(context)
+
+        # TODO: extract to function - Find Exporter id
+
+        # find exporter id
+        exporter_id = -1
+        for idx, exp in enumerate(export_collection.exporters):
+            if exp == exporter:
+                exporter_id = idx
+
+        if exporter_id == -1:
+            self.report({'ERROR'}, f" {exporter.name} not found in the exporters of collection {collection_name}'.")
+            return self.cancel(context)
+
+
+        #TODO: extract to function - Validate Export path
+        export_path = exporter.export_properties.filepath
+        print(f'Exporter Path: {export_path}')
+
+        # Ensure the export directory exists
+        ensure_export_folder_exists(export_path)
+
+        # Apply instance offset if the preference is enabled
+        if prefs.use_instance_offset:
+            apply_collection_offset(export_collection)
+
+
+        # export
+        try:
+            bpy.ops.collection.exporter_export(index=exporter_id)
+        except Exception as e:
+            self.report({'ERROR'}, f" {exporter.name} not found in the exporters of collection {collection_name}'.")
+            apply_collection_offset(export_collection, inverse=True)
+            return self.cancel(context)
+
+
+        apply_collection_offset(export_collection, inverse=True)
+        # Create and invoke the popup operator instance
+        # bpy.ops.scene.export_results_popup('INVOKE_DEFAULT', export_results=str(export_results))
 
         return {'FINISHED'}
 
@@ -238,26 +318,11 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
     bl_label = "Export Selected Collections"
     bl_options = {'REGISTER', 'UNDO'}
 
+
     def execute(self, context):
-        export_results = []  # Store results
-
-        for collection in bpy.data.collections:
-            if not getattr(collection, "simple_export_selected", False) or len(collection.exporters) == 0:
-                continue
-
-            set_active_layer_Collection(collection.name)
-            result = export_collection(collection, context)
-
-            export_results.append({
-                'name': collection.name,
-                'success': result['success'],
-                'message': result['message']
-            })
-
-        # Create and invoke the popup operator instance
-        bpy.ops.scene.export_results_popup('INVOKE_DEFAULT', export_results=str(export_results))
-
+        print('TODO')
         return {'FINISHED'}
+
 
 class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
     """
@@ -291,7 +356,6 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
 classes = (SCENE_OT_CreateExportDirectory,
            SCENE_OT_ExportResultsPopup,
            SCENE_OT_SelectAllCollections,
-           SCENE_OT_UnselectAllCollections,
            SCENE_OT_SetExporterPath,
            SCENE_OT_ExportCollection,
            SCENE_OT_ExportSelectedCollections,

@@ -2,6 +2,8 @@ import bpy
 
 from .keymap import remove_key
 from .panels import get_export_format_items
+
+
 def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_export_panel_ctrl,
             simple_export_panel_shift,
             simple_export_panel_alt, simple_export_panel_active):
@@ -37,6 +39,7 @@ def get_default_export_format():
     except (AttributeError, KeyError):
         return "FBX"  # Fallback default
 
+
 def register_scene_properties():
     bpy.types.Scene.collection_index = bpy.props.IntProperty(
         name="Collection Index",
@@ -54,15 +57,16 @@ def register_scene_properties():
 
 def register_collection_properties():
     bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty(name="Selected Collection",
-                                                                   description="Select this collection for export",
-                                                                   default=False)
+                                                                         description="Select this collection for export",
+                                                                         default=False)
 
     bpy.types.Collection.offset_object = bpy.props.PointerProperty(name="Offset Object", type=bpy.types.Object,
                                                                    description="Object to be used for setting the collection offset")
 
     bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty(name="Select for Export",
-                                                                   description="Select this collection for export",
-                                                                   default=False)
+                                                                         description="Select this collection for export",
+                                                                         default=False)
+
 
 def unregister_scene_properties():
     del bpy.types.Scene.collection_index
@@ -147,25 +151,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     replacement_path: bpy.props.StringProperty(name="Replacement Path", description="The path to replace with.",
                                                default="sourcedata")
 
-    ###################################################################
-    # KEYMAP
-
-    simple_export_panel_type: bpy.props.StringProperty(name="Export Popup Menu", default="E",
-                                                       update=update_simple_export_panel_key)
-
-    simple_export_panel_ctrl: bpy.props.BoolProperty(name="Ctrl", default=False, update=update_simple_export_panel_key)
-
-    simple_export_panel_shift: bpy.props.BoolProperty(name="Shift", default=True, update=update_simple_export_panel_key)
-    simple_export_panel_alt: bpy.props.BoolProperty(name="Alt", default=True, update=update_simple_export_panel_key)
-
-    simple_export_panel_active: bpy.props.BoolProperty(name="Active", default=True,
-                                                       update=update_simple_export_panel_key)
-
+    ########################################
     # Collections
 
     set_location_offset_on_creation: bpy.props.BoolProperty(name="Set Location Offset",
-                                                       description="Set Location Offset",
-                                                       default=True)
+                                                            description="Set Location Offset",
+                                                            default=True)
 
     collection_color: bpy.props.EnumProperty(
         name="Collection Color Tag",
@@ -183,6 +174,28 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         ],
         default='NONE',
     )
+    ###################################################################
+    # Creation
+    auto_set_filepath: bpy.props.BoolProperty(name="Create with Filepath",
+                                              description="Set filepath when creating an Exporter Collection",
+                                              default=True)
+    auto_set_preset: bpy.props.BoolProperty(name="Set Location Offset",
+                                            description="Set export preset when creating an Exporter Collection",
+                                            default=True)
+
+    ###################################################################
+    # KEYMAP
+
+    simple_export_panel_type: bpy.props.StringProperty(name="Export Popup Menu", default="E",
+                                                       update=update_simple_export_panel_key)
+
+    simple_export_panel_ctrl: bpy.props.BoolProperty(name="Ctrl", default=False, update=update_simple_export_panel_key)
+
+    simple_export_panel_shift: bpy.props.BoolProperty(name="Shift", default=True, update=update_simple_export_panel_key)
+    simple_export_panel_alt: bpy.props.BoolProperty(name="Alt", default=True, update=update_simple_export_panel_key)
+
+    simple_export_panel_active: bpy.props.BoolProperty(name="Active", default=True,
+                                                       update=update_simple_export_panel_key)
 
     def keymap_ui(self, layout, title, property_prefix, id_name, properties_name):
         box = layout.box()
@@ -232,21 +245,30 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.prop(self, "use_blender_file_location")
             if not self.use_blender_file_location:
                 box.prop(self, "custom_export_path")
-            box.prop(self, "use_blend_file_name_as_prefix")
             box.prop(self, "original_path")
             box.prop(self, "replacement_path")
-            box.prop(self, "custom_prefix")
-            box.prop(self, "custom_suffix")
 
             box = layout.box()
             box.label(text="Export Collection Offset")
-            box.prop(self, "set_location_offset_on_creation")
+
+            # TODO: Set offset object
+
+            box = layout.box()
+            box.label(text="Export Collections")
             box.prop(self, "collection_color")
+            # TODO: change prefix options from file to collections (- Better visibility)
+            box.prop(self, "use_blend_file_name_as_prefix")
+            box.prop(self, "custom_prefix")
+            box.prop(self, "custom_suffix")
+            # Collection offset
+            box.prop(self, "set_location_offset_on_creation")
+            # Collection offset
+            box.prop(self, "auto_set_filepath")
+            box.prop(self, "auto_set_preset")
 
             box = layout.box()
             box.label(text="Export Settings")
             box.prop(self, "use_instance_offset")
-
 
             layout.separator()
             layout.prop(self, "simple_export_debug")

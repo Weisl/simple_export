@@ -66,7 +66,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         # Buttons for setting the export path and opening the directory
         # Assign Path
-        op = row.operator("scene.set_exporter_path", text="", icon='FOLDER_REDIRECT')
+        op = row.operator("scene.set_export_path", text="", icon='FOLDER_REDIRECT')
         op.collection_name = collection.name
 
         # TODO: Implement features
