@@ -250,7 +250,7 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
         export_collection = bpy.data.collections.get(collection_name)
         set_active_layer_Collection(export_collection.name)
 
-        # TODO: extract to function - Validate Exporter
+        # TODO: extract to function - Find valid Exporter
         if len(export_collection.exporters) == 0:
             self.report({'ERROR'}, f"No exporter found for collection '{collection_name}'.")
             return self.cancel(context)
@@ -259,7 +259,6 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
         props = context.scene.simple_export_props
         export_format = props.export_format
         exporter = None
-
 
         # find exporter
         for exp in export_collection.exporters:
@@ -271,6 +270,8 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
         if exporter == None:
             self.report({'ERROR'}, f"No {export_format} exporter found for collection {collection_name}'.")
             return self.cancel(context)
+
+        # TODO: extract to function - Find Exporter id
 
         # find exporter id
         exporter_id = -1
@@ -286,16 +287,16 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
         #TODO: extract to function - Validate Export path
         export_path = exporter.export_properties.filepath
         print(f'Exporter Path: {export_path}')
+
         # Ensure the export directory exists
         ensure_export_folder_exists(export_path)
-
-        # export
-        export_results = []  # Store results
 
         # Apply instance offset if the preference is enabled
         if prefs.use_instance_offset:
             apply_collection_offset(export_collection)
 
+
+        # export
         try:
             bpy.ops.collection.exporter_export(index=exporter_id)
         except Exception as e:
