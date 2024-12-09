@@ -1,8 +1,9 @@
 import os
-import inspect
+
 import bpy
 
 from .functions import get_addon_name
+
 
 def get_presets_folder():
     """Retrieve the base path for Blender's presets folder."""
@@ -62,6 +63,7 @@ EXPORT_FORMATS = {
     },
 }
 
+
 def draw_export_preset(self, context):
     layout = self.layout
     scene = context.scene
@@ -99,6 +101,7 @@ def draw_export_preset(self, context):
         row = box_debug.row()
         op = row.operator("simple_export.apply_preset", text="Apply Preset")
         op.collection_name = context.collection.name
+
 
 def draw_custom_collection_ui(self, context):
     """Draw custom UI in the COLLECTION_PT_instancing panel."""
@@ -212,8 +215,9 @@ class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
         op = row.operator("scene.select_all_collections", text="Select All", icon="CHECKBOX_HLT")
         op.invert = False
         row = layout.row()
-        row.operator("scene.select_all_collections", text="Unselect All", icon="CHECKBOX_DEHLT")
-        op.invert=True
+        op = row.operator("scene.select_all_collections", text="Unselect All", icon="CHECKBOX_DEHLT")
+        op.invert = True
+
 
 class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
     bl_idname = "SCENE_PT_simple_export"
