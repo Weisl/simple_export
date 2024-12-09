@@ -1,9 +1,11 @@
-import os
-
 import bpy
+import os
 
 from .functions import open_directory, ensure_export_directory, export_collection
 
+class BlendFileNotSavedError(Exception):
+    """Custom exception for unsaved Blender file."""
+    pass
 
 def recurLayerCollection(layerColl, collName):
     # print(f"Checking collection: {layerColl.name}")  # Debug print
@@ -22,6 +24,53 @@ def set_active_layer_Collection(collection_name):
     layer_collection = bpy.context.view_layer.layer_collection
     layerColl = recurLayerCollection(layer_collection, collection_name)
     bpy.context.view_layer.active_layer_collection = layerColl
+
+def set_export_path(collection_name, exporter, original_path, replacement_path):
+    """
+    Set the export path for a given collection's exporter.
+
+    Args:
+        collection_name (str): The name of the collection.
+        exporter (bpy.types.PropertyGroup): The exporter for the collection.
+        original_path (str): The original path to be replaced.
+        replacement_path (str): The replacement path to be applied.
+    """
+    prefs = bpy.context.preferences.addons[__package__].preferences
+
+    if prefs.use_blender_file_location:
+        blend_filepath = bpy.data.filepath
+        # Return if Blend File hasn't been saved
+        if not blend_filepath:
+            raise BlendFileNotSavedError("The Blender file has not been saved.")
+        export_dir = os.path.dirname(blend_filepath)
+    else:
+        export_dir = prefs.custom_export_path
+
+    # Construct the export file name
+    export_name = ""
+
+    if prefs.use_blend_file_name_as_prefix:
+        blend_file_name = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
+        export_name += blend_file_name + "_"
+
+    if prefs.custom_prefix:
+        export_name += prefs.custom_prefix + "_"
+
+    export_name += collection_name
+
+    if prefs.custom_suffix:
+        export_name += "_" + prefs.custom_suffix
+
+    export_name += ".fbx"  # or use prefs.export_format to determine extension
+    export_path = os.path.join(export_dir, export_name)
+
+    if original_path in export_path:
+        export_path = export_path.replace(original_path, replacement_path)
+
+    ensure_export_directory(exporter)
+    exporter.export_properties.filepath = export_path
+    print(f"Set export path: {export_path}")
+    return export_path
 
 
 # Popup to show export results
@@ -107,7 +156,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
     """
     Operator to set the exporter path for a collection based on the original and replacement paths defined in the scene properties.
     """
-    bl_idname = "scene.set_exporter_path"
+    bl_idname = "scene.set_export_path"
     bl_label = "Set Export Path"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -119,7 +168,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
 
         if not collection:
             self.report({'ERROR'}, f"Collection '{self.collection_name}' not found.")
-            return {'CANCELLED'}
+            return
 
         # Path variables
         original_path = prefs.original_path
@@ -132,7 +181,14 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
             self.report({'ERROR'}, f"Could not add exporter to collection '{collection.name}'.")
             return {'CANCELLED'}
 
-        export_path = self.set_exporter_path(context, collection.name, exporter, original_path, replacement_path)
+        # Set export Path
+        try:
+            export_path = set_export_path(collection.name, exporter, original_path, replacement_path)
+            print(f"Export path set: {export_path}")
+        except BlendFileNotSavedError as e:
+            self.report({'ERROR'}, "Save the Blender file before running the script.")
+            return {'CANCELLED'}
+
         self.report({'INFO'}, f"Export path set to {export_path}")
         return {'FINISHED'}
 
@@ -156,53 +212,6 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
                 return exporter
 
         return None
-
-    def set_exporter_path(self, context, collection_name, exporter, original_path, replacement_path):
-        """
-        Set the export path for a given collection's exporter.
-
-        Args:
-            collection_name (str): The name of the collection.
-            exporter (bpy.types.PropertyGroup): The exporter for the collection.
-            original_path (str): The original path to be replaced.
-            replacement_path (str): The replacement path to be applied.
-        """
-        prefs = bpy.context.preferences.addons[__package__].preferences
-
-        if prefs.use_blender_file_location:
-            blend_filepath = bpy.data.filepath
-            if not blend_filepath:
-                self.report({'ERROR'}, "Save the Blender file before running the script.")
-                return
-            export_dir = os.path.dirname(blend_filepath)
-        else:
-            export_dir = prefs.custom_export_path
-
-        # Construct the export file name
-        export_name = ""
-
-        if prefs.use_blend_file_name_as_prefix:
-            blend_file_name = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
-            export_name += blend_file_name + "_"
-
-        if prefs.custom_prefix:
-            export_name += prefs.custom_prefix + "_"
-
-        export_name += collection_name
-
-        if prefs.custom_suffix:
-            export_name += "_" + prefs.custom_suffix
-
-        export_name += ".fbx"  # or use prefs.export_format to determine extension
-        export_path = os.path.join(export_dir, export_name)
-
-        if original_path in export_path:
-            export_path = export_path.replace(original_path, replacement_path)
-
-        ensure_export_directory(exporter)
-        exporter.export_properties.filepath = export_path
-        print(f"Set export path: {export_path}")
-        return export_path
 
 
 class SCENE_OT_ExportCollection(bpy.types.Operator):
@@ -258,6 +267,7 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
         bpy.ops.scene.export_results_popup('INVOKE_DEFAULT', export_results=str(export_results))
 
         return {'FINISHED'}
+
 
 class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
     """
