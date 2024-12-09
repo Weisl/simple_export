@@ -4,6 +4,7 @@ from .operators import set_active_layer_Collection
 from .panels import EXPORT_FORMATS
 from .presets import assign_preset
 from .operators import set_export_path
+from .operators import BlendFileNotSavedError
 
 class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
     """
@@ -45,6 +46,10 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
                     parent_collection.children.link(col)
             return col
 
+        # Create or get the export collection
+        collection_name = active_object.name
+        export_collection = make_collection(collection_name, parent_collection)
+
         # Recursive function to find all children of an object
         def find_children(parent_object, child_stack):
             """ Recursive function to find all children """
@@ -53,10 +58,6 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
                     child_stack.append(ob)
                     find_children(ob, child_stack)
             return child_stack
-
-        # Create or get the export collection
-        collection_name = active_object.name
-        export_collection = make_collection(collection_name, parent_collection)
 
         # Find all children of the active object
         collection_objects = find_children(active_object, [])
@@ -100,7 +101,7 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
         def get_all_exporters():
             # Replace `bpy.data.` with the appropriate data container for your exporters
             # This is a placeholder, and you should use the correct attribute or structure
-            return [exporter.name for exporter in bpy.data.objects if exporter.type == 'EXPORTER']
+            return list(export_collection.exporters)
 
         exporters_before = get_all_exporters()
 
@@ -108,7 +109,8 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
 
         exporters_after = get_all_exporters()
 
-        exporter = list(set(exporters_after) - set(exporters_before))
+        exporter = list(set(exporters_after) - set(exporters_before))[0]
+        print(f'Exporter {exporter}')
 
         props = context.scene.simple_export_props
         # Assign the preset
@@ -129,7 +131,7 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
                 return {'CANCELLED'}
 
             try:
-                export_path = set_export_path(collection.name, exporter, original_path, replacement_path)
+                export_path = set_export_path(collection_name, exporter, original_path, replacement_path)
             except BlendFileNotSavedError as e:
                 self.report({'ERROR'}, "Save the Blender file before running the script.")
                 return {'CANCELLED'}
