@@ -227,15 +227,14 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
 
     def execute(self, context):
         collection = bpy.data.collections.get(self.collection_name)
-        print(f'Executing export on collection: {collection.name}')
 
         if not collection or len(collection.exporters) == 0:
             self.report({'WARNING'}, f"No valid exporter found for collection '{self.collection_name}'.")
             return {'CANCELLED'}
 
         set_active_layer_Collection(self.collection_name)
-
         export_collection(collection, context)
+
         self.report({'INFO'}, f"Exported collection '{collection.name}'.")
 
         return {'FINISHED'}

@@ -110,7 +110,6 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
         exporters_after = get_all_exporters()
 
         exporter = list(set(exporters_after) - set(exporters_before))[0]
-        print(f'Exporter {exporter}')
 
         props = context.scene.simple_export_props
         # Assign the preset
