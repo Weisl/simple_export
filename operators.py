@@ -1,7 +1,7 @@
 import bpy
 import os
 
-from .functions import open_directory, ensure_export_directory, export_collection
+from .functions import open_directory, ensure_export_folder_exists, export_collection
 
 class BlendFileNotSavedError(Exception):
     """Custom exception for unsaved Blender file."""
@@ -25,26 +25,17 @@ def set_active_layer_Collection(collection_name):
     layerColl = recurLayerCollection(layer_collection, collection_name)
     bpy.context.view_layer.active_layer_collection = layerColl
 
-def set_export_path(collection_name, exporter, original_path, replacement_path):
+def generate_export_path(collection_name, export_dir, original_path, replacement_path):
     """
     Set the export path for a given collection's exporter.
 
     Args:
         collection_name (str): The name of the collection.
-        exporter (bpy.types.PropertyGroup): The exporter for the collection.
+        exporter_dir (str): Path to the export folder.
         original_path (str): The original path to be replaced.
         replacement_path (str): The replacement path to be applied.
     """
     prefs = bpy.context.preferences.addons[__package__].preferences
-
-    if prefs.use_blender_file_location:
-        blend_filepath = bpy.data.filepath
-        # Return if Blend File hasn't been saved
-        if not blend_filepath:
-            raise BlendFileNotSavedError("The Blender file has not been saved.")
-        export_dir = os.path.dirname(blend_filepath)
-    else:
-        export_dir = prefs.custom_export_path
 
     # Construct the export file name
     export_name = ""
@@ -66,17 +57,21 @@ def set_export_path(collection_name, exporter, original_path, replacement_path):
 
     if original_path in export_path:
         export_path = export_path.replace(original_path, replacement_path)
-
-    ensure_export_directory(exporter)
-    exporter.export_properties.filepath = export_path
-    print(f"Set export path: {export_path}")
     return export_path
+
+
+def assign_exporter_path(exporter, export_path):
+    ensure_export_folder_exists(export_path)
+    exporter.export_properties.filepath = export_path
+    return export_path
+
 
 
 # Popup to show export results
 class SCENE_OT_ExportResultsPopup(bpy.types.Operator):
     bl_idname = "scene.export_results_popup"
     bl_label = "Export Results"
+    bl_ui_units_x = 50
 
     export_results: bpy.props.StringProperty()  # JSON-like string to hold results
 
@@ -166,9 +161,23 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
         prefs = bpy.context.preferences.addons[__package__].preferences
         collection = bpy.data.collections.get(self.collection_name)
 
+        prefs = bpy.context.preferences.addons[__package__].preferences
+
+
+        if prefs.use_blender_file_location:
+            blend_filepath = bpy.data.filepath
+            # Return if Blend File hasn't been saved
+            if not blend_filepath:
+                self.report({'ERROR'}, f"Save the Blend file before calling this operator.")
+                return {'CANCELLED'}
+            export_dir = os.path.dirname(blend_filepath)
+        else:
+            export_dir = prefs.custom_export_path
+
+        # Return if collection not found
         if not collection:
             self.report({'ERROR'}, f"Collection '{self.collection_name}' not found.")
-            return
+            return {'CANCELLED'}
 
         # Path variables
         original_path = prefs.original_path
@@ -177,21 +186,20 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
 
         # Add custom exporter
         exporter = self.get_custom_exporter_for_collection(collection.name, default_export_format)
+
+        # Return
         if not exporter:
             self.report({'ERROR'}, f"Could not add exporter to collection '{collection.name}'.")
             return {'CANCELLED'}
 
         # Set export Path
-        try:
-            export_path = set_export_path(collection.name, exporter, original_path, replacement_path)
-            print(f"Export path set: {export_path}")
-        except BlendFileNotSavedError as e:
-            self.report({'ERROR'}, "Save the Blender file before running the script.")
-            return {'CANCELLED'}
+        export_path = generate_export_path(collection.name, export_dir, original_path, replacement_path)
+        export_path = assign_exporter_path(exporter, export_path)
 
         self.report({'INFO'}, f"Export path set to {export_path}")
         return {'FINISHED'}
 
+    # TODO: improve custom exporters
     def get_custom_exporter_for_collection(self, collection_name, exporter_name):
         """
         Retrieve the custom exporter for a given collection.

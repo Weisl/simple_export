@@ -1,10 +1,12 @@
+import os
+
 import bpy
 
+from .operators import generate_export_path, assign_exporter_path
 from .operators import set_active_layer_Collection
 from .panels import EXPORT_FORMATS
 from .presets import assign_preset
-from .operators import set_export_path
-from .operators import BlendFileNotSavedError
+
 
 class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
     """
@@ -17,6 +19,7 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
     def execute(self, context):
         active_object = context.active_object
         parent_collection = context.scene.parent_collection or context.scene.collection
+        prefs = bpy.context.preferences.addons[__package__].preferences
 
         # Check for active object
         if not active_object:
@@ -32,6 +35,17 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
         if active_object.name in bpy.data.collections:
             self.report({'WARNING'}, "No active collection")
             return {'CANCELLED'}
+
+        # Make sure that blend file exists to retrieve the file path
+        if prefs.use_blender_file_location:
+            blend_filepath = bpy.data.filepath
+            # Return if Blend File hasn't been saved
+            if not blend_filepath:
+                self.report({'ERROR'}, f"Save the Blend file before calling this operator.")
+                return {'CANCELLED'}
+            export_dir = os.path.dirname(blend_filepath)
+        else:
+            export_dir = prefs.custom_export_path
 
         # Helper function to create or retrieve an existing collection
         def make_collection(collection_name, parent_collection):
@@ -73,8 +87,6 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
             for col in ob.users_collection:
                 if col != export_collection:
                     col.objects.unlink(ob)
-
-        prefs = bpy.context.preferences.addons[__package__].preferences
 
         # Set collection Color:
         color_tag = prefs.collection_color
@@ -129,11 +141,9 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
                 self.report({'ERROR'}, f"Could not add exporter to collection '{collection_name}'.")
                 return {'CANCELLED'}
 
-            try:
-                export_path = set_export_path(collection_name, exporter, original_path, replacement_path)
-            except BlendFileNotSavedError as e:
-                self.report({'ERROR'}, "Save the Blender file before running the script.")
-                return {'CANCELLED'}
+            export_path = generate_export_path(collection_name, export_dir, original_path, replacement_path)
+            export_path = assign_exporter_path(exporter, export_path)
+
         self.report({'INFO'}, f"Export collection '{export_collection.name}' created successfully.")
         return {'FINISHED'}
 

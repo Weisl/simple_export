@@ -42,16 +42,17 @@ def get_addon_name():
     return "Simple Export"
 
 
-def ensure_export_directory(exporter):
+def ensure_export_folder_exists(export_path):
     """
     Ensure the directory for the export path exists, creating it if necessary.
     """
-    export_path = exporter.export_properties.filepath
     export_dir = os.path.dirname(export_path)
 
     if export_dir and not os.path.exists(export_dir):
         os.makedirs(export_dir)
         print(f"Created export directory: {export_dir}")
+
+    return True
 
 
 def set_active_collection(collection_name):
@@ -95,7 +96,7 @@ def export_collection(collection, context):
         export_path = exporter.export_properties.filepath
 
         # Ensure the export directory exists
-        ensure_export_directory(exporter)
+        ensure_export_folder_exists(export_path)
 
         # Apply instance offset if the preference is enabled
         if prefs.use_instance_offset:
