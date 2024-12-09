@@ -87,29 +87,31 @@ def export_collection(collection, context):
     if update_collection_offset in bpy.app.handlers.depsgraph_update_post:
         bpy.app.handlers.depsgraph_update_post.remove(update_collection_offset)
 
+
+    # Validate exporter availability
+    if not collection.exporters or not collection.exporters[0]:
+        raise ValueError("No exporter configured for the collection.")
+
+    exporter = collection.exporters[0]
+    print(f'Exporter: {exporter}')
+    export_path = exporter.export_properties.filepath
+    print(f'Exporter Path: {export_path}')
+    # Ensure the export directory exists
+    ensure_export_folder_exists(export_path)
+
+    # Apply instance offset if the preference is enabled
+    if prefs.use_instance_offset:
+        apply_collection_offset(collection)
+
+    # Set the active collection
+    set_active_collection(collection.name)
+
+    # Clear Blender's report logs to ensure a clean state
     try:
-        # Validate exporter availability
-        if not collection.exporters or not collection.exporters[0]:
-            raise ValueError("No exporter configured for the collection.")
-
-        exporter = collection.exporters[0]
-        export_path = exporter.export_properties.filepath
-
-        # Ensure the export directory exists
-        ensure_export_folder_exists(export_path)
-
-        # Apply instance offset if the preference is enabled
-        if prefs.use_instance_offset:
-            apply_collection_offset(collection)
-
-        # Set the active collection
-        set_active_collection(collection.name)
-
-        # Clear Blender's report logs to ensure a clean state
-        bpy.ops.wm.report_clear()
-
         # Perform the export operation and check its result
         result = bpy.ops.collection.exporter_export(index=0)
+        print(f'Exporter Result: {result}')
+
         if 'FINISHED' not in result:
             raise RuntimeError(f"Export operator did not finish successfully for '{collection.name}'.")
 
@@ -127,10 +129,6 @@ def export_collection(collection, context):
         print(f"Exported collection '{collection.name}' to '{export_path}'")
         msg = {'success': True, 'message': f"Exported successfully to {export_path}."}
 
-    except ValueError as ve:
-        msg = {'success': False, 'message': f"Export failed: {str(ve)}"}
-    except RuntimeError as re:
-        msg = {'success': False, 'message': f"Export failed: {str(re)}"}
     except Exception as e:
         msg = {'success': False, 'message': f"Unexpected error: {str(e)}"}
 
@@ -138,7 +136,7 @@ def export_collection(collection, context):
         # Revert instance offset if applied
         if prefs.use_instance_offset:
             apply_collection_offset(collection, inverse=True)
-            
+
         # Re-enable the collection offset update handler
         if update_collection_offset not in bpy.app.handlers.depsgraph_update_post:
             bpy.app.handlers.depsgraph_update_post.append(update_collection_offset)

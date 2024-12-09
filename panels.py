@@ -1,9 +1,8 @@
 import os
-
+import inspect
 import bpy
 
 from .functions import get_addon_name
-
 
 def get_presets_folder():
     """Retrieve the base path for Blender's presets folder."""
@@ -17,45 +16,51 @@ EXPORT_FORMATS = {
         "label": "FBX",
         "description": "FBX Export",
         "preset_folder": os.path.join(get_presets_folder(), "export_scene.fbx"),
+        "op_type": bpy.types.EXPORT_SCENE_OT_fbx,
     },
-    "OBJ": {
-        "op_name": "IO_FH_obj",
-        "label": "OBJ",
-        "description": "Wavefront OBJ Export",
-        "preset_folder": os.path.join(get_presets_folder(), "wm.obj_export"),
-    },
+    # "OBJ": {
+    #     "op_name": "IO_FH_obj",
+    #     "label": "OBJ",
+    #     "description": "Wavefront OBJ Export",
+    #     "preset_folder": os.path.join(get_presets_folder(), "wm.obj_export"),
+    #     "op_type": bpy.types.WM_OT_obj_export,
+    # },
     "GLTF": {
         "op_name": "IO_FH_gltf2",
         "label": "glTF",
         "description": "glTF 2.0 Export",
         "preset_folder": os.path.join(get_presets_folder(), "export_scene.gltf"),
+        "op_type": bpy.types.EXPORT_SCENE_OT_gltf,
     },
-    "USD": {
-        "op_name": "IO_FH_usd",
-        "label": "USD",
-        "description": "Universal Scene Description Export",
-        "preset_folder": os.path.join(get_presets_folder(), "wm.usd_export"),
-    },
-    "ALEMBIC": {
-        "op_name": "IO_FH_alembic",
-        "label": "Alembic",
-        "description": "Alembic Export",
-        "preset_folder": os.path.join(get_presets_folder(), "wm.alembic_export"),
-    },
-    "PLY": {
-        "op_name": "IO_FH_ply",
-        "label": "PLY",
-        "description": "Stanford PLY Export",
-        "preset_folder": os.path.join(get_presets_folder(), "wm.ply_export"),
-    },
-    "STL": {
-        "op_name": "IO_FH_stl",
-        "label": "STL",
-        "description": "STL Export",
-        "preset_folder": os.path.join(get_presets_folder(), "wm.stl_export"),
-    },
+    # "USD": {
+    #     "op_name": "IO_FH_usd",
+    #     "label": "USD",
+    #     "description": "Universal Scene Description Export",
+    #     "preset_folder": os.path.join(get_presets_folder(), "wm.usd_export"),
+    #     "op_type": bpy.types.WM_OT_usd_export,
+    # },
+    # "ALEMBIC": {
+    #     "op_name": "IO_FH_alembic",
+    #     "label": "Alembic",
+    #     "description": "Alembic Export",
+    #     "preset_folder": os.path.join(get_presets_folder(), "wm.alembic_export"),
+    #     "op_type": bpy.types.WM_OT_alembic_export,
+    # },
+    # "PLY": {
+    #     "op_name": "IO_FH_ply",
+    #     "label": "PLY",
+    #     "description": "Stanford PLY Export",
+    #     "preset_folder": os.path.join(get_presets_folder(), "wm.ply_export"),
+    #     "op_type": bpy.types.WM_OT_stl_export,
+    # },
+    # "STL": {
+    #     "op_name": "IO_FH_stl",
+    #     "label": "STL",
+    #     "description": "STL Export",
+    #     "preset_folder": os.path.join(get_presets_folder(), "wm.stl_export"),
+    #     "op_type": bpy.types.WM_OT_ply_export,
+    # },
 }
-
 
 def draw_export_preset(self, context):
     layout = self.layout
@@ -204,10 +209,11 @@ class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        row.operator("scene.select_all_collections", text="Select All", icon="CHECKBOX_HLT")
+        op = row.operator("scene.select_all_collections", text="Select All", icon="CHECKBOX_HLT")
+        op.invert = False
         row = layout.row()
-        row.operator("scene.unselect_all_collections", text="Unselect All", icon="CHECKBOX_DEHLT")
-
+        row.operator("scene.select_all_collections", text="Unselect All", icon="CHECKBOX_DEHLT")
+        op.invert=True
 
 class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
     bl_idname = "SCENE_PT_simple_export"
