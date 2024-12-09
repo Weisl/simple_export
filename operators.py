@@ -81,9 +81,9 @@ def reenable_offset_handler():
 
 # Popup to show export results
 class SCENE_OT_ExportResultsPopup(bpy.types.Operator):
-    bl_idname = "scene.export_results_popup"
+    bl_idname = "simple_export.results_popup"
     bl_label = "Export Results"
-    bl_ui_units_x = 45
+    bl_ui_units_x = 150
 
     export_results: bpy.props.StringProperty()  # JSON-like string to hold results
 
@@ -201,7 +201,6 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
         self.report({'INFO'}, f"Export path set to {export_path}")
         return {'FINISHED'}
 
-    # TODO: improve finding custom exporters
     def get_custom_exporter_for_collection(self, collection_name, exporter_name):
         """
         Retrieve the custom exporter for a given collection.
@@ -243,12 +242,12 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
     def cancel_with_results(self, context, export_results):
         """Handle cancellation with results."""
         reenable_offset_handler()
-        bpy.ops.scene.export_results_popup('INVOKE_DEFAULT', export_results=str(export_results))
+        bpy.ops.simple_export.results_popup('INVOKE_DEFAULT', export_results=str(export_results))
         return {'CANCELLED'}
 
     def show_results(self, context, export_results):
         """Display the export results."""
-        bpy.ops.scene.export_results_popup('INVOKE_DEFAULT', export_results=str(export_results))
+        bpy.ops.simple_export.results_popup('INVOKE_DEFAULT', export_results=str(export_results))
         return {'FINISHED'}
 
     def validate_collection(self):
