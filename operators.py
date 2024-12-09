@@ -245,7 +245,7 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
         collection_name = self.collection_name
         if not collection_name or not bpy.data.collections.get(collection_name):
             self.report({'ERROR'}, f"Invalid export collection.")
-            return self.cancel()
+            return self.cancel(context)
 
         export_collection = bpy.data.collections.get(collection_name)
         set_active_layer_Collection(export_collection.name)
@@ -253,7 +253,7 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
         # TODO: extract to function - Validate Exporter
         if len(export_collection.exporters) == 0:
             self.report({'ERROR'}, f"No exporter found for collection '{collection_name}'.")
-            return self.cancel()
+            return self.cancel(context)
 
         # Validate exporter type
         props = context.scene.simple_export_props
@@ -263,22 +263,24 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
 
         # find exporter
         for exp in export_collection.exporters:
-            if type(exp) == EXPORT_FORMATS[export_format]["op_type"]:
+            exp_class_str = str(type(exp.export_properties))
+            print(f'debug class "{exp_class_str}"')
+            if exp_class_str == EXPORT_FORMATS[export_format]["op_type"]:
                 exporter = exp
 
         if exporter == None:
             self.report({'ERROR'}, f"No {export_format} exporter found for collection {collection_name}'.")
-            return self.cancel()
+            return self.cancel(context)
 
         # find exporter id
         exporter_id = -1
         for idx, exp in enumerate(export_collection.exporters):
-            if exp is exporter:
+            if exp == exporter:
                 exporter_id = idx
 
         if exporter_id == -1:
             self.report({'ERROR'}, f" {exporter.name} not found in the exporters of collection {collection_name}'.")
-            return self.cancel()
+            return self.cancel(context)
 
 
         #TODO: extract to function - Validate Export path
@@ -299,7 +301,7 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
         except Exception as e:
             self.report({'ERROR'}, f" {exporter.name} not found in the exporters of collection {collection_name}'.")
             apply_collection_offset(export_collection, inverse=True)
-            return self.cancel()
+            return self.cancel(context)
 
 
         apply_collection_offset(export_collection, inverse=True)
