@@ -8,14 +8,13 @@ from .panels import EXPORT_FORMATS
 from .presets import assign_preset
 
 
-def generate_collection_name(context, obj_name):
+def generate_collection_name(obj_name):
     # Construct the export file name
     collection_name = obj_name
     prefs = bpy.context.preferences.addons[__package__].preferences
 
     if prefs.use_blend_file_name_as_prefix:
         blend_file_name = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
-
         if not collection_name.startswith(blend_file_name):
             collection_name = blend_file_name + "_" + collection_name
 
@@ -55,7 +54,7 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
             self.report({'WARNING'}, "No valid parent collection selected. Falling back to the scene collection.")
             parent_collection = context.scene.collection
 
-        collection_name = generate_collection_name(context, active_object.name)
+        collection_name = generate_collection_name(active_object.name)
         # Ensure export collection does not yet exist.
         if collection_name in bpy.data.collections:
             self.report({'WARNING'}, "Collection already exists")
@@ -68,9 +67,9 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
             if not blend_filepath:
                 self.report({'ERROR'}, f"Save the Blend file before calling this operator.")
                 return {'CANCELLED'}
-            export_dir = os.path.dirname(blend_filepath)
+            blend_dir = os.path.dirname(blend_filepath)
         else:
-            export_dir = prefs.custom_export_path
+            blend_dir = prefs.custom_export_path
 
         # Assign the preset
         if prefs.auto_set_preset:
@@ -168,7 +167,7 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
                 self.report({'ERROR'}, f"Could not add exporter to collection '{collection_name}'.")
                 return {'CANCELLED'}
 
-            export_path = generate_export_path(collection_name, export_dir, search_path, replacement_path)
+            export_path = generate_export_path(collection_name, blend_dir, search_path, replacement_path)
             export_path = assign_exporter_path(exporter, export_path)
 
         self.report({'INFO'}, f"Export collection '{export_collection.name}' created successfully.")
