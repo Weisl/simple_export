@@ -1,7 +1,9 @@
-import bpy
 import os
 
+import bpy
+
 from .operators import find_exporter
+
 
 def parse_preset_file(preset_path):
     """Parse the preset file to extract properties and their values."""
@@ -31,6 +33,10 @@ def parse_preset_file(preset_path):
 def assign_preset_to_exporter(properties, exporter):
     """Apply parsed properties to the exporter."""
     for prop_name, prop_value in properties.items():
+        # ignore filepath
+        if prop_name == 'filepath':
+            continue
+
         try:
             if hasattr(exporter.export_properties, prop_name):
                 setattr(exporter.export_properties, prop_name, prop_value)
@@ -39,7 +45,8 @@ def assign_preset_to_exporter(properties, exporter):
         except Exception as e:
             print(f"Error setting property '{prop_name}': {e}")
 
-#TODO: This should work based on the exporter not the collection
+
+# TODO: This should work based on the exporter not the collection
 def assign_preset(exporter, preset_path):
     # Ensure the collection has exporters
     if not exporter:
@@ -59,6 +66,30 @@ def assign_preset(exporter, preset_path):
     assign_preset_to_exporter(preset_properties, exporter)
 
     return True, None
+
+
+class SIMPLEEXPORTER_PT_ResultsPanel(bpy.types.Panel):
+    """Panel to display the results of applying the preset."""
+    bl_idname = "SIMPLEEXPORTER_PT_ResultsPanel"
+    bl_label = "Preset Application Results"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "WINDOW"
+    bl_ui_units_x = 30
+
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="Results:")
+
+        # Get results from WindowManager
+        results_str = context.window_manager.result_data
+        results = eval(results_str) if results_str else []  # Parse results string into a list
+
+        for result in results:
+            row = layout.row()
+            icon = 'CHECKMARK' if result['success'] else 'CANCEL'
+            row.label(text=f"{result['name']}: {result['message']}", icon=icon)
+
 
 
 class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
@@ -95,18 +126,82 @@ class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
+    """Operator to apply the preset to all collections"""
+    bl_idname = "simple_export.assign_preset_selection"
+    bl_label = "Assign Presets"
+
+
+    def execute(self, context):
+        results = []  # To store the renaming status of each collection
+        props = context.scene.simple_export_props
+        preset_path = props.simple_export_preset_file
+
+        try:
+            # Validate preset path
+            self.validate_preset_path(preset_path)
+
+            # Iterate through all collections and apply preset
+            for collection in bpy.data.collections:
+                try:
+                    # Process each collection
+                    self.apply_preset_to_collection(collection, preset_path, props.export_format, results)
+                except Exception as e:
+                    # Handle per-collection errors
+                    results.append({'name': collection.name, 'success': False, 'message': str(e)})
+
+        except Exception as e:
+            # Handle global errors
+            self.report({'ERROR'}, str(e))
+            return {'CANCELLED'}
+
+        # Store results in WindowManager
+        context.window_manager.result_data = str(results)
+
+        # Show results in the panel
+        bpy.ops.wm.call_panel(name="SIMPLEEXPORTER_PT_ResultsPanel")
+        return {'FINISHED'}
+
+    def validate_preset_path(self, preset_path):
+        """Ensure the preset path is valid."""
+        if not preset_path:
+            raise ValueError("Select a preset to be applied.")
+
+    def apply_preset_to_collection(self, collection, preset_path, export_format, results):
+        """Apply the preset to a single collection."""
+        preset_name = os.path.basename(preset_path)
+
+        # Find exporter
+        exporter = find_exporter(collection, export_format)
+        if not exporter:
+            raise ValueError("No exporters found in the current collection.")
+
+        # Apply preset
+        success, msg = assign_preset(exporter, preset_path)
+        if not success:
+            raise ValueError(msg)
+
+        # Add success result
+        results.append({'name': collection.name, 'success': True, 'message': f"Applied preset '{preset_name}'."})
+
 classes = (
+    SIMPLEEXPORTER_PT_ResultsPanel,
     SIMPLEEXPORTER_OT_ApplyPreset,
+    SIMPLEEXPORTER_OT_ApplyPresetSelection
 )
 
 
 def register():
+    bpy.types.WindowManager.result_data = bpy.props.StringProperty(default="[]")
+
     from bpy.utils import register_class
     for cls in classes:
         register_class(cls)
 
 
 def unregister():
+    del bpy.types.WindowManager.result_data
+
     from bpy.utils import unregister_class
     for cls in reversed(classes):
         unregister_class(cls)

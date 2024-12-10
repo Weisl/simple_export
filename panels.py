@@ -193,8 +193,8 @@ class SIMPLE_EXPORT_menu_base:
         row = col.row()
         row.operator("scene.export_selected_collections", text="Export Selected")
 
-        # row = col.row()
-        # row.operator("simple_export.assign_preset", text="TODO: Assign Presets")
+        row = col.row()
+        row.operator("simple_export.assign_preset_selection", text="Assign Presets")
         # row = col.row()
         # row.operator("scene.export_selected_collections", text="TODO: Assign Paths")
 
