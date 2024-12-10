@@ -75,13 +75,6 @@ def draw_export_preset(self, context):
 
     box = layout.box()
     box.label(text="Presets")
-
-    # Active Preset
-    row = box.row(align=True)
-    row.label(text="Active")
-    preset_name = os.path.basename(scene.simple_export_preset_file)
-    row.label(text=preset_name)
-
     # Select preset
     box.prop(props, "simple_export_preset_file", text="Select")
 

@@ -1,6 +1,7 @@
 import bpy
 import os
 
+from .operators import find_exporter
 
 def parse_preset_file(preset_path):
     """Parse the preset file to extract properties and their values."""
@@ -39,23 +40,25 @@ def apply_preset_to_exporter(properties, exporter):
             print(f"Error setting property '{prop_name}': {e}")
 
 #TODO: This should work based on the exporter not the collection
-def assign_preset(collection, preset_path):
+def assign_preset(exporter, preset_path):
     # Ensure the collection has exporters
-    if not hasattr(collection, "exporters") or len(collection.exporters) == 0:
-        return False
+    if not exporter:
+        msg = "No valid exporter found"
+        return False, msg
 
-    exporter = collection.exporters[0]
+    if not preset_path:
+        msg = "Please select a Preset"
+        return False, msg
 
-
-    # Parse the preset file
+    # Parse the preset file and remove filepath
     preset_properties = parse_preset_file(preset_path)
-
-    del preset_properties['filepath']
+    if not preset_properties:
+        del preset_properties['filepath']
 
     # Apply the properties to the exporter
     apply_preset_to_exporter(preset_properties, exporter)
 
-    return True
+    return True, None
 
 
 class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
@@ -76,11 +79,13 @@ class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
             return {'CANCELLED'}
 
         if not preset_path:
-            self.report({'ERROR'}, f"Preset path {props.preset_path}' not found.")
+            self.report({'ERROR'}, f"Select a preset to be applied.")
             return {'CANCELLED'}
 
         preset_name = os.path.basename(preset_path)
-        suceess = assign_preset(collection, preset_path)
+        exporter = find_exporter(collection, props.export_format)
+
+        suceess, msg = assign_preset(exporter, preset_path)
 
         if not suceess:
             self.report({'ERROR'}, "No exporters found in the current collection.")
