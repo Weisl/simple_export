@@ -20,6 +20,7 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
         active_object = context.active_object
         parent_collection = context.scene.parent_collection or context.scene.collection
         prefs = bpy.context.preferences.addons[__package__].preferences
+        props = context.scene.simple_export_props
 
         # Check for active object
         if not active_object:
@@ -46,6 +47,14 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
             export_dir = os.path.dirname(blend_filepath)
         else:
             export_dir = prefs.custom_export_path
+
+        # Assign the preset
+        if prefs.auto_set_preset:
+            preset_path = props.simple_export_preset_file
+
+            if not preset_path:
+                self.report({'ERROR'}, f"No Preset specified.")
+                return {'CANCELLED'}
 
         # Helper function to create or retrieve an existing collection
         def make_collection(collection_name, parent_collection):
@@ -107,7 +116,6 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
         set_active_layer_Collection(collection_name)
 
         # Assigning the correct format exporter
-        props = context.scene.simple_export_props
         export_data = EXPORT_FORMATS.get(props.export_format)
 
         def get_all_exporters():
@@ -121,17 +129,11 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
 
         exporters_after = get_all_exporters()
 
+        props = context.scene.simple_export_props
+
         exporter = list(set(exporters_after) - set(exporters_before))[0]
 
-        props = context.scene.simple_export_props
-        # Assign the preset
-        if prefs.auto_set_preset:
-            preset_path = props.simple_export_preset_file
-
-            if preset_path:
-                assign_preset(export_collection, preset_path)
-            else:
-                self.report({'WARNING'}, f"No Preset.")
+        assign_preset(export_collection, preset_path)
 
         if prefs.auto_set_filepath:
             search_path = prefs.search_path
