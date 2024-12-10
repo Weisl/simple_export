@@ -118,6 +118,8 @@ def pre_export_checks(export_path):
 
 def post_export_checks(export_path, file_exists_before, file_timestamp_before):
     """Validate the exported file."""
+    if not export_path:
+        return False, f"No filepath specified."
     if not os.path.exists(export_path):
         return False, f"File '{export_path}' was not created."
     if not os.access(export_path, os.W_OK):
@@ -298,6 +300,7 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
             # Pre-export checks
             export_path = exporter.export_properties.filepath
             file_exists_before, file_timestamp_before = pre_export_checks(export_path)
+
 
             # Apply instance offset if enabled
             prefs = bpy.context.preferences.addons[__package__].preferences
