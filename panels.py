@@ -93,7 +93,7 @@ def draw_export_preset(self, context):
         row.prop(props, "preset_path", text="Preset Folder")
 
         row = box_debug.row()
-        op = row.operator("simple_export.apply_preset", text="Apply Preset")
+        op = row.operator("simple_export.assign_preset", text="Assign Preset")
         op.collection_name = context.collection.name
 
 
@@ -191,10 +191,10 @@ class SIMPLE_EXPORT_menu_base:
         # List Operators
         col = layout.column(align=True)
         row = col.row()
-        row.operator("scene.export_selected_collections", text="Export Collections")
+        row.operator("scene.export_selected_collections", text="Export Selected")
 
         # row = col.row()
-        # row.operator("simple_export.apply_preset", text="TODO: Assign Presets")
+        # row.operator("simple_export.assign_preset", text="TODO: Assign Presets")
         # row = col.row()
         # row.operator("scene.export_selected_collections", text="TODO: Assign Paths")
 

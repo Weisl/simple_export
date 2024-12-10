@@ -28,7 +28,7 @@ def parse_preset_file(preset_path):
     return properties
 
 
-def apply_preset_to_exporter(properties, exporter):
+def assign_preset_to_exporter(properties, exporter):
     """Apply parsed properties to the exporter."""
     for prop_name, prop_value in properties.items():
         try:
@@ -56,15 +56,15 @@ def assign_preset(exporter, preset_path):
         del preset_properties['filepath']
 
     # Apply the properties to the exporter
-    apply_preset_to_exporter(preset_properties, exporter)
+    assign_preset_to_exporter(preset_properties, exporter)
 
     return True, None
 
 
 class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
     """Operator to apply the preset"""
-    bl_idname = "simple_export.apply_preset"
-    bl_label = "Apply Preset"
+    bl_idname = "simple_export.assign_preset"
+    bl_label = "Assign Preset"
 
     collection_name: bpy.props.StringProperty()
 

@@ -71,7 +71,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         # TODO: Implement features
         # Assign Preset
-        op = row.operator("simple_export.apply_preset", text="", icon='PRESET')
+        op = row.operator("simple_export.assign_preset", text="", icon='PRESET')
         op.collection_name = collection.name
 
         # Add the Export Collection button

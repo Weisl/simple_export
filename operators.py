@@ -330,7 +330,7 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
 # Operator to export selected collections
 class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
     bl_idname = "scene.export_selected_collections"
-    bl_label = "Export Selected Collections"
+    bl_label = "Export Selected"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):

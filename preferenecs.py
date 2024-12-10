@@ -262,7 +262,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             # TODO: Set offset object
 
             box = layout.box()
-            box.label(text="Export Collections")
+            box.label(text="Export Collection")
             box.prop(self, "collection_color")
             # TODO: change prefix options from file to collections (- Better visibility)
             box.prop(self, "use_blend_file_name_as_prefix")
