@@ -79,7 +79,7 @@ class SIMPLEEXPORTER_PT_ResultsPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text="Results:")
+        layout.label(text="Collection:")
 
         # Get results from WindowManager
         results_str = context.window_manager.result_data
@@ -88,7 +88,8 @@ class SIMPLEEXPORTER_PT_ResultsPanel(bpy.types.Panel):
         for result in results:
             row = layout.row()
             icon = 'CHECKMARK' if result['success'] else 'CANCEL'
-            row.label(text=f"{result['name']}: {result['message']}", icon=icon)
+            row.label(text=f"{result['name']}:", icon=icon)
+            row.label(text=f"{result['message']}")
 
 
 
@@ -143,6 +144,11 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
 
             # Iterate through all collections and apply preset
             for collection in bpy.data.collections:
+
+                # return early
+                if not collection.simple_export_selected or len(collection.exporters) == 0:
+                    continue
+
                 try:
                     # Process each collection
                     self.apply_preset_to_collection(collection, preset_path, props.export_format, results)
