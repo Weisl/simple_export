@@ -3,6 +3,7 @@ import os
 import bpy
 
 from .operators import find_exporter
+from .uilist import color_tag_icons
 
 
 def parse_preset_file(preset_path):
@@ -76,7 +77,6 @@ class SIMPLEEXPORTER_PT_ResultsPanel(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_ui_units_x = 30
 
-
     def draw(self, context):
         layout = self.layout
         layout.label(text="Results:")
@@ -98,7 +98,7 @@ class SIMPLEEXPORTER_PT_ResultsPanel(bpy.types.Panel):
 
         # Iterate over results and populate the table
         for result in results:
-            split = layout.split(factor=0.1)  # Split for each row
+            split = layout.split(factor=0.05)  # Split for each row
             col_icon = split.column()
             col_name = split.column()
             col_message = split.column()
@@ -107,7 +107,11 @@ class SIMPLEEXPORTER_PT_ResultsPanel(bpy.types.Panel):
             col_icon.label(icon='CHECKMARK' if result['success'] else 'CANCEL')
 
             # Collection Name Column
-            col_name.label(text=result['name'])
+            collection_name = result['name']
+            collection = bpy.data.collections[collection_name]
+            color_tag = collection.color_tag
+            icon = color_tag_icons.get(color_tag, 'NONE')
+            col_name.label(text=result['name'], icon=icon)
 
             # Info Message Column
             col_message.label(text=result['message'])
@@ -151,7 +155,6 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
     """Operator to apply the preset to all collections"""
     bl_idname = "simple_export.assign_preset_selection"
     bl_label = "Assign Presets"
-
 
     def execute(self, context):
         results = []  # To store the renaming status of each collection
@@ -209,6 +212,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
 
         # Add success result
         results.append({'name': collection.name, 'success': True, 'message': f"Applied preset '{preset_name}'."})
+
 
 classes = (
     SIMPLEEXPORTER_PT_ResultsPanel,
