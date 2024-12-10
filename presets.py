@@ -82,7 +82,7 @@ class SIMPLEEXPORTER_PT_ResultsPanel(bpy.types.Panel):
         layout.label(text="Results:")
 
         # Get results from WindowManager
-        results_str = context.window_manager.result_data
+        results_str = context.window_manager.assign_preset_info_data
         results = eval(results_str) if results_str else []  # Parse results string into a list
 
         # Header row with column titles
@@ -185,7 +185,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Store results in WindowManager
-        context.window_manager.result_data = str(results)
+        context.window_manager.assign_preset_info_data = str(results)
 
         # Show results in the panel
         bpy.ops.wm.call_panel(name="SIMPLEEXPORTER_PT_ResultsPanel")
@@ -222,7 +222,7 @@ classes = (
 
 
 def register():
-    bpy.types.WindowManager.result_data = bpy.props.StringProperty(default="[]")
+    bpy.types.WindowManager.assign_preset_info_data = bpy.props.StringProperty(default="[]")
 
     from bpy.utils import register_class
     for cls in classes:
@@ -230,7 +230,7 @@ def register():
 
 
 def unregister():
-    del bpy.types.WindowManager.result_data
+    del bpy.types.WindowManager.assign_preset_info_data
 
     from bpy.utils import unregister_class
     for cls in reversed(classes):
