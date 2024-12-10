@@ -8,6 +8,29 @@ from .panels import EXPORT_FORMATS
 from .presets import assign_preset
 
 
+def generate_collection_name(context, obj_name):
+    # Construct the export file name
+    collection_name = obj_name
+    prefs = bpy.context.preferences.addons[__package__].preferences
+
+    if prefs.use_blend_file_name_as_prefix:
+        blend_file_name = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
+
+        if not collection_name.startswith(blend_file_name):
+            collection_name = blend_file_name + "_" + collection_name
+
+    prefix = prefs.custom_prefix
+    suffix = prefs.custom_suffix
+
+    if prefix and not collection_name.startswith(prefix):
+        collection_name = prefix + "_" + collection_name
+
+    if suffix and not collection_name.endswith(suffix):
+        collection_name = collection_name + "_" + suffix
+
+    return collection_name
+
+
 class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
     """
     Create a new collection for the active object and its children.
@@ -32,8 +55,9 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
             self.report({'WARNING'}, "No valid parent collection selected. Falling back to the scene collection.")
             parent_collection = context.scene.collection
 
+        collection_name = generate_collection_name(context, active_object.name)
         # Ensure export collection does not yet exist.
-        if active_object.name in bpy.data.collections:
+        if collection_name in bpy.data.collections:
             self.report({'WARNING'}, "Collection already exists")
             return {'CANCELLED'}
 
@@ -69,9 +93,10 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
                     parent_collection.children.link(col)
             return col
 
-        # Create or get the export collection
-        collection_name = active_object.name
         export_collection = make_collection(collection_name, parent_collection)
+
+        # assign properties
+        export_collection['simple_export_selected'] = True
 
         # Recursive function to find all children of an object
         def find_children(parent_object, child_stack):

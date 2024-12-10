@@ -38,21 +38,7 @@ def generate_export_path(collection_name, export_dir, search_path, replacement_p
     """
     prefs = bpy.context.preferences.addons[__package__].preferences
 
-    # Construct the export file name
-    export_name = ""
-
-    if prefs.use_blend_file_name_as_prefix:
-        blend_file_name = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
-        export_name += blend_file_name + "_"
-
-    if prefs.custom_prefix:
-        export_name += prefs.custom_prefix + "_"
-
-    export_name += collection_name
-
-    if prefs.custom_suffix:
-        export_name += "_" + prefs.custom_suffix
-
+    export_name = collection_name
     export_name += ".fbx"  # or use prefs.export_format to determine extension
     export_path = os.path.join(export_dir, export_name)
 
