@@ -2,6 +2,18 @@ import os
 
 import bpy
 
+# Map color_tag to icons
+color_tag_icons = {
+    'NONE': 'OUTLINER_COLLECTION',
+    'COLOR_01': 'COLLECTION_COLOR_01',
+    'COLOR_02': 'COLLECTION_COLOR_02',
+    'COLOR_03': 'COLLECTION_COLOR_03',
+    'COLOR_04': 'COLLECTION_COLOR_04',
+    'COLOR_05': 'COLLECTION_COLOR_05',
+    'COLOR_06': 'COLLECTION_COLOR_06',
+    'COLOR_07': 'COLLECTION_COLOR_07',
+    'COLOR_08': 'COLLECTION_COLOR_08',
+}
 
 class SCENE_UL_CollectionList(bpy.types.UIList):
     """
@@ -41,18 +53,6 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             icon = 'FILE_NEW'
 
         row.label(icon=icon)
-        # Map color_tag to icons
-        color_tag_icons = {
-            'NONE': 'OUTLINER_COLLECTION',
-            'COLOR_01': 'COLLECTION_COLOR_01',
-            'COLOR_02': 'COLLECTION_COLOR_02',
-            'COLOR_03': 'COLLECTION_COLOR_03',
-            'COLOR_04': 'COLLECTION_COLOR_04',
-            'COLOR_05': 'COLLECTION_COLOR_05',
-            'COLOR_06': 'COLLECTION_COLOR_06',
-            'COLOR_07': 'COLLECTION_COLOR_07',
-            'COLOR_08': 'COLLECTION_COLOR_08',
-        }
 
         # Determine the icon based on the collection's color_tag
         color_tag = collection.color_tag
@@ -71,7 +71,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         # TODO: Implement features
         # Assign Preset
-        op = row.operator("simple_export.apply_preset", text="", icon='PRESET')
+        op = row.operator("simple_export.assign_preset", text="", icon='PRESET')
         op.collection_name = collection.name
 
         # Add the Export Collection button

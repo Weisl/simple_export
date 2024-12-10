@@ -30,7 +30,7 @@ def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_
     kmi.active = simple_export_panel_active
 
 
-# Scene properties to define original_path and replacement_path
+# Scene properties to define search_path and replacement_path
 
 def get_default_export_format():
     """Fetch default export format from add-on preferences or fallback to FBX."""
@@ -107,6 +107,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
         return
 
+    # Preference UI properties
     prefs_tabs: bpy.props.EnumProperty(
         name='Export Preferences',
         items=(('SETTINGS', "Settings", "General addon settings"),
@@ -114,9 +115,13 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default='SETTINGS',
         description='Settings category:')
 
-    simple_export_debug: bpy.props.BoolProperty(name="Debug Mode",
-                                                description="Debug mode only used for development",
-                                                default=False)
+    # Main settings
+    default_export_format: bpy.props.EnumProperty(
+        name="Default Export Format",
+        description="Default format for exporting collections.",
+        items=get_export_format_items(),
+        default="FBX",  # Default value
+    )
 
     use_blender_file_location: bpy.props.BoolProperty(name="Use Blender File Location",
                                                       description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
@@ -126,6 +131,9 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                                                 description="Use the collection offset for the exported collection",
                                                 default=False)
 
+    ########################################
+    # Filepath
+
     custom_export_path: bpy.props.StringProperty(name="Custom Export Path",
                                                  description="Custom directory to export files to.", subtype='DIR_PATH')
 
@@ -133,24 +141,24 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                                                           description="If checked, the Blender file name will be used as a prefix for the export file name.",
                                                           default=False)
 
+    ########################################
+    # Collection Name
+
     custom_prefix: bpy.props.StringProperty(name="Custom Prefix",
                                             description="Custom prefix to add to the export file name.")
 
     custom_suffix: bpy.props.StringProperty(name="Custom Suffix",
                                             description="Custom suffix to add to the export file name.")
 
-    default_export_format: bpy.props.EnumProperty(
-        name="Default Export Format",
-        description="Default format for exporting collections.",
-        items=get_export_format_items(),
-        default="FBX",  # Default value
-    )
-
-    original_path: bpy.props.StringProperty(name="Original Path", description="The path to be replaced.",
+    search_path: bpy.props.StringProperty(name="Search Path", description="The path to be replaced.",
                                             default="workdata")
     replacement_path: bpy.props.StringProperty(name="Replacement Path", description="The path to replace with.",
                                                default="sourcedata")
 
+    # Debug
+    simple_export_debug: bpy.props.BoolProperty(name="Debug Mode",
+                                                description="Debug mode only used for development",
+                                                default=False)
     ########################################
     # Collections
 
@@ -245,7 +253,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.prop(self, "use_blender_file_location")
             if not self.use_blender_file_location:
                 box.prop(self, "custom_export_path")
-            box.prop(self, "original_path")
+            box.prop(self, "search_path")
             box.prop(self, "replacement_path")
 
             box = layout.box()
@@ -254,7 +262,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             # TODO: Set offset object
 
             box = layout.box()
-            box.label(text="Export Collections")
+            box.label(text="Export Collection")
             box.prop(self, "collection_color")
             # TODO: change prefix options from file to collections (- Better visibility)
             box.prop(self, "use_blend_file_name_as_prefix")

@@ -26,14 +26,14 @@ def set_active_layer_Collection(collection_name):
     bpy.context.view_layer.active_layer_collection = layerColl
 
 
-def generate_export_path(collection_name, export_dir, original_path, replacement_path):
+def generate_export_path(collection_name, export_dir, search_path, replacement_path):
     """
     Set the export path for a given collection's exporter.
 
     Args:
         collection_name (str): The name of the collection.
         exporter_dir (str): Path to the export folder.
-        original_path (str): The original path to be replaced.
+        search_path (str): The original path to be replaced.
         replacement_path (str): The replacement path to be applied.
     """
     prefs = bpy.context.preferences.addons[__package__].preferences
@@ -56,8 +56,8 @@ def generate_export_path(collection_name, export_dir, original_path, replacement
     export_name += ".fbx"  # or use prefs.export_format to determine extension
     export_path = os.path.join(export_dir, export_name)
 
-    if original_path in export_path:
-        export_path = export_path.replace(original_path, replacement_path)
+    if search_path in export_path:
+        export_path = export_path.replace(search_path, replacement_path)
     return export_path
 
 
@@ -79,21 +79,27 @@ def reenable_offset_handler():
         bpy.app.handlers.depsgraph_update_post.append(update_collection_offset)
 
 
-def cancel_with_results(export_results):
+def call_export_popup(export_results, context):
     """Handle cancellation with results."""
-    bpy.ops.simple_export.results_popup('INVOKE_DEFAULT', export_results=str(export_results))
+    # Store results in WindowManager
+    context.window_manager.export_data_info = str(export_results)
+
+    bpy.ops.wm.call_panel(name="SIMPLEEXPORTER_PT_ExportResultsPanel")
     return {'CANCELLED'}
+
 
 def show_results(export_results):
     """Display the export results."""
     bpy.ops.simple_export.results_popup('INVOKE_DEFAULT', export_results=str(export_results))
     return {'FINISHED'}
 
+
 def validate_collection(collection_name):
     """Validate the collection and return it if valid."""
     if not collection_name or not bpy.data.collections.get(collection_name):
         raise ValueError("Invalid export collection.")
     return bpy.data.collections.get(collection_name)
+
 
 def find_exporter(collection, export_format):
     """Find the appropriate exporter for the given collection and format."""
@@ -102,12 +108,14 @@ def find_exporter(collection, export_format):
             return exporter
     raise ValueError(f"No {export_format} exporter found for collection '{collection.collection_name}'.")
 
+
 def get_exporter_id(collection, exporter):
     """Get the exporter ID within the collection."""
     for idx, exp in enumerate(collection.exporters):
         if exp == exporter:
             return idx
     raise ValueError(f"{exporter.name} not found in the exporters of collection '{self.collection_name}'.")
+
 
 def pre_export_checks(export_path):
     """Perform pre-export checks and return file existence and timestamp."""
@@ -116,8 +124,11 @@ def pre_export_checks(export_path):
     ensure_export_folder_exists(export_path)
     return file_exists, file_timestamp
 
+
 def post_export_checks(export_path, file_exists_before, file_timestamp_before):
     """Validate the exported file."""
+    if not export_path:
+        return False, f"No filepath specified."
     if not os.path.exists(export_path):
         return False, f"File '{export_path}' was not created."
     if not os.access(export_path, os.W_OK):
@@ -126,30 +137,52 @@ def post_export_checks(export_path, file_exists_before, file_timestamp_before):
         return False, f"File '{export_path}' was not updated."
     return True, f"Exported successfully to '{export_path}'."
 
+
 # Popup to show export results
-class SCENE_OT_ExportResultsPopup(bpy.types.Operator):
-    bl_idname = "simple_export.results_popup"
+class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
+    """Panel to display the export results in a table format."""
+    bl_idname = "SIMPLEEXPORTER_PT_ExportResultsPanel"
     bl_label = "Export Results"
-    bl_ui_units_x = 150
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "WINDOW"
+    bl_ui_units_x = 30
 
-    export_results: bpy.props.StringProperty()  # JSON-like string to hold results
-
-    def execute(self, context):
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        return context.window_manager.invoke_props_dialog(self)
 
     def draw(self, context):
         layout = self.layout
         layout.label(text="Export Results:")
 
-        # Parse export results from JSON-like string
-        results = eval(self.export_results)  # Safe since we control input
+        # Get results from WindowManager
+        results_str = context.window_manager.export_data_info
+        results = eval(results_str) if results_str else []  # Parse results string into a list
+
+        # Header row with column titles
+        split = layout.split(factor=0.1)
+        col_icon = split.column()  # Icon column
+        col_name = split.column()  # Collection name column
+        col_message = split.column()  # Info message column
+
+        header_row = layout.row()
+        header_row.alignment = 'CENTER'
+        col_icon.label(text="")  # Icon column title (empty for icons)
+        col_name.label(text="Collection")  # Collection name column title
+        col_message.label(text="Info")  # Info message column title
+
+        # Iterate over results and populate the table
         for result in results:
-            row = layout.row()
-            icon = 'CHECKMARK' if result['success'] else 'CANCEL'
-            row.label(text=f"{result['name']}: {result['message']}", icon=icon)
+            split = layout.split(factor=0.1)  # Split for each row
+            col_icon = split.column()
+            col_name = split.column()
+            col_message = split.column()
+
+            # Icon Column
+            col_icon.label(icon='CHECKMARK' if result['success'] else 'CANCEL')
+
+            # Collection Name Column
+            col_name.label(text=result['name'])
+
+            # Info Message Column
+            col_message.label(text=result['message'])
 
 
 class SCENE_OT_CreateExportDirectory(bpy.types.Operator):
@@ -229,7 +262,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Path variables
-        original_path = prefs.original_path
+        search_path = prefs.search_path
         replacement_path = prefs.replacement_path
         default_export_format = prefs.default_export_format
 
@@ -242,7 +275,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Set export Path
-        export_path = generate_export_path(collection.name, export_dir, original_path, replacement_path)
+        export_path = generate_export_path(collection.name, export_dir, search_path, replacement_path)
         export_path = assign_exporter_path(exporter, export_path)
 
         self.report({'INFO'}, f"Export path set to {export_path}")
@@ -284,6 +317,7 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
     def execute(self, context):
         export_results = []
         temporarily_disable_offset_handler()
+        success = False
 
         try:
             # Validate collection
@@ -311,33 +345,42 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
             success, message = post_export_checks(export_path, file_exists_before, file_timestamp_before)
             export_results.append({'name': collection.name, 'success': success, 'message': message})
 
+            # Operator is successful as soon as one export succeded
+            success = True
+
         except Exception as e:
             # Handle errors in one place
             export_results.append(
                 {'name': self.collection_name or "Unknown Collection", 'success': False, 'message': str(e)})
-            return cancel_with_results(export_results)
 
         finally:
             if prefs.use_instance_offset:
                 # Revert instance offset and show results
                 apply_collection_offset(collection, inverse=True)
-            return show_results(export_results)
+
+        call_export_popup(export_results, context)
+        if success:
+            return {'FINISHED'}
+        else:
+            return {'CANCELLED'}
 
 
 # Operator to export selected collections
 class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
     bl_idname = "scene.export_selected_collections"
-    bl_label = "Export Selected Collections"
+    bl_label = "Export Selected"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         export_results = []
         export_collections = []
         temporarily_disable_offset_handler()
+        success = False
 
-        try:
-            for collection in bpy.data.collections:
+        prefs = bpy.context.preferences.addons[__package__].preferences
 
+        for collection in bpy.data.collections:
+            try:
                 # return early
                 if not collection.simple_export_selected or len(collection.exporters) == 0:
                     continue
@@ -356,7 +399,6 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
                 file_exists_before, file_timestamp_before = pre_export_checks(export_path)
 
                 # Apply instance offset if enabled
-                prefs = bpy.context.preferences.addons[__package__].preferences
                 if prefs.use_instance_offset:
                     apply_collection_offset(collection)
 
@@ -369,20 +411,22 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
                 success, message = post_export_checks(export_path, file_exists_before, file_timestamp_before)
                 export_results.append({'name': collection.name, 'success': success, 'message': message})
 
-        except Exception as e:
-            # Handle errors in one place
-            export_results.append(
-                {'name': self.collection_name or "Unknown Collection", 'success': False, 'message': str(e)})
-            return cancel_with_results(export_results)
+                success = True
 
-        finally:
-            if prefs.use_instance_offset:
-                for col in export_collections:
+            except Exception as e:
+                # Handle errors in one place
+                export_results.append(
+                    {'name': self.collection_name or "Unknown Collection", 'success': False, 'message': str(e)})
+
+            finally:
+                if prefs.use_instance_offset:
                     apply_collection_offset(collection, inverse=True)
-            return show_results(export_results)
 
-        return {'FINISHED'}
-
+        call_export_popup(export_results, context)
+        if success:
+            return {'FINISHED'}
+        else:
+            return {'CANCELLED'}
 
 class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
     """
@@ -414,7 +458,7 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
 
 
 classes = (SCENE_OT_CreateExportDirectory,
-           SCENE_OT_ExportResultsPopup,
+           SIMPLEEXPORTER_PT_ExportResultsPanel,
            SCENE_OT_SelectAllCollections,
            SCENE_OT_SetExporterPath,
            SCENE_OT_ExportCollection,
@@ -423,14 +467,16 @@ classes = (SCENE_OT_CreateExportDirectory,
 
 
 def register():
-    from bpy.utils import register_class
+    bpy.types.WindowManager.export_data_info = bpy.props.StringProperty(default="[]")
 
+    from bpy.utils import register_class
     for cls in classes:
         register_class(cls)
 
 
 def unregister():
-    from bpy.utils import unregister_class
+    del bpy.types.WindowManager.export_data_info
 
+    from bpy.utils import unregister_class
     for cls in reversed(classes):
         unregister_class(cls)

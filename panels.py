@@ -3,6 +3,7 @@ import os
 import bpy
 
 from .functions import get_addon_name
+from .uilist import color_tag_icons
 
 
 def get_presets_folder():
@@ -74,13 +75,6 @@ def draw_export_preset(self, context):
 
     box = layout.box()
     box.label(text="Presets")
-
-    # Active Preset
-    row = box.row(align=True)
-    row.label(text="Active")
-    preset_name = os.path.basename(scene.simple_export_preset_file)
-    row.label(text=preset_name)
-
     # Select preset
     box.prop(props, "simple_export_preset_file", text="Select")
 
@@ -99,7 +93,7 @@ def draw_export_preset(self, context):
         row.prop(props, "preset_path", text="Preset Folder")
 
         row = box_debug.row()
-        op = row.operator("simple_export.apply_preset", text="Apply Preset")
+        op = row.operator("simple_export.assign_preset", text="Assign Preset")
         op.collection_name = context.collection.name
 
 
@@ -197,10 +191,10 @@ class SIMPLE_EXPORT_menu_base:
         # List Operators
         col = layout.column(align=True)
         row = col.row()
-        row.operator("scene.export_selected_collections", text="Export Collections")
+        row.operator("scene.export_selected_collections", text="Export Selected")
 
-        # row = col.row()
-        # row.operator("simple_export.apply_preset", text="TODO: Assign Presets")
+        row = col.row()
+        row.operator("simple_export.assign_preset_selection", text="Assign Presets")
         # row = col.row()
         # row.operator("scene.export_selected_collections", text="TODO: Assign Paths")
 
@@ -239,10 +233,21 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         # Collection Creation
         box = layout.box()
         box.label(text='Export Collection')
+
+        color_tag = None
+        if context.scene.parent_collection:
+            color_tag = context.scene.parent_collection.color_tag
+        icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
         row = box.row()
-        row.prop(context.scene, "parent_collection", text="Parent Collection")
+        row.prop(context.scene, "parent_collection", text="Parent Collection", icon=icon)
         row = box.row()
-        row.operator("simple_export.create_export_collection", icon='COLLECTION_NEW')
+
+        # Determine the icon based on the collection's color_tag
+        prefs = context.preferences.addons[__package__].preferences
+
+        color_tag = prefs.collection_color
+        icon=color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
+        row.operator("simple_export.create_export_collection", icon=icon)
 
 
 class SIMPLE_EXPORT_PT_simple_export(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
