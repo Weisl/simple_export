@@ -79,18 +79,38 @@ class SIMPLEEXPORTER_PT_ResultsPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text="Collection:")
+        layout.label(text="Results:")
 
         # Get results from WindowManager
         results_str = context.window_manager.result_data
         results = eval(results_str) if results_str else []  # Parse results string into a list
 
-        for result in results:
-            row = layout.row()
-            icon = 'CHECKMARK' if result['success'] else 'CANCEL'
-            row.label(text=f"{result['name']}:", icon=icon)
-            row.label(text=f"{result['message']}")
+        # Header row with column titles
+        split = layout.split(factor=0.1)
+        col_icon = split.column()  # Icon column
+        col_name = split.column()  # Collection name column
+        col_message = split.column()  # Info message column
 
+        row = layout.row()
+        col_icon.label(text="")
+        col_name.label(text="Collection")
+        col_message.label(text="Info")
+
+        # Iterate over results and populate the table
+        for result in results:
+            split = layout.split(factor=0.1)  # Split for each row
+            col_icon = split.column()
+            col_name = split.column()
+            col_message = split.column()
+
+            # Icon Column
+            col_icon.label(icon='CHECKMARK' if result['success'] else 'CANCEL')
+
+            # Collection Name Column
+            col_name.label(text=result['name'])
+
+            # Info Message Column
+            col_message.label(text=result['message'])
 
 
 class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
