@@ -26,14 +26,14 @@ def set_active_layer_Collection(collection_name):
     bpy.context.view_layer.active_layer_collection = layerColl
 
 
-def generate_export_path(collection_name, export_dir, original_path, replacement_path):
+def generate_export_path(collection_name, export_dir, search_path, replacement_path):
     """
     Set the export path for a given collection's exporter.
 
     Args:
         collection_name (str): The name of the collection.
         exporter_dir (str): Path to the export folder.
-        original_path (str): The original path to be replaced.
+        search_path (str): The original path to be replaced.
         replacement_path (str): The replacement path to be applied.
     """
     prefs = bpy.context.preferences.addons[__package__].preferences
@@ -56,8 +56,8 @@ def generate_export_path(collection_name, export_dir, original_path, replacement
     export_name += ".fbx"  # or use prefs.export_format to determine extension
     export_path = os.path.join(export_dir, export_name)
 
-    if original_path in export_path:
-        export_path = export_path.replace(original_path, replacement_path)
+    if search_path in export_path:
+        export_path = export_path.replace(search_path, replacement_path)
     return export_path
 
 
@@ -229,7 +229,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Path variables
-        original_path = prefs.original_path
+        search_path = prefs.search_path
         replacement_path = prefs.replacement_path
         default_export_format = prefs.default_export_format
 
@@ -242,7 +242,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Set export Path
-        export_path = generate_export_path(collection.name, export_dir, original_path, replacement_path)
+        export_path = generate_export_path(collection.name, export_dir, search_path, replacement_path)
         export_path = assign_exporter_path(exporter, export_path)
 
         self.report({'INFO'}, f"Export path set to {export_path}")
