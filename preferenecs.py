@@ -131,15 +131,16 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                                                 description="Use the collection offset for the exported collection",
                                                 default=False)
 
+    use_blend_file_name_as_prefix: bpy.props.BoolProperty(name="Use Blend File Name as Prefix",
+                                                          description="If checked, the Blender file name will be used as a prefix for the export file name.",
+                                                          default=False)
+
+
     ########################################
     # Filepath
 
     custom_export_path: bpy.props.StringProperty(name="Custom Export Path",
                                                  description="Custom directory to export files to.", subtype='DIR_PATH')
-
-    use_blend_file_name_as_prefix: bpy.props.BoolProperty(name="Use Blend File Name as Prefix",
-                                                          description="If checked, the Blender file name will be used as a prefix for the export file name.",
-                                                          default=False)
 
     ########################################
     # Collection Name
@@ -155,6 +156,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     replacement_path: bpy.props.StringProperty(name="Replacement Path", description="The path to replace with.",
                                                default="sourcedata")
 
+    ########################################
     # Debug
     simple_export_debug: bpy.props.BoolProperty(name="Debug Mode",
                                                 description="Debug mode only used for development",
@@ -286,16 +288,52 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                            "SIMPLE_EXPORT_PT_simple_export")
 
 
+# Initialize Window Manager Properties with Add-on Preferences Defaults
+
 classes = (
     SIMPLE_EXPORT_preferences,
 )
 
+# Helper function to initialize Window Manager properties
+def initialize_window_manager_properties():
+    prefs = bpy.context.preferences.addons[__package__].preferences
+    bpy.types.WindowManager.custom_prefix = bpy.props.StringProperty(
+        name="Custom Prefix",
+        description="Custom prefix to add to the export file name.",
+        default=prefs.custom_prefix
+    )
+    bpy.types.WindowManager.custom_suffix = bpy.props.StringProperty(
+        name="Custom Suffix",
+        description="Custom suffix to add to the export file name.",
+        default=prefs.custom_suffix
+    )
+    bpy.types.WindowManager.search_path = bpy.props.StringProperty(
+        name="Search Path",
+        description="The path to be replaced.",
+        default=prefs.search_path
+    )
+    bpy.types.WindowManager.replacement_path = bpy.props.StringProperty(
+        name="Replacement Path",
+        description="The path to replace with.",
+        default=prefs.replacement_path
+    )
+    bpy.types.WindowManager.use_blend_file_name_as_prefix = bpy.props.StringProperty(
+        name="Use Blend File Name as Prefix",
+        description="If checked, the Blender file name will be used as a prefix for the export file name.",
+        default=prefs.use_blend_file_name_as_prefix
+    )
+
+
+def post_register():
+    initialize_window_manager_properties()
 
 def register():
     from bpy.utils import register_class
 
     for cls in classes:
         register_class(cls)
+
+    bpy.app.timers.register(post_register, first_interval=0.1)
 
     from .keymap import add_keymap
     add_keymap()
@@ -314,3 +352,12 @@ def unregister():
 
     for cls in reversed(classes):
         unregister_class(cls)
+
+    # Collection creation
+    del bpy.types.WindowManager.custom_prefix
+    del bpy.types.WindowManager.custom_suffix
+    del bpy.types.WindowManager.use_blend_file_name_as_prefix
+
+    # filepath
+    del bpy.types.WindowManager.search_path
+    del bpy.types.WindowManager.replacement_path

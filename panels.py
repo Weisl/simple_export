@@ -242,6 +242,16 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         row.prop(context.scene, "parent_collection", text="Parent Collection", icon=icon)
         row = box.row()
 
+        wm = context.window_manager
+        box.prop(wm, "collection_color")
+        box.prop(wm, "use_blend_file_name_as_prefix")
+        box.prop(wm, "custom_prefix")
+        box.prop(wm, "custom_suffix")
+        # Collection offset
+        box.prop(wm, "set_location_offset_on_creation")
+        # Collection offset
+        box.prop(wm, "auto_set_filepath")
+        box.prop(wm, "auto_set_preset")
         # Determine the icon based on the collection's color_tag
         prefs = context.preferences.addons[__package__].preferences
 
@@ -274,6 +284,10 @@ classes = (
 )
 
 
+
+
+
+# Register and Unregister
 def register():
     Scene = bpy.types.Scene
     Scene.simple_export_preset_file = bpy.props.StringProperty(
@@ -281,7 +295,6 @@ def register():
         description="Path for Simple Export preset",
         default="",
     )
-
     from bpy.utils import register_class
 
     for cls in classes:
@@ -299,3 +312,5 @@ def unregister():
     Scene = bpy.types.Scene
     del Scene.simple_export_preset_file
     del Scene.simple_export_props
+
+
