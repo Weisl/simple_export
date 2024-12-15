@@ -119,24 +119,35 @@ def draw_create_export_collection(layout, context):
     icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
     row.operator("simple_export.create_export_collection", icon=icon)
 
-
     wm = context.window_manager
-    row = layout.row()
-    row.prop(wm, "collection_color")
-    row = layout.row()
-    row.prop(wm, "use_blend_file_name_as_prefix")
-    row = layout.row()
-    row.prop(wm, "custom_prefix")
-    row = layout.row()
-    row.prop(wm, "custom_suffix")
-    # Collection settings
-    row = layout.row()
-    row.prop(wm, "auto_set_filepath")
-    row = layout.row()
-    row.prop(wm, "auto_set_preset")
-    # Collection Offset
-    row = layout.row()
-    row.prop(wm, "set_location_offset_on_creation")
+
+    # Define properties to check
+    properties = [
+        "collection_color",
+        "use_blend_file_name_as_prefix",
+        "custom_prefix",
+        "custom_suffix",
+        "auto_set_filepath",
+        "auto_set_preset",
+        "set_location_offset_on_creation"
+    ]
+
+    for prop_name in properties:
+        # Ensure the property exists in both WindowManager and Preferences
+        if hasattr(wm, prop_name) and hasattr(prefs, prop_name):
+            wm_value = getattr(wm, prop_name)
+            pref_value = getattr(prefs, prop_name)
+
+            # Determine label text with prefix
+            label_prefix = "* " if wm_value != pref_value else ""
+            label_text = f"{label_prefix}{prop_name.replace('_', ' ').title()}"
+
+            # Draw the property with dynamic label
+            row = layout.row()
+            row.prop(wm, prop_name, text=label_text)
+        else:
+            # Debugging note: Property does not exist
+            print(f"Property {prop_name} not found in WindowManager or Preferences")
 
 
 def draw_filepath_settings(layout, context):
@@ -297,8 +308,6 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         # Export Filepath Settings UI
         box = layout.box()
         draw_filepath_settings(box, context)
-
-
 
 
 class SIMPLE_EXPORT_PT_simple_export(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
