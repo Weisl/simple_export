@@ -135,7 +135,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                                                           description="If checked, the Blender file name will be used as a prefix for the export file name.",
                                                           default=False)
 
-
     ########################################
     # Filepath
 
@@ -152,7 +151,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                                             description="Custom suffix to add to the export file name.")
 
     search_path: bpy.props.StringProperty(name="Search Path", description="The path to be replaced.",
-                                            default="workdata")
+                                          default="workdata")
     replacement_path: bpy.props.StringProperty(name="Replacement Path", description="The path to replace with.",
                                                default="sourcedata")
 
@@ -186,10 +185,10 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     )
     ###################################################################
     # Creation
-    auto_set_filepath: bpy.props.BoolProperty(name="Create with Filepath",
+    auto_set_filepath: bpy.props.BoolProperty(name="Use Filepath",
                                               description="Set filepath when creating an Exporter Collection",
                                               default=True)
-    auto_set_preset: bpy.props.BoolProperty(name="Set Location Offset",
+    auto_set_preset: bpy.props.BoolProperty(name="Use Preset",
                                             description="Set export preset when creating an Exporter Collection",
                                             default=True)
 
@@ -294,9 +293,11 @@ classes = (
     SIMPLE_EXPORT_preferences,
 )
 
+
 # Helper function to initialize Window Manager properties
-def initialize_window_manager_properties():
+def initialize_properties_collection_generation():
     prefs = bpy.context.preferences.addons[__package__].preferences
+
     bpy.types.WindowManager.custom_prefix = bpy.props.StringProperty(
         name="Custom Prefix",
         description="Custom prefix to add to the export file name.",
@@ -307,6 +308,30 @@ def initialize_window_manager_properties():
         description="Custom suffix to add to the export file name.",
         default=prefs.custom_suffix
     )
+    bpy.types.WindowManager.use_blend_file_name_as_prefix = bpy.props.BoolProperty(
+        name="Use Blend File Name as Prefix",
+        description="If checked, the Blender file name will be used as a prefix for the export file name.",
+        default=prefs.use_blend_file_name_as_prefix
+    )
+    bpy.types.WindowManager.set_location_offset_on_creation = bpy.props.BoolProperty(
+        name="Set Location Offset",
+        description="Set Location Offset",
+        default=prefs.set_location_offset_on_creation
+    )
+    bpy.types.WindowManager.auto_set_filepath = bpy.props.BoolProperty(
+        name="Use Filepath",
+        description="Set filepath when creating an Exporter Collection",
+        default=prefs.auto_set_filepath
+    )
+    bpy.types.WindowManager.auto_set_preset = bpy.props.BoolProperty(
+        name="Use Preset",
+        description="Set export preset when creating an Exporter Collection",
+        default=prefs.auto_set_preset
+    )
+
+
+def initialize_properties_file_path():
+    prefs = bpy.context.preferences.addons[__package__].preferences
     bpy.types.WindowManager.search_path = bpy.props.StringProperty(
         name="Search Path",
         description="The path to be replaced.",
@@ -317,15 +342,12 @@ def initialize_window_manager_properties():
         description="The path to replace with.",
         default=prefs.replacement_path
     )
-    bpy.types.WindowManager.use_blend_file_name_as_prefix = bpy.props.StringProperty(
-        name="Use Blend File Name as Prefix",
-        description="If checked, the Blender file name will be used as a prefix for the export file name.",
-        default=prefs.use_blend_file_name_as_prefix
-    )
 
 
 def post_register():
-    initialize_window_manager_properties()
+    initialize_properties_collection_generation()
+    initialize_properties_file_path()
+
 
 def register():
     from bpy.utils import register_class

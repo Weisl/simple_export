@@ -65,13 +65,10 @@ EXPORT_FORMATS = {
 }
 
 
-def draw_export_preset(self, context):
-    layout = self.layout
+def draw_export_preset(layout, context):
     scene = context.scene
     props = context.scene.simple_export_props
     prefs = context.preferences.addons[__package__].preferences
-
-    layout.prop(props, "export_format", text="Format")
 
     box = layout.box()
     box.label(text="Presets")
@@ -95,6 +92,61 @@ def draw_export_preset(self, context):
         row = box_debug.row()
         op = row.operator("simple_export.assign_preset", text="Assign Preset")
         op.collection_name = context.collection.name
+
+
+def draw_create_export_collection(layout, context):
+    addon_name = get_addon_name()
+
+    # Header
+    row = layout.row(align=True)
+    op = row.operator("simple_export.open_preferenecs", text="", icon="PREFERENCES")
+    op.addon_name = addon_name
+    op.prefs_tabs = 'SETTINGS'
+    row.label(text='Export Collection')
+
+    # Parent selection
+    row = layout.row()
+    color_tag = None
+    if context.scene.parent_collection:
+        color_tag = context.scene.parent_collection.color_tag
+    icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
+    row.prop(context.scene, "parent_collection", text="Parent Collection", icon=icon)
+
+    # Draw Create Button
+    row = layout.row()
+    prefs = context.preferences.addons[__package__].preferences
+    color_tag = prefs.collection_color
+    icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
+    row.operator("simple_export.create_export_collection", icon=icon)
+
+
+    wm = context.window_manager
+    row = layout.row()
+    row.prop(wm, "collection_color")
+    row = layout.row()
+    row.prop(wm, "use_blend_file_name_as_prefix")
+    row = layout.row()
+    row.prop(wm, "custom_prefix")
+    row = layout.row()
+    row.prop(wm, "custom_suffix")
+    # Collection settings
+    row = layout.row()
+    row.prop(wm, "auto_set_filepath")
+    row = layout.row()
+    row.prop(wm, "auto_set_preset")
+    # Collection Offset
+    row = layout.row()
+    row.prop(wm, "set_location_offset_on_creation")
+
+
+def draw_filepath_settings(layout, context):
+    wm = context.window_manager
+    row = layout.row()
+    row.label(text='File Path')
+    row = layout.row()
+    row.prop(wm, "search_path")
+    row = layout.row()
+    row.prop(wm, "replacement_path")
 
 
 def draw_custom_collection_ui(self, context):
@@ -128,12 +180,14 @@ class SimpleExportProperties(bpy.types.PropertyGroup):
         default=EXPORT_FORMATS["FBX"]["preset_folder"],  # Dynamically fetch from EXPORT_FORMATS
         subtype="DIR_PATH",
     )
+
     simple_export_preset_file: bpy.props.EnumProperty(
         name="Preset File",
         description="Select a .py file",
         items=lambda self, context: self.get_py_files(),
         update=lambda self, context: self.update_scene_preset_path(context),
     )
+
     override_path: bpy.props.BoolProperty(
         name="Override Preset Folder",
         description="Manually override the automatically set preset folder",
@@ -185,8 +239,8 @@ class SIMPLE_EXPORT_menu_base:
         row.label(text="Export List")
         row = layout.row()
         row.template_list("SCENE_UL_CollectionList", "", bpy.data, "collections", scene, "collection_index")
-        col = row.column(align=True)
-        col.menu("SIMPLE_EXPORT_MT_context_menu", icon="DOWNARROW_HLT", text="")
+        # col = row.column(align=True)
+        # col.menu("SIMPLE_EXPORT_MT_context_menu", icon="DOWNARROW_HLT", text="")
 
         # List Operators
         col = layout.column(align=True)
@@ -220,44 +274,31 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
     bl_context = "scene"
 
     def draw(self, context):
-        draw_export_preset(self, context)
-
-        super().draw(context)
-
+        props = context.scene.simple_export_props
         layout = self.layout
 
-        # Add a button to open the panel as a popup
+        # Draw format selection
+        layout.prop(props, "export_format", text="Format")
+
+        # Draw Export List
+        super().draw(context)
+
+        # Button to open the export Popup
         op = layout.operator("wm.call_panel", text="Open Export Popup")
         op.name = "SIMPLE_EXPORT_PT_simple_export"
 
-        # Collection Creation
+        # Draw Preset UI
+        draw_export_preset(layout, context)
+
+        # Export Collection Creation UI
         box = layout.box()
-        box.label(text='Export Collection')
+        draw_create_export_collection(box, context)
 
-        color_tag = None
-        if context.scene.parent_collection:
-            color_tag = context.scene.parent_collection.color_tag
-        icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
-        row = box.row()
-        row.prop(context.scene, "parent_collection", text="Parent Collection", icon=icon)
-        row = box.row()
+        # Export Filepath Settings UI
+        box = layout.box()
+        draw_filepath_settings(box, context)
 
-        wm = context.window_manager
-        box.prop(wm, "collection_color")
-        box.prop(wm, "use_blend_file_name_as_prefix")
-        box.prop(wm, "custom_prefix")
-        box.prop(wm, "custom_suffix")
-        # Collection offset
-        box.prop(wm, "set_location_offset_on_creation")
-        # Collection offset
-        box.prop(wm, "auto_set_filepath")
-        box.prop(wm, "auto_set_preset")
-        # Determine the icon based on the collection's color_tag
-        prefs = context.preferences.addons[__package__].preferences
 
-        color_tag = prefs.collection_color
-        icon=color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
-        row.operator("simple_export.create_export_collection", icon=icon)
 
 
 class SIMPLE_EXPORT_PT_simple_export(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
@@ -282,9 +323,6 @@ classes = (
     SIMPLE_EXPORT_PT_CollectionExportPanel,
     SIMPLE_EXPORT_PT_simple_export,
 )
-
-
-
 
 
 # Register and Unregister
@@ -312,5 +350,3 @@ def unregister():
     Scene = bpy.types.Scene
     del Scene.simple_export_preset_file
     del Scene.simple_export_props
-
-
