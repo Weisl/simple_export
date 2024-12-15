@@ -117,7 +117,7 @@ def export_collection(collection, context):
 
         # Check Blender's reports for any errors
         report_messages = []
-        for report in bpy.context.window_manager.reports:
+        for report in context.window_manager.reports:
             if report.type == 'ERROR':
                 report_messages.append(report.message)
 

@@ -94,7 +94,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             None
         """
         # This functions gets called when the hotkey assignment is updated in the preferences
-        wm = bpy.context.window_manager
+        wm = context.window_manager
         km = wm.keyconfigs.addon.keymaps["Window"]
         simple_export_panel_type = self.simple_export_panel_type.upper()
 
@@ -328,10 +328,27 @@ def initialize_properties_collection_generation():
         description="Set export preset when creating an Exporter Collection",
         default=prefs.auto_set_preset
     )
+    bpy.types.WindowManager.collection_color = bpy.props.EnumProperty(
+        name="Collection Color Tag",
+        description="Choose a color tag for collections",
+        items=[
+            ('NONE', "Default", "Default color tag", 'OUTLINER_COLLECTION', 0),
+            ('COLOR_01', "Color 1", "Red tag", 'COLLECTION_COLOR_01', 1),
+            ('COLOR_02', "Color 2", "Orange tag", 'COLLECTION_COLOR_02', 2),
+            ('COLOR_03', "Color 3", "Yellow tag", 'COLLECTION_COLOR_03', 3),
+            ('COLOR_04', "Color 4", "Green tag", 'COLLECTION_COLOR_04', 4),
+            ('COLOR_05', "Color 5", "Blue tag", 'COLLECTION_COLOR_05', 5),
+            ('COLOR_06', "Color 6", "Purple tag", 'COLLECTION_COLOR_06', 6),
+            ('COLOR_07', "Color 7", "Pink tag", 'COLLECTION_COLOR_07', 7),
+            ('COLOR_08', "Color 8", "Gray tag", 'COLLECTION_COLOR_08', 8),
+        ],
+        default=prefs.collection_color,
+    )
 
 
 def initialize_properties_file_path():
     prefs = bpy.context.preferences.addons[__package__].preferences
+
     bpy.types.WindowManager.search_path = bpy.props.StringProperty(
         name="Search Path",
         description="The path to be replaced.",
@@ -342,6 +359,15 @@ def initialize_properties_file_path():
         description="The path to replace with.",
         default=prefs.replacement_path
     )
+    bpy.types.WindowManager.use_blender_file_location = bpy.props.BoolProperty(
+        name="Use Blender File Location",
+        description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
+        default=True
+    )
+    bpy.types.WindowManager.custom_export_path = bpy.props.StringProperty(
+        name="Custom Export Path",
+        description="Custom directory to export files to.",
+        subtype='DIR_PATH')
 
 
 def post_register():

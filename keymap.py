@@ -17,7 +17,7 @@ def add_key(context, idname, type, ctrl, shift, alt, operator, active):
 
 def remove_key(context, idname, properties_name):
     """Removes addon hotkeys from the keymap"""
-    wm = bpy.context.window_manager
+    wm = context.window_manager
     km = wm.keyconfigs.addon.keymaps['Window']
 
     for kmi in km.keymap_items:

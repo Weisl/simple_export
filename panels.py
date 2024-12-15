@@ -93,6 +93,35 @@ def draw_export_preset(layout, context):
         op = row.operator("simple_export.assign_preset", text="Assign Preset")
         op.collection_name = context.collection.name
 
+def draw_properties_with_prefix(layout, context, properties):
+    """
+    Draws properties with a * prefix if they differ between the WindowManager and Preferences.
+
+    Args:
+        layout (UILayout): The UI layout to draw in.
+        context (Context): The Blender context.
+        properties (list): List of property names to compare and draw.
+    """
+    wm = context.window_manager
+    prefs = context.preferences.addons[__package__].preferences
+
+    for prop_name in properties:
+        # Ensure the property exists in both WindowManager and Preferences
+        if hasattr(wm, prop_name) and hasattr(prefs, prop_name):
+            wm_value = getattr(wm, prop_name)
+            pref_value = getattr(prefs, prop_name)
+
+            # Determine label text with prefix
+            label_prefix = "* " if wm_value != pref_value else ""
+            label_text = f"{label_prefix}{prop_name.replace('_', ' ').title()}"
+
+            # Draw the property with dynamic label
+            row = layout.row()
+            row.prop(wm, prop_name, text=label_text)
+        else:
+            # Debugging note: Property does not exist
+            print(f"Property {prop_name} not found in WindowManager or Preferences")
+
 
 def draw_create_export_collection(layout, context):
     addon_name = get_addon_name()
@@ -132,32 +161,27 @@ def draw_create_export_collection(layout, context):
         "set_location_offset_on_creation"
     ]
 
-    for prop_name in properties:
-        # Ensure the property exists in both WindowManager and Preferences
-        if hasattr(wm, prop_name) and hasattr(prefs, prop_name):
-            wm_value = getattr(wm, prop_name)
-            pref_value = getattr(prefs, prop_name)
-
-            # Determine label text with prefix
-            label_prefix = "* " if wm_value != pref_value else ""
-            label_text = f"{label_prefix}{prop_name.replace('_', ' ').title()}"
-
-            # Draw the property with dynamic label
-            row = layout.row()
-            row.prop(wm, prop_name, text=label_text)
-        else:
-            # Debugging note: Property does not exist
-            print(f"Property {prop_name} not found in WindowManager or Preferences")
+    # Use the helper function to draw properties
+    draw_properties_with_prefix(layout, context, properties)
 
 
 def draw_filepath_settings(layout, context):
     wm = context.window_manager
+    prefs = context.preferences.addons[__package__].preferences
+
     row = layout.row()
     row.label(text='File Path')
-    row = layout.row()
-    row.prop(wm, "search_path")
-    row = layout.row()
-    row.prop(wm, "replacement_path")
+
+    # Define properties to check
+    properties = [
+        "use_blender_file_location",
+        "custom_export_path",
+        "search_path",
+        "replacement_path",
+    ]
+
+    # Use the helper function to draw properties
+    draw_properties_with_prefix(layout, context, properties)
 
 
 def draw_custom_collection_ui(self, context):
