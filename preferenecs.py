@@ -367,7 +367,8 @@ def initialize_properties_file_path():
     bpy.types.WindowManager.custom_export_path = bpy.props.StringProperty(
         name="Custom Export Path",
         description="Custom directory to export files to.",
-        subtype='DIR_PATH')
+        subtype='DIR_PATH'
+    )
 
 
 def post_register():
