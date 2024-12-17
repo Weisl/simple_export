@@ -15,6 +15,7 @@ color_tag_icons = {
     'COLOR_08': 'COLLECTION_COLOR_08',
 }
 
+
 class SCENE_UL_CollectionList(bpy.types.UIList):
     """
     UIList displaying all collections with an exporter matching the selected export type.
@@ -85,10 +86,13 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         props = context.scene.simple_export_props
         export_format = props.export_format
 
+        from .panels import EXPORT_FORMATS
+
         for collection in bpy.data.collections:
             # Filter collections based on whether they have an exporter with the matching format
             has_matching_exporter = any(
-                exporter.name == export_format for exporter in collection.exporters
+                str(type(exporter.export_properties)) == EXPORT_FORMATS[export_format]["op_type"] for exporter in
+                collection.exporters
             )
 
             if has_matching_exporter:
