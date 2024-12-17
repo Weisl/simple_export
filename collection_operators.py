@@ -8,6 +8,32 @@ from .panels import EXPORT_FORMATS
 from .presets import assign_preset
 
 
+def generate_collection_name(context, obj_name):
+    # Construct the export file name
+    collection_name = obj_name
+
+    prefs = bpy.context.preferences.addons[__package__].preferences
+    wm = context.window_manager
+    settings = wm
+
+
+    if getattr(settings, 'use_blend_file_name_as_prefix'):
+        blend_file_name = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
+        if not collection_name.startswith(blend_file_name):
+            collection_name = blend_file_name + "_" + collection_name
+
+    prefix = getattr(settings, 'custom_prefix')
+    suffix = getattr(settings, 'custom_suffix')
+
+    if prefix and not collection_name.startswith(prefix):
+        collection_name = prefix + "_" + collection_name
+
+    if suffix and not collection_name.endswith(suffix):
+        collection_name = collection_name + "_" + suffix
+
+    return collection_name
+
+
 class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
     """
     Create a new collection for the active object and its children.
@@ -19,7 +45,11 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
     def execute(self, context):
         active_object = context.active_object
         parent_collection = context.scene.parent_collection or context.scene.collection
+
         prefs = bpy.context.preferences.addons[__package__].preferences
+        wm = context.window_manager
+        settings = wm
+
         props = context.scene.simple_export_props
 
         # Check for active object
@@ -32,24 +62,25 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
             self.report({'WARNING'}, "No valid parent collection selected. Falling back to the scene collection.")
             parent_collection = context.scene.collection
 
+        collection_name = generate_collection_name(context, active_object.name)
         # Ensure export collection does not yet exist.
-        if active_object.name in bpy.data.collections:
+        if collection_name in bpy.data.collections:
             self.report({'WARNING'}, "Collection already exists")
             return {'CANCELLED'}
 
         # Make sure that blend file exists to retrieve the file path
-        if prefs.use_blender_file_location:
+        if getattr(settings, 'use_blender_file_location') and getattr(settings, 'auto_set_filepath'):
             blend_filepath = bpy.data.filepath
             # Return if Blend File hasn't been saved
             if not blend_filepath:
                 self.report({'ERROR'}, f"Save the Blend file before calling this operator.")
                 return {'CANCELLED'}
-            export_dir = os.path.dirname(blend_filepath)
-        else:
-            export_dir = prefs.custom_export_path
+            blend_dir = os.path.dirname(blend_filepath)
+        elif getattr(settings, 'custom_export_path'):
+            blend_dir = getattr(settings, 'custom_export_path')
 
         # Assign the preset
-        if prefs.auto_set_preset:
+        if getattr(settings, 'auto_set_preset'):
             preset_path = props.simple_export_preset_file
 
             if not preset_path:
@@ -69,9 +100,10 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
                     parent_collection.children.link(col)
             return col
 
-        # Create or get the export collection
-        collection_name = active_object.name
         export_collection = make_collection(collection_name, parent_collection)
+
+        # assign properties
+        export_collection['simple_export_selected'] = True
 
         # Recursive function to find all children of an object
         def find_children(parent_object, child_stack):
@@ -98,11 +130,11 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
                     col.objects.unlink(ob)
 
         # Set collection Color:
-        color_tag = prefs.collection_color
+        color_tag = getattr(settings, 'collection_color')
         export_collection.color_tag = color_tag
 
         # Set instance offset
-        if prefs.set_location_offset_on_creation:
+        if getattr(settings, 'set_location_offset_on_creation'):
             export_collection.instance_offset = active_object.location
 
         # TODO: Set collection offset Object
@@ -133,17 +165,18 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
 
         exporter = list(set(exporters_after) - set(exporters_before))[0]
 
-        assign_preset(export_collection, preset_path)
+        if getattr(settings, 'auto_set_preset'):
+            assign_preset(export_collection, preset_path)
 
-        if prefs.auto_set_filepath:
-            search_path = prefs.search_path
-            replacement_path = prefs.replacement_path
+        if getattr(settings, 'auto_set_filepath'):
+            search_path = getattr(settings, 'search_path')
+            replacement_path = getattr(settings, 'replacement_path')
 
             if not exporter:
                 self.report({'ERROR'}, f"Could not add exporter to collection '{collection_name}'.")
                 return {'CANCELLED'}
 
-            export_path = generate_export_path(collection_name, export_dir, search_path, replacement_path)
+            export_path = generate_export_path(collection_name, blend_dir, search_path, replacement_path)
             export_path = assign_exporter_path(exporter, export_path)
 
         self.report({'INFO'}, f"Export collection '{export_collection.name}' created successfully.")

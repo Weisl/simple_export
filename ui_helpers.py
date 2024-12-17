@@ -26,7 +26,7 @@ class EXPORTER_OT_open_preferences(bpy.types.Operator):
             mod.bl_info['show_expanded'] = True
 
             # Find User Preferences area and redraw it
-            for window in bpy.context.window_manager.windows:
+            for window in context.window_manager.windows:
                 for area in window.screen.areas:
                     if area.type == 'USER_PREFERENCES':
                         area.tag_redraw()
