@@ -30,7 +30,7 @@ PROPERTY_METADATA = {
         "default": "sourcedata",
     },
     "collection_color": {
-        "name": "Collection Color",
+        "name": "Color",
         "description": "Choose a color tag for collections.",
         "items": [
             ('NONE', "Default", "Default color tag", 'OUTLINER_COLLECTION', 0),
