@@ -3,6 +3,65 @@ import bpy
 from .keymap import remove_key
 from .panels import get_export_format_items
 
+PROPERTY_METADATA = {
+    "custom_prefix": {
+        "name": "Prefix",
+        "description": "Custom prefix to add to the export file name.",
+        "default": "",
+    },
+    "custom_suffix": {
+        "name": "Suffix",
+        "description": "Custom suffix to add to the export file name.",
+        "default": "",
+    },
+    "use_blend_file_name_as_prefix": {
+        "name": "File Name",
+        "description": "If checked, the Blender file name will be used as a prefix for the export file name.",
+        "default": False,
+    },
+    "search_path": {
+        "name": "Search",
+        "description": "The path to be replaced.",
+        "default": "workdata",
+    },
+    "replacement_path": {
+        "name": "Replace",
+        "description": "The path to replace with.",
+        "default": "sourcedata",
+    },
+    "collection_color": {
+        "name": "Collection Color",
+        "description": "Choose a color tag for collections.",
+        "items": [
+            ('NONE', "Default", "Default color tag", 'OUTLINER_COLLECTION', 0),
+            ('COLOR_01', "Color 1", "Red tag", 'COLLECTION_COLOR_01', 1),
+            ('COLOR_02', "Color 2", "Orange tag", 'COLLECTION_COLOR_02', 2),
+            ('COLOR_03', "Color 3", "Yellow tag", 'COLLECTION_COLOR_03', 3),
+            ('COLOR_04', "Color 4", "Green tag", 'COLLECTION_COLOR_04', 4),
+            ('COLOR_05', "Color 5", "Blue tag", 'COLLECTION_COLOR_05', 5),
+            ('COLOR_06', "Color 6", "Purple tag", 'COLLECTION_COLOR_06', 6),
+            ('COLOR_07', "Color 7", "Pink tag", 'COLLECTION_COLOR_07', 7),
+            ('COLOR_08', "Color 8", "Gray tag", 'COLLECTION_COLOR_08', 8),
+        ],
+        "default": 'NONE',
+    },
+    "auto_set_filepath": {
+        "name": "Export Path",
+        "description": "##### Set filepath when creating an Exporter Collection.",
+        "default": True,
+    },
+    "auto_set_preset": {
+        "name": "Export Preset",
+        "description": "Set export preset when creating an Exporter Collection.",
+        "default": True,
+    },
+    "set_location_offset_on_creation": {
+        "name": "Collection Offset",
+        "description": "Set Location Offset for collections.",
+        "default": True,
+    },
+}
+
 
 def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_export_panel_ctrl,
             simple_export_panel_shift,
@@ -113,7 +172,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         items=(('SETTINGS', "Settings", "General addon settings"),
                ('KEYMAP', "Keymap", "Change the hotkeys for tools associated with this addon.")),
         default='SETTINGS',
-        description='Settings category:')
+        description='Settings category:'
+    )
 
     # Main settings
     default_export_format: bpy.props.EnumProperty(
@@ -123,17 +183,23 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default="FBX",  # Default value
     )
 
-    use_blender_file_location: bpy.props.BoolProperty(name="Use Blender File Location",
-                                                      description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
-                                                      default=True)
+    use_blender_file_location: bpy.props.BoolProperty(
+        name="Use Blender File Location",
+        description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
+        default=True
+    )
 
-    use_instance_offset: bpy.props.BoolProperty(name="(BETA) Move to Collection Offset",
-                                                description="Use the collection offset for the exported collection",
-                                                default=False)
+    use_instance_offset: bpy.props.BoolProperty(
+        name="(BETA) Move to Collection Offset",
+        description="Use the collection offset for the exported collection",
+        default=False
+    )
 
-    use_blend_file_name_as_prefix: bpy.props.BoolProperty(name="Use Blend File Name as Prefix",
-                                                          description="If checked, the Blender file name will be used as a prefix for the export file name.",
-                                                          default=False)
+    use_blend_file_name_as_prefix: bpy.props.BoolProperty(
+        name="Use Blend File Name as Prefix",
+        description="If checked, the Blender file name will be used as a prefix for the export file name.",
+        default=False
+    )
 
     ########################################
     # Filepath
@@ -144,67 +210,84 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     ########################################
     # Collection Name
 
-    custom_prefix: bpy.props.StringProperty(name="Custom Prefix",
-                                            description="Custom prefix to add to the export file name.")
+    custom_prefix: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["custom_prefix"]["name"],
+        description=PROPERTY_METADATA["custom_prefix"]["description"],
+        default=PROPERTY_METADATA["custom_prefix"]["default"],
+    )
 
-    custom_suffix: bpy.props.StringProperty(name="Custom Suffix",
-                                            description="Custom suffix to add to the export file name.")
+    custom_suffix: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["custom_suffix"]["name"],
+        description=PROPERTY_METADATA["custom_suffix"]["description"],
+        default=PROPERTY_METADATA["custom_suffix"]["default"],
+    )
 
-    search_path: bpy.props.StringProperty(name="Search Path", description="The path to be replaced.",
-                                          default="workdata")
-    replacement_path: bpy.props.StringProperty(name="Replacement Path", description="The path to replace with.",
-                                               default="sourcedata")
+    search_path: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["search_path"]["name"],
+        description=PROPERTY_METADATA["search_path"]["description"],
+        default=PROPERTY_METADATA["search_path"]["default"],
+    )
+
+    replacement_path: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["replacement_path"]["name"],
+        description=PROPERTY_METADATA["replacement_path"]["description"],
+        default=PROPERTY_METADATA["replacement_path"]["default"],
+    )
+    ########################################
+    # Collections
+
+    set_location_offset_on_creation: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["set_location_offset_on_creation"]["name"],
+        description=PROPERTY_METADATA["set_location_offset_on_creation"]["description"],
+        default=PROPERTY_METADATA["set_location_offset_on_creation"]["default"],
+    )
+
+    collection_color: bpy.props.EnumProperty(
+        name=PROPERTY_METADATA["collection_color"]["name"],
+        description=PROPERTY_METADATA["collection_color"]["description"],
+        items=PROPERTY_METADATA["collection_color"]["items"],
+        default=PROPERTY_METADATA["collection_color"]["default"],
+    )
+
+    ###################################################################
+    # Creation
+
+    auto_set_filepath: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["auto_set_filepath"]["name"],
+        description=PROPERTY_METADATA["auto_set_filepath"]["description"],
+        default=PROPERTY_METADATA["auto_set_filepath"]["default"],
+    )
+
+    auto_set_preset: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["auto_set_preset"]["name"],
+        description=PROPERTY_METADATA["auto_set_preset"]["description"],
+        default=PROPERTY_METADATA["auto_set_preset"]["default"],
+    )
+    ###################################################################
+    # KEYMAP
+
+    simple_export_panel_type: bpy.props.StringProperty(
+        name="Export Popup Menu", default="E",
+        update=update_simple_export_panel_key)
+
+    simple_export_panel_ctrl: bpy.props.BoolProperty(
+        name="Ctrl", default=False, update=update_simple_export_panel_key)
+
+    simple_export_panel_shift: bpy.props.BoolProperty(
+        name="Shift", default=True, update=update_simple_export_panel_key)
+    simple_export_panel_alt: bpy.props.BoolProperty(
+        name="Alt", default=True, update=update_simple_export_panel_key)
+
+    simple_export_panel_active: bpy.props.BoolProperty(
+        name="Active", default=True,
+        update=update_simple_export_panel_key)
+
 
     ########################################
     # Debug
     simple_export_debug: bpy.props.BoolProperty(name="Debug Mode",
                                                 description="Debug mode only used for development",
                                                 default=False)
-    ########################################
-    # Collections
-
-    set_location_offset_on_creation: bpy.props.BoolProperty(name="Set Location Offset",
-                                                            description="Set Location Offset",
-                                                            default=True)
-
-    collection_color: bpy.props.EnumProperty(
-        name="Collection Color Tag",
-        description="Choose a color tag for collections",
-        items=[
-            ('NONE', "Default", "Default color tag", 'OUTLINER_COLLECTION', 0),
-            ('COLOR_01', "Color 1", "Red tag", 'COLLECTION_COLOR_01', 1),
-            ('COLOR_02', "Color 2", "Orange tag", 'COLLECTION_COLOR_02', 2),
-            ('COLOR_03', "Color 3", "Yellow tag", 'COLLECTION_COLOR_03', 3),
-            ('COLOR_04', "Color 4", "Green tag", 'COLLECTION_COLOR_04', 4),
-            ('COLOR_05', "Color 5", "Blue tag", 'COLLECTION_COLOR_05', 5),
-            ('COLOR_06', "Color 6", "Purple tag", 'COLLECTION_COLOR_06', 6),
-            ('COLOR_07', "Color 7", "Pink tag", 'COLLECTION_COLOR_07', 7),
-            ('COLOR_08', "Color 8", "Gray tag", 'COLLECTION_COLOR_08', 8),
-        ],
-        default='NONE',
-    )
-    ###################################################################
-    # Creation
-    auto_set_filepath: bpy.props.BoolProperty(name="Use Filepath",
-                                              description="Set filepath when creating an Exporter Collection",
-                                              default=True)
-    auto_set_preset: bpy.props.BoolProperty(name="Use Preset",
-                                            description="Set export preset when creating an Exporter Collection",
-                                            default=True)
-
-    ###################################################################
-    # KEYMAP
-
-    simple_export_panel_type: bpy.props.StringProperty(name="Export Popup Menu", default="E",
-                                                       update=update_simple_export_panel_key)
-
-    simple_export_panel_ctrl: bpy.props.BoolProperty(name="Ctrl", default=False, update=update_simple_export_panel_key)
-
-    simple_export_panel_shift: bpy.props.BoolProperty(name="Shift", default=True, update=update_simple_export_panel_key)
-    simple_export_panel_alt: bpy.props.BoolProperty(name="Alt", default=True, update=update_simple_export_panel_key)
-
-    simple_export_panel_active: bpy.props.BoolProperty(name="Active", default=True,
-                                                       update=update_simple_export_panel_key)
 
     def keymap_ui(self, layout, title, property_prefix, id_name, properties_name):
         box = layout.box()
@@ -299,75 +382,65 @@ def initialize_properties_collection_generation():
     prefs = bpy.context.preferences.addons[__package__].preferences
 
     bpy.types.WindowManager.custom_prefix = bpy.props.StringProperty(
-        name="Custom Prefix",
-        description="Custom prefix to add to the export file name.",
+        name=PROPERTY_METADATA["custom_prefix"]["name"],
+        description=PROPERTY_METADATA["custom_prefix"]["description"],
         default=prefs.custom_prefix
     )
     bpy.types.WindowManager.custom_suffix = bpy.props.StringProperty(
-        name="Custom Suffix",
-        description="Custom suffix to add to the export file name.",
+        name=PROPERTY_METADATA["custom_suffix"]["name"],
+        description=PROPERTY_METADATA["custom_suffix"]["description"],
         default=prefs.custom_suffix
     )
     bpy.types.WindowManager.use_blend_file_name_as_prefix = bpy.props.BoolProperty(
-        name="Use Blend File Name as Prefix",
-        description="If checked, the Blender file name will be used as a prefix for the export file name.",
+        name=PROPERTY_METADATA["use_blend_file_name_as_prefix"]["name"],
+        description=PROPERTY_METADATA["use_blend_file_name_as_prefix"]["description"],
         default=prefs.use_blend_file_name_as_prefix
     )
     bpy.types.WindowManager.set_location_offset_on_creation = bpy.props.BoolProperty(
-        name="Set Location Offset",
-        description="Set Location Offset",
+        name=PROPERTY_METADATA["set_location_offset_on_creation"]["name"],
+        description=PROPERTY_METADATA["set_location_offset_on_creation"]["description"],
         default=prefs.set_location_offset_on_creation
     )
     bpy.types.WindowManager.auto_set_filepath = bpy.props.BoolProperty(
-        name="Use Filepath",
-        description="Set filepath when creating an Exporter Collection",
+        name=PROPERTY_METADATA["auto_set_filepath"]["name"],
+        description=PROPERTY_METADATA["auto_set_filepath"]["description"],
         default=prefs.auto_set_filepath
     )
     bpy.types.WindowManager.auto_set_preset = bpy.props.BoolProperty(
-        name="Use Preset",
-        description="Set export preset when creating an Exporter Collection",
+        name=PROPERTY_METADATA["auto_set_preset"]["name"],
+        description=PROPERTY_METADATA["auto_set_preset"]["description"],
         default=prefs.auto_set_preset
     )
     bpy.types.WindowManager.collection_color = bpy.props.EnumProperty(
-        name="Collection Color Tag",
-        description="Choose a color tag for collections",
-        items=[
-            ('NONE', "Default", "Default color tag", 'OUTLINER_COLLECTION', 0),
-            ('COLOR_01', "Color 1", "Red tag", 'COLLECTION_COLOR_01', 1),
-            ('COLOR_02', "Color 2", "Orange tag", 'COLLECTION_COLOR_02', 2),
-            ('COLOR_03', "Color 3", "Yellow tag", 'COLLECTION_COLOR_03', 3),
-            ('COLOR_04', "Color 4", "Green tag", 'COLLECTION_COLOR_04', 4),
-            ('COLOR_05', "Color 5", "Blue tag", 'COLLECTION_COLOR_05', 5),
-            ('COLOR_06', "Color 6", "Purple tag", 'COLLECTION_COLOR_06', 6),
-            ('COLOR_07', "Color 7", "Pink tag", 'COLLECTION_COLOR_07', 7),
-            ('COLOR_08', "Color 8", "Gray tag", 'COLLECTION_COLOR_08', 8),
-        ],
-        default=prefs.collection_color,
+        name=PROPERTY_METADATA["collection_color"]["name"],
+        description=PROPERTY_METADATA["collection_color"]["description"],
+        items=PROPERTY_METADATA["collection_color"]["items"],
+        default=prefs.collection_color
     )
-
 
 def initialize_properties_file_path():
     prefs = bpy.context.preferences.addons[__package__].preferences
 
     bpy.types.WindowManager.search_path = bpy.props.StringProperty(
-        name="Search Path",
-        description="The path to be replaced.",
+        name=PROPERTY_METADATA["search_path"]["name"],
+        description=PROPERTY_METADATA["search_path"]["description"],
         default=prefs.search_path
     )
     bpy.types.WindowManager.replacement_path = bpy.props.StringProperty(
-        name="Replacement Path",
-        description="The path to replace with.",
+        name=PROPERTY_METADATA["replacement_path"]["name"],
+        description=PROPERTY_METADATA["replacement_path"]["description"],
         default=prefs.replacement_path
     )
     bpy.types.WindowManager.use_blender_file_location = bpy.props.BoolProperty(
         name="Use Blender File Location",
         description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
-        default=True
+        default=prefs.use_blender_file_location
     )
     bpy.types.WindowManager.custom_export_path = bpy.props.StringProperty(
         name="Custom Export Path",
         description="Custom directory to export files to.",
-        subtype='DIR_PATH'
+        subtype='DIR_PATH',
+        default=prefs.custom_export_path
     )
 
 
@@ -406,7 +479,13 @@ def unregister():
     del bpy.types.WindowManager.custom_prefix
     del bpy.types.WindowManager.custom_suffix
     del bpy.types.WindowManager.use_blend_file_name_as_prefix
+    del bpy.types.WindowManager.set_location_offset_on_creation
+    del bpy.types.WindowManager.auto_set_filepath
+    del bpy.types.WindowManager.auto_set_preset
+    del bpy.types.WindowManager.collection_color
 
     # filepath
     del bpy.types.WindowManager.search_path
     del bpy.types.WindowManager.replacement_path
+    del bpy.types.WindowManager.use_blender_file_location
+    del bpy.types.WindowManager.custom_export_path

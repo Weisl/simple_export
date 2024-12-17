@@ -111,9 +111,12 @@ def draw_properties_with_prefix(layout, context, properties):
             wm_value = getattr(wm, prop_name)
             pref_value = getattr(prefs, prop_name)
 
+            from .preferenecs import PROPERTY_METADATA
+            text = PROPERTY_METADATA[prop_name]["name"]
+
             # Determine label text with prefix
             label_prefix = "* " if wm_value != pref_value else ""
-            label_text = f"{label_prefix}{prop_name.replace('_', ' ').title()}"
+            label_text = f"{label_prefix}{text.replace('_', ' ').title()}"
 
             # Draw the property with dynamic label
             row = layout.row()
