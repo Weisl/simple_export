@@ -77,13 +77,11 @@ def draw_export_preset(layout, context):
     props = context.scene.simple_export_props
     prefs = context.preferences.addons[__package__].preferences
 
-    box = layout.box()
-    box.label(text="Presets")
     # Select preset
-    box.prop(props, "simple_export_preset_file", text="Select")
+    layout.prop(props, "simple_export_preset_file", text="Select")
 
     if prefs.simple_export_debug:
-        box_debug = box.box()
+        box_debug = layout.box()
 
         box_debug.label(text='Debug')
 
@@ -99,6 +97,7 @@ def draw_export_preset(layout, context):
         row = box_debug.row()
         op = row.operator("simple_export.assign_preset", text="Assign Preset")
         op.collection_name = context.collection.name
+
 
 def draw_properties_with_prefix(layout, context, properties):
     """
@@ -133,16 +132,18 @@ def draw_properties_with_prefix(layout, context, properties):
             print(f"Property {prop_name} not found in WindowManager or Preferences")
 
 
-def draw_create_export_collection(layout, context):
+def draw_sub_panel_header(layout, title):
     addon_name = get_addon_name()
 
     # Header
     row = layout.row(align=True)
-    op = row.operator("simple_export.open_preferenecs", text="", icon="PREFERENCES")
+    op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
     op.addon_name = addon_name
     op.prefs_tabs = 'SETTINGS'
-    row.label(text='Export Collection')
+    row.label(text=title)
 
+
+def draw_create_export_collection(layout, context):
     # Parent selection
     row = layout.row()
     color_tag = None
@@ -157,8 +158,6 @@ def draw_create_export_collection(layout, context):
     color_tag = prefs.collection_color
     icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
     row.operator("simple_export.create_export_collection", icon=icon)
-
-    wm = context.window_manager
 
     # Define properties to check
     properties = [
@@ -176,11 +175,7 @@ def draw_create_export_collection(layout, context):
 
 
 def draw_filepath_settings(layout, context):
-    wm = context.window_manager
-    prefs = context.preferences.addons[__package__].preferences
 
-    row = layout.row()
-    row.label(text='File Path')
 
     # Define properties to check
     properties = [
@@ -189,7 +184,6 @@ def draw_filepath_settings(layout, context):
         "search_path",
         "replacement_path",
     ]
-
     # Use the helper function to draw properties
     draw_properties_with_prefix(layout, context, properties)
 
@@ -271,7 +265,7 @@ class SIMPLE_EXPORT_menu_base:
 
         # Open Preferences
         addon_name = get_addon_name()
-        op = row.operator("simple_export.open_preferenecs", text="", icon="PREFERENCES")
+        op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
         op.addon_name = addon_name
         op.prefs_tabs = 'SETTINGS'
 
@@ -316,7 +310,7 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
     bl_idname = "SCENE_PT_simple_export"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
-    bl_context = "scene"
+    bl_context = "output"
 
     def draw(self, context):
         props = context.scene.simple_export_props
@@ -326,38 +320,32 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         layout.prop(props, "export_format", text="Format")
 
         # Draw Preset UI
-        # Collapsible Presets Section
-        header, body = layout.panel("export_presets", default_closed=False)
-        header.label(text="Presets")
-        if body:
-            draw_export_preset(body, context)
+        layout.label(text="Presets")
+        draw_export_preset(layout, context)
 
         # Draw Export List
         super().draw(context)
 
         # Button to open the export Popup
         op = layout.operator("wm.call_panel", text="Open Export Popup")
-        op.name = "SIMPLE_EXPORT_PT_simple_export"
+        op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
 
         # Collapsible Filepath Settings Section
         header, body = layout.panel("filepath_settings", default_closed=True)
-        header.label(text="Filepath Settings")
+        draw_sub_panel_header(header, "Filepath Settings")
         if body:
             draw_filepath_settings(body, context)
 
         # Collapsible Export Collection Section
         header, body = layout.panel("export_collection", default_closed=False)
+        draw_sub_panel_header(header, "Export Header")
         header.label(text="Export Collection")
         if body:
             draw_create_export_collection(body, context)
 
 
-
-
-
-
-class SIMPLE_EXPORT_PT_simple_export(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
-    bl_idname = "SIMPLE_EXPORT_PT_simple_export"
+class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
+    bl_idname = "SIMPLE_EXPORT_PT_simple_export_popup"
     bl_space_type = "VIEW_3D"
     bl_region_type = "WINDOW"
     bl_context = "empty"
@@ -376,7 +364,7 @@ classes = (
     SimpleExportProperties,
     SIMPLE_EXPORT_MT_context_menu,
     SIMPLE_EXPORT_PT_CollectionExportPanel,
-    SIMPLE_EXPORT_PT_simple_export,
+    SIMPLE_EXPORT_PT_simple_export_popup,
 )
 
 

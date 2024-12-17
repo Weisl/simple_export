@@ -87,7 +87,6 @@ def export_collection(collection, context):
     if update_collection_offset in bpy.app.handlers.depsgraph_update_post:
         bpy.app.handlers.depsgraph_update_post.remove(update_collection_offset)
 
-
     # Validate exporter availability
     if not collection.exporters or not collection.exporters[0]:
         raise ValueError("No exporter configured for the collection.")
@@ -142,8 +141,6 @@ def export_collection(collection, context):
             bpy.app.handlers.depsgraph_update_post.append(update_collection_offset)
 
     return msg
-
-
 
 
 def open_directory(export_dir):

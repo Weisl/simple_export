@@ -2,7 +2,7 @@ import bpy
 
 class EXPORTER_OT_open_preferences(bpy.types.Operator):
     """Tooltip"""
-    bl_idname = "simple_export.open_preferenecs"
+    bl_idname = "simple_export.open_preferences"
     bl_label = "Open Addon preferences"
 
     addon_name: bpy.props.StringProperty()

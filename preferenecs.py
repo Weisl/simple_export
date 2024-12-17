@@ -168,8 +168,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         simple_export_panel_type = self.simple_export_panel_type.upper()
 
         # Remove previous key assignment
-        remove_key(context, 'wm.call_panel', "SIMPLE_EXPORT_PT_simple_export")
-        add_key(self, km, 'wm.call_panel', "SIMPLE_EXPORT_PT_simple_export", simple_export_panel_type,
+        remove_key(context, 'wm.call_panel', "SIMPLE_EXPORT_PT_simple_export_popup")
+        add_key(self, km, 'wm.call_panel', "SIMPLE_EXPORT_PT_simple_export_popup", simple_export_panel_type,
                 self.simple_export_panel_ctrl,
                 self.simple_export_panel_shift, self.simple_export_panel_alt, self.simple_export_panel_active)
         self.simple_export_panel_type = simple_export_panel_type
@@ -378,7 +378,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
         elif self.prefs_tabs == 'KEYMAP':
             self.keymap_ui(layout, 'Export Popup', 'simple_export_panel', 'wm.call_panel',
-                           "SIMPLE_EXPORT_PT_simple_export")
+                           "SIMPLE_EXPORT_PT_simple_export_popup")
 
 
 # Initialize Window Manager Properties with Add-on Preferences Defaults
