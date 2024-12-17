@@ -80,23 +80,27 @@ def draw_export_preset(layout, context):
     # Select preset
     layout.prop(props, "simple_export_preset_file", text="Select")
 
-    if prefs.simple_export_debug:
-        box_debug = layout.box()
 
-        box_debug.label(text='Debug')
+def draw_preset_debug(layout, context):
+    scene = context.scene
+    props = context.scene.simple_export_props
 
-        row = box_debug.row(align=True)
-        row.enabled = False  # Makes the field non-editable
-        row.prop(scene, "simple_export_preset_file", text="")
-        box_debug.prop(props, "override_path", text="Override Preset Folder")
+    box_debug = layout.box()
 
-        row = box_debug.row(align=True)
-        row.enabled = props.override_path  # Only enable preset_path editing if override_path is true
-        row.prop(props, "preset_path", text="Preset Folder")
+    box_debug.label(text='Debug')
 
-        row = box_debug.row()
-        op = row.operator("simple_export.assign_preset", text="Assign Preset")
-        op.collection_name = context.collection.name
+    row = box_debug.row(align=True)
+    row.enabled = False  # Makes the field non-editable
+    row.prop(scene, "simple_export_preset_file", text="")
+    box_debug.prop(props, "override_path", text="Override Preset Folder")
+
+    row = box_debug.row(align=True)
+    row.enabled = props.override_path  # Only enable preset_path editing if override_path is true
+    row.prop(props, "preset_path", text="Preset Folder")
+
+    row = box_debug.row()
+    op = row.operator("simple_export.assign_preset", text="Assign Preset")
+    op.collection_name = context.collection.name
 
 
 def draw_properties_with_prefix(layout, context, properties):
@@ -132,32 +136,11 @@ def draw_properties_with_prefix(layout, context, properties):
             print(f"Property {prop_name} not found in WindowManager or Preferences")
 
 
-def draw_sub_panel_header(layout, title):
-    addon_name = get_addon_name()
-
-    # Header
-    row = layout.row(align=True)
-    op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
-    op.addon_name = addon_name
-    op.prefs_tabs = 'SETTINGS'
-    row.label(text=title)
-
-
 def draw_create_export_collection(layout, context):
-    # Parent selection
-    row = layout.row()
-    color_tag = None
-    if context.scene.parent_collection:
-        color_tag = context.scene.parent_collection.color_tag
-    icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
-    row.prop(context.scene, "parent_collection", text="Parent Collection", icon=icon)
+    wm = context.window_manager
 
-    # Draw Create Button
-    row = layout.row()
-    prefs = context.preferences.addons[__package__].preferences
-    color_tag = prefs.collection_color
-    icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
-    row.operator("simple_export.create_export_collection", icon=icon)
+    if not wm.overwrite_collection_settings:
+        layout.enabled = False
 
     # Define properties to check
     properties = [
@@ -175,7 +158,10 @@ def draw_create_export_collection(layout, context):
 
 
 def draw_filepath_settings(layout, context):
+    wm = context.window_manager
 
+    if not wm.overwrite_filepath_settings:
+        layout.enabled = False
 
     # Define properties to check
     properties = [
@@ -314,34 +300,76 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
 
     def draw(self, context):
         props = context.scene.simple_export_props
+        prefs = context.preferences.addons[__package__].preferences
+
         layout = self.layout
 
         # Draw format selection
         layout.prop(props, "export_format", text="Format")
 
         # Draw Preset UI
-        layout.label(text="Presets")
+        box = layout.box()
+        row = box.row(align=True)
+        row.label(text="Presets")
+
         draw_export_preset(layout, context)
+
+        if prefs.simple_export_debug:
+            box = box.box()
+            draw_preset_debug(box, context)
 
         # Draw Export List
         super().draw(context)
-
+        wm = context.window_manager
         # Button to open the export Popup
         op = layout.operator("wm.call_panel", text="Open Export Popup")
         op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
 
         # Collapsible Filepath Settings Section
         header, body = layout.panel("filepath_settings", default_closed=True)
-        draw_sub_panel_header(header, "Filepath Settings")
+
+
+        # Header
+        addon_name = get_addon_name()
+
+        row = header.row(align=True)
+        row.prop(wm, 'overwrite_filepath_settings')
+        op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
+        op.addon_name = addon_name
+        op.prefs_tabs = 'SETTINGS'
+
+        # Body
         if body:
             draw_filepath_settings(body, context)
 
         # Collapsible Export Collection Section
         header, body = layout.panel("export_collection", default_closed=False)
-        draw_sub_panel_header(header, "Export Header")
-        header.label(text="Export Collection")
+
+        # Header
+        row = header.row(align=True)
+        row.prop(wm, 'overwrite_collection_settings')
+        op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
+        op.addon_name = addon_name
+        op.prefs_tabs = 'SETTINGS'
+
+        # Body
         if body:
             draw_create_export_collection(body, context)
+
+        # Parent selection
+        row = layout.row()
+        color_tag = None
+        if context.scene.parent_collection:
+            color_tag = context.scene.parent_collection.color_tag
+        icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
+        row.prop(context.scene, "parent_collection", text="Parent Collection", icon=icon)
+
+        # Draw Create Button
+        row = layout.row()
+        prefs = context.preferences.addons[__package__].preferences
+        color_tag = prefs.collection_color
+        icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
+        row.operator("simple_export.create_export_collection", icon=icon)
 
 
 class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Panel):

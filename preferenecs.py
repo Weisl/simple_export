@@ -109,44 +109,6 @@ def get_default_export_format():
         return "FBX"  # Fallback default
 
 
-def register_scene_properties():
-    bpy.types.Scene.collection_index = bpy.props.IntProperty(
-        name="Collection Index",
-        description="Index of the active collection in the list",
-        default=0
-    )
-
-    bpy.types.Scene.export_format = bpy.props.EnumProperty(
-        name="Export Format",
-        description="Filter collections by export format.",
-        items=get_export_format_items(),
-        default=get_default_export_format(),
-    )
-
-
-def register_collection_properties():
-    bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty(name="Selected Collection",
-                                                                         description="Select this collection for export",
-                                                                         default=False)
-
-    bpy.types.Collection.offset_object = bpy.props.PointerProperty(name="Offset Object", type=bpy.types.Object,
-                                                                   description="Object to be used for setting the collection offset")
-
-    bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty(name="Select for Export",
-                                                                         description="Select this collection for export",
-                                                                         default=False)
-
-
-def unregister_scene_properties():
-    del bpy.types.Scene.collection_index
-    del bpy.types.Scene.export_format
-
-
-def unregister_collection_properties():
-    del bpy.types.Collection.simple_export_selected
-    del bpy.types.Collection.offset_object
-
-
 class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
@@ -467,25 +429,66 @@ def register():
     for cls in classes:
         register_class(cls)
 
-    bpy.app.timers.register(post_register, first_interval=0.1)
-
     from .keymap import add_keymap
     add_keymap()
-    register_scene_properties()
-    register_collection_properties()
+
+    bpy.types.Scene.collection_index = bpy.props.IntProperty(
+        name="Collection Index",
+        description="Index of the active collection in the list",
+        default=0
+    )
+
+    bpy.types.Scene.export_format = bpy.props.EnumProperty(
+        name="Export Format",
+        description="Filter collections by export format.",
+        items=get_export_format_items(),
+        default=get_default_export_format(),
+    )
+
+    bpy.types.WindowManager.overwrite_collection_settings = bpy.props.BoolProperty(
+        name="Overwrite Collection",
+        description="Overwrite settings defined in the Preferences",
+        default=False)
+
+    bpy.types.WindowManager.overwrite_filepath_settings = bpy.props.BoolProperty(
+        name="Overwrite Path",
+        description="Overwrite settings defined in the Preferences",
+        default=False)
+
+    bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty(
+        name="Selected Collection",
+        description="Select this collection for export",
+        default=False)
+
+    bpy.types.Collection.offset_object = bpy.props.PointerProperty(
+        name="Offset Object", type=bpy.types.Object,
+        description="Object to be used for setting the collection offset")
+
+    bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty(
+        name="Select for Export",
+        description="Select this collection for export",
+        default=False)
+
+    bpy.app.timers.register(post_register, first_interval=0.1)
 
 
 def unregister():
     from .keymap import remove_keymap
     remove_keymap()
 
-    unregister_collection_properties()
-    unregister_scene_properties()
-
     from bpy.utils import unregister_class
 
     for cls in reversed(classes):
         unregister_class(cls)
+
+    # Persistant settings
+    del bpy.types.Scene.collection_index
+    del bpy.types.Scene.export_format
+    del bpy.types.Collection.simple_export_selected
+    del bpy.types.Collection.offset_object
+
+    del bpy.types.WindowManager.overwrite_filepath_settings
+    del bpy.types.WindowManager.overwrite_collection_settings
 
     # Collection creation
     del bpy.types.WindowManager.custom_prefix
