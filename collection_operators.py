@@ -69,7 +69,7 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Make sure that blend file exists to retrieve the file path
-        if getattr(settings, 'use_blender_file_location') and getattr(settings, 'auto_set_filepath'):
+        if not getattr(settings, 'use_custom_export_folder') and getattr(settings, 'auto_set_filepath'):
             blend_filepath = bpy.data.filepath
             # Return if Blend File hasn't been saved
             if not blend_filepath:

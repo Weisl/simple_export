@@ -226,12 +226,13 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
     collection_name: bpy.props.StringProperty()
 
     def execute(self, context):
-        prefs = bpy.context.preferences.addons[__package__].preferences
         collection = bpy.data.collections.get(self.collection_name)
 
         prefs = bpy.context.preferences.addons[__package__].preferences
+        wm = context.window_manager
+        settings = wm
 
-        if prefs.use_blender_file_location:
+        if not settings.use_custom_export_folder:
             blend_filepath = bpy.data.filepath
             # Return if Blend File hasn't been saved
             if not blend_filepath:
@@ -239,7 +240,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
                 return {'CANCELLED'}
             export_dir = os.path.dirname(blend_filepath)
         else:
-            export_dir = prefs.custom_export_path
+            export_dir = settings.custom_export_path
 
         # Return if collection not found
         if not collection:
@@ -247,9 +248,9 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Path variables
-        search_path = prefs.search_path
-        replacement_path = prefs.replacement_path
-        default_export_format = prefs.default_export_format
+        search_path = settings.search_path
+        replacement_path = settings.replacement_path
+        default_export_format = settings.default_export_format
 
         # Add custom exporter
         exporter = self.get_custom_exporter_for_collection(collection.name, default_export_format)
@@ -306,6 +307,10 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
         temporarily_disable_offset_handler()
         success = False
 
+        prefs = bpy.context.preferences.addons[__package__].preferences
+        wm = context.window_manager
+        settings = wm
+
         try:
             # Validate collection
             collection = validate_collection(self.collection_name)
@@ -314,15 +319,15 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
             # Find and validate exporter
             props = context.scene.simple_export_props
             exporter = find_exporter(collection, props.export_format)
-            exporter_id = get_exporter_id(collection, exporter)
+            exporter_id = get_exporter_id(self, collection, exporter)
 
             # Pre-export checks
             export_path = exporter.export_properties.filepath
             file_exists_before, file_timestamp_before = pre_export_checks(export_path)
 
             # Apply instance offset if enabled
-            prefs = bpy.context.preferences.addons[__package__].preferences
-            if prefs.use_instance_offset:
+            settings = bpy.context.preferences.addons[__package__].preferences
+            if settings.use_instance_offset:
                 apply_collection_offset(collection)
 
             # Perform the export
@@ -341,7 +346,7 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
                 {'name': self.collection_name or "Unknown Collection", 'success': False, 'message': str(e)})
 
         finally:
-            if prefs.use_instance_offset:
+            if settings.use_instance_offset:
                 # Revert instance offset and show results
                 apply_collection_offset(collection, inverse=True)
 
@@ -365,6 +370,8 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
         success = False
 
         prefs = bpy.context.preferences.addons[__package__].preferences
+        wm = context.window_manager
+        settings = wm
 
         for collection in bpy.data.collections:
             try:
@@ -379,14 +386,14 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
                 # Find and validate exporter
                 props = context.scene.simple_export_props
                 exporter = find_exporter(collection, props.export_format)
-                exporter_id = get_exporter_id(collection, exporter)
+                exporter_id = get_exporter_id(self, collection, exporter)
 
                 # Pre-export checks
                 export_path = exporter.export_properties.filepath
                 file_exists_before, file_timestamp_before = pre_export_checks(export_path)
 
                 # Apply instance offset if enabled
-                if prefs.use_instance_offset:
+                if settings.use_instance_offset:
                     apply_collection_offset(collection)
 
                 export_collections.append(collection)
@@ -406,7 +413,7 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
                     {'name': self.collection_name or "Unknown Collection", 'success': False, 'message': str(e)})
 
             finally:
-                if prefs.use_instance_offset:
+                if settings.use_instance_offset:
                     apply_collection_offset(collection, inverse=True)
 
         call_export_popup(export_results, context)
@@ -414,6 +421,7 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
             return {'FINISHED'}
         else:
             return {'CANCELLED'}
+
 
 class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
     """

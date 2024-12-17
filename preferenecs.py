@@ -60,6 +60,16 @@ PROPERTY_METADATA = {
         "description": "Set Location Offset for collections.",
         "default": True,
     },
+    "use_custom_export_folder": {
+        "name": "Custom Folder",
+        "description": "Use a custom export folder",
+        "default": False,
+    },
+    "custom_export_path": {
+        "name": "Export Folder",
+        "description": "Custom folder to export files to.",
+        "default": '',
+    },
 }
 
 
@@ -183,12 +193,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default="FBX",  # Default value
     )
 
-    use_blender_file_location: bpy.props.BoolProperty(
-        name="Use Blender File Location",
-        description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
-        default=True
-    )
-
     use_instance_offset: bpy.props.BoolProperty(
         name="(BETA) Move to Collection Offset",
         description="Use the collection offset for the exported collection",
@@ -203,9 +207,17 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
     ########################################
     # Filepath
+    use_custom_export_folder: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["use_custom_export_folder"]["name"],
+        description=PROPERTY_METADATA["use_custom_export_folder"]["description"],
+        default=PROPERTY_METADATA["use_custom_export_folder"]["default"],
+    )
 
-    custom_export_path: bpy.props.StringProperty(name="Custom Export Path",
-                                                 description="Custom directory to export files to.", subtype='DIR_PATH')
+    custom_export_path: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["custom_export_path"]["name"],
+        description=PROPERTY_METADATA["custom_export_path"]["description"],
+        default=PROPERTY_METADATA["custom_export_path"]["default"],
+        subtype='DIR_PATH')
 
     ########################################
     # Collection Name
@@ -250,7 +262,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     )
 
     ###################################################################
-    # Creation
+    # Auto
 
     auto_set_filepath: bpy.props.BoolProperty(
         name=PROPERTY_METADATA["auto_set_filepath"]["name"],
@@ -281,7 +293,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     simple_export_panel_active: bpy.props.BoolProperty(
         name="Active", default=True,
         update=update_simple_export_panel_key)
-
 
     ########################################
     # Debug
@@ -334,8 +345,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
             box = layout.box()
             box.label(text="Export Path")
-            box.prop(self, "use_blender_file_location")
-            if not self.use_blender_file_location:
+            box.prop(self, "use_custom_export_folder")
+            if self.use_custom_export_folder:
                 box.prop(self, "custom_export_path")
             box.prop(self, "search_path")
             box.prop(self, "replacement_path")
@@ -418,6 +429,7 @@ def initialize_properties_collection_generation():
         default=prefs.collection_color
     )
 
+
 def initialize_properties_file_path():
     prefs = bpy.context.preferences.addons[__package__].preferences
 
@@ -431,10 +443,10 @@ def initialize_properties_file_path():
         description=PROPERTY_METADATA["replacement_path"]["description"],
         default=prefs.replacement_path
     )
-    bpy.types.WindowManager.use_blender_file_location = bpy.props.BoolProperty(
-        name="Use Blender File Location",
-        description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
-        default=prefs.use_blender_file_location
+    bpy.types.WindowManager.use_custom_export_folder = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["use_custom_export_folder"]["name"],
+        description=PROPERTY_METADATA["use_custom_export_folder"]["description"],
+        default=prefs.use_custom_export_folder
     )
     bpy.types.WindowManager.custom_export_path = bpy.props.StringProperty(
         name="Custom Export Path",
@@ -487,5 +499,5 @@ def unregister():
     # filepath
     del bpy.types.WindowManager.search_path
     del bpy.types.WindowManager.replacement_path
-    del bpy.types.WindowManager.use_blender_file_location
+    del bpy.types.WindowManager.use_custom_export_folder
     del bpy.types.WindowManager.custom_export_path

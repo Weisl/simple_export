@@ -184,6 +184,7 @@ def draw_filepath_settings(layout, context):
 
     # Define properties to check
     properties = [
+        "use_custom_export_folder",
         "custom_export_path",
         "search_path",
         "replacement_path",
@@ -324,6 +325,13 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         # Draw format selection
         layout.prop(props, "export_format", text="Format")
 
+        # Draw Preset UI
+        # Collapsible Presets Section
+        header, body = layout.panel("export_presets", default_closed=False)
+        header.label(text="Presets")
+        if body:
+            draw_export_preset(body, context)
+
         # Draw Export List
         super().draw(context)
 
@@ -331,16 +339,21 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         op = layout.operator("wm.call_panel", text="Open Export Popup")
         op.name = "SIMPLE_EXPORT_PT_simple_export"
 
-        # Draw Preset UI
-        draw_export_preset(layout, context)
+        # Collapsible Filepath Settings Section
+        header, body = layout.panel("filepath_settings", default_closed=True)
+        header.label(text="Filepath Settings")
+        if body:
+            draw_filepath_settings(body, context)
 
-        # Export Collection Creation UI
-        box = layout.box()
-        draw_create_export_collection(box, context)
+        # Collapsible Export Collection Section
+        header, body = layout.panel("export_collection", default_closed=False)
+        header.label(text="Export Collection")
+        if body:
+            draw_create_export_collection(body, context)
 
-        # Export Filepath Settings UI
-        box = layout.box()
-        draw_filepath_settings(box, context)
+
+
+
 
 
 class SIMPLE_EXPORT_PT_simple_export(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
