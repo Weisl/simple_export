@@ -176,7 +176,8 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
                 self.report({'ERROR'}, f"Could not add exporter to collection '{collection_name}'.")
                 return {'CANCELLED'}
 
-            export_path = generate_export_path(collection_name, blend_dir, search_path, replacement_path)
+            export_format = props.export_format
+            export_path = generate_export_path(collection_name, export_format, blend_dir, search_path, replacement_path)
             export_path = assign_exporter_path(exporter, export_path)
 
         self.report({'INFO'}, f"Export collection '{export_collection.name}' created successfully.")

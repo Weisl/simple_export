@@ -26,7 +26,7 @@ def set_active_layer_Collection(collection_name):
     bpy.context.view_layer.active_layer_collection = layerColl
 
 
-def generate_export_path(collection_name, export_dir, search_path, replacement_path):
+def generate_export_path(collection_name, export_format, export_dir, search_path, replacement_path):
     """
     Set the export path for a given collection's exporter.
 
@@ -36,10 +36,10 @@ def generate_export_path(collection_name, export_dir, search_path, replacement_p
         search_path (str): The original path to be replaced.
         replacement_path (str): The replacement path to be applied.
     """
-    prefs = bpy.context.preferences.addons[__package__].preferences
 
     export_name = collection_name
-    export_name += ".fbx"  # or use prefs.export_format to determine extension
+    export_extension = EXPORT_FORMATS[export_format]["file_extension"]
+    export_name += f".{export_extension}"  # or use prefs.export_format to determine extension
     export_path = os.path.join(export_dir, export_name)
 
     if search_path in export_path:
@@ -95,7 +95,7 @@ def find_exporter(collection, export_format):
     raise ValueError(f"No {export_format} exporter found for collection '{collection.collection_name}'.")
 
 
-def get_exporter_id(collection, exporter):
+def get_exporter_id(self, collection, exporter):
     """Get the exporter ID within the collection."""
     for idx, exp in enumerate(collection.exporters):
         if exp == exporter:
@@ -132,7 +132,6 @@ class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "WINDOW"
     bl_ui_units_x = 30
-
 
     def draw(self, context):
         layout = self.layout
@@ -261,7 +260,9 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Set export Path
-        export_path = generate_export_path(collection.name, export_dir, search_path, replacement_path)
+        props = context.scene.simple_export_props
+        export_format = props.export_format
+        export_path = generate_export_path(collection.name, export_format, export_dir, search_path, replacement_path)
         export_path = assign_exporter_path(exporter, export_path)
 
         self.report({'INFO'}, f"Export path set to {export_path}")
