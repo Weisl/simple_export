@@ -122,12 +122,17 @@ class UIListProperties(bpy.types.PropertyGroup):
         description="Toggle visibility of the icon in the UI list",
         default=True
     )
-    uilist_filepath: BoolProperty(
+    uilist_show_filepath: BoolProperty(
         name="Show Filepath",
         description="Toggle visibility of the filepath in the UI list",
         default=True
     )
-    uilist_preset: BoolProperty(
+    uilist_set_filepath: BoolProperty(
+        name="Show Set Filepath",
+        description="Toggle visibility of the filepath in the UI list",
+        default=True
+    )
+    uilist_set_preset: BoolProperty(
         name="Show Preset",
         description="Toggle visibility of the preset in the UI list",
         default=True
@@ -372,14 +377,16 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box = layout.box()
             box.label(text="Scene List")
             box.prop(self.scene_properties, "uilist_icon")
-            box.prop(self.scene_properties, "uilist_filepath")
-            box.prop(self.scene_properties, "uilist_preset")
+            box.prop(self.scene_properties, "uilist_show_filepath")
+            box.prop(self.scene_properties, "uilist_set_filepath")
+            box.prop(self.scene_properties, "uilist_set_preset")
 
             box = layout.box()
             box.label(text="Popup List")
             box.prop(self.popup_properties, "uilist_icon")
-            box.prop(self.popup_properties, "uilist_filepath")
-            box.prop(self.popup_properties, "uilist_preset")
+            box.prop(self.popup_properties, "uilist_show_filepath")
+            box.prop(self.popup_properties, "uilist_set_filepath")
+            box.prop(self.popup_properties, "uilist_set_preset")
 
         elif self.prefs_tabs == 'KEYMAP':
             self.keymap_ui(layout, 'Export Popup', 'simple_export_panel', 'wm.call_panel',

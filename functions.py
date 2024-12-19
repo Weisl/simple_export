@@ -82,6 +82,7 @@ def export_collection(collection, context):
     """
 
     prefs = bpy.context.preferences.addons[__package__].preferences
+    props = context.scene.simple_export_props
     wm = context.window_manager
     settings_col = wm if wm.overwrite_collection_settings else prefs
     settings_filepath = wm if wm.overwrite_filepath_settings else prefs
@@ -94,7 +95,8 @@ def export_collection(collection, context):
     if not collection.exporters or not collection.exporters[0]:
         raise ValueError("No exporter configured for the collection.")
 
-    exporter = collection.exporters[0]
+    from .operators import find_exporter
+    exporter = find_exporter(collection, props.export_format)
     print(f'Exporter: {exporter}')
     export_path = exporter.export_properties.filepath
     print(f'Exporter Path: {export_path}')

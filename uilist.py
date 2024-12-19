@@ -1,6 +1,7 @@
 import os
 
 import bpy
+from .operators import find_exporter
 
 # Map color_tag to icons
 color_tag_icons = {
@@ -26,6 +27,13 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         prefs = context.preferences.addons[__package__].preferences
+
+        # Determine settings based on the list_id
+        if self.list_id == "scene":
+            settings = prefs.scene_properties
+        elif self.list_id == "popup":
+            settings = prefs.popup_properties
+
         collection = item
         if not collection:
             return
@@ -40,20 +48,23 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             return
 
         # Get exporter details
-        exporter = collection.exporters[0]
+        props = context.scene.simple_export_props
+        exporter = find_exporter(collection, props.export_format)
         export_path = exporter.export_properties.filepath
         file_exists = os.path.exists(export_path)
         is_locked = file_exists and not os.access(export_path, os.W_OK)
 
-        # Show lock icon based on file permissions
-        if is_locked:
-            icon = 'LOCKED'
-        elif file_exists:
-            icon = 'CURRENT_FILE'
-        else:
-            icon = 'FILE_NEW'
 
-        row.label(icon=icon)
+        if settings.uilist_icon:
+            # Show lock icon based on file permissions
+            if is_locked:
+                icon = 'LOCKED'
+            elif file_exists:
+                icon = 'CURRENT_FILE'
+            else:
+                icon = 'FILE_NEW'
+
+            row.label(icon=icon)
 
         # Determine the icon based on the collection's color_tag
         color_tag = collection.color_tag
@@ -62,17 +73,20 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         # Display the collection name with the color icon
         row.label(text=collection.name, icon=icon)
 
-        # Display the export file path as an editable property
-        row.prop(exporter.export_properties, "filepath", text="", expand=True)
+        if settings.uilist_show_filepath:
+            # Display the export file path as an editable property
+            row.prop(exporter.export_properties, "filepath", text="", expand=True)
 
-        # Buttons for setting the export path and opening the directory
-        # Assign Path
-        op = row.operator("scene.set_export_path", text="", icon='FOLDER_REDIRECT')
-        op.collection_name = collection.name
+        if settings.uilist_set_filepath:
+            # Buttons for setting the export path and opening the directory
+            # Assign Path
+            op = row.operator("scene.set_export_path", text="", icon='FOLDER_REDIRECT')
+            op.collection_name = collection.name
 
-        # Assign Preset
-        op = row.operator("simple_export.assign_preset", text="", icon='PRESET')
-        op.collection_name = collection.name
+        if settings.uilist_set_preset:
+            # Assign Preset
+            op = row.operator("simple_export.assign_preset", text="", icon='PRESET')
+            op.collection_name = collection.name
 
         # Add the Export Collection button
         op = row.operator("simple_export.export_collection", text="", icon='EXPORT')

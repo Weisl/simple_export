@@ -4,7 +4,6 @@ import bpy
 
 from .collection_utils import update_collection_offset
 from .functions import open_directory, ensure_export_folder_exists, apply_collection_offset
-from .panels import EXPORT_FORMATS
 
 
 def recursiceLayerCollection(layerColl, collName):
@@ -38,6 +37,7 @@ def generate_export_path(collection_name, export_format, export_dir, search_path
     """
 
     export_name = collection_name
+    from .panels import EXPORT_FORMATS
     export_extension = EXPORT_FORMATS[export_format]["file_extension"]
     export_name += f".{export_extension}"  # or use prefs.export_format to determine extension
     export_path = os.path.join(export_dir, export_name)
@@ -88,6 +88,7 @@ def validate_collection(collection_name):
 
 
 def find_exporter(collection, export_format):
+    from .panels import EXPORT_FORMATS
     """Find the appropriate exporter for the given collection and format."""
     for exporter in collection.exporters:
         if str(type(exporter.export_properties)) == EXPORT_FORMATS[export_format]["op_type"]:
@@ -104,6 +105,7 @@ def get_exporter_id(self, collection, exporter):
 
 
 def add_extension(path, export_format):
+    from .panels import EXPORT_FORMATS
     file_extension = EXPORT_FORMATS[export_format]["file_extension"]
 
     # Check if the filename already has the extension
@@ -199,7 +201,9 @@ class SCENE_OT_CreateExportDirectory(bpy.types.Operator):
             self.report({'WARNING'}, "No valid exporter found for the active collection.")
             return {'CANCELLED'}
 
-        exporter = collection.exporters[0]
+        props = context.scene.simple_export_props
+        exporter = find_exporter(collection, props.export_format)
+
         export_path = exporter.export_properties.filepath
         export_dir = os.path.dirname(export_path)
 
@@ -452,7 +456,8 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
             self.report({'WARNING'}, "No valid exporter found for the active collection.")
             return {'CANCELLED'}
 
-        exporter = collection.exporters[0]
+        props = context.scene.simple_export_props
+        exporter = find_exporter(collection, props.export_format)
         export_path = exporter.export_properties.filepath
         export_dir = os.path.dirname(export_path)
 

@@ -262,17 +262,7 @@ class SIMPLE_EXPORT_menu_base:
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
         wm = context.window_manager
-
-        # Export List
-        row = layout.row()
-        row.label(text="Export List")
-        row = layout.row()
-        row.template_list("SCENE_UL_CollectionList", "", bpy.data, "collections", scene, "collection_index")
-
-        # col = row.column(align=True)
-        # col.menu("SIMPLE_EXPORT_MT_context_menu", icon="DOWNARROW_HLT", text="")
 
         # List Operators
         col = layout.column(align=True)
@@ -312,6 +302,9 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         props = context.scene.simple_export_props
         prefs = context.preferences.addons[__package__].preferences
 
+        scene = context.scene
+        wm = context.window_manager
+
         layout = self.layout
 
         # Draw format selection
@@ -326,9 +319,15 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
             box = box.box()
             draw_preset_debug(box, context)
 
+        # Export List
+        row = layout.row()
+        row.label(text="Export List")
+        row = layout.row()
+        row.template_list("SCENE_UL_CollectionList", "scene", bpy.data, "collections", scene, "collection_index")
+
         # Draw Export List
         super().draw(context)
-        wm = context.window_manager
+
         # Button to open the export Popup
         op = layout.operator("wm.call_panel", text="Open Export Popup")
         op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
@@ -387,10 +386,17 @@ class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Pa
     bl_ui_units_x = 45
 
     def draw(self, context):
+        scene = context.scene
         layout = self.layout
 
         row = layout.row()
         row.label(text="Simple Export Popup")
+
+        # Export List
+        row = layout.row()
+        row.label(text="Export List")
+        row = layout.row()
+        row.template_list("SCENE_UL_CollectionList", "popup", bpy.data, "collections", scene, "collection_index")
 
         super().draw(context)
 
