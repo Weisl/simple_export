@@ -78,7 +78,7 @@ def draw_export_preset(layout, context):
     prefs = context.preferences.addons[__package__].preferences
 
     # Select preset
-    layout.prop(props, "simple_export_preset_file", text="Select")
+    layout.prop(props, "simple_export_preset_file", text="Preset")
 
 
 def draw_preset_debug(layout, context):
@@ -270,6 +270,7 @@ class SIMPLE_EXPORT_menu_base:
         row.label(text="Export List")
         row = layout.row()
         row.template_list("SCENE_UL_CollectionList", "", bpy.data, "collections", scene, "collection_index")
+
         # col = row.column(align=True)
         # col.menu("SIMPLE_EXPORT_MT_context_menu", icon="DOWNARROW_HLT", text="")
 
@@ -278,12 +279,13 @@ class SIMPLE_EXPORT_menu_base:
         row = col.row()
         row.prop(wm, 'move_to_origin')
         row = col.row()
-        row.operator("scene.export_selected_collections", text="Export Selected")
+        row.operator("scene.export_selected_collections", text="Export Selected", icon='EXPORT')
 
         row = col.row()
-        row.operator("simple_export.assign_preset_selection", text="Assign Presets")
-        # row = col.row()
-        # row.operator("scene.export_selected_collections", text="TODO: Assign Paths")
+        row.operator("simple_export.assign_preset_selection", text="Assign Presets", icon='PRESET_NEW')
+
+        row = col.row()
+        row.operator("scene.export_selected_collections", text="TODO: Assign Filepaths", icon='FOLDER_REDIRECT')
 
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
@@ -318,9 +320,7 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         # Draw Preset UI
         box = layout.box()
         row = box.row(align=True)
-        row.label(text="Presets")
-
-        draw_export_preset(layout, context)
+        draw_export_preset(row, context)
 
         if prefs.simple_export_debug:
             box = box.box()

@@ -1,4 +1,5 @@
 import bpy
+from bpy.props import BoolProperty, PointerProperty
 
 from .keymap import remove_key
 from .panels import get_export_format_items
@@ -115,6 +116,24 @@ def get_default_export_format():
         return "FBX"  # Fallback default
 
 
+class UIListProperties(bpy.types.PropertyGroup):
+    uilist_icon: BoolProperty(
+        name="Show Icon",
+        description="Toggle visibility of the icon in the UI list",
+        default=True
+    )
+    uilist_filepath: BoolProperty(
+        name="Show Filepath",
+        description="Toggle visibility of the filepath in the UI list",
+        default=True
+    )
+    uilist_preset: BoolProperty(
+        name="Show Preset",
+        description="Toggle visibility of the preset in the UI list",
+        default=True
+    )
+
+
 class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
@@ -148,7 +167,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     prefs_tabs: bpy.props.EnumProperty(
         name='Export Preferences',
         items=(('SETTINGS', "Settings", "General addon settings"),
-               ('KEYMAP', "Keymap", "Change the hotkeys for tools associated with this addon.")),
+               ('UI', "UI", "Settings related to the UI."),
+               ('KEYMAP', "Keymap", "Change the hotkeys for tools associated with this addon."),),
         default='SETTINGS',
         description='Settings category:'
     )
@@ -266,6 +286,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                                                 description="Debug mode only used for development",
                                                 default=False)
 
+    ########################################
+    # UI
+
+    scene_properties: PointerProperty(type=UIListProperties)
+    popup_properties: PointerProperty(type=UIListProperties)
+
     def keymap_ui(self, layout, title, property_prefix, id_name, properties_name):
         box = layout.box()
         split = box.split(align=True, factor=0.5)
@@ -342,6 +368,19 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             layout.separator()
             layout.prop(self, "simple_export_debug")
 
+        elif self.prefs_tabs == 'UI':
+            box = layout.box()
+            box.label(text="Scene List")
+            box.prop(self.scene_properties, "uilist_icon")
+            box.prop(self.scene_properties, "uilist_filepath")
+            box.prop(self.scene_properties, "uilist_preset")
+
+            box = layout.box()
+            box.label(text="Popup List")
+            box.prop(self.popup_properties, "uilist_icon")
+            box.prop(self.popup_properties, "uilist_filepath")
+            box.prop(self.popup_properties, "uilist_preset")
+
         elif self.prefs_tabs == 'KEYMAP':
             self.keymap_ui(layout, 'Export Popup', 'simple_export_panel', 'wm.call_panel',
                            "SIMPLE_EXPORT_PT_simple_export_popup")
@@ -350,6 +389,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 # Initialize Window Manager Properties with Add-on Preferences Defaults
 
 classes = (
+    UIListProperties,
     SIMPLE_EXPORT_preferences,
 )
 
