@@ -5,7 +5,6 @@ import bpy
 from .collection_utils import update_collection_offset
 from .functions import open_directory, ensure_export_folder_exists, apply_collection_offset
 
-
 def recursiceLayerCollection(layerColl, collName):
     # print(f"Checking collection: {layerColl.name}")  # Debug print
     if layerColl.name == collName:
@@ -49,8 +48,19 @@ def generate_export_path(collection_name, export_format, export_dir, search_path
 
 def assign_exporter_path(exporter, export_path):
     ensure_export_folder_exists(export_path)
+
+    if not exporter:
+        msg = "No valid exporter found"
+        return False, msg
+
+    if not export_path:
+        msg = "Please select a Preset"
+        return False, msg
+
+    # Apply the properties to the exporter
     exporter.export_properties.filepath = export_path
-    return export_path
+
+    return True, None
 
 
 def temporarily_disable_offset_handler():
@@ -135,6 +145,56 @@ def post_export_checks(export_path, file_exists_before, file_timestamp_before):
     if file_exists_before and os.path.getmtime(export_path) <= file_timestamp_before:
         return False, f"File '{export_path}' was not updated."
     return True, f"Exported successfully to '{export_path}'."
+
+
+class SIMPLEEXPORTER_PT_FilePathResultsPanel(bpy.types.Panel):
+    """Panel to display the results of applying the preset."""
+    bl_idname = "SIMPLEEXPORTER_PT_FilePathResultsPanel"
+    bl_label = "Preset Application Results"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "WINDOW"
+    bl_ui_units_x = 30
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="Filepath Result Preset:")
+
+        # Get results from WindowManager
+        results_str = context.window_manager.assign_filepath_result_info
+        results = eval(results_str) if results_str else []  # Parse results string into a list
+
+        # Header row with column titles
+        split = layout.split(factor=0.1)
+        col_icon = split.column()  # Icon column
+        col_name = split.column()  # Collection name column
+        col_message = split.column()  # Info message column
+
+        row = layout.row()
+        col_icon.label(text="")
+        col_name.label(text="Collection")
+        col_message.label(text="Info")
+
+        # Iterate over results and populate the table
+        for result in results:
+            split = layout.split(factor=0.05)  # Split for each row
+            col_icon = split.column()
+            col_name = split.column()
+            col_message = split.column()
+
+            # Icon Column
+            col_icon.label(icon='CHECKMARK' if result['success'] else 'CANCEL')
+
+            # Collection Name Column
+            collection_name = result['name']
+            collection = bpy.data.collections[collection_name]
+            color_tag = collection.color_tag
+
+            from .uilist import color_tag_icons
+            icon = color_tag_icons.get(color_tag, 'NONE')
+            col_name.label(text=result['name'], icon=icon)
+
+            # Info Message Column
+            col_message.label(text=result['message'])
 
 
 # Popup to show export results
@@ -230,6 +290,66 @@ class SCENE_OT_SelectAllCollections(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
+    """
+    Operator to set the exporter path for a collection based on the original and replacement paths defined in the scene properties.
+    """
+    bl_idname = "scene.set_export_path_selection"
+    bl_label = "Set Export Path"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        results = []  # To store the renaming status of each collection
+        props = context.scene.simple_export_props
+        prefs = bpy.context.preferences.addons[__package__].preferences
+        wm = context.window_manager
+        settings_col = wm if wm.overwrite_collection_settings else prefs
+        settings_filepath = wm if wm.overwrite_filepath_settings else prefs
+
+        # Iterate through all collections and apply preset
+        for collection in bpy.data.collections:
+
+            if not collection.simple_export_selected or len(collection.exporters) == 0:
+                continue
+
+            try:
+                # Find exporter
+                exporter = find_exporter(collection, props.export_format)
+                if not exporter:
+                    raise ValueError("No exporters found in the current collection.")
+
+                if settings_filepath.use_custom_export_folder:
+                    if not settings_filepath.custom_export_path:
+                        raise ValueError("Invalid Export Path.")
+
+                    export_dir = settings_filepath.custom_export_path
+                else:
+                    # Return if Blend File hasn't been saved
+                    if not bpy.data.filepath:
+                        raise ValueError("Save the Blend file before calling this operator.")
+                    export_dir = os.path.dirname(bpy.data.filepath)
+
+                # Path variables
+                search_path = settings_filepath.search_path
+                replacement_path = settings_filepath.replacement_path
+
+                export_path = generate_export_path(collection.name, props.export_format, export_dir, search_path,
+                                                   replacement_path)
+                success, msg = assign_exporter_path(exporter, export_path)
+                results.append({'name': collection.name, 'success': success, 'message': msg})
+
+            except Exception as e:
+                # Handle per-collection errors
+                results.append({'name': collection.name, 'success': False, 'message': str(e)})
+
+        # Store results in WindowManager
+        context.window_manager.assign_filepath_result_info = str(results)
+        # Show results in the panel
+        bpy.ops.wm.call_panel(name="SIMPLEEXPORTER_PT_FilePathResultsPanel")
+
+        return {'FINISHED'}
+
+
 class SCENE_OT_SetExporterPath(bpy.types.Operator):
     """
     Operator to set the exporter path for a collection based on the original and replacement paths defined in the scene properties.
@@ -266,10 +386,10 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
         # Path variables
         search_path = settings_filepath.search_path
         replacement_path = settings_filepath.replacement_path
-        default_export_format = settings_filepath.default_export_format
 
         # Add custom exporter
-        exporter = self.get_custom_exporter_for_collection(collection.name, default_export_format)
+        props = context.scene.simple_export_props
+        exporter = find_exporter(collection, props.export_format)
 
         # Return
         if not exporter:
@@ -280,7 +400,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
         props = context.scene.simple_export_props
         export_format = props.export_format
         export_path = generate_export_path(collection.name, export_format, export_dir, search_path, replacement_path)
-        export_path = assign_exporter_path(exporter, export_path)
+        success, msg = assign_exporter_path(exporter, export_path)
 
         self.report({'INFO'}, f"Export path set to {export_path}")
         return {'FINISHED'}
@@ -472,8 +592,10 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
 
 classes = (SCENE_OT_CreateExportDirectory,
            SIMPLEEXPORTER_PT_ExportResultsPanel,
+           SIMPLEEXPORTER_PT_FilePathResultsPanel,
            SCENE_OT_SelectAllCollections,
            SCENE_OT_SetExporterPath,
+           SCENE_OT_SetExporterPathSelection,
            SCENE_OT_ExportCollection,
            SCENE_OT_ExportSelectedCollections,
            SCENE_OT_OpenExportDirectory,)
@@ -481,6 +603,7 @@ classes = (SCENE_OT_CreateExportDirectory,
 
 def register():
     bpy.types.WindowManager.export_data_info = bpy.props.StringProperty(default="[]")
+    bpy.types.WindowManager.assign_filepath_result_info = bpy.props.StringProperty(default="[]")
 
     from bpy.utils import register_class
     for cls in classes:
@@ -489,6 +612,7 @@ def register():
 
 def unregister():
     del bpy.types.WindowManager.export_data_info
+    del bpy.types.WindowManager.assign_filepath_result_info
 
     from bpy.utils import unregister_class
     for cls in reversed(classes):

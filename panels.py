@@ -275,7 +275,7 @@ class SIMPLE_EXPORT_menu_base:
         row.operator("simple_export.assign_preset_selection", text="Assign Presets", icon='PRESET_NEW')
 
         row = col.row()
-        row.operator("scene.export_selected_collections", text="TODO: Assign Filepaths", icon='FOLDER_REDIRECT')
+        row.operator("scene.set_export_path_selection", text="Assign Filepaths", icon='FOLDER_REDIRECT')
 
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):

@@ -174,7 +174,8 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
 
                 try:
                     # Process each collection
-                    self.apply_preset_to_collection(collection, preset_path, props.export_format, results)
+                    result = self.apply_preset_to_collection(collection, preset_path, props.export_format)
+                    results.append(result)
                 except Exception as e:
                     # Handle per-collection errors
                     results.append({'name': collection.name, 'success': False, 'message': str(e)})
@@ -196,7 +197,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
         if not preset_path:
             raise ValueError("Select a preset to be applied.")
 
-    def apply_preset_to_collection(self, collection, preset_path, export_format, results):
+    def apply_preset_to_collection(self, collection, preset_path, export_format):
         """Apply the preset to a single collection."""
         preset_name = os.path.basename(preset_path)
 
@@ -211,7 +212,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
             raise ValueError(msg)
 
         # Add success result
-        results.append({'name': collection.name, 'success': True, 'message': f"Applied preset '{preset_name}'."})
+        return {'name': collection.name, 'success': True, 'message': f"Applied preset '{preset_name}'."}
 
 
 classes = (
