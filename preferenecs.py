@@ -60,6 +60,12 @@ PROPERTY_METADATA = {
         "description": "Set Location Offset for collections.",
         "default": True,
     },
+    "move_to_origin": {
+        "name": "Move To Origin",
+        "description": "Objects are moved to the origin based on the Collection Offset before exporting.",
+        "default": False,
+    },
+
     "use_custom_export_folder": {
         "name": "Custom Folder",
         "description": "Use a custom export folder",
@@ -155,10 +161,10 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default="FBX",  # Default value
     )
 
-    use_instance_offset: bpy.props.BoolProperty(
-        name="(BETA) Move to Collection Offset",
-        description="Use the collection offset for the exported collection",
-        default=False
+    move_to_origin: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["move_to_origin"]["name"],
+        description=PROPERTY_METADATA["move_to_origin"]["description"],
+        default=PROPERTY_METADATA["move_to_origin"]["default"],
     )
 
     use_blend_file_name_as_prefix: bpy.props.BoolProperty(
@@ -181,6 +187,18 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=PROPERTY_METADATA["custom_export_path"]["default"],
         subtype='DIR_PATH')
 
+    search_path: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["search_path"]["name"],
+        description=PROPERTY_METADATA["search_path"]["description"],
+        default=PROPERTY_METADATA["search_path"]["default"],
+    )
+
+    replacement_path: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["replacement_path"]["name"],
+        description=PROPERTY_METADATA["replacement_path"]["description"],
+        default=PROPERTY_METADATA["replacement_path"]["default"],
+    )
+
     ########################################
     # Collection Name
 
@@ -196,17 +214,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=PROPERTY_METADATA["custom_suffix"]["default"],
     )
 
-    search_path: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["search_path"]["name"],
-        description=PROPERTY_METADATA["search_path"]["description"],
-        default=PROPERTY_METADATA["search_path"]["default"],
-    )
-
-    replacement_path: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["replacement_path"]["name"],
-        description=PROPERTY_METADATA["replacement_path"]["description"],
-        default=PROPERTY_METADATA["replacement_path"]["default"],
-    )
     ########################################
     # Collections
 
@@ -222,9 +229,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         items=PROPERTY_METADATA["collection_color"]["items"],
         default=PROPERTY_METADATA["collection_color"]["default"],
     )
-
-    ###################################################################
-    # Auto
 
     auto_set_filepath: bpy.props.BoolProperty(
         name=PROPERTY_METADATA["auto_set_filepath"]["name"],
@@ -333,7 +337,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
             box = layout.box()
             box.label(text="Export Settings")
-            box.prop(self, "use_instance_offset")
+            box.prop(self, "move_to_origin")
 
             layout.separator()
             layout.prop(self, "simple_export_debug")
@@ -374,6 +378,12 @@ def initialize_properties_collection_generation():
         description=PROPERTY_METADATA["set_location_offset_on_creation"]["description"],
         default=prefs.set_location_offset_on_creation
     )
+    bpy.types.WindowManager.move_to_origin = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["move_to_origin"]["name"],
+        description=PROPERTY_METADATA["move_to_origin"]["description"],
+        default=prefs.move_to_origin,
+    )
+
     bpy.types.WindowManager.auto_set_filepath = bpy.props.BoolProperty(
         name=PROPERTY_METADATA["auto_set_filepath"]["name"],
         description=PROPERTY_METADATA["auto_set_filepath"]["description"],
@@ -447,12 +457,12 @@ def register():
 
     bpy.types.WindowManager.overwrite_collection_settings = bpy.props.BoolProperty(
         name="Overwrite Collection",
-        description="Overwrite settings defined in the Preferences",
+        description="Overwrite the settings related to the creation of Export Collections defined in the Preferences",
         default=False)
 
     bpy.types.WindowManager.overwrite_filepath_settings = bpy.props.BoolProperty(
         name="Overwrite Path",
-        description="Overwrite settings defined in the Preferences",
+        description="Overwrite the settings regarding the generation of the export path defined in the Preferences",
         default=False)
 
     bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty(

@@ -14,16 +14,16 @@ def generate_collection_name(context, obj_name):
 
     prefs = bpy.context.preferences.addons[__package__].preferences
     wm = context.window_manager
-    settings = wm
+    settings_col = wm if wm.overwrite_collection_settings else prefs
 
 
-    if getattr(settings, 'use_blend_file_name_as_prefix'):
+    if getattr(settings_col, 'use_blend_file_name_as_prefix'):
         blend_file_name = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
         if not collection_name.startswith(blend_file_name):
             collection_name = blend_file_name + "_" + collection_name
 
-    prefix = getattr(settings, 'custom_prefix')
-    suffix = getattr(settings, 'custom_suffix')
+    prefix = getattr(settings_col, 'custom_prefix')
+    suffix = getattr(settings_col, 'custom_suffix')
 
     if prefix and not collection_name.startswith(prefix):
         collection_name = prefix + "_" + collection_name
@@ -48,7 +48,8 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
 
         prefs = bpy.context.preferences.addons[__package__].preferences
         wm = context.window_manager
-        settings = wm
+        settings_col = wm if wm.overwrite_collection_settings else prefs
+        settings_filepath = wm if wm.overwrite_filepath_settings else prefs
 
         props = context.scene.simple_export_props
 
@@ -69,18 +70,18 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Make sure that blend file exists to retrieve the file path
-        if not getattr(settings, 'use_custom_export_folder') and getattr(settings, 'auto_set_filepath'):
+        if not getattr(settings_filepath, 'use_custom_export_folder') and getattr(settings_col, 'auto_set_filepath'):
             blend_filepath = bpy.data.filepath
             # Return if Blend File hasn't been saved
             if not blend_filepath:
                 self.report({'ERROR'}, f"Save the Blend file before calling this operator.")
                 return {'CANCELLED'}
             blend_dir = os.path.dirname(blend_filepath)
-        elif getattr(settings, 'custom_export_path'):
-            blend_dir = getattr(settings, 'custom_export_path')
+        elif getattr(settings_filepath, 'custom_export_path'):
+            blend_dir = getattr(settings_filepath, 'custom_export_path')
 
         # Assign the preset
-        if getattr(settings, 'auto_set_preset'):
+        if getattr(settings_col, 'auto_set_preset'):
             preset_path = props.simple_export_preset_file
 
             if not preset_path:
@@ -130,11 +131,11 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
                     col.objects.unlink(ob)
 
         # Set collection Color:
-        color_tag = getattr(settings, 'collection_color')
+        color_tag = getattr(settings_col, 'collection_color')
         export_collection.color_tag = color_tag
 
         # Set instance offset
-        if getattr(settings, 'set_location_offset_on_creation'):
+        if getattr(settings_col, 'set_location_offset_on_creation'):
             export_collection.instance_offset = active_object.location
 
         # TODO: Set collection offset Object
@@ -165,12 +166,12 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
 
         exporter = list(set(exporters_after) - set(exporters_before))[0]
 
-        if getattr(settings, 'auto_set_preset'):
+        if getattr(settings_col, 'auto_set_preset'):
             assign_preset(export_collection, preset_path)
 
-        if getattr(settings, 'auto_set_filepath'):
-            search_path = getattr(settings, 'search_path')
-            replacement_path = getattr(settings, 'replacement_path')
+        if getattr(settings_col, 'auto_set_filepath'):
+            search_path = getattr(settings_filepath, 'search_path')
+            replacement_path = getattr(settings_filepath, 'replacement_path')
 
             if not exporter:
                 self.report({'ERROR'}, f"Could not add exporter to collection '{collection_name}'.")

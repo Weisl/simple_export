@@ -92,7 +92,7 @@ def draw_preset_debug(layout, context):
     row = box_debug.row(align=True)
     row.enabled = False  # Makes the field non-editable
     row.prop(scene, "simple_export_preset_file", text="")
-    box_debug.prop(props, "override_path", text="Override Preset Folder")
+    box_debug.prop(props, "override_path", text="Overwrite Preset Folder")
 
     row = box_debug.row(align=True)
     row.enabled = props.override_path  # Only enable preset_path editing if override_path is true
@@ -164,13 +164,18 @@ def draw_filepath_settings(layout, context):
         layout.enabled = False
 
     # Define properties to check
-    properties = [
+    properties_foler = [
         "use_custom_export_folder",
         "custom_export_path",
+    ]
+
+    properties = [
         "search_path",
         "replacement_path",
     ]
     # Use the helper function to draw properties
+    box = layout.box()
+    draw_properties_with_prefix(box, context, properties_foler)
     draw_properties_with_prefix(layout, context, properties)
 
 
@@ -214,7 +219,7 @@ class SimpleExportProperties(bpy.types.PropertyGroup):
     )
 
     override_path: bpy.props.BoolProperty(
-        name="Override Preset Folder",
+        name="Overwrite Preset Folder",
         description="Manually override the automatically set preset folder",
         default=False,
     )
@@ -258,6 +263,7 @@ class SIMPLE_EXPORT_menu_base:
     def draw(self, context):
         layout = self.layout
         scene = context.scene
+        wm = context.window_manager
 
         # Export List
         row = layout.row()
@@ -269,6 +275,8 @@ class SIMPLE_EXPORT_menu_base:
 
         # List Operators
         col = layout.column(align=True)
+        row = col.row()
+        row.prop(wm, 'move_to_origin')
         row = col.row()
         row.operator("scene.export_selected_collections", text="Export Selected")
 
@@ -327,7 +335,6 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
 
         # Collapsible Filepath Settings Section
         header, body = layout.panel("filepath_settings", default_closed=True)
-
 
         # Header
         addon_name = get_addon_name()

@@ -80,8 +80,11 @@ def export_collection(collection, context):
     Returns:
         dict: A dictionary with 'success' (bool) and 'message' (str) keys.
     """
+
     prefs = bpy.context.preferences.addons[__package__].preferences
-    msg = {'success': False, 'message': "Unknown error occurred."}
+    wm = context.window_manager
+    settings_col = wm if wm.overwrite_collection_settings else prefs
+    settings_filepath = wm if wm.overwrite_filepath_settings else prefs
 
     # Temporarily remove the collection offset update handler
     if update_collection_offset in bpy.app.handlers.depsgraph_update_post:
@@ -95,11 +98,12 @@ def export_collection(collection, context):
     print(f'Exporter: {exporter}')
     export_path = exporter.export_properties.filepath
     print(f'Exporter Path: {export_path}')
+
     # Ensure the export directory exists
     ensure_export_folder_exists(export_path)
 
     # Apply instance offset if the preference is enabled
-    if prefs.use_instance_offset:
+    if wm.move_to_origin:
         apply_collection_offset(collection)
 
     # Set the active collection
@@ -133,7 +137,7 @@ def export_collection(collection, context):
 
     finally:
         # Revert instance offset if applied
-        if prefs.use_instance_offset:
+        if wm.move_to_origin:
             apply_collection_offset(collection, inverse=True)
 
         # Re-enable the collection offset update handler

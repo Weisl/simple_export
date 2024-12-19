@@ -70,13 +70,12 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         op = row.operator("scene.set_export_path", text="", icon='FOLDER_REDIRECT')
         op.collection_name = collection.name
 
-        # TODO: Implement features
         # Assign Preset
         op = row.operator("simple_export.assign_preset", text="", icon='PRESET')
         op.collection_name = collection.name
 
         # Add the Export Collection button
-        op = row.operator("scene.export_collection", text="", icon='EXPORT')
+        op = row.operator("simple_export.export_collection", text="", icon='EXPORT')
         op.collection_name = collection.name
 
     def filter_items(self, context, data, propname):
