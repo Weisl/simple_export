@@ -42,17 +42,34 @@ def get_addon_name():
     return "Simple Export"
 
 
+import os
+import bpy
+
 def ensure_export_folder_exists(export_path):
     """
     Ensure the directory for the export path exists, creating it if necessary.
+    Handles both relative and absolute paths properly.
     """
     export_dir = os.path.dirname(export_path)
 
+    # Convert relative path (//) to absolute path
+    if not os.path.isabs(export_dir):
+        export_dir = bpy.path.abspath(export_dir)
+
+    # Normalize to handle slashes, backslashes, and .. correctly
+    export_dir = os.path.normpath(export_dir)
+
+    # Ensure directory exists
     if export_dir and not os.path.exists(export_dir):
-        os.makedirs(export_dir)
-        print(f"Created export directory: {export_dir}")
+        try:
+            os.makedirs(export_dir, exist_ok=True)
+            print(f"Created export directory: {export_dir}")
+        except OSError as e:
+            print(f"Failed to create directory: {e}")
+            return False
 
     return True
+
 
 
 def set_active_collection(collection_name):

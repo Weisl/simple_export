@@ -1,7 +1,8 @@
 import os
 
 import bpy
-from .operators import find_exporter
+
+from .operators import find_exporter, clean_relative_path
 
 # Map color_tag to icons
 color_tag_icons = {
@@ -51,9 +52,9 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         props = context.scene.simple_export_props
         exporter = find_exporter(collection, props.export_format)
         export_path = exporter.export_properties.filepath
+        export_path = clean_relative_path(export_path)
         file_exists = os.path.exists(export_path)
         is_locked = file_exists and not os.access(export_path, os.W_OK)
-
 
         if settings.uilist_icon:
             # Show lock icon based on file permissions
