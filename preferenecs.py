@@ -508,7 +508,7 @@ def register():
         default=False)
 
     bpy.types.WindowManager.overwrite_filepath_settings = bpy.props.BoolProperty(
-        name="Overwrite Path",
+        name="Overwrite Filepath",
         description="Overwrite the settings regarding the generation of the export path defined in the Preferences",
         default=False)
 

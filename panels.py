@@ -160,6 +160,7 @@ def draw_create_export_collection(layout, context):
 def draw_filepath_settings(layout, context):
     wm = context.window_manager
 
+
     if not wm.overwrite_filepath_settings:
         layout.enabled = False
 
@@ -333,34 +334,28 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
 
         # Collapsible Filepath Settings Section
-        header, body = layout.panel("filepath_settings", default_closed=True)
+        header, body = layout.panel("overwrite_settings", default_closed=True)
 
         # Header
         addon_name = get_addon_name()
 
         row = header.row(align=True)
-        row.prop(wm, 'overwrite_filepath_settings')
+        row.label(text='Overwrite Preferences')
         op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
         op.addon_name = addon_name
         op.prefs_tabs = 'SETTINGS'
 
         # Body
         if body:
-            draw_filepath_settings(body, context)
+            row = body.row()
+            row.prop(wm, 'overwrite_filepath_settings')
+            box = body.box()
+            draw_filepath_settings(box, context)
 
-        # Collapsible Export Collection Section
-        header, body = layout.panel("export_collection", default_closed=False)
-
-        # Header
-        row = header.row(align=True)
-        row.prop(wm, 'overwrite_collection_settings')
-        op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
-        op.addon_name = addon_name
-        op.prefs_tabs = 'SETTINGS'
-
-        # Body
-        if body:
-            draw_create_export_collection(body, context)
+            row = body.row()
+            row.prop(wm, 'overwrite_collection_settings')
+            box = layout.box()
+            draw_create_export_collection(box, context)
 
         # Parent selection
         row = layout.row()
