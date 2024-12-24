@@ -269,8 +269,6 @@ class SIMPLE_EXPORT_menu_base:
         col = layout.column(align=True)
         row = col.row()
         row.prop(wm, 'move_to_origin')
-        row = col.row()
-        row.operator("scene.export_selected_collections", text="Export Selected", icon='EXPORT')
 
         row = col.row()
         row.operator("simple_export.assign_preset_selection", text="Assign Presets", icon='PRESET_NEW')
@@ -278,6 +276,9 @@ class SIMPLE_EXPORT_menu_base:
         row = col.row()
         row.operator("scene.set_export_path_selection", text="Assign Filepaths", icon='FOLDER_REDIRECT')
 
+        col.separator()
+        row = col.row()
+        row.operator("scene.export_selected_collections", text="Export Selected", icon='EXPORT')
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
     bl_label = "Custom Collection Menu"
@@ -349,12 +350,14 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         if body:
             row = body.row()
             row.prop(wm, 'overwrite_filepath_settings')
+
             box = body.box()
             draw_filepath_settings(box, context)
 
             row = body.row()
             row.prop(wm, 'overwrite_collection_settings')
-            box = layout.box()
+
+            box = body.box()
             draw_create_export_collection(box, context)
 
         # Parent selection
