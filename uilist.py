@@ -1,6 +1,7 @@
 import os
 
 import bpy
+from .operators import find_exporter
 
 # Map color_tag to icons
 color_tag_icons = {
@@ -15,6 +16,7 @@ color_tag_icons = {
     'COLOR_08': 'COLLECTION_COLOR_08',
 }
 
+
 class SCENE_UL_CollectionList(bpy.types.UIList):
     """
     UIList displaying all collections with an exporter matching the selected export type.
@@ -25,6 +27,13 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         prefs = context.preferences.addons[__package__].preferences
+
+        # Determine settings based on the list_id
+        if self.list_id == "scene":
+            settings = prefs.scene_properties
+        elif self.list_id == "popup":
+            settings = prefs.popup_properties
+
         collection = item
         if not collection:
             return
@@ -39,20 +48,23 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             return
 
         # Get exporter details
-        exporter = collection.exporters[0]
+        props = context.scene.simple_export_props
+        exporter = find_exporter(collection, props.export_format)
         export_path = exporter.export_properties.filepath
         file_exists = os.path.exists(export_path)
         is_locked = file_exists and not os.access(export_path, os.W_OK)
 
-        # Show lock icon based on file permissions
-        if is_locked:
-            icon = 'LOCKED'
-        elif file_exists:
-            icon = 'CURRENT_FILE'
-        else:
-            icon = 'FILE_NEW'
 
-        row.label(icon=icon)
+        if settings.uilist_icon:
+            # Show lock icon based on file permissions
+            if is_locked:
+                icon = 'LOCKED'
+            elif file_exists:
+                icon = 'CURRENT_FILE'
+            else:
+                icon = 'FILE_NEW'
+
+            row.label(icon=icon)
 
         # Determine the icon based on the collection's color_tag
         color_tag = collection.color_tag
@@ -61,21 +73,23 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         # Display the collection name with the color icon
         row.label(text=collection.name, icon=icon)
 
-        # Display the export file path as an editable property
-        row.prop(exporter.export_properties, "filepath", text="", expand=True)
+        if settings.uilist_show_filepath:
+            # Display the export file path as an editable property
+            row.prop(exporter.export_properties, "filepath", text="", expand=True)
 
-        # Buttons for setting the export path and opening the directory
-        # Assign Path
-        op = row.operator("scene.set_export_path", text="", icon='FOLDER_REDIRECT')
-        op.collection_name = collection.name
+        if settings.uilist_set_filepath:
+            # Buttons for setting the export path and opening the directory
+            # Assign Path
+            op = row.operator("scene.set_export_path", text="", icon='FOLDER_REDIRECT')
+            op.collection_name = collection.name
 
-        # TODO: Implement features
-        # Assign Preset
-        op = row.operator("simple_export.assign_preset", text="", icon='PRESET')
-        op.collection_name = collection.name
+        if settings.uilist_set_preset:
+            # Assign Preset
+            op = row.operator("simple_export.assign_preset", text="", icon='PRESET')
+            op.collection_name = collection.name
 
         # Add the Export Collection button
-        op = row.operator("scene.export_collection", text="", icon='EXPORT')
+        op = row.operator("simple_export.export_collection", text="", icon='EXPORT')
         op.collection_name = collection.name
 
     def filter_items(self, context, data, propname):
@@ -85,10 +99,13 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         props = context.scene.simple_export_props
         export_format = props.export_format
 
+        from .panels import EXPORT_FORMATS
+
         for collection in bpy.data.collections:
             # Filter collections based on whether they have an exporter with the matching format
             has_matching_exporter = any(
-                exporter.name == export_format for exporter in collection.exporters
+                str(type(exporter.export_properties)) == EXPORT_FORMATS[export_format]["op_type"] for exporter in
+                collection.exporters
             )
 
             if has_matching_exporter:

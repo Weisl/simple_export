@@ -69,9 +69,9 @@ def assign_preset(exporter, preset_path):
     return True, None
 
 
-class SIMPLEEXPORTER_PT_ResultsPanel(bpy.types.Panel):
+class SIMPLEEXPORTER_PT_PresetResultsPanel(bpy.types.Panel):
     """Panel to display the results of applying the preset."""
-    bl_idname = "SIMPLEEXPORTER_PT_ResultsPanel"
+    bl_idname = "SIMPLEEXPORTER_PT_PresetResultsPanel"
     bl_label = "Preset Application Results"
     bl_space_type = "VIEW_3D"
     bl_region_type = "WINDOW"
@@ -79,7 +79,7 @@ class SIMPLEEXPORTER_PT_ResultsPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text="Results:")
+        layout.label(text="Assign Preset:")
 
         # Get results from WindowManager
         results_str = context.window_manager.assign_preset_info_data
@@ -174,7 +174,8 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
 
                 try:
                     # Process each collection
-                    self.apply_preset_to_collection(collection, preset_path, props.export_format, results)
+                    result = self.apply_preset_to_collection(collection, preset_path, props.export_format)
+                    results.append(result)
                 except Exception as e:
                     # Handle per-collection errors
                     results.append({'name': collection.name, 'success': False, 'message': str(e)})
@@ -188,7 +189,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
         context.window_manager.assign_preset_info_data = str(results)
 
         # Show results in the panel
-        bpy.ops.wm.call_panel(name="SIMPLEEXPORTER_PT_ResultsPanel")
+        bpy.ops.wm.call_panel(name="SIMPLEEXPORTER_PT_PresetResultsPanel")
         return {'FINISHED'}
 
     def validate_preset_path(self, preset_path):
@@ -196,7 +197,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
         if not preset_path:
             raise ValueError("Select a preset to be applied.")
 
-    def apply_preset_to_collection(self, collection, preset_path, export_format, results):
+    def apply_preset_to_collection(self, collection, preset_path, export_format):
         """Apply the preset to a single collection."""
         preset_name = os.path.basename(preset_path)
 
@@ -211,11 +212,11 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
             raise ValueError(msg)
 
         # Add success result
-        results.append({'name': collection.name, 'success': True, 'message': f"Applied preset '{preset_name}'."})
+        return {'name': collection.name, 'success': True, 'message': f"Applied preset '{preset_name}'."}
 
 
 classes = (
-    SIMPLEEXPORTER_PT_ResultsPanel,
+    SIMPLEEXPORTER_PT_PresetResultsPanel,
     SIMPLEEXPORTER_OT_ApplyPreset,
     SIMPLEEXPORTER_OT_ApplyPresetSelection
 )

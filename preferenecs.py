@@ -1,4 +1,5 @@
 import bpy
+from bpy.props import BoolProperty, PointerProperty
 
 from .keymap import remove_key
 from .panels import get_export_format_items
@@ -60,6 +61,22 @@ PROPERTY_METADATA = {
         "description": "Set Location Offset for collections.",
         "default": True,
     },
+    "move_to_origin": {
+        "name": "Move To Origin",
+        "description": "Objects are moved to the origin based on the Collection Offset before exporting.",
+        "default": False,
+    },
+
+    "use_custom_export_folder": {
+        "name": "Custom Folder",
+        "description": "Use a custom export folder",
+        "default": False,
+    },
+    "custom_export_path": {
+        "name": "Export Folder",
+        "description": "Custom folder to export files to.",
+        "default": '',
+    },
 }
 
 
@@ -99,42 +116,27 @@ def get_default_export_format():
         return "FBX"  # Fallback default
 
 
-def register_scene_properties():
-    bpy.types.Scene.collection_index = bpy.props.IntProperty(
-        name="Collection Index",
-        description="Index of the active collection in the list",
-        default=0
+class UIListProperties(bpy.types.PropertyGroup):
+    uilist_icon: BoolProperty(
+        name="Show Icon",
+        description="Toggle visibility of the icon in the UI list",
+        default=True
     )
-
-    bpy.types.Scene.export_format = bpy.props.EnumProperty(
-        name="Export Format",
-        description="Filter collections by export format.",
-        items=get_export_format_items(),
-        default=get_default_export_format(),
+    uilist_show_filepath: BoolProperty(
+        name="Show Filepath",
+        description="Toggle visibility of the filepath in the UI list",
+        default=True
     )
-
-
-def register_collection_properties():
-    bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty(name="Selected Collection",
-                                                                         description="Select this collection for export",
-                                                                         default=False)
-
-    bpy.types.Collection.offset_object = bpy.props.PointerProperty(name="Offset Object", type=bpy.types.Object,
-                                                                   description="Object to be used for setting the collection offset")
-
-    bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty(name="Select for Export",
-                                                                         description="Select this collection for export",
-                                                                         default=False)
-
-
-def unregister_scene_properties():
-    del bpy.types.Scene.collection_index
-    del bpy.types.Scene.export_format
-
-
-def unregister_collection_properties():
-    del bpy.types.Collection.simple_export_selected
-    del bpy.types.Collection.offset_object
+    uilist_set_filepath: BoolProperty(
+        name="Show Set Filepath",
+        description="Toggle visibility of the filepath in the UI list",
+        default=True
+    )
+    uilist_set_preset: BoolProperty(
+        name="Show Preset",
+        description="Toggle visibility of the preset in the UI list",
+        default=True
+    )
 
 
 class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
@@ -158,8 +160,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         simple_export_panel_type = self.simple_export_panel_type.upper()
 
         # Remove previous key assignment
-        remove_key(context, 'wm.call_panel', "SIMPLE_EXPORT_PT_simple_export")
-        add_key(self, km, 'wm.call_panel', "SIMPLE_EXPORT_PT_simple_export", simple_export_panel_type,
+        remove_key(context, 'wm.call_panel', "SIMPLE_EXPORT_PT_simple_export_popup")
+        add_key(self, km, 'wm.call_panel', "SIMPLE_EXPORT_PT_simple_export_popup", simple_export_panel_type,
                 self.simple_export_panel_ctrl,
                 self.simple_export_panel_shift, self.simple_export_panel_alt, self.simple_export_panel_active)
         self.simple_export_panel_type = simple_export_panel_type
@@ -170,7 +172,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     prefs_tabs: bpy.props.EnumProperty(
         name='Export Preferences',
         items=(('SETTINGS', "Settings", "General addon settings"),
-               ('KEYMAP', "Keymap", "Change the hotkeys for tools associated with this addon.")),
+               ('UI', "UI", "Settings related to the UI."),
+               ('KEYMAP', "Keymap", "Change the hotkeys for tools associated with this addon."),),
         default='SETTINGS',
         description='Settings category:'
     )
@@ -183,16 +186,10 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default="FBX",  # Default value
     )
 
-    use_blender_file_location: bpy.props.BoolProperty(
-        name="Use Blender File Location",
-        description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
-        default=True
-    )
-
-    use_instance_offset: bpy.props.BoolProperty(
-        name="(BETA) Move to Collection Offset",
-        description="Use the collection offset for the exported collection",
-        default=False
+    move_to_origin: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["move_to_origin"]["name"],
+        description=PROPERTY_METADATA["move_to_origin"]["description"],
+        default=PROPERTY_METADATA["move_to_origin"]["default"],
     )
 
     use_blend_file_name_as_prefix: bpy.props.BoolProperty(
@@ -203,9 +200,29 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
     ########################################
     # Filepath
+    use_custom_export_folder: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["use_custom_export_folder"]["name"],
+        description=PROPERTY_METADATA["use_custom_export_folder"]["description"],
+        default=PROPERTY_METADATA["use_custom_export_folder"]["default"],
+    )
 
-    custom_export_path: bpy.props.StringProperty(name="Custom Export Path",
-                                                 description="Custom directory to export files to.", subtype='DIR_PATH')
+    custom_export_path: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["custom_export_path"]["name"],
+        description=PROPERTY_METADATA["custom_export_path"]["description"],
+        default=PROPERTY_METADATA["custom_export_path"]["default"],
+        subtype='DIR_PATH')
+
+    search_path: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["search_path"]["name"],
+        description=PROPERTY_METADATA["search_path"]["description"],
+        default=PROPERTY_METADATA["search_path"]["default"],
+    )
+
+    replacement_path: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["replacement_path"]["name"],
+        description=PROPERTY_METADATA["replacement_path"]["description"],
+        default=PROPERTY_METADATA["replacement_path"]["default"],
+    )
 
     ########################################
     # Collection Name
@@ -222,17 +239,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=PROPERTY_METADATA["custom_suffix"]["default"],
     )
 
-    search_path: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["search_path"]["name"],
-        description=PROPERTY_METADATA["search_path"]["description"],
-        default=PROPERTY_METADATA["search_path"]["default"],
-    )
-
-    replacement_path: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["replacement_path"]["name"],
-        description=PROPERTY_METADATA["replacement_path"]["description"],
-        default=PROPERTY_METADATA["replacement_path"]["default"],
-    )
     ########################################
     # Collections
 
@@ -248,9 +254,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         items=PROPERTY_METADATA["collection_color"]["items"],
         default=PROPERTY_METADATA["collection_color"]["default"],
     )
-
-    ###################################################################
-    # Creation
 
     auto_set_filepath: bpy.props.BoolProperty(
         name=PROPERTY_METADATA["auto_set_filepath"]["name"],
@@ -282,12 +285,17 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         name="Active", default=True,
         update=update_simple_export_panel_key)
 
-
     ########################################
     # Debug
     simple_export_debug: bpy.props.BoolProperty(name="Debug Mode",
                                                 description="Debug mode only used for development",
                                                 default=False)
+
+    ########################################
+    # UI
+
+    scene_properties: PointerProperty(type=UIListProperties)
+    popup_properties: PointerProperty(type=UIListProperties)
 
     def keymap_ui(self, layout, title, property_prefix, id_name, properties_name):
         box = layout.box()
@@ -334,8 +342,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
             box = layout.box()
             box.label(text="Export Path")
-            box.prop(self, "use_blender_file_location")
-            if not self.use_blender_file_location:
+            box.prop(self, "use_custom_export_folder")
+            if self.use_custom_export_folder:
                 box.prop(self, "custom_export_path")
             box.prop(self, "search_path")
             box.prop(self, "replacement_path")
@@ -360,19 +368,35 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
             box = layout.box()
             box.label(text="Export Settings")
-            box.prop(self, "use_instance_offset")
+            box.prop(self, "move_to_origin")
 
             layout.separator()
             layout.prop(self, "simple_export_debug")
 
+        elif self.prefs_tabs == 'UI':
+            box = layout.box()
+            box.label(text="Scene List")
+            box.prop(self.scene_properties, "uilist_icon")
+            box.prop(self.scene_properties, "uilist_show_filepath")
+            box.prop(self.scene_properties, "uilist_set_filepath")
+            box.prop(self.scene_properties, "uilist_set_preset")
+
+            box = layout.box()
+            box.label(text="Popup List")
+            box.prop(self.popup_properties, "uilist_icon")
+            box.prop(self.popup_properties, "uilist_show_filepath")
+            box.prop(self.popup_properties, "uilist_set_filepath")
+            box.prop(self.popup_properties, "uilist_set_preset")
+
         elif self.prefs_tabs == 'KEYMAP':
             self.keymap_ui(layout, 'Export Popup', 'simple_export_panel', 'wm.call_panel',
-                           "SIMPLE_EXPORT_PT_simple_export")
+                           "SIMPLE_EXPORT_PT_simple_export_popup")
 
 
 # Initialize Window Manager Properties with Add-on Preferences Defaults
 
 classes = (
+    UIListProperties,
     SIMPLE_EXPORT_preferences,
 )
 
@@ -401,6 +425,12 @@ def initialize_properties_collection_generation():
         description=PROPERTY_METADATA["set_location_offset_on_creation"]["description"],
         default=prefs.set_location_offset_on_creation
     )
+    bpy.types.WindowManager.move_to_origin = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["move_to_origin"]["name"],
+        description=PROPERTY_METADATA["move_to_origin"]["description"],
+        default=prefs.move_to_origin,
+    )
+
     bpy.types.WindowManager.auto_set_filepath = bpy.props.BoolProperty(
         name=PROPERTY_METADATA["auto_set_filepath"]["name"],
         description=PROPERTY_METADATA["auto_set_filepath"]["description"],
@@ -418,6 +448,7 @@ def initialize_properties_collection_generation():
         default=prefs.collection_color
     )
 
+
 def initialize_properties_file_path():
     prefs = bpy.context.preferences.addons[__package__].preferences
 
@@ -431,10 +462,10 @@ def initialize_properties_file_path():
         description=PROPERTY_METADATA["replacement_path"]["description"],
         default=prefs.replacement_path
     )
-    bpy.types.WindowManager.use_blender_file_location = bpy.props.BoolProperty(
-        name="Use Blender File Location",
-        description="If checked, the export path will be set to the Blender file location. If unchecked, a custom path will be used.",
-        default=prefs.use_blender_file_location
+    bpy.types.WindowManager.use_custom_export_folder = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["use_custom_export_folder"]["name"],
+        description=PROPERTY_METADATA["use_custom_export_folder"]["description"],
+        default=prefs.use_custom_export_folder
     )
     bpy.types.WindowManager.custom_export_path = bpy.props.StringProperty(
         name="Custom Export Path",
@@ -455,25 +486,66 @@ def register():
     for cls in classes:
         register_class(cls)
 
-    bpy.app.timers.register(post_register, first_interval=0.1)
-
     from .keymap import add_keymap
     add_keymap()
-    register_scene_properties()
-    register_collection_properties()
+
+    bpy.types.Scene.collection_index = bpy.props.IntProperty(
+        name="Collection Index",
+        description="Index of the active collection in the list",
+        default=0
+    )
+
+    bpy.types.Scene.export_format = bpy.props.EnumProperty(
+        name="Export Format",
+        description="Filter collections by export format.",
+        items=get_export_format_items(),
+        default=get_default_export_format(),
+    )
+
+    bpy.types.WindowManager.overwrite_collection_settings = bpy.props.BoolProperty(
+        name="Overwrite Collection",
+        description="Overwrite the settings related to the creation of Export Collections defined in the Preferences",
+        default=False)
+
+    bpy.types.WindowManager.overwrite_filepath_settings = bpy.props.BoolProperty(
+        name="Overwrite Filepath",
+        description="Overwrite the settings regarding the generation of the export path defined in the Preferences",
+        default=False)
+
+    bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty(
+        name="Selected Collection",
+        description="Select this collection for export",
+        default=False)
+
+    bpy.types.Collection.offset_object = bpy.props.PointerProperty(
+        name="Offset Object", type=bpy.types.Object,
+        description="Object to be used for setting the collection offset")
+
+    bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty(
+        name="Select for Export",
+        description="Select this collection for export",
+        default=False)
+
+    bpy.app.timers.register(post_register, first_interval=0.1)
 
 
 def unregister():
     from .keymap import remove_keymap
     remove_keymap()
 
-    unregister_collection_properties()
-    unregister_scene_properties()
-
     from bpy.utils import unregister_class
 
     for cls in reversed(classes):
         unregister_class(cls)
+
+    # Persistant settings
+    del bpy.types.Scene.collection_index
+    del bpy.types.Scene.export_format
+    del bpy.types.Collection.simple_export_selected
+    del bpy.types.Collection.offset_object
+
+    del bpy.types.WindowManager.overwrite_filepath_settings
+    del bpy.types.WindowManager.overwrite_collection_settings
 
     # Collection creation
     del bpy.types.WindowManager.custom_prefix
@@ -487,5 +559,5 @@ def unregister():
     # filepath
     del bpy.types.WindowManager.search_path
     del bpy.types.WindowManager.replacement_path
-    del bpy.types.WindowManager.use_blender_file_location
+    del bpy.types.WindowManager.use_custom_export_folder
     del bpy.types.WindowManager.custom_export_path

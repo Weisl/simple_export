@@ -19,6 +19,7 @@ EXPORT_FORMATS = {
         "description": "FBX Export",
         "preset_folder": os.path.join(get_presets_folder(), "export_scene.fbx"),
         "op_type": "<class 'bpy.types.EXPORT_SCENE_OT_fbx'>",
+        "file_extension": "fbx",
     },
     "OBJ": {
         "op_name": "IO_FH_obj",
@@ -26,6 +27,7 @@ EXPORT_FORMATS = {
         "description": "Wavefront OBJ Export",
         "preset_folder": os.path.join(get_presets_folder(), "wm.obj_export"),
         "op_type": "<class 'bpy.types.WM_OT_obj_export'>",
+        "file_extension": "obj",
     },
     "GLTF": {
         "op_name": "IO_FH_gltf2",
@@ -33,6 +35,7 @@ EXPORT_FORMATS = {
         "description": "glTF 2.0 Export",
         "preset_folder": os.path.join(get_presets_folder(), "export_scene.gltf"),
         "op_type": "<class 'bpy.types.EXPORT_SCENE_OT_gltf'>",
+        "file_extension": "glb",
     },
     "USD": {
         "op_name": "IO_FH_usd",
@@ -40,6 +43,7 @@ EXPORT_FORMATS = {
         "description": "Universal Scene Description Export",
         "preset_folder": os.path.join(get_presets_folder(), "wm.usd_export"),
         "op_type": "<class 'bpy.types.WM_OT_usd_export'>",
+        "file_extension": "usd",
     },
     "ALEMBIC": {
         "op_name": "IO_FH_alembic",
@@ -47,6 +51,7 @@ EXPORT_FORMATS = {
         "description": "Alembic Export",
         "preset_folder": os.path.join(get_presets_folder(), "wm.alembic_export"),
         "op_type": "<class 'bpy.types.WM_OT_alembic_export'>",
+        "file_extension": "abc",
     },
     "PLY": {
         "op_name": "IO_FH_ply",
@@ -54,6 +59,7 @@ EXPORT_FORMATS = {
         "description": "Stanford PLY Export",
         "preset_folder": os.path.join(get_presets_folder(), "wm.ply_export"),
         "op_type": "<class 'bpy.types.WM_OT_ply_export'>",
+        "file_extension": "ply",
     },
     "STL": {
         "op_name": "IO_FH_stl",
@@ -61,6 +67,7 @@ EXPORT_FORMATS = {
         "description": "STL Export",
         "preset_folder": os.path.join(get_presets_folder(), "wm.stl_export"),
         "op_type": "<class 'bpy.types.WM_OT_stl_export'>",
+        "file_extension": "stl",
     },
 }
 
@@ -70,28 +77,31 @@ def draw_export_preset(layout, context):
     props = context.scene.simple_export_props
     prefs = context.preferences.addons[__package__].preferences
 
-    box = layout.box()
-    box.label(text="Presets")
     # Select preset
-    box.prop(props, "simple_export_preset_file", text="Select")
+    layout.prop(props, "simple_export_preset_file", text="Preset")
 
-    if prefs.simple_export_debug:
-        box_debug = box.box()
 
-        box_debug.label(text='Debug')
+def draw_preset_debug(layout, context):
+    scene = context.scene
+    props = context.scene.simple_export_props
 
-        row = box_debug.row(align=True)
-        row.enabled = False  # Makes the field non-editable
-        row.prop(scene, "simple_export_preset_file", text="")
-        box_debug.prop(props, "override_path", text="Override Preset Folder")
+    box_debug = layout.box()
 
-        row = box_debug.row(align=True)
-        row.enabled = props.override_path  # Only enable preset_path editing if override_path is true
-        row.prop(props, "preset_path", text="Preset Folder")
+    box_debug.label(text='Debug')
 
-        row = box_debug.row()
-        op = row.operator("simple_export.assign_preset", text="Assign Preset")
-        op.collection_name = context.collection.name
+    row = box_debug.row(align=True)
+    row.enabled = False  # Makes the field non-editable
+    row.prop(scene, "simple_export_preset_file", text="")
+    box_debug.prop(props, "override_path", text="Overwrite Preset Folder")
+
+    row = box_debug.row(align=True)
+    row.enabled = props.override_path  # Only enable preset_path editing if override_path is true
+    row.prop(props, "preset_path", text="Preset Folder")
+
+    row = box_debug.row()
+    op = row.operator("simple_export.assign_preset", text="Assign Preset")
+    op.collection_name = context.collection.name
+
 
 def draw_properties_with_prefix(layout, context, properties):
     """
@@ -127,31 +137,10 @@ def draw_properties_with_prefix(layout, context, properties):
 
 
 def draw_create_export_collection(layout, context):
-    addon_name = get_addon_name()
-
-    # Header
-    row = layout.row(align=True)
-    op = row.operator("simple_export.open_preferenecs", text="", icon="PREFERENCES")
-    op.addon_name = addon_name
-    op.prefs_tabs = 'SETTINGS'
-    row.label(text='Export Collection')
-
-    # Parent selection
-    row = layout.row()
-    color_tag = None
-    if context.scene.parent_collection:
-        color_tag = context.scene.parent_collection.color_tag
-    icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
-    row.prop(context.scene, "parent_collection", text="Parent Collection", icon=icon)
-
-    # Draw Create Button
-    row = layout.row()
-    prefs = context.preferences.addons[__package__].preferences
-    color_tag = prefs.collection_color
-    icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
-    row.operator("simple_export.create_export_collection", icon=icon)
-
     wm = context.window_manager
+
+    if not wm.overwrite_collection_settings:
+        layout.enabled = False
 
     # Define properties to check
     properties = [
@@ -170,20 +159,24 @@ def draw_create_export_collection(layout, context):
 
 def draw_filepath_settings(layout, context):
     wm = context.window_manager
-    prefs = context.preferences.addons[__package__].preferences
 
-    row = layout.row()
-    row.label(text='File Path')
+
+    if not wm.overwrite_filepath_settings:
+        layout.enabled = False
 
     # Define properties to check
-    properties = [
-        "use_blender_file_location",
+    properties_foler = [
+        "use_custom_export_folder",
         "custom_export_path",
+    ]
+
+    properties = [
         "search_path",
         "replacement_path",
     ]
-
     # Use the helper function to draw properties
+    box = layout.box()
+    draw_properties_with_prefix(box, context, properties_foler)
     draw_properties_with_prefix(layout, context, properties)
 
 
@@ -227,7 +220,7 @@ class SimpleExportProperties(bpy.types.PropertyGroup):
     )
 
     override_path: bpy.props.BoolProperty(
-        name="Override Preset Folder",
+        name="Overwrite Preset Folder",
         description="Manually override the automatically set preset folder",
         default=False,
     )
@@ -264,32 +257,28 @@ class SIMPLE_EXPORT_menu_base:
 
         # Open Preferences
         addon_name = get_addon_name()
-        op = row.operator("simple_export.open_preferenecs", text="", icon="PREFERENCES")
+        op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
         op.addon_name = addon_name
         op.prefs_tabs = 'SETTINGS'
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
-
-        # Export List
-        row = layout.row()
-        row.label(text="Export List")
-        row = layout.row()
-        row.template_list("SCENE_UL_CollectionList", "", bpy.data, "collections", scene, "collection_index")
-        # col = row.column(align=True)
-        # col.menu("SIMPLE_EXPORT_MT_context_menu", icon="DOWNARROW_HLT", text="")
+        wm = context.window_manager
 
         # List Operators
         col = layout.column(align=True)
         row = col.row()
-        row.operator("scene.export_selected_collections", text="Export Selected")
+        row.prop(wm, 'move_to_origin')
 
         row = col.row()
-        row.operator("simple_export.assign_preset_selection", text="Assign Presets")
-        # row = col.row()
-        # row.operator("scene.export_selected_collections", text="TODO: Assign Paths")
+        row.operator("simple_export.assign_preset_selection", text="Assign Presets", icon='PRESET_NEW')
 
+        row = col.row()
+        row.operator("scene.set_export_path_selection", text="Assign Filepaths", icon='FOLDER_REDIRECT')
+
+        col.separator()
+        row = col.row()
+        row.operator("scene.export_selected_collections", text="Export Selected", icon='EXPORT')
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
     bl_label = "Custom Collection Menu"
@@ -309,46 +298,103 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
     bl_idname = "SCENE_PT_simple_export"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
-    bl_context = "scene"
+    bl_context = "output"
 
     def draw(self, context):
         props = context.scene.simple_export_props
+        prefs = context.preferences.addons[__package__].preferences
+
+        scene = context.scene
+        wm = context.window_manager
+
         layout = self.layout
 
         # Draw format selection
         layout.prop(props, "export_format", text="Format")
+
+        # Draw Preset UI
+        box = layout.box()
+        row = box.row(align=True)
+        draw_export_preset(row, context)
+
+        if prefs.simple_export_debug:
+            box = box.box()
+            draw_preset_debug(box, context)
+
+        # Export List
+        row = layout.row()
+        row.label(text="Export List")
+        row = layout.row()
+        row.template_list("SCENE_UL_CollectionList", "scene", bpy.data, "collections", scene, "collection_index")
 
         # Draw Export List
         super().draw(context)
 
         # Button to open the export Popup
         op = layout.operator("wm.call_panel", text="Open Export Popup")
-        op.name = "SIMPLE_EXPORT_PT_simple_export"
+        op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
 
-        # Draw Preset UI
-        draw_export_preset(layout, context)
+        # Collapsible Filepath Settings Section
+        header, body = layout.panel("overwrite_settings", default_closed=True)
 
-        # Export Collection Creation UI
-        box = layout.box()
-        draw_create_export_collection(box, context)
+        # Header
+        addon_name = get_addon_name()
 
-        # Export Filepath Settings UI
-        box = layout.box()
-        draw_filepath_settings(box, context)
+        row = header.row(align=True)
+        row.label(text='Overwrite Preferences')
+        op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
+        op.addon_name = addon_name
+        op.prefs_tabs = 'SETTINGS'
+
+        # Body
+        if body:
+            row = body.row()
+            row.prop(wm, 'overwrite_filepath_settings')
+
+            box = body.box()
+            draw_filepath_settings(box, context)
+
+            row = body.row()
+            row.prop(wm, 'overwrite_collection_settings')
+
+            box = body.box()
+            draw_create_export_collection(box, context)
+
+        # Parent selection
+        row = layout.row()
+        color_tag = None
+        if context.scene.parent_collection:
+            color_tag = context.scene.parent_collection.color_tag
+        icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
+        row.prop(context.scene, "parent_collection", text="Parent Collection", icon=icon)
+
+        # Draw Create Button
+        row = layout.row()
+        prefs = context.preferences.addons[__package__].preferences
+        color_tag = prefs.collection_color
+        icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
+        row.operator("simple_export.create_export_collection", icon=icon)
 
 
-class SIMPLE_EXPORT_PT_simple_export(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
-    bl_idname = "SIMPLE_EXPORT_PT_simple_export"
+class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
+    bl_idname = "SIMPLE_EXPORT_PT_simple_export_popup"
     bl_space_type = "VIEW_3D"
     bl_region_type = "WINDOW"
     bl_context = "empty"
     bl_ui_units_x = 45
 
     def draw(self, context):
+        scene = context.scene
         layout = self.layout
 
         row = layout.row()
         row.label(text="Simple Export Popup")
+
+        # Export List
+        row = layout.row()
+        row.label(text="Export List")
+        row = layout.row()
+        row.template_list("SCENE_UL_CollectionList", "popup", bpy.data, "collections", scene, "collection_index")
 
         super().draw(context)
 
@@ -357,7 +403,7 @@ classes = (
     SimpleExportProperties,
     SIMPLE_EXPORT_MT_context_menu,
     SIMPLE_EXPORT_PT_CollectionExportPanel,
-    SIMPLE_EXPORT_PT_simple_export,
+    SIMPLE_EXPORT_PT_simple_export_popup,
 )
 
 
