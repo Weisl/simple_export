@@ -124,6 +124,23 @@ def add_extension(path, export_format):
 
     return path
 
+def is_really_absolute(path):
+    return os.path.abspath(path) == path
+
+def clean_relative_path(path):
+    """
+    Convert relative paths (//) to absolute paths and normalize them.
+    Ensures paths are correctly interpreted across different operating systems.
+    """
+
+    # Convert Blender relative paths (//) or root-relative paths (\..) to absolute
+    if not is_really_absolute(path):
+        path = bpy.path.abspath(path)
+
+    # Normalize path to clean up redundant separators (e.g., \\, //)
+    path = os.path.normpath(path)
+
+    return path
 
 def pre_export_checks(export_path):
     """Perform pre-export checks and return file existence and timestamp."""
@@ -266,6 +283,8 @@ class SCENE_OT_CreateExportDirectory(bpy.types.Operator):
 
         export_path = exporter.export_properties.filepath
         export_dir = os.path.dirname(export_path)
+        export_dir = clean_relative_path(os.path.dirname(export_dir))
+
 
         if not os.path.exists(export_dir):
             os.makedirs(export_dir)
@@ -460,6 +479,9 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
 
             # Pre-export checks
             export_path = add_extension(exporter.export_properties.filepath, props.export_format)
+            export_path = clean_relative_path(export_path)
+            print('EXPORT PATH: ' + str(export_path))
+
             file_exists_before, file_timestamp_before = pre_export_checks(export_path)
 
             # Apply instance offset if enabled
@@ -527,6 +549,8 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
 
                 # Pre-export checks
                 export_path = add_extension(exporter.export_properties.filepath, props.export_format)
+                export_path = clean_relative_path(export_path)
+
                 file_exists_before, file_timestamp_before = pre_export_checks(export_path)
 
                 # Apply instance offset if enabled
@@ -580,6 +604,7 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
         exporter = find_exporter(collection, props.export_format)
         export_path = exporter.export_properties.filepath
         export_dir = os.path.dirname(export_path)
+        export_dir = clean_relative_path(os.path.dirname(export_dir))
 
         if not os.path.exists(export_dir):
             self.report({'WARNING'}, f"Directory does not exist: {export_dir}")
