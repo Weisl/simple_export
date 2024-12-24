@@ -1,8 +1,5 @@
-import os
 import platform
 import subprocess
-
-import bpy
 from mathutils import Matrix
 
 from .collection_utils import update_collection_offset
@@ -45,6 +42,7 @@ def get_addon_name():
 import os
 import bpy
 
+
 def ensure_export_folder_exists(export_path):
     """
     Ensure the directory for the export path exists, creating it if necessary.
@@ -69,7 +67,6 @@ def ensure_export_folder_exists(export_path):
             return False
 
     return True
-
 
 
 def set_active_collection(collection_name):

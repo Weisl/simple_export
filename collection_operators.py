@@ -1,6 +1,5 @@
-import os
-
 import bpy
+import os
 
 from .operators import generate_export_path, assign_exporter_path
 from .operators import set_active_layer_Collection
@@ -15,7 +14,6 @@ def generate_collection_name(context, obj_name):
     prefs = bpy.context.preferences.addons[__package__].preferences
     wm = context.window_manager
     settings_col = wm if wm.overwrite_collection_settings else prefs
-
 
     if getattr(settings_col, 'use_blend_file_name_as_prefix'):
         blend_file_name = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
@@ -89,17 +87,17 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
                 return {'CANCELLED'}
 
         # Helper function to create or retrieve an existing collection
-        def make_collection(collection_name, parent_collection):
+        def make_collection(col_name, prnt_collection):
             """
             Return existing collection if it exists, otherwise create a new one
             """
-            if collection_name in bpy.data.collections:
-                col = bpy.data.collections[collection_name]
+            if col_name in bpy.data.collections:
+                collect = bpy.data.collections[col_name]
             else:
-                col = bpy.data.collections.new(collection_name)
-                if col.name not in parent_collection.children.keys():
-                    parent_collection.children.link(col)
-            return col
+                collect = bpy.data.collections.new(col_name)
+                if collect.name not in prnt_collection.children.keys():
+                    prnt_collection.children.link(collect)
+            return collect
 
         export_collection = make_collection(collection_name, parent_collection)
 
@@ -109,10 +107,10 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
         # Recursive function to find all children of an object
         def find_children(parent_object, child_stack):
             """ Recursive function to find all children """
-            for ob in bpy.data.objects:
-                if ob.parent == parent_object:
-                    child_stack.append(ob)
-                    find_children(ob, child_stack)
+            for obj in bpy.data.objects:
+                if obj.parent == parent_object:
+                    child_stack.append(obj)
+                    find_children(obj, child_stack)
             return child_stack
 
         # Find all children of the active object
@@ -179,7 +177,7 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
 
             export_format = props.export_format
             export_path = generate_export_path(collection_name, export_format, blend_dir, search_path, replacement_path)
-            export_path = assign_exporter_path(exporter, export_path)
+            success, msg = assign_exporter_path(exporter, export_path)
 
         self.report({'INFO'}, f"Export collection '{export_collection.name}' created successfully.")
         return {'FINISHED'}

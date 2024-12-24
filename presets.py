@@ -1,6 +1,5 @@
-import os
-
 import bpy
+import os
 
 from .operators import find_exporter
 from .uilist import color_tag_icons
