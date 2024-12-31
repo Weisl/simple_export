@@ -1,9 +1,9 @@
-import os
-
 import bpy
+import os
 
 from .collection_utils import update_collection_offset
 from .functions import open_directory, ensure_export_folder_exists, apply_collection_offset
+
 
 def recursiceLayerCollection(layerColl, collName):
     # print(f"Checking collection: {layerColl.name}")  # Debug print
@@ -124,8 +124,10 @@ def add_extension(path, export_format):
 
     return path
 
+
 def is_really_absolute(path):
     return os.path.abspath(path) == path
+
 
 def clean_relative_path(path):
     """
@@ -141,6 +143,7 @@ def clean_relative_path(path):
     path = os.path.normpath(path)
 
     return path
+
 
 def pre_export_checks(export_path):
     """Perform pre-export checks and return file existence and timestamp."""
@@ -284,7 +287,6 @@ class SCENE_OT_CreateExportDirectory(bpy.types.Operator):
         export_path = exporter.export_properties.filepath
         export_dir = os.path.dirname(export_path)
         export_dir = clean_relative_path(os.path.dirname(export_dir))
-
 
         if not os.path.exists(export_dir):
             os.makedirs(export_dir)

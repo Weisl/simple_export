@@ -1,5 +1,6 @@
 import bpy
 
+
 class EXPORTER_OT_open_preferences(bpy.types.Operator):
     """Tooltip"""
     bl_idname = "simple_export.open_preferences"
@@ -33,6 +34,7 @@ class EXPORTER_OT_open_preferences(bpy.types.Operator):
 
         bpy.ops.preferences.addon_expand(module=self.addon_name)
         return {'FINISHED'}
+
 
 classes = (
     EXPORTER_OT_open_preferences,

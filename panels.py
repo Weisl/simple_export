@@ -1,6 +1,5 @@
-import os
-
 import bpy
+import os
 
 from .functions import get_addon_name
 from .uilist import color_tag_icons
@@ -160,7 +159,6 @@ def draw_create_export_collection(layout, context):
 def draw_filepath_settings(layout, context):
     wm = context.window_manager
 
-
     if not wm.overwrite_filepath_settings:
         layout.enabled = False
 
@@ -279,6 +277,7 @@ class SIMPLE_EXPORT_menu_base:
         col.separator()
         row = col.row()
         row.operator("scene.export_selected_collections", text="Export Selected", icon='EXPORT')
+
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
     bl_label = "Custom Collection Menu"

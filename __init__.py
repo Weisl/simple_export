@@ -23,7 +23,6 @@ else:
     from . import panels
     from . import keymap
 
-
 files = [
     collection_utils,
     collection_operators,
