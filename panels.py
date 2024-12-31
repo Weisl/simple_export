@@ -324,8 +324,14 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         # Export List
         row = layout.row()
         row.label(text="Export List")
-        row = layout.row()
-        row.template_list("SCENE_UL_CollectionList", "scene", bpy.data, "collections", scene, "collection_index")
+
+        row = layout.row(align=True)
+        op = row.operator("scene.select_all_collections", text="All", icon="CHECKBOX_HLT")
+        op.invert = False
+        op = row.operator("scene.select_all_collections", text="None", icon="CHECKBOX_DEHLT")
+        op.invert = True
+
+        layout.template_list("SCENE_UL_CollectionList", "scene", bpy.data, "collections", scene, "collection_index")
 
         # Draw Export List
         super().draw(context)
@@ -393,6 +399,8 @@ class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Pa
         # Export List
         row = layout.row()
         row.label(text="Export List")
+        row = layout.row()
+
         row = layout.row()
         row.template_list("SCENE_UL_CollectionList", "popup", bpy.data, "collections", scene, "collection_index")
 
