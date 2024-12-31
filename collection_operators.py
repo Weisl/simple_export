@@ -165,7 +165,7 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
         exporter = list(set(exporters_after) - set(exporters_before))[0]
 
         if getattr(settings_col, 'auto_set_preset'):
-            assign_preset(export_collection, preset_path)
+            assign_preset(exporter, preset_path)
 
         if getattr(settings_col, 'auto_set_filepath'):
             search_path = getattr(settings_filepath, 'search_path')

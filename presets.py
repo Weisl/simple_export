@@ -45,8 +45,6 @@ def assign_preset_to_exporter(properties, exporter):
         except Exception as e:
             print(f"Error setting property '{prop_name}': {e}")
 
-
-# TODO: This should work based on the exporter not the collection
 def assign_preset(exporter, preset_path):
     # Ensure the collection has exporters
     if not exporter:
