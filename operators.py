@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from .collection_utils import update_collection_offset
 from .functions import open_directory, ensure_export_folder_exists, apply_collection_offset
@@ -159,12 +160,12 @@ def post_export_checks(export_path, file_exists_before, file_timestamp_before):
     if not export_path:
         return False, f"No filepath specified."
     if not os.path.exists(export_path):
-        return False, f"File '{export_path}' was not created."
+        return False, f"File was not created."
     if not os.access(export_path, os.W_OK):
-        return False, f"File '{export_path}' is read-only."
+        return False, f"File is read-only."
     if file_exists_before and os.path.getmtime(export_path) <= file_timestamp_before:
-        return False, f"File '{export_path}' was not updated."
-    return True, f"Exported successfully to '{export_path}'."
+        return False, f"File was not updated."
+    return True, f"Export successful."
 
 
 class SIMPLEEXPORTER_PT_FilePathResultsPanel(bpy.types.Panel):
@@ -276,7 +277,12 @@ class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
             col_filepath.label(text=result['filepath'] if 'filepath' in result else "-")
 
             # Info Message Column
-            col_info.label(text=result['message'])
+            row = col_info.row(align=True)
+            row.label(text=result['message'])
+            op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
+            op.operation = 'FOLDER_OPEN'
+            op.filepath = ''
+            # op.filepath = result['filepath']
 
 
 
@@ -374,11 +380,11 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
                 export_path = generate_export_path(collection.name, props.export_format, export_dir, search_path,
                                                    replacement_path)
                 success, msg = assign_exporter_path(exporter, export_path)
-                results.append({'name': collection.name, 'success': success, 'message': msg})
+                results.append({'name': collection.name, 'success': success, 'filepath': export_path, 'message': msg})
 
             except Exception as e:
                 # Handle per-collection errors
-                results.append({'name': collection.name, 'success': False, 'message': str(e)})
+                results.append({'name': collection.name, 'success': False, 'filepath': export_path, 'message': str(e)})
 
         # Store results in WindowManager
         context.window_manager.assign_filepath_result_info = str(results)
@@ -511,8 +517,9 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
             bpy.ops.collection.exporter_export(index=exporter_id)
 
             # Post-export validation
-            success, message = post_export_checks(export_path, file_exists_before, file_timestamp_before)
-            export_results.append({'name': collection.name, 'success': success, 'message': message})
+            success, file_path, message = post_export_checks(export_path, file_exists_before, file_timestamp_before)
+            export_results.append(
+                {'name': collection.name, 'success': success, 'filepath': export_path, 'message': message})
 
             # Operator is successful as soon as one export succeded
             success = True
@@ -520,7 +527,7 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
         except Exception as e:
             # Handle errors in one place
             export_results.append(
-                {'name': self.collection_name or "Unknown Collection", 'success': False, 'message': str(e)})
+                {'name': self.collection_name or "Unknown Collection", 'success': False, 'filepath': export_path, 'message': str(e)})
 
         finally:
             if wm.move_to_origin:
@@ -583,14 +590,14 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
 
                 # Post-export validation
                 success, message = post_export_checks(export_path, file_exists_before, file_timestamp_before)
-                export_results.append({'name': collection.name, 'success': success, 'message': message})
+                export_results.append({'name': collection.name, 'success': success, 'filepath': export_path, 'message': message})
 
                 success = True
 
             except Exception as e:
                 # Handle errors in one place
                 export_results.append(
-                    {'name': self.collection_name or "Unknown Collection", 'success': False, 'message': str(e)})
+                    {'name': self.collection_name or "Unknown Collection", 'success': False, 'filepath': export_path, 'message': str(e)})
 
             finally:
                 if wm.move_to_origin:
