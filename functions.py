@@ -81,14 +81,3 @@ def set_active_collection(collection_name):
         if layer.name == collection_name:
             bpy.context.view_layer.active_layer_collection = layer
             return
-
-def open_directory(export_dir):
-    """
-    Open the given directory in the file explorer.
-    """
-    if platform.system() == "Windows":
-        subprocess.Popen(f'explorer "{export_dir}"')
-    elif platform.system() == "Darwin":
-        subprocess.Popen(["open", export_dir])
-    else:  # Linux and other platforms
-        subprocess.Popen(["xdg-open", export_dir])

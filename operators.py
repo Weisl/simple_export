@@ -1,9 +1,8 @@
+import bpy
 import os
 
-import bpy
-
 from .collection_utils import update_collection_offset
-from .functions import open_directory, ensure_export_folder_exists, apply_collection_offset
+from .functions import ensure_export_folder_exists, apply_collection_offset
 
 
 def recursiceLayerCollection(layerColl, collName):
@@ -279,46 +278,12 @@ class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
             # Info Message Column
             row = col_info.row(align=True)
             row.label(text=result['message'])
-            op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
-            op.operation = 'FOLDER_OPEN'
-            op.filepath = ''
-            # op.filepath = result['filepath']
 
-
-
-class SCENE_OT_CreateExportDirectory(bpy.types.Operator):
-    bl_idname = "scene.create_export_directory"
-    bl_label = "Create Export Directory"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    collection_name: bpy.props.StringProperty()
-
-    def execute(self, context):
-        scene = context.scene
-
-        collection = bpy.data.collections[scene.collection_index]
-        if self.collection_name:
-            collection = bpy.data.collections.get(self.collection_name)
-
-        if not collection or len(collection.exporters) == 0:
-            self.report({'WARNING'}, "No valid exporter found for the active collection.")
-            return {'CANCELLED'}
-
-        props = context.scene.simple_export_props
-        exporter = find_exporter(collection, props.export_format)
-
-        export_path = exporter.export_properties.filepath
-        export_dir = os.path.dirname(export_path)
-        export_dir = clean_relative_path(os.path.dirname(export_dir))
-
-        if not os.path.exists(export_dir):
-            os.makedirs(export_dir)
-            self.report({'INFO'}, f"Created directory: {export_dir}")
-        else:
-            open_directory(export_dir)
-            self.report({'INFO'}, f"Opened directory: {export_dir}")
-
-        return {'FINISHED'}
+            if result['success']:
+                op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
+                op.operation = 'FOLDER_OPEN'
+                export_dir = os.path.dirname(result['filepath'])
+                op.filepath = export_dir
 
 
 class SCENE_OT_SelectAllCollections(bpy.types.Operator):
@@ -517,7 +482,7 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
             bpy.ops.collection.exporter_export(index=exporter_id)
 
             # Post-export validation
-            success, file_path, message = post_export_checks(export_path, file_exists_before, file_timestamp_before)
+            success, message = post_export_checks(export_path, file_exists_before, file_timestamp_before)
             export_results.append(
                 {'name': collection.name, 'success': success, 'filepath': export_path, 'message': message})
 
@@ -527,7 +492,8 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
         except Exception as e:
             # Handle errors in one place
             export_results.append(
-                {'name': self.collection_name or "Unknown Collection", 'success': False, 'filepath': export_path, 'message': str(e)})
+                {'name': self.collection_name or "Unknown Collection", 'success': False, 'filepath': export_path,
+                 'message': str(e)})
 
         finally:
             if wm.move_to_origin:
@@ -590,14 +556,16 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
 
                 # Post-export validation
                 success, message = post_export_checks(export_path, file_exists_before, file_timestamp_before)
-                export_results.append({'name': collection.name, 'success': success, 'filepath': export_path, 'message': message})
+                export_results.append(
+                    {'name': collection.name, 'success': success, 'filepath': export_path, 'message': message})
 
                 success = True
 
             except Exception as e:
                 # Handle errors in one place
                 export_results.append(
-                    {'name': self.collection_name or "Unknown Collection", 'success': False, 'filepath': export_path, 'message': str(e)})
+                    {'name': self.collection_name or "Unknown Collection", 'success': False, 'filepath': export_path,
+                     'message': str(e)})
 
             finally:
                 if wm.move_to_origin:
@@ -636,13 +604,12 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
             self.report({'WARNING'}, f"Directory does not exist: {export_dir}")
             return {'CANCELLED'}
 
-        open_directory(export_dir)
+        bpy.ops.file.external_operation(filepath=export_dir, operation='FOLDER_OPEN')
         self.report({'INFO'}, f"Opened directory: {export_dir}")
         return {'FINISHED'}
 
 
-classes = (SCENE_OT_CreateExportDirectory,
-           SIMPLEEXPORTER_PT_ExportResultsPanel,
+classes = (SIMPLEEXPORTER_PT_ExportResultsPanel,
            SIMPLEEXPORTER_PT_FilePathResultsPanel,
            SCENE_OT_SelectAllCollections,
            SCENE_OT_SetExporterPath,
