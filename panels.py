@@ -380,6 +380,9 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
         row.operator("simple_export.create_export_collection", icon=icon)
 
+        row = layout.row()
+        row.operator("simple_export.add_settings_to_collection")
+
 
 class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
     bl_idname = "SIMPLE_EXPORT_PT_simple_export_popup"
