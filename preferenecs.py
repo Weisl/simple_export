@@ -293,6 +293,11 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
     ########################################
     # UI
+    report_errors_only: bpy.props.BoolProperty(name="Report Errors Only",
+                                                description="Show the result panel only when errors occur.",
+                                                default=False)
+
+
 
     scene_properties: PointerProperty(type=UIListProperties)
     popup_properties: PointerProperty(type=UIListProperties)
@@ -349,11 +354,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.prop(self, "replacement_path")
 
             box = layout.box()
-            box.label(text="Export Collection Offset")
-
-            # TODO: Set offset object
-
-            box = layout.box()
             box.label(text="Export Collection")
             box.prop(self, "collection_color")
             # TODO: change prefix options from file to collections (- Better visibility)
@@ -374,6 +374,9 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             layout.prop(self, "simple_export_debug")
 
         elif self.prefs_tabs == 'UI':
+
+            layout.prop(self, "report_errors_only")
+
             box = layout.box()
             box.label(text="Scene List")
             box.prop(self.scene_properties, "uilist_icon")

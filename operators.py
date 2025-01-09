@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from .collection_utils import update_collection_offset
 from .functions import ensure_export_folder_exists, apply_collection_offset
@@ -497,13 +498,20 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
                 # Revert instance offset and show results
                 apply_collection_offset(collection, inverse=True)
 
-        call_export_popup(export_results, context)
         if success:
             self.report({'INFO'}, f"Export Sucessful")
+
+            # Always show export infos
+            if not prefs.report_errors_only:
+                call_export_popup(export_results, context)
+
             return {'FINISHED'}
+
         else:
             self.report({'ERROR'}, f"Export failed")
+            call_export_popup(export_results, context)
             return {'CANCELLED'}
+
 
 # Operator to export selected collections
 class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
@@ -557,7 +565,7 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
                 export_results.append(
                     {'name': collection.name, 'success': success, 'filepath': export_path, 'message': message})
                 if not success:
-                    error_count += 1 
+                    error_count += 1
 
 
             except Exception as e:
@@ -570,13 +578,19 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
                 if wm.move_to_origin:
                     apply_collection_offset(collection, inverse=True)
 
-        call_export_popup(export_results, context)
         if error_count == 0:
             self.report({'INFO'}, f"Export Sucessful")
+            # Always show export infos
+            if not prefs.report_errors_only:
+                call_export_popup(export_results, context)
+
             return {'FINISHED'}
+
         else:
             self.report({'WARNING'}, f"Export with Errors: See Result windows or console for further information.")
+            call_export_popup(export_results, context)
             return {'CANCELLED'}
+
 
 class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
     """
