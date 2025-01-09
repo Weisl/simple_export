@@ -276,8 +276,8 @@ class SIMPLE_EXPORT_menu_base:
 
         col.separator()
         row = col.row()
-        row.operator("scene.export_selected_collections", text="Export Selected", icon='EXPORT')
-
+        op = row.operator("simple_export.export_selected_collections", text="Export Selected", icon='EXPORT')
+        op.outliner = False
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
     bl_label = "Custom Collection Menu"
