@@ -486,9 +486,6 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
             export_results.append(
                 {'name': collection.name, 'success': success, 'filepath': export_path, 'message': message})
 
-            # Operator is successful as soon as one export succeded
-            success = True
-
         except Exception as e:
             # Handle errors in one place
             export_results.append(
@@ -502,10 +499,11 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
 
         call_export_popup(export_results, context)
         if success:
+            self.report({'INFO'}, f"Export Sucessful")
             return {'FINISHED'}
         else:
+            self.report({'ERROR'}, f"Export failed")
             return {'CANCELLED'}
-
 
 # Operator to export selected collections
 class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
@@ -517,7 +515,7 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
         export_results = []
         export_collections = []
         temporarily_disable_offset_handler()
-        success = False
+        error_count = 0
 
         prefs = bpy.context.preferences.addons[__package__].preferences
         wm = context.window_manager
@@ -558,8 +556,9 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
                 success, message = post_export_checks(export_path, file_exists_before, file_timestamp_before)
                 export_results.append(
                     {'name': collection.name, 'success': success, 'filepath': export_path, 'message': message})
+                if not success:
+                    error_count += 1 
 
-                success = True
 
             except Exception as e:
                 # Handle errors in one place
@@ -572,11 +571,12 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
                     apply_collection_offset(collection, inverse=True)
 
         call_export_popup(export_results, context)
-        if success:
+        if error_count == 0:
+            self.report({'INFO'}, f"Export Sucessful")
             return {'FINISHED'}
         else:
+            self.report({'WARNING'}, f"Export with Errors: See Result windows or console for further information.")
             return {'CANCELLED'}
-
 
 class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
     """
