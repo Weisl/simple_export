@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from .functions import get_addon_name
 from .uilist import color_tag_icons
@@ -269,14 +270,17 @@ class SIMPLE_EXPORT_menu_base:
         row.prop(wm, 'move_to_origin')
 
         row = col.row()
-        row.operator("simple_export.assign_preset_selection", text="Assign Presets", icon='PRESET_NEW')
+        op = row.operator("simple_export.assign_preset_selection", text="Assign Presets", icon='PRESET_NEW')
+        op.outliner = False
 
         row = col.row()
-        row.operator("scene.set_export_path_selection", text="Assign Filepaths", icon='FOLDER_REDIRECT')
+        op = row.operator("scene.set_export_path_selection", text="Assign Filepaths", icon='FOLDER_REDIRECT')
+        op.outliner = False
 
         col.separator()
         row = col.row()
-        row.operator("scene.export_selected_collections", text="Export Selected", icon='EXPORT')
+        op = row.operator("simple_export.export_selected_collections", text="Export Selected", icon='EXPORT')
+        op.outliner = False
 
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):

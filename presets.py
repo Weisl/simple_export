@@ -1,7 +1,7 @@
 import bpy
 import os
 
-from .operators import find_exporter
+from .operators import find_exporter, get_outliner_collections
 from .uilist import color_tag_icons
 
 
@@ -153,6 +153,8 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
     bl_idname = "simple_export.assign_preset_selection"
     bl_label = "Assign Presets"
 
+    outliner: bpy.props.BoolProperty()
+
     def execute(self, context):
         results = []  # To store the renaming status of each collection
         props = context.scene.simple_export_props
@@ -162,8 +164,11 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
             # Validate preset path
             self.validate_preset_path(preset_path)
 
-            # Iterate through all collections and apply preset
-            for collection in bpy.data.collections:
+            collection_list = bpy.data.collections
+            if self.outliner:
+                collection_list = get_outliner_collections(context)
+
+            for collection in collection_list:
 
                 # return early
                 if not collection.simple_export_selected or len(collection.exporters) == 0:

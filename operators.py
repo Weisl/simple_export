@@ -168,8 +168,15 @@ def post_export_checks(export_path, file_exists_before, file_timestamp_before):
     return True, f"Export successful."
 
 
+def get_outliner_collections(context):
+    # Get all selected items in the outliner
+    selected_ids = context.selected_ids
+
+    return [item for item in selected_ids if isinstance(item, bpy.types.Collection)]
+
+
 class SIMPLEEXPORTER_PT_FilePathResultsPanel(bpy.types.Panel):
-    """Panel to display the results of applying the preset."""
+    """Panel to display the results of applying the filepath."""
     bl_idname = "SIMPLEEXPORTER_PT_FilePathResultsPanel"
     bl_label = "Preset Application Results"
     bl_space_type = "VIEW_3D"
@@ -308,6 +315,8 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
     bl_label = "Set Export Path"
     bl_options = {'REGISTER', 'UNDO'}
 
+    outliner: bpy.props.BoolProperty()
+
     def execute(self, context):
         results = []  # To store the renaming status of each collection
         props = context.scene.simple_export_props
@@ -316,8 +325,11 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
         settings_col = wm if wm.overwrite_collection_settings else prefs
         settings_filepath = wm if wm.overwrite_filepath_settings else prefs
 
-        # Iterate through all collections and apply preset
-        for collection in bpy.data.collections:
+        collection_list = bpy.data.collections
+        if self.outliner:
+            collection_list = get_outliner_collections(context)
+
+        for collection in collection_list:
 
             if not collection.simple_export_selected or len(collection.exporters) == 0:
                 continue
@@ -515,9 +527,11 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
 
 # Operator to export selected collections
 class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
-    bl_idname = "scene.export_selected_collections"
+    bl_idname = "simple_export.export_selected_collections"
     bl_label = "Export Selected"
     bl_options = {'REGISTER', 'UNDO'}
+
+    outliner: bpy.props.BoolProperty()
 
     def execute(self, context):
         export_results = []
@@ -530,7 +544,12 @@ class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
         settings_col = wm if wm.overwrite_collection_settings else prefs
         settings_filepath = wm if wm.overwrite_filepath_settings else prefs
 
-        for collection in bpy.data.collections:
+        collection_list = bpy.data.collections
+
+        if self.outliner:
+            collection_list = get_outliner_collections(context)
+
+        for collection in collection_list:
             try:
                 # return early
                 if not collection.simple_export_selected or len(collection.exporters) == 0:
