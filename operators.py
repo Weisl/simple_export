@@ -200,7 +200,7 @@ class SIMPLEEXPORTER_PT_FilePathResultsPanel(bpy.types.Panel):
         row = layout.row()
         col_icon.label(text="")
         col_name.label(text="Collection")
-        col_message.label(text="Info")
+        col_message.label(text="Filepath")
 
         # Iterate over results and populate the table
         for result in results:
@@ -222,7 +222,7 @@ class SIMPLEEXPORTER_PT_FilePathResultsPanel(bpy.types.Panel):
             col_name.label(text=result['name'], icon=icon)
 
             # Info Message Column
-            col_message.label(text=result['message'])
+            col_message.label(text=result['filepath'])
 
 
 # Popup to show export results
@@ -307,71 +307,6 @@ class SCENE_OT_SelectAllCollections(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
-    """
-    Operator to set the exporter path for a collection based on the original and replacement paths defined in the scene properties.
-    """
-    bl_idname = "scene.set_export_path_selection"
-    bl_label = "Set Export Path"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    outliner: bpy.props.BoolProperty()
-
-    def execute(self, context):
-        results = []  # To store the renaming status of each collection
-        props = context.scene.simple_export_props
-        prefs = bpy.context.preferences.addons[__package__].preferences
-        wm = context.window_manager
-        settings_col = wm if wm.overwrite_collection_settings else prefs
-        settings_filepath = wm if wm.overwrite_filepath_settings else prefs
-
-        collection_list = bpy.data.collections
-        if self.outliner:
-            collection_list = get_outliner_collections(context)
-
-        for collection in collection_list:
-
-            if not collection.simple_export_selected or len(collection.exporters) == 0:
-                continue
-
-            try:
-                # Find exporter
-                exporter = find_exporter(collection, props.export_format)
-                if not exporter:
-                    raise ValueError("No exporters found in the current collection.")
-
-                if settings_filepath.use_custom_export_folder:
-                    if not settings_filepath.custom_export_path:
-                        raise ValueError("Invalid Export Path.")
-
-                    export_dir = settings_filepath.custom_export_path
-                else:
-                    # Return if Blend File hasn't been saved
-                    if not bpy.data.filepath:
-                        raise ValueError("Save the Blend file before calling this operator.")
-                    export_dir = os.path.dirname(bpy.data.filepath)
-
-                # Path variables
-                search_path = settings_filepath.search_path
-                replacement_path = settings_filepath.replacement_path
-
-                export_path = generate_export_path(collection.name, props.export_format, export_dir, search_path,
-                                                   replacement_path)
-                success, msg = assign_exporter_path(exporter, export_path)
-                results.append({'name': collection.name, 'success': success, 'filepath': export_path, 'message': msg})
-
-            except Exception as e:
-                # Handle per-collection errors
-                results.append({'name': collection.name, 'success': False, 'filepath': export_path, 'message': str(e)})
-
-        # Store results in WindowManager
-        context.window_manager.assign_filepath_result_info = str(results)
-        # Show results in the panel
-        bpy.ops.wm.call_panel(name="SIMPLEEXPORTER_PT_FilePathResultsPanel")
-
-        return {'FINISHED'}
-
-
 class SCENE_OT_SetExporterPath(bpy.types.Operator):
     """
     Operator to set the exporter path for a collection based on the original and replacement paths defined in the scene properties.
@@ -447,6 +382,71 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
                 return exporter
 
         return None
+
+
+class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
+    """
+    Operator to set the exporter path for a collection based on the original and replacement paths defined in the scene properties.
+    """
+    bl_idname = "scene.set_export_path_selection"
+    bl_label = "Set Export Path"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    outliner: bpy.props.BoolProperty()
+
+    def execute(self, context):
+        results = []  # To store the renaming status of each collection
+        props = context.scene.simple_export_props
+        prefs = bpy.context.preferences.addons[__package__].preferences
+        wm = context.window_manager
+        settings_col = wm if wm.overwrite_collection_settings else prefs
+        settings_filepath = wm if wm.overwrite_filepath_settings else prefs
+
+        collection_list = bpy.data.collections
+        if self.outliner:
+            collection_list = get_outliner_collections(context)
+
+        for collection in collection_list:
+
+            if not collection.simple_export_selected or len(collection.exporters) == 0:
+                continue
+
+            try:
+                # Find exporter
+                exporter = find_exporter(collection, props.export_format)
+                if not exporter:
+                    raise ValueError("No exporters found in the current collection.")
+
+                if settings_filepath.use_custom_export_folder:
+                    if not settings_filepath.custom_export_path:
+                        raise ValueError("Invalid Export Path.")
+
+                    export_dir = settings_filepath.custom_export_path
+                else:
+                    # Return if Blend File hasn't been saved
+                    if not bpy.data.filepath:
+                        raise ValueError("Save the Blend file before calling this operator.")
+                    export_dir = os.path.dirname(bpy.data.filepath)
+
+                # Path variables
+                search_path = settings_filepath.search_path
+                replacement_path = settings_filepath.replacement_path
+
+                export_path = generate_export_path(collection.name, props.export_format, export_dir, search_path,
+                                                   replacement_path)
+                success, msg = assign_exporter_path(exporter, export_path)
+                results.append({'name': collection.name, 'success': success, 'filepath': export_path, 'message': msg})
+
+            except Exception as e:
+                # Handle per-collection errors
+                results.append({'name': collection.name, 'success': False, 'filepath': export_path, 'message': str(e)})
+
+        # Store results in WindowManager
+        context.window_manager.assign_filepath_result_info = str(results)
+        # Show results in the panel
+        bpy.ops.wm.call_panel(name="SIMPLEEXPORTER_PT_FilePathResultsPanel")
+
+        return {'FINISHED'}
 
 
 class SCENE_OT_ExportCollection(bpy.types.Operator):
@@ -526,7 +526,7 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
 
 
 # Operator to export selected collections
-class SCENE_OT_ExportSelectedCollections(bpy.types.Operator):
+class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
     bl_idname = "simple_export.export_selected_collections"
     bl_label = "Export Selected"
     bl_options = {'REGISTER', 'UNDO'}
@@ -648,7 +648,7 @@ classes = (SIMPLEEXPORTER_PT_ExportResultsPanel,
            SCENE_OT_SetExporterPath,
            SCENE_OT_SetExporterPathSelection,
            SCENE_OT_ExportCollection,
-           SCENE_OT_ExportSelectedCollections,
+           SCENE_OT_ExportCollectionsSelection,
            SCENE_OT_OpenExportDirectory,)
 
 
