@@ -176,7 +176,7 @@ def get_outliner_collections(context):
 
 
 class SIMPLEEXPORTER_PT_FilePathResultsPanel(bpy.types.Panel):
-    """Panel to display the results of applying the preset."""
+    """Panel to display the results of applying the filepath."""
     bl_idname = "SIMPLEEXPORTER_PT_FilePathResultsPanel"
     bl_label = "Preset Application Results"
     bl_space_type = "VIEW_3D"
@@ -315,6 +315,8 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
     bl_label = "Set Export Path"
     bl_options = {'REGISTER', 'UNDO'}
 
+    outliner: bpy.props.BoolProperty()
+
     def execute(self, context):
         results = []  # To store the renaming status of each collection
         props = context.scene.simple_export_props
@@ -323,8 +325,11 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
         settings_col = wm if wm.overwrite_collection_settings else prefs
         settings_filepath = wm if wm.overwrite_filepath_settings else prefs
 
-        # Iterate through all collections and apply preset
-        for collection in bpy.data.collections:
+        collection_list = bpy.data.collections
+        if self.outliner:
+            collection_list = get_outliner_collections(context)
+
+        for collection in collection_list:
 
             if not collection.simple_export_selected or len(collection.exporters) == 0:
                 continue

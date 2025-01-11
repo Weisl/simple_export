@@ -30,9 +30,12 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         op = layout.operator("simple_export.export_selected_collections", icon='EXPORT')
         op.outliner = True
 
-        op = layout.operator("simple_export.assign_preset_selection", icon='PRESET')
-        op.collection_name = collection.name
+        op = layout.operator("simple_export.assign_preset_selection", icon='PRESET_NEW')
+        op.outliner = True
 
+        op = layout.operator("scene.set_export_path_selection", text="Assign Filepaths", icon='FOLDER_REDIRECT')
+        op.outliner = True
+        op.collection_name = collection.name
 
         layout.separator()
         layout.operator(CUSTOM_OT_print_selected_collections.bl_idname, icon='INFO')
