@@ -165,7 +165,6 @@ def draw_filepath_settings(layout, context):
 
     # Define properties to check
     properties_foler = [
-        "use_custom_export_folder",
         "custom_export_path",
     ]
 
@@ -173,10 +172,13 @@ def draw_filepath_settings(layout, context):
         "search_path",
         "replacement_path",
     ]
+    wm = context.window_manager
     # Use the helper function to draw properties
-    box = layout.box()
-    draw_properties_with_prefix(box, context, properties_foler)
-    draw_properties_with_prefix(layout, context, properties)
+    layout.prop(wm, "use_custom_export_folder")
+    if wm.use_custom_export_folder:
+        draw_properties_with_prefix(layout, context, properties_foler)
+    if not wm.use_custom_export_folder:
+        draw_properties_with_prefix(layout, context, properties)
 
 
 def draw_custom_collection_ui(self, context):
@@ -265,10 +267,14 @@ class SIMPLE_EXPORT_menu_base:
         wm = context.window_manager
 
         # List Operators
-        col = layout.column(align=True)
+        box = layout.box()
+        col = box.column(align=True)
+        row = col.row()
+        row.label(text="Pre Export Operations (BETA)", icon='WARNING_LARGE')
         row = col.row()
         row.prop(wm, 'move_to_origin')
 
+        col = layout.column(align=True)
         row = col.row()
         op = row.operator("simple_export.assign_preset_selection", text="Assign Presets", icon='PRESET_NEW')
         op.outliner = False

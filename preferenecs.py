@@ -1,3 +1,5 @@
+import textwrap
+
 import bpy
 from bpy.props import BoolProperty, PointerProperty
 
@@ -78,6 +80,14 @@ PROPERTY_METADATA = {
         "default": '',
     },
 }
+
+
+def label_multiline(context, text, parent):
+    chars = int(context.region.width / 7)  # 7 pix on 1 character
+    wrapper = textwrap.TextWrapper(width=chars)
+    text_lines = wrapper.wrap(text=text)
+    for text_line in text_lines:
+        parent.label(text=text_line)
 
 
 def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_export_panel_ctrl,
@@ -294,10 +304,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     ########################################
     # UI
     report_errors_only: bpy.props.BoolProperty(name="Report Errors Only",
-                                                description="Show the result panel only when errors occur.",
-                                                default=False)
-
-
+                                               description="Show the result panel only when errors occur.",
+                                               default=False)
 
     scene_properties: PointerProperty(type=UIListProperties)
     popup_properties: PointerProperty(type=UIListProperties)
@@ -342,6 +350,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         row = layout.row(align=True)
         row.prop(self, "prefs_tabs", expand=True)
 
+        layout.separator()
+
         if self.prefs_tabs == 'SETTINGS':
             layout.prop(self, "default_export_format")
 
@@ -350,8 +360,20 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.prop(self, "use_custom_export_folder")
             if self.use_custom_export_folder:
                 box.prop(self, "custom_export_path")
-            box.prop(self, "search_path")
-            box.prop(self, "replacement_path")
+            if not self.use_custom_export_folder:
+                texts=[]
+                texts.append("Export Path is set relative to the .blend file directory.")
+                texts.append("Use Search and Replace to manipulate the path")
+
+                for text in texts:
+                    label_multiline(
+                        context=context,
+                        text=text,
+                        parent=box
+                    )
+
+                box.prop(self, "search_path")
+                box.prop(self, "replacement_path")
 
             box = layout.box()
             box.label(text="Export Collection")
@@ -367,11 +389,11 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.prop(self, "auto_set_preset")
 
             box = layout.box()
-            box.label(text="Export Settings")
+            box.label(text="Pre Export Operations")
             box.prop(self, "move_to_origin")
 
             layout.separator()
-            layout.prop(self, "simple_export_debug")
+            layout.prop(self, "simple_export_debug", icon='WARNING_LARGE')
 
         elif self.prefs_tabs == 'UI':
 
