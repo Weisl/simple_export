@@ -345,8 +345,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
         replacement_path = settings_filepath.replacement_path
 
         # Add custom exporter
-        props = context.scene.simple_export_props
-        exporter = find_exporter(collection, props.export_format)
+        exporter = find_exporter(collection, wm.export_format)
 
         # Return
         if not exporter:
@@ -354,8 +353,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Set export Path
-        props = context.scene.simple_export_props
-        export_format = props.export_format
+        export_format = wm.export_format
         export_path = generate_export_path(collection.name, export_format, export_dir, search_path, replacement_path)
         success, msg = assign_exporter_path(exporter, export_path)
 
@@ -396,7 +394,6 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
 
     def execute(self, context):
         results = []  # To store the renaming status of each collection
-        props = context.scene.simple_export_props
         prefs = bpy.context.preferences.addons[__package__].preferences
         wm = context.window_manager
         settings_col = wm if wm.overwrite_collection_settings else prefs
@@ -413,7 +410,7 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
 
             try:
                 # Find exporter
-                exporter = find_exporter(collection, props.export_format)
+                exporter = find_exporter(collection, wm.export_format)
                 if not exporter:
                     raise ValueError("No exporters found in the current collection.")
 
@@ -432,7 +429,7 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
                 search_path = settings_filepath.search_path
                 replacement_path = settings_filepath.replacement_path
 
-                export_path = generate_export_path(collection.name, props.export_format, export_dir, search_path,
+                export_path = generate_export_path(collection.name, wm.export_format, export_dir, search_path,
                                                    replacement_path)
                 success, msg = assign_exporter_path(exporter, export_path)
                 results.append({'name': collection.name, 'success': success, 'filepath': export_path, 'message': msg})
@@ -476,12 +473,11 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
             set_active_layer_Collection(collection.name)
 
             # Find and validate exporter
-            props = context.scene.simple_export_props
-            exporter = find_exporter(collection, props.export_format)
+            exporter = find_exporter(collection, wm.export_format)
             exporter_id = get_exporter_id(self, collection, exporter)
 
             # Pre-export checks
-            export_path = add_extension(exporter.export_properties.filepath, props.export_format)
+            export_path = add_extension(exporter.export_properties.filepath, wm.export_format)
             export_path = clean_relative_path(export_path)
             print('EXPORT PATH: ' + str(export_path))
 
@@ -560,12 +556,11 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 set_active_layer_Collection(collection.name)
 
                 # Find and validate exporter
-                props = context.scene.simple_export_props
-                exporter = find_exporter(collection, props.export_format)
+                exporter = find_exporter(collection, wm.export_format)
                 exporter_id = get_exporter_id(self, collection, exporter)
 
                 # Pre-export checks
-                export_path = add_extension(exporter.export_properties.filepath, props.export_format)
+                export_path = add_extension(exporter.export_properties.filepath, wm.export_format)
                 export_path = clean_relative_path(export_path)
 
                 file_exists_before, file_timestamp_before = pre_export_checks(export_path)
@@ -627,8 +622,8 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
             self.report({'WARNING'}, "No valid exporter found for the active collection.")
             return {'CANCELLED'}
 
-        props = context.scene.simple_export_props
-        exporter = find_exporter(collection, props.export_format)
+        wm = context.window_manager
+        exporter = find_exporter(collection, wm.export_format)
         export_path = exporter.export_properties.filepath
         export_dir = os.path.dirname(export_path)
         export_dir = clean_relative_path(os.path.dirname(export_dir))

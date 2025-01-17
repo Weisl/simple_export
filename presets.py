@@ -124,8 +124,8 @@ class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
     def execute(self, context):
 
         collection = bpy.data.collections.get(self.collection_name)
-        props = context.scene.simple_export_props
-        preset_path = props.simple_export_preset_file
+        wm = context.window_manager
+        preset_path = wm.simple_export_preset_file
 
         if not collection:
             self.report({'ERROR'}, f"Collection '{self.collection_name}' not found.")
@@ -136,7 +136,7 @@ class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
             return {'CANCELLED'}
 
         preset_name = os.path.basename(preset_path)
-        exporter = find_exporter(collection, props.export_format)
+        exporter = find_exporter(collection, wm.export_presets)
 
         suceess, msg = assign_preset(exporter, preset_path)
 
@@ -157,8 +157,8 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
 
     def execute(self, context):
         results = []  # To store the renaming status of each collection
-        props = context.scene.simple_export_props
-        preset_path = props.simple_export_preset_file
+        wm = context.window_manager
+        preset_path = wm.simple_export_preset_file
 
         try:
             # Validate preset path
@@ -168,6 +168,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
             if self.outliner:
                 collection_list = get_outliner_collections(context)
 
+
             for collection in collection_list:
 
                 # return early
@@ -176,7 +177,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
 
                 try:
                     # Process each collection
-                    result = self.apply_preset_to_collection(collection, preset_path, props.export_format)
+                    result = self.apply_preset_to_collection(collection, preset_path, wm.export_format)
                     results.append(result)
                 except Exception as e:
                     # Handle per-collection errors

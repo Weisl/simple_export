@@ -73,17 +73,15 @@ EXPORT_FORMATS = {
 
 
 def draw_export_preset(layout, context):
-    scene = context.scene
-    props = context.scene.simple_export_props
-    prefs = context.preferences.addons[__package__].preferences
+    wm = context.window_manager
 
     # Select preset
-    layout.prop(props, "simple_export_preset_file", text="Preset")
+    layout.prop(wm, "simple_export_preset_file", text="Preset")
 
 
 def draw_preset_debug(layout, context):
     scene = context.scene
-    props = context.scene.simple_export_props
+    wm = context.window_manager
 
     box_debug = layout.box()
 
@@ -92,11 +90,11 @@ def draw_preset_debug(layout, context):
     row = box_debug.row(align=True)
     row.enabled = False  # Makes the field non-editable
     row.prop(scene, "simple_export_preset_file", text="")
-    box_debug.prop(props, "override_path", text="Overwrite Preset Folder")
+    box_debug.prop(wm, "override_path", text="Overwrite Preset Folder")
 
     row = box_debug.row(align=True)
-    row.enabled = props.override_path  # Only enable preset_path editing if override_path is true
-    row.prop(props, "preset_path", text="Preset Folder")
+    row.enabled = wm.override_path  # Only enable preset_path editing if override_path is true
+    row.prop(wm, "preset_path", text="Preset Folder")
 
     row = box_debug.row()
     op = row.operator("simple_export.assign_preset", text="Assign Preset")
@@ -194,57 +192,6 @@ def get_export_format_items():
     return [(key, value["label"], value["description"]) for key, value in EXPORT_FORMATS.items()]
 
 
-class SimpleExportProperties(bpy.types.PropertyGroup):
-    def update_preset_path(self, context):
-        self.preset_path = EXPORT_FORMATS[self.export_format]["preset_folder"]
-
-    export_format: bpy.props.EnumProperty(
-        name="Export Format",
-        description="Select the export format",
-        items=get_export_format_items(),  # Dynamically generated items from EXPORT_FORMATS
-        default="FBX",
-        update=update_preset_path,  # Update the preset path when export format changes
-    )
-
-    preset_path: bpy.props.StringProperty(
-        name="Preset Folder Path",
-        description="Path to the folder containing .py files",
-        default=EXPORT_FORMATS["FBX"]["preset_folder"],  # Dynamically fetch from EXPORT_FORMATS
-        subtype="DIR_PATH",
-    )
-
-    simple_export_preset_file: bpy.props.EnumProperty(
-        name="Preset File",
-        description="Select a .py file",
-        items=lambda self, context: self.get_py_files(),
-        update=lambda self, context: self.update_scene_preset_path(context),
-    )
-
-    override_path: bpy.props.BoolProperty(
-        name="Overwrite Preset Folder",
-        description="Manually override the automatically set preset folder",
-        default=False,
-    )
-
-    def update_scene_preset_path(self, context):
-        """Update the full path of the selected preset in the scene property."""
-        context.scene.simple_export_preset_file = self.simple_export_preset_file
-
-    def get_py_files(self):
-        """Retrieve all .py files from the specified folder."""
-        if not self.preset_path:
-            return [("", "No Path", "No path specified")]
-
-        try:
-            files = [
-                (os.path.join(self.preset_path, f), f, "")
-                for f in os.listdir(self.preset_path)
-                if f.endswith(".py")
-            ]
-            return files if files else [("", "No Files", "No .py files found")]
-        except Exception as e:
-            return [("", "Error", str(e))]
-
 
 class SIMPLE_EXPORT_menu_base:
     bl_label = "Simple Export"
@@ -310,7 +257,6 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
     bl_context = "output"
 
     def draw(self, context):
-        props = context.scene.simple_export_props
         prefs = context.preferences.addons[__package__].preferences
 
         scene = context.scene
@@ -319,7 +265,7 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         layout = self.layout
 
         # Draw format selection
-        layout.prop(props, "export_format", text="Format")
+        layout.prop(wm, "export_format", text="Format")
 
         # Draw Preset UI
         box = layout.box()
@@ -420,7 +366,6 @@ class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Pa
 
 
 classes = (
-    SimpleExportProperties,
     SIMPLE_EXPORT_MT_context_menu,
     SIMPLE_EXPORT_PT_CollectionExportPanel,
     SIMPLE_EXPORT_PT_simple_export_popup,
@@ -440,7 +385,6 @@ def register():
     for cls in classes:
         register_class(cls)
 
-    Scene.simple_export_props = bpy.props.PointerProperty(type=SimpleExportProperties)
 
 
 def unregister():
@@ -451,4 +395,4 @@ def unregister():
 
     Scene = bpy.types.Scene
     del Scene.simple_export_preset_file
-    del Scene.simple_export_props
+
