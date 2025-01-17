@@ -47,9 +47,11 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         if not collection.exporters:
             return
 
+
         # Get exporter details
-        props = context.scene.simple_export_props
-        exporter = find_exporter(collection, props.export_format)
+        wm = context.window_manager
+
+        exporter = find_exporter(collection, wm.export_format)
         export_path = exporter.export_properties.filepath
         export_path = clean_relative_path(export_path)
         file_exists = os.path.exists(export_path)
@@ -96,8 +98,9 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         flt_flags = []
         flt_neworder = []
 
-        props = context.scene.simple_export_props
-        export_format = props.export_format
+        wm = context.window_manager
+
+        export_format = wm.export_format
 
         from .panels import EXPORT_FORMATS
 

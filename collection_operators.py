@@ -37,7 +37,7 @@ def generate_collection_name(context, obj_name):
     return collection_name
 
 def setup_collection(context, collection, active_object, settings_col, settings_filepath):
-    props = context.scene.simple_export_props
+    wm = context.window_manager
 
     # Set collection properties
     collection['simple_export_selected'] = True
@@ -50,7 +50,7 @@ def setup_collection(context, collection, active_object, settings_col, settings_
     # Assign exporter
     set_active_layer_Collection(collection.name)
 
-    export_data = EXPORT_FORMATS.get(props.export_format)
+    export_data = EXPORT_FORMATS.get(wm.export_format)
 
     def get_all_exporters():
         return list(collection.exporters)
@@ -62,7 +62,7 @@ def setup_collection(context, collection, active_object, settings_col, settings_
     exporter = list(set(exporters_after) - set(exporters_before))[0]
 
     if getattr(settings_col, 'auto_set_preset'):
-        preset_path = props.simple_export_preset_file
+        preset_path = wm.simple_export_preset_file
         assign_preset(exporter, preset_path)
 
     if getattr(settings_col, 'auto_set_filepath'):
@@ -70,7 +70,7 @@ def setup_collection(context, collection, active_object, settings_col, settings_
         search_path = getattr(settings_filepath, 'search_path')
         replacement_path = getattr(settings_filepath, 'replacement_path')
 
-        export_format = props.export_format
+        export_format = wm.export_format
         export_path = generate_export_path(collection.name, export_format, blend_dir, search_path, replacement_path)
         assign_exporter_path(exporter, export_path)
 

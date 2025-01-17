@@ -1,7 +1,11 @@
+import os
+import textwrap
+
 import bpy
 from bpy.props import BoolProperty, PointerProperty
 
 from .keymap import remove_key
+from .panels import EXPORT_FORMATS
 from .panels import get_export_format_items
 
 PROPERTY_METADATA = {
@@ -80,6 +84,14 @@ PROPERTY_METADATA = {
 }
 
 
+def label_multiline(context, text, parent):
+    chars = int(context.region.width / 7)  # 7 pix on 1 character
+    wrapper = textwrap.TextWrapper(width=chars)
+    text_lines = wrapper.wrap(text=text)
+    for text_line in text_lines:
+        parent.label(text=text_line)
+
+
 def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_export_panel_ctrl,
             simple_export_panel_shift,
             simple_export_panel_alt, simple_export_panel_active):
@@ -107,13 +119,6 @@ def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_
 
 
 # Scene properties to define search_path and replacement_path
-
-def get_default_export_format():
-    """Fetch default export format from add-on preferences or fallback to FBX."""
-    try:
-        return bpy.context.preferences.addons[__package__].preferences.default_export_format
-    except (AttributeError, KeyError):
-        return "FBX"  # Fallback default
 
 
 class UIListProperties(bpy.types.PropertyGroup):
@@ -294,10 +299,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     ########################################
     # UI
     report_errors_only: bpy.props.BoolProperty(name="Report Errors Only",
-                                                description="Show the result panel only when errors occur.",
-                                                default=False)
-
-
+                                               description="Show the result panel only when errors occur.",
+                                               default=False)
 
     scene_properties: PointerProperty(type=UIListProperties)
     popup_properties: PointerProperty(type=UIListProperties)
@@ -342,6 +345,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         row = layout.row(align=True)
         row.prop(self, "prefs_tabs", expand=True)
 
+        layout.separator()
+
         if self.prefs_tabs == 'SETTINGS':
             layout.prop(self, "default_export_format")
 
@@ -350,8 +355,20 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.prop(self, "use_custom_export_folder")
             if self.use_custom_export_folder:
                 box.prop(self, "custom_export_path")
-            box.prop(self, "search_path")
-            box.prop(self, "replacement_path")
+            if not self.use_custom_export_folder:
+                texts = []
+                texts.append("Export Path is set relative to the .blend file directory.")
+                texts.append("Use Search and Replace to manipulate the path")
+
+                for text in texts:
+                    label_multiline(
+                        context=context,
+                        text=text,
+                        parent=box
+                    )
+
+                box.prop(self, "search_path")
+                box.prop(self, "replacement_path")
 
             box = layout.box()
             box.label(text="Export Collection")
@@ -367,11 +384,11 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.prop(self, "auto_set_preset")
 
             box = layout.box()
-            box.label(text="Export Settings")
+            box.label(text="Pre Export Operations")
             box.prop(self, "move_to_origin")
 
             layout.separator()
-            layout.prop(self, "simple_export_debug")
+            layout.prop(self, "simple_export_debug", icon='WARNING_LARGE')
 
         elif self.prefs_tabs == 'UI':
 
@@ -404,9 +421,79 @@ classes = (
 )
 
 
+def update_preset_path(self, context):
+    self.preset_path = EXPORT_FORMATS[self.export_format]["preset_folder"]
+
+
+def get_default_export_format():
+    """Fetch default export format from add-on preferences or fallback to FBX."""
+    try:
+        return bpy.context.preferences.addons[__package__].preferences.default_export_format
+    except (AttributeError, KeyError):
+        print('Fallback to FBX')
+        return "FBX"  # Fallback default
+
+
+def update_scene_preset_path(self, context):
+    """Update the full path of the selected preset in the scene property."""
+    context.scene.simple_export_preset_file = self.simple_export_preset_file
+
+
+def get_py_files(self=None):
+    """Retrieve all .py files from the specified folder."""
+    # Get the preset path from the appropriate source
+    preset_path = None
+    if self is not None:  # Check if self is provided and has a preset_path attribute
+        preset_path = getattr(self, 'preset_path', None)
+
+    if not preset_path:  # If preset_path is still None, use a fallback
+        preset_path = bpy.context.preferences.addons[__package__].preferences.preset_path
+
+    if not preset_path:
+        return [("", "No Path", "No path specified")]
+
+    try:
+        files = [
+            (os.path.join(preset_path, f), f, "")
+            for f in os.listdir(preset_path)
+            if f.endswith(".py")
+        ]
+        return files if files else [("", "No Files", "No .py files found")]
+    except Exception as e:
+        return [("", "Error", str(e))]
+
+
 # Helper function to initialize Window Manager properties
 def initialize_properties_collection_generation():
     prefs = bpy.context.preferences.addons[__package__].preferences
+
+    bpy.types.WindowManager.export_format = bpy.props.EnumProperty(
+        name="Export Format",
+        description="Select the export format",
+        items=get_export_format_items(),  # Dynamically generated items from EXPORT_FORMATS
+        default=get_default_export_format(),
+        update=update_preset_path,  # Update the preset path when export format changes
+    )
+
+    bpy.types.WindowManager.simple_export_preset_file = bpy.props.EnumProperty(
+        name="Preset File",
+        description="Select a .py file",
+        items=lambda self, context: get_py_files(self),  # Pass self explicitly
+        update=lambda self, context: update_scene_preset_path(context),
+    )
+
+    bpy.types.WindowManager.override_path = bpy.props.BoolProperty(
+        name="Overwrite Preset Folder",
+        description="Manually override the automatically set preset folder",
+        default=False,
+    )
+
+    bpy.types.WindowManager.preset_path = bpy.props.StringProperty(
+        name="Preset Folder Path",
+        description="Path to the folder containing .py files",
+        default=EXPORT_FORMATS["FBX"]["preset_folder"],  # Dynamically fetch from EXPORT_FORMATS
+        subtype="DIR_PATH",
+    )
 
     bpy.types.WindowManager.custom_prefix = bpy.props.StringProperty(
         name=PROPERTY_METADATA["custom_prefix"]["name"],
@@ -496,13 +583,6 @@ def register():
         name="Collection Index",
         description="Index of the active collection in the list",
         default=0
-    )
-
-    bpy.types.Scene.export_format = bpy.props.EnumProperty(
-        name="Export Format",
-        description="Filter collections by export format.",
-        items=get_export_format_items(),
-        default=get_default_export_format(),
     )
 
     bpy.types.WindowManager.overwrite_collection_settings = bpy.props.BoolProperty(
