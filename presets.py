@@ -136,7 +136,7 @@ class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
             return {'CANCELLED'}
 
         preset_name = os.path.basename(preset_path)
-        exporter = find_exporter(collection, wm.export_presets)
+        exporter = find_exporter(collection, wm.export_format)
 
         suceess, msg = assign_preset(exporter, preset_path)
 
