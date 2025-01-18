@@ -23,7 +23,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
     """
 
     def draw_filter(self, context, layout):
-        layout.prop(context.scene.simple_export_props, "export_format", text="Filter Format")
+        layout.prop(context.window_manager, "export_format", text="Filter Format")
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         prefs = context.preferences.addons[__package__].preferences
