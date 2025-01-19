@@ -108,7 +108,7 @@ def draw_preset_debug(layout, context):
 
     row = box_debug.row(align=True)
     row.enabled = False  # Makes the field non-editable
-    row.prop(scene, "simple_export_preset_file", text="")
+    row.prop(wm, "simple_export_preset_file", text="")
     box_debug.prop(wm, "override_path", text="Overwrite Preset Folder")
 
     row = box_debug.row(align=True)

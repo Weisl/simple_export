@@ -553,10 +553,6 @@ def update_scene_preset_path(self, context):
         prop_name = f"simple_export_preset_file_{context.window_manager.export_format.lower()}"
         selected_preset = getattr(context.window_manager, prop_name, None)
 
-        # Debug output
-        # print(f"[DEBUG] Updating preset path for: {prop_name}")
-        # print(f"[DEBUG] Selected preset: {selected_preset}")
-
         if selected_preset:
             context.window_manager.simple_export_preset_file = selected_preset
             self.report({'INFO'}, f"Preset path updated to: {selected_preset}")
