@@ -1,18 +1,12 @@
-import bpy
 import os
+
+import bpy
 
 from .operators import generate_export_path, assign_exporter_path
 from .operators import set_active_layer_Collection
 from .panels import EXPORT_FORMATS
 from .presets import assign_preset
 
-import bpy
-import os
-
-from .operators import generate_export_path, assign_exporter_path
-from .operators import set_active_layer_Collection
-from .panels import EXPORT_FORMATS
-from .presets import assign_preset
 
 def generate_collection_name(context, obj_name):
     prefs = bpy.context.preferences.addons[__package__].preferences
@@ -36,8 +30,10 @@ def generate_collection_name(context, obj_name):
 
     return collection_name
 
+
 def setup_collection(context, collection, active_object, settings_col, settings_filepath):
     wm = context.window_manager
+    prefs = bpy.context.preferences.addons[__package__].preferences
 
     # Set collection properties
     collection['simple_export_selected'] = True
@@ -62,7 +58,14 @@ def setup_collection(context, collection, active_object, settings_col, settings_
     exporter = list(set(exporters_after) - set(exporters_before))[0]
 
     if getattr(settings_col, 'auto_set_preset'):
-        preset_path = wm.simple_export_preset_file
+        # Construct the property name dynamically
+        export_format = wm.export_format.lower()
+        prop_name = f"simple_export_preset_file_{export_format}"
+
+        # Get preset path
+        preset_settings = wm if wm.overwrite_preset_settings else prefs
+        preset_path = getattr(preset_settings, prop_name, None)
+
         assign_preset(exporter, preset_path)
 
     if getattr(settings_col, 'auto_set_filepath'):
@@ -73,6 +76,7 @@ def setup_collection(context, collection, active_object, settings_col, settings_
         export_format = wm.export_format
         export_path = generate_export_path(collection.name, export_format, blend_dir, search_path, replacement_path)
         assign_exporter_path(exporter, export_path)
+
 
 class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
     """
@@ -122,6 +126,7 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
         self.report({'INFO'}, f"Export collection '{export_collection.name}' created successfully.")
         return {'FINISHED'}
 
+
 class EXPORT_OT_AddSettingsToCollection(bpy.types.Operator):
     """
     Add export settings to an existing collection.
@@ -148,10 +153,12 @@ class EXPORT_OT_AddSettingsToCollection(bpy.types.Operator):
         self.report({'INFO'}, f"Settings added to collection '{active_collection.name}' successfully.")
         return {'FINISHED'}
 
+
 classes = (
     EXPORT_OT_CreateExportCollection,
     EXPORT_OT_AddSettingsToCollection,
 )
+
 
 # Register the scene property
 def register():

@@ -107,31 +107,31 @@ def get_py_files_for_stl(self, context):
     return get_py_files(self, context, EXPORT_FORMATS["STL"]["preset_folder"])
 
 def update_preset_path_for_fbx(self, context):
-    context.window_manager.simple_export_preset_file = self.simple_export_preset_file_fbx
+    context.window_manager.simple_export_preset_file_fbx = self.simple_export_preset_file_fbx
     print(f"[DEBUG] FBX preset path updated to: {self.simple_export_preset_file_fbx}")
 
 def update_preset_path_for_obj(self, context):
-    context.window_manager.simple_export_preset_file = self.simple_export_preset_file_obj
+    context.window_manager.simple_export_preset_file_obj = self.simple_export_preset_file_obj
     print(f"[DEBUG] OBJ preset path updated to: {self.simple_export_preset_file_obj}")
 
 def update_preset_path_for_gltf(self, context):
-    context.window_manager.simple_export_preset_file = self.simple_export_preset_file_gltf
+    context.window_manager.simple_export_preset_file_gltf = self.simple_export_preset_file_gltf
     print(f"[DEBUG] glTF preset path updated to: {self.simple_export_preset_file_gltf}")
 
 def update_preset_path_for_usd(self, context):
-    context.window_manager.simple_export_preset_file = self.simple_export_preset_file_usd
+    context.window_manager.simple_export_preset_file_usd = self.simple_export_preset_file_usd
     print(f"[DEBUG] USD preset path updated to: {self.simple_export_preset_file_usd}")
 
 def update_preset_path_for_abc(self, context):
-    context.window_manager.simple_export_preset_file = self.simple_export_preset_file_abc
+    context.window_manager.simple_export_preset_file_abc = self.simple_export_preset_file_abc
     print(f"[DEBUG] Alembic preset path updated to: {self.simple_export_preset_file_abc}")
 
 def update_preset_path_for_ply(self, context):
-    context.window_manager.simple_export_preset_file = self.simple_export_preset_file_ply
+    context.window_manager.simple_export_preset_file_ply = self.simple_export_preset_file_ply
     print(f"[DEBUG] PLY preset path updated to: {self.simple_export_preset_file_ply}")
 
 def update_preset_path_for_stl(self, context):
-    context.window_manager.simple_export_preset_file = self.simple_export_preset_file_stl
+    context.window_manager.simple_export_preset_file_stl = self.simple_export_preset_file_stl
     print(f"[DEBUG] STL preset path updated to: {self.simple_export_preset_file_stl}")
 
 
@@ -654,13 +654,6 @@ def initialize_properties_collection_generation():
         items=get_export_format_items(),  # Dynamically generated items from EXPORT_FORMATS
         default=get_default_export_format(),
         update=update_preset_path,  # Update the preset path when export format changes
-    )
-
-    bpy.types.WindowManager.simple_export_preset_file = bpy.props.EnumProperty(
-        name="Preset File",
-        description="Select a .py file",
-        items=lambda self, context: get_py_files(self),  # Pass self explicitly
-        update=update_scene_preset_path,
     )
 
     bpy.types.WindowManager.override_path = bpy.props.BoolProperty(

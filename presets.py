@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from .operators import find_exporter, get_outliner_collections
 from .uilist import color_tag_icons
@@ -44,6 +45,7 @@ def assign_preset_to_exporter(properties, exporter):
                 print(f"Exporter property '{prop_name}' not found.")
         except Exception as e:
             print(f"Error setting property '{prop_name}': {e}")
+
 
 def assign_preset(exporter, preset_path):
     # Ensure the collection has exporters
@@ -123,9 +125,18 @@ class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
 
     def execute(self, context):
 
-        collection = bpy.data.collections.get(self.collection_name)
+        prefs = bpy.context.preferences.addons[__package__].preferences
         wm = context.window_manager
-        preset_path = wm.simple_export_preset_file
+
+        collection = bpy.data.collections.get(self.collection_name)
+
+        # Construct the property name dynamically
+        export_format = wm.export_format.lower()
+        prop_name = f"simple_export_preset_file_{export_format}"
+
+        # Get preset path
+        preset_settings = wm if wm.overwrite_preset_settings else prefs
+        preset_path = getattr(preset_settings, prop_name, None)
 
         if not collection:
             self.report({'ERROR'}, f"Collection '{self.collection_name}' not found.")
@@ -157,8 +168,16 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
 
     def execute(self, context):
         results = []  # To store the renaming status of each collection
+        prefs = bpy.context.preferences.addons[__package__].preferences
         wm = context.window_manager
-        preset_path = wm.simple_export_preset_file
+
+        # Construct the property name dynamically
+        export_format = wm.export_format.lower()
+        prop_name = f"simple_export_preset_file_{export_format}"
+
+        # Get preset path
+        preset_settings = wm if wm.overwrite_preset_settings else prefs
+        preset_path = getattr(preset_settings, prop_name, None)
 
         try:
             # Validate preset path
@@ -167,7 +186,6 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
             collection_list = bpy.data.collections
             if self.outliner:
                 collection_list = get_outliner_collections(context)
-
 
             for collection in collection_list:
 
