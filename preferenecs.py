@@ -775,6 +775,11 @@ def register():
         description="Overwrite the settings related to the creation of Export Collections defined in the Preferences",
         default=False)
 
+    bpy.types.WindowManager.overwrite_preset_settings = bpy.props.BoolProperty(
+        name="Overwrite Preset",
+        description="Overwrite the settings regarding the presets",
+        default=False)
+
     bpy.types.WindowManager.overwrite_filepath_settings = bpy.props.BoolProperty(
         name="Overwrite Filepath",
         description="Overwrite the settings regarding the generation of the export path defined in the Preferences",
