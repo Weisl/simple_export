@@ -73,10 +73,19 @@ EXPORT_FORMATS = {
 
 
 def draw_export_preset(layout, context):
+    """
+    Draw the preset property dynamically based on the selected export format.
+    """
     wm = context.window_manager
+    export_format = wm.export_format  # Get the currently selected export format
 
-    # Select preset
-    layout.prop(wm, "simple_export_preset_file", text="Preset")
+    # Dynamically determine the property name
+    prop_name = f"simple_export_preset_file_{export_format.lower()}"
+    if hasattr(wm, prop_name):
+        layout.prop(wm, prop_name, text=f"{EXPORT_FORMATS[export_format]['label']} Preset")
+    else:
+        layout.label(text=f"No presets available for {export_format}", icon="ERROR")
+
 
 
 def draw_preset_debug(layout, context):
@@ -269,12 +278,7 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
 
         # Draw Preset UI
         box = layout.box()
-        row = box.row(align=True)
-        draw_export_preset(row, context)
-
-        if prefs.simple_export_debug:
-            box = box.box()
-            draw_preset_debug(box, context)
+        draw_export_preset(box, context)
 
         # Export List
         row = layout.row()
