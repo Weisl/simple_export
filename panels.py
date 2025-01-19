@@ -378,12 +378,6 @@ classes = (
 
 # Register and Unregister
 def register():
-    Scene = bpy.types.Scene
-    Scene.simple_export_preset_file = bpy.props.StringProperty(
-        name="Simple Export Preset",
-        description="Path for Simple Export preset",
-        default="",
-    )
     from bpy.utils import register_class
 
     for cls in classes:
@@ -396,7 +390,4 @@ def unregister():
 
     for cls in reversed(classes):
         unregister_class(cls)
-
-    Scene = bpy.types.Scene
-    del Scene.simple_export_preset_file
 

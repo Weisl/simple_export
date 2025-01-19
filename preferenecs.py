@@ -454,7 +454,7 @@ def update_scene_preset_path(self, context):
         print(f"[DEBUG] Selected preset: {selected_preset}")
 
         if selected_preset:
-            context.scene.simple_export_preset_file = selected_preset
+            context.window_manager.simple_export_preset_file = selected_preset
             self.report({'INFO'}, f"Preset path updated to: {selected_preset}")
         else:
             self.report({'WARNING'}, "No preset selected or preset path is invalid.")
