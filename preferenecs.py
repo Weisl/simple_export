@@ -84,6 +84,58 @@ PROPERTY_METADATA = {
 }
 
 
+# Wrapper functions for each format using the existing `get_py_files` function
+def get_py_files_for_fbx(self, context):
+    return get_py_files(self, context, EXPORT_FORMATS["FBX"]["preset_folder"])
+
+def get_py_files_for_obj(self, context):
+    return get_py_files(self, context, EXPORT_FORMATS["OBJ"]["preset_folder"])
+
+def get_py_files_for_gltf(self, context):
+    return get_py_files(self, context, EXPORT_FORMATS["GLTF"]["preset_folder"])
+
+def get_py_files_for_usd(self, context):
+    return get_py_files(self, context, EXPORT_FORMATS["USD"]["preset_folder"])
+
+def get_py_files_for_abc(self, context):
+    return get_py_files(self, context, EXPORT_FORMATS["ALEMBIC"]["preset_folder"])
+
+def get_py_files_for_ply(self, context):
+    return get_py_files(self, context, EXPORT_FORMATS["PLY"]["preset_folder"])
+
+def get_py_files_for_stl(self, context):
+    return get_py_files(self, context, EXPORT_FORMATS["STL"]["preset_folder"])
+
+def update_preset_path_for_fbx(self, context):
+    context.window_manager.simple_export_preset_file = self.simple_export_preset_file_fbx
+    print(f"[DEBUG] FBX preset path updated to: {self.simple_export_preset_file_fbx}")
+
+def update_preset_path_for_obj(self, context):
+    context.window_manager.simple_export_preset_file = self.simple_export_preset_file_obj
+    print(f"[DEBUG] OBJ preset path updated to: {self.simple_export_preset_file_obj}")
+
+def update_preset_path_for_gltf(self, context):
+    context.window_manager.simple_export_preset_file = self.simple_export_preset_file_gltf
+    print(f"[DEBUG] glTF preset path updated to: {self.simple_export_preset_file_gltf}")
+
+def update_preset_path_for_usd(self, context):
+    context.window_manager.simple_export_preset_file = self.simple_export_preset_file_usd
+    print(f"[DEBUG] USD preset path updated to: {self.simple_export_preset_file_usd}")
+
+def update_preset_path_for_abc(self, context):
+    context.window_manager.simple_export_preset_file = self.simple_export_preset_file_abc
+    print(f"[DEBUG] Alembic preset path updated to: {self.simple_export_preset_file_abc}")
+
+def update_preset_path_for_ply(self, context):
+    context.window_manager.simple_export_preset_file = self.simple_export_preset_file_ply
+    print(f"[DEBUG] PLY preset path updated to: {self.simple_export_preset_file_ply}")
+
+def update_preset_path_for_stl(self, context):
+    context.window_manager.simple_export_preset_file = self.simple_export_preset_file_stl
+    print(f"[DEBUG] STL preset path updated to: {self.simple_export_preset_file_stl}")
+
+
+
 def label_multiline(context, text, parent):
     chars = int(context.region.width / 7)  # 7 pix on 1 character
     wrapper = textwrap.TextWrapper(width=chars)
@@ -305,6 +357,57 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     scene_properties: PointerProperty(type=UIListProperties)
     popup_properties: PointerProperty(type=UIListProperties)
 
+    ########################################
+    # Presets
+    simple_export_preset_file_fbx: bpy.props.EnumProperty(
+        name="FBX Preset File",
+        description="Select a preset file for FBX",
+        items=lambda self, context: get_py_files_for_fbx(self, context),
+        update=update_preset_path_for_fbx,
+    )
+
+    simple_export_preset_file_obj: bpy.props.EnumProperty(
+        name="OBJ Preset File",
+        description="Select a preset file for OBJ",
+        items=lambda self, context: get_py_files_for_obj(self, context),
+        update=update_preset_path_for_obj,
+    )
+
+    simple_export_preset_file_gltf: bpy.props.EnumProperty(
+        name="glTF Preset File",
+        description="Select a preset file for glTF",
+        items=lambda self, context: get_py_files_for_gltf(self, context),
+        update=update_preset_path_for_gltf,
+    )
+
+    simple_export_preset_file_usd: bpy.props.EnumProperty(
+        name="USD Preset File",
+        description="Select a preset file for USD",
+        items=lambda self, context: get_py_files_for_usd(self, context),
+        update=update_preset_path_for_usd,
+    )
+
+    simple_export_preset_file_abc: bpy.props.EnumProperty(
+        name="Alembic Preset File",
+        description="Select a preset file for Alembic",
+        items=lambda self, context: get_py_files_for_abc(self, context),
+        update=update_preset_path_for_abc,
+    )
+
+    simple_export_preset_file_ply: bpy.props.EnumProperty(
+        name="PLY Preset File",
+        description="Select a preset file for PLY",
+        items=lambda self, context: get_py_files_for_ply(self, context),
+        update=update_preset_path_for_ply,
+    )
+
+    simple_export_preset_file_stl: bpy.props.EnumProperty(
+        name="STL Preset File",
+        description="Select a preset file for STL",
+        items=lambda self, context: get_py_files_for_stl(self, context),
+        update=update_preset_path_for_stl,
+    )
+
     def keymap_ui(self, layout, title, property_prefix, id_name, properties_name):
         box = layout.box()
         split = box.split(align=True, factor=0.5)
@@ -352,12 +455,13 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
             # Iterate through dynamically created properties
             box = layout.box()
+            box.label(text="Export Presets")
             for export_format in EXPORT_FORMATS.keys():
                 prop_name = f"simple_export_preset_file_{export_format.lower()}"
-                if hasattr(bpy.types.WindowManager, prop_name):
+                if hasattr(self, prop_name):
                     row = box.row(align=True)
                     row.label(text=f"{export_format} Preset", icon='FILE_SCRIPT')
-                    row.prop(context.window_manager, prop_name, text="")
+                    row.prop(self, prop_name, text="")
 
             box = layout.box()
             box.label(text="Export Path")
@@ -450,8 +554,8 @@ def update_scene_preset_path(self, context):
         selected_preset = getattr(context.window_manager, prop_name, None)
 
         # Debug output
-        print(f"[DEBUG] Updating preset path for: {prop_name}")
-        print(f"[DEBUG] Selected preset: {selected_preset}")
+        # print(f"[DEBUG] Updating preset path for: {prop_name}")
+        # print(f"[DEBUG] Selected preset: {selected_preset}")
 
         if selected_preset:
             context.window_manager.simple_export_preset_file = selected_preset
@@ -460,7 +564,7 @@ def update_scene_preset_path(self, context):
             self.report({'WARNING'}, "No preset selected or preset path is invalid.")
     except Exception as e:
         # Debug error handling
-        print(f"[DEBUG ERROR] Failed to update preset path: {e}")
+        # print(f"[DEBUG ERROR] Failed to update preset path: {e}")
         self.report({'ERROR'}, f"Failed to update preset path: {e}")
 
 
@@ -478,7 +582,7 @@ def get_py_files(self=None, context=None, folder=None):
         folder = preset_path
 
     if not folder or not os.path.isdir(folder):
-        print(f"[DEBUG] Invalid folder: {folder}")
+        # print(f"[DEBUG] Invalid folder: {folder}")
         return [("", "No Path", "No path specified")]
 
     try:
@@ -487,19 +591,11 @@ def get_py_files(self=None, context=None, folder=None):
             for f in os.listdir(folder)
             if f.endswith(".py")
         ]
-        print(f"[DEBUG] Files found in {folder}: {files}")
+        # print(f"[DEBUG] Files found in {folder}: {files}")
         return files if files else [("", "No Files", "No .py files found")]
     except Exception as e:
         print(f"[DEBUG ERROR] Error reading files in {folder}: {e}")
         return [("", "Error", str(e))]
-
-
-from functools import partial
-
-
-def get_py_files_for_format(self, context, folder):
-    """Retrieve all .py files from the specified folder for the given export format."""
-    return get_py_files(self, context, folder)
 
 
 def create_export_format_preset_properties():
@@ -512,10 +608,10 @@ def create_export_format_preset_properties():
 
         # Ensure the folder exists and provide debug information
         if not os.path.isdir(preset_folder):
-            print(f"[DEBUG] Invalid folder for {export_format}: {preset_folder}")
+            # print(f"[DEBUG] Invalid folder for {export_format}: {preset_folder}")
             continue
 
-        print(f"[DEBUG] Creating property: {prop_name} for folder: {preset_folder}")
+        # print(f"[DEBUG] Creating property: {prop_name} for folder: {preset_folder}")
 
         # Use a function to bind the current preset_folder to the property
         def create_property(folder):
@@ -528,9 +624,10 @@ def create_export_format_preset_properties():
                     selected_preset = getattr(self, prop_name, None)
                     if selected_preset:
                         setattr(context.scene, f"simple_export_preset_path_{export_format.lower()}", selected_preset)
-                        print(f"[DEBUG] Updated preset path for {export_format}: {selected_preset}")
+                        # print(f"[DEBUG] Updated preset path for {export_format}: {selected_preset}")
                 except Exception as e:
-                    print(f"[DEBUG ERROR] Failed to update preset path for {export_format}: {e}")
+                    # print(f"[DEBUG ERROR] Failed to update preset path for {export_format}: {e}")
+                    self.report({'ERROR'}, f"Failed to update preset path for {export_format}: {e}")
 
             # Create the property dynamically
             return bpy.props.EnumProperty(
