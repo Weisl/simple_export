@@ -615,22 +615,11 @@ def create_export_format_preset_properties():
                 """Retrieve .py files specifically for this export format."""
                 return get_py_files(self, context, folder)
 
-            def update_preset_path_for_this_format(self, context):
-                try:
-                    selected_preset = getattr(self, prop_name, None)
-                    if selected_preset:
-                        setattr(context.scene, f"simple_export_preset_path_{export_format.lower()}", selected_preset)
-                        # print(f"[DEBUG] Updated preset path for {export_format}: {selected_preset}")
-                except Exception as e:
-                    # print(f"[DEBUG ERROR] Failed to update preset path for {export_format}: {e}")
-                    self.report({'ERROR'}, f"Failed to update preset path for {export_format}: {e}")
-
             # Create the property dynamically
             return bpy.props.EnumProperty(
                 name=f"{export_format} Preset File",
                 description=f"Select a preset file for {export_format}",
                 items=lambda self, context: get_py_files_for_this_format(self, context),
-                update=update_preset_path_for_this_format,
             )
 
         # Set the property dynamically with the current folder
