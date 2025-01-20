@@ -45,7 +45,7 @@ EXPORT_FORMATS = {
         "op_type": "<class 'bpy.types.WM_OT_usd_export'>",
         "file_extension": "usd",
     },
-    "ALEMBIC": {
+    "ABC": {
         "op_name": "IO_FH_alembic",
         "label": "Alembic",
         "description": "Alembic Export",
@@ -96,28 +96,6 @@ def draw_preset_settings(layout, context):
         layout.prop(set, prop_name, text=label)
     else:
         layout.label(text=f"No presets available for {export_format}", icon="ERROR")
-
-
-def draw_preset_debug(layout, context):
-    scene = context.scene
-    wm = context.window_manager
-
-    box_debug = layout.box()
-
-    box_debug.label(text='Debug')
-
-    row = box_debug.row(align=True)
-    row.enabled = False  # Makes the field non-editable
-    row.prop(wm, "simple_export_preset_file", text="")
-    box_debug.prop(wm, "override_path", text="Overwrite Preset Folder")
-
-    row = box_debug.row(align=True)
-    row.enabled = wm.override_path  # Only enable preset_path editing if override_path is true
-    row.prop(wm, "preset_path", text="Preset Folder")
-
-    row = box_debug.row()
-    op = row.operator("simple_export.assign_preset", text="Assign Preset")
-    op.collection_name = context.collection.name
 
 
 def draw_properties_with_prefix(layout, context, properties):
