@@ -15,3 +15,14 @@ def update_collection_offset(scene):
             if collection.instance_offset != obj.location:
                 set_collection_offset_from_object(collection, obj)
 
+
+def register():
+    # Update collection offset automatically
+    if update_collection_offset not in bpy.app.handlers.depsgraph_update_post:
+        bpy.app.handlers.depsgraph_update_post.append(update_collection_offset)
+
+
+def unregister():
+    # Update collection offset automatically
+    if update_collection_offset in bpy.app.handlers.depsgraph_update_post:
+        bpy.app.handlers.depsgraph_update_post.remove(update_collection_offset)
