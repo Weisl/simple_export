@@ -79,38 +79,8 @@ class EXPORTER_OT_open_preferences(bpy.types.Operator):
         return {'FINISHED'}
 
 
-# Define the custom operator
-class CUSTOM_OT_print_selected_collections(bpy.types.Operator):
-    bl_idname = "custom.print_selected_collections"
-    bl_label = "Print Selected Collections"
-    bl_description = "Print the names of all selected collections in the Outliner"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        # Get all selected items in the outliner
-        selected_ids = context.selected_ids
-
-        if not selected_ids:
-            self.report({'WARNING'}, "No items selected in the Outliner.")
-            return {'CANCELLED'}
-
-        # Filter and print only collections
-        collections = [item for item in selected_ids if isinstance(item, bpy.types.Collection)]
-
-        if not collections:
-            self.report({'WARNING'}, "No collections selected.")
-            return {'CANCELLED'}
-
-        for collection in collections:
-            print(f"Selected Collection: {collection.name}")
-
-        self.report({'INFO'}, f"Printed {len(collections)} collection(s) to the console.")
-        return {'FINISHED'}
-
-
 classes = (
     EXPORTER_OT_open_preferences,
-    CUSTOM_OT_print_selected_collections,
     CUSTOM_MT_outliner_simple_export_menu
 )
 
