@@ -94,7 +94,7 @@ def show_results(export_results):
 def validate_collection(collection_name):
     """Validate the collection and return it if valid."""
     if not collection_name or not bpy.data.collections.get(collection_name):
-        raise ValueError("Invalid export collection.")
+        return None  # Return None for invalid collections
     return bpy.data.collections.get(collection_name)
 
 
@@ -104,7 +104,7 @@ def find_exporter(collection, export_format):
     for exporter in collection.exporters:
         if str(type(exporter.export_properties)) == EXPORT_FORMATS[export_format]["op_type"]:
             return exporter
-    raise ValueError(f"No {export_format} exporter found for collection '{collection.collection_name}'.")
+    return None  # Return None if no valid exporter is found
 
 
 def get_exporter_id(self, collection, exporter):
@@ -404,15 +404,23 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
             collection_list = get_outliner_collections(context)
 
         for collection in collection_list:
-
-            if not collection.simple_export_selected or len(collection.exporters) == 0:
-                continue
-
             try:
-                # Find exporter
+                # return early
+                if not collection.simple_export_selected or len(collection.exporters) == 0:
+                    continue
+
+                # Validate collection
+                collection = validate_collection(collection.name)
+                if not collection:
+                    continue
+
+                set_active_layer_Collection(collection.name)
+
+                # Find and validate exporter
                 exporter = find_exporter(collection, wm.export_format)
+
                 if not exporter:
-                    raise ValueError("No exporters found in the current collection.")
+                    continue
 
                 if settings_filepath.use_custom_export_folder:
                     if not settings_filepath.custom_export_path:
@@ -553,10 +561,17 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
                 # Validate collection
                 collection = validate_collection(collection.name)
+                if not collection:
+                    continue
+
                 set_active_layer_Collection(collection.name)
 
                 # Find and validate exporter
                 exporter = find_exporter(collection, wm.export_format)
+
+                if not exporter:
+                    continue
+
                 exporter_id = get_exporter_id(self, collection, exporter)
 
                 # Pre-export checks

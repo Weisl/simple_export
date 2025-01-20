@@ -193,9 +193,15 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
                 if not collection.simple_export_selected or len(collection.exporters) == 0:
                     continue
 
+                # Find and validate exporter
+                exporter = find_exporter(collection, wm.export_format)
+
+                if not exporter:
+                    continue
+
                 try:
                     # Process each collection
-                    result = self.apply_preset_to_collection(collection, preset_path, wm.export_format)
+                    result = self.apply_preset_to_collections(collection, preset_path, exporter)
                     results.append(result)
                 except Exception as e:
                     # Handle per-collection errors
@@ -218,14 +224,9 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
         if not preset_path:
             raise ValueError("Select a preset to be applied.")
 
-    def apply_preset_to_collection(self, collection, preset_path, export_format):
+    def apply_preset_to_collections(self, collection, preset_path, exporter):
         """Apply the preset to a single collection."""
         preset_name = os.path.basename(preset_path)
-
-        # Find exporter
-        exporter = find_exporter(collection, export_format)
-        if not exporter:
-            raise ValueError("No exporters found in the current collection.")
 
         # Apply preset
         success, msg = assign_preset(exporter, preset_path)
