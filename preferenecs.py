@@ -486,7 +486,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box = layout.box()
             box.label(text="Export Collection")
             box.prop(self, "collection_color")
-            # TODO: change prefix options from file to collections (- Better visibility)
+            
             box.prop(self, "use_blend_file_name_as_prefix")
             box.prop(self, "custom_prefix")
             box.prop(self, "custom_suffix")
