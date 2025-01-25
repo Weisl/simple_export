@@ -501,7 +501,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.prop(self, "move_to_origin")
 
             layout.separator()
-            layout.prop(self, "simple_export_debug", icon='WARNING_LARGE')
+            icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
+            layout.prop(self, "simple_export_debug", icon=icon)
 
         elif self.prefs_tabs == 'UI':
 

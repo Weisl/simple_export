@@ -213,7 +213,9 @@ class SIMPLE_EXPORT_menu_base:
         box = layout.box()
         col = box.column(align=True)
         row = col.row()
-        row.label(text="Pre Export Operations (BETA)", icon='WARNING_LARGE')
+
+        icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
+        row.label(text="Pre Export Operations (BETA)", icon=icon)
         row = col.row()
         row.prop(wm, 'move_to_origin')
 
