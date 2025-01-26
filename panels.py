@@ -351,6 +351,12 @@ class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Pa
         row.label(text="Export List")
         row = layout.row()
 
+        row = layout.row(align=True)
+        op = row.operator("scene.select_all_collections", text="All", icon="CHECKBOX_HLT")
+        op.invert = False
+        op = row.operator("scene.select_all_collections", text="None", icon="CHECKBOX_DEHLT")
+        op.invert = True
+        
         row = layout.row()
         row.template_list("SCENE_UL_CollectionList", "popup", bpy.data, "collections", scene, "collection_index")
 
