@@ -638,7 +638,7 @@ def initialize_format_specific_properties():
 def initialize_properties_collection_generation():
     prefs = bpy.context.preferences.addons[__package__].preferences
 
-    bpy.types.WindowManager.export_format = bpy.props.EnumProperty(
+    bpy.types.Scene.export_format = bpy.props.EnumProperty(
         name="Export Format",
         description="Select the export format",
         items=get_export_format_items(),  # Dynamically generated items from EXPORT_FORMATS
@@ -646,56 +646,56 @@ def initialize_properties_collection_generation():
         update=update_preset_path,  # Update the preset path when export format changes
     )
 
-    bpy.types.WindowManager.override_path = bpy.props.BoolProperty(
+    bpy.types.Scene.override_path = bpy.props.BoolProperty(
         name="Overwrite Preset Folder",
         description="Manually override the automatically set preset folder",
         default=False,
     )
 
-    bpy.types.WindowManager.preset_path = bpy.props.StringProperty(
+    bpy.types.Scene.preset_path = bpy.props.StringProperty(
         name="Preset Folder Path",
         description="Path to the folder containing .py files",
         default=EXPORT_FORMATS["FBX"]["preset_folder"],  # Dynamically fetch from EXPORT_FORMATS
         subtype="DIR_PATH",
     )
 
-    bpy.types.WindowManager.custom_prefix = bpy.props.StringProperty(
+    bpy.types.Scene.custom_prefix = bpy.props.StringProperty(
         name=PROPERTY_METADATA["custom_prefix"]["name"],
         description=PROPERTY_METADATA["custom_prefix"]["description"],
         default=prefs.custom_prefix
     )
-    bpy.types.WindowManager.custom_suffix = bpy.props.StringProperty(
+    bpy.types.Scene.custom_suffix = bpy.props.StringProperty(
         name=PROPERTY_METADATA["custom_suffix"]["name"],
         description=PROPERTY_METADATA["custom_suffix"]["description"],
         default=prefs.custom_suffix
     )
-    bpy.types.WindowManager.use_blend_file_name_as_prefix = bpy.props.BoolProperty(
+    bpy.types.Scene.use_blend_file_name_as_prefix = bpy.props.BoolProperty(
         name=PROPERTY_METADATA["use_blend_file_name_as_prefix"]["name"],
         description=PROPERTY_METADATA["use_blend_file_name_as_prefix"]["description"],
         default=prefs.use_blend_file_name_as_prefix
     )
-    bpy.types.WindowManager.set_location_offset_on_creation = bpy.props.BoolProperty(
+    bpy.types.Scene.set_location_offset_on_creation = bpy.props.BoolProperty(
         name=PROPERTY_METADATA["set_location_offset_on_creation"]["name"],
         description=PROPERTY_METADATA["set_location_offset_on_creation"]["description"],
         default=prefs.set_location_offset_on_creation
     )
-    bpy.types.WindowManager.move_to_origin = bpy.props.BoolProperty(
+    bpy.types.Scene.move_to_origin = bpy.props.BoolProperty(
         name=PROPERTY_METADATA["move_to_origin"]["name"],
         description=PROPERTY_METADATA["move_to_origin"]["description"],
         default=prefs.move_to_origin,
     )
 
-    bpy.types.WindowManager.auto_set_filepath = bpy.props.BoolProperty(
+    bpy.types.Scene.auto_set_filepath = bpy.props.BoolProperty(
         name=PROPERTY_METADATA["auto_set_filepath"]["name"],
         description=PROPERTY_METADATA["auto_set_filepath"]["description"],
         default=prefs.auto_set_filepath
     )
-    bpy.types.WindowManager.auto_set_preset = bpy.props.BoolProperty(
+    bpy.types.Scene.auto_set_preset = bpy.props.BoolProperty(
         name=PROPERTY_METADATA["auto_set_preset"]["name"],
         description=PROPERTY_METADATA["auto_set_preset"]["description"],
         default=prefs.auto_set_preset
     )
-    bpy.types.WindowManager.collection_color = bpy.props.EnumProperty(
+    bpy.types.Scene.collection_color = bpy.props.EnumProperty(
         name=PROPERTY_METADATA["collection_color"]["name"],
         description=PROPERTY_METADATA["collection_color"]["description"],
         items=PROPERTY_METADATA["collection_color"]["items"],
@@ -706,22 +706,22 @@ def initialize_properties_collection_generation():
 def initialize_properties_file_path():
     prefs = bpy.context.preferences.addons[__package__].preferences
 
-    bpy.types.WindowManager.search_path = bpy.props.StringProperty(
+    bpy.types.Scene.search_path = bpy.props.StringProperty(
         name=PROPERTY_METADATA["search_path"]["name"],
         description=PROPERTY_METADATA["search_path"]["description"],
         default=prefs.search_path
     )
-    bpy.types.WindowManager.replacement_path = bpy.props.StringProperty(
+    bpy.types.Scene.replacement_path = bpy.props.StringProperty(
         name=PROPERTY_METADATA["replacement_path"]["name"],
         description=PROPERTY_METADATA["replacement_path"]["description"],
         default=prefs.replacement_path
     )
-    bpy.types.WindowManager.use_custom_export_folder = bpy.props.BoolProperty(
+    bpy.types.Scene.use_custom_export_folder = bpy.props.BoolProperty(
         name=PROPERTY_METADATA["use_custom_export_folder"]["name"],
         description=PROPERTY_METADATA["use_custom_export_folder"]["description"],
         default=prefs.use_custom_export_folder
     )
-    bpy.types.WindowManager.custom_export_path = bpy.props.StringProperty(
+    bpy.types.Scene.custom_export_path = bpy.props.StringProperty(
         name="Custom Export Path",
         description="Custom directory to export files to.",
         subtype='DIR_PATH',
@@ -749,18 +749,18 @@ def register():
         default=0
     )
 
-    bpy.types.WindowManager.overwrite_filepath_settings = bpy.props.BoolProperty(
+    bpy.types.Scene.overwrite_filepath_settings = bpy.props.BoolProperty(
         name="Overwrite Filepath",
         description="Overwrite the settings regarding the generation of the export path defined in the Preferences",
         default=True)
 
 
-    bpy.types.WindowManager.overwrite_collection_settings = bpy.props.BoolProperty(
+    bpy.types.Scene.overwrite_collection_settings = bpy.props.BoolProperty(
         name="Overwrite Collection",
         description="Overwrite the settings related to the creation of Export Collections defined in the Preferences",
         default=False)
 
-    bpy.types.WindowManager.overwrite_preset_settings = bpy.props.BoolProperty(
+    bpy.types.Scene.overwrite_preset_settings = bpy.props.BoolProperty(
         name="Overwrite Preset",
         description="Overwrite the settings regarding the presets",
         default=False)
@@ -790,8 +790,8 @@ def unregister():
     # Remove dynamically created properties
     for export_format in EXPORT_FORMATS.keys():
         prop_name = f"simple_export_preset_file_{export_format.lower()}"
-        if hasattr(bpy.types.WindowManager, prop_name):
-            delattr(bpy.types.WindowManager, prop_name)
+        if hasattr(bpy.types.Scene, prop_name):
+            delattr(bpy.types.Scene, prop_name)
 
     from bpy.utils import unregister_class
 
@@ -803,20 +803,20 @@ def unregister():
     del bpy.types.Collection.simple_export_selected
     del bpy.types.Collection.offset_object
 
-    del bpy.types.WindowManager.overwrite_filepath_settings
-    del bpy.types.WindowManager.overwrite_collection_settings
+    del bpy.types.Scene.overwrite_filepath_settings
+    del bpy.types.Scene.overwrite_collection_settings
 
     # Collection creation
-    del bpy.types.WindowManager.custom_prefix
-    del bpy.types.WindowManager.custom_suffix
-    del bpy.types.WindowManager.use_blend_file_name_as_prefix
-    del bpy.types.WindowManager.set_location_offset_on_creation
-    del bpy.types.WindowManager.auto_set_filepath
-    del bpy.types.WindowManager.auto_set_preset
-    del bpy.types.WindowManager.collection_color
+    del bpy.types.Scene.custom_prefix
+    del bpy.types.Scene.custom_suffix
+    del bpy.types.Scene.use_blend_file_name_as_prefix
+    del bpy.types.Scene.set_location_offset_on_creation
+    del bpy.types.Scene.auto_set_filepath
+    del bpy.types.Scene.auto_set_preset
+    del bpy.types.Scene.collection_color
 
     # filepath
-    del bpy.types.WindowManager.search_path
-    del bpy.types.WindowManager.replacement_path
-    del bpy.types.WindowManager.use_custom_export_folder
-    del bpy.types.WindowManager.custom_export_path
+    del bpy.types.Scene.search_path
+    del bpy.types.Scene.replacement_path
+    del bpy.types.Scene.use_custom_export_folder
+    del bpy.types.Scene.custom_export_path

@@ -321,9 +321,9 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
         collection = bpy.data.collections.get(self.collection_name)
 
         prefs = bpy.context.preferences.addons[__package__].preferences
-        wm = context.window_manager
-        settings_col = wm if wm.overwrite_collection_settings else prefs
-        settings_filepath = wm if wm.overwrite_filepath_settings else prefs
+        scene = context.scene
+        settings_col = scene if scene.overwrite_collection_settings else prefs
+        settings_filepath = scene if scene.overwrite_filepath_settings else prefs
 
         if not settings_filepath.use_custom_export_folder:
             blend_filepath = bpy.data.filepath
@@ -345,7 +345,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
         replacement_path = settings_filepath.replacement_path
 
         # Add custom exporter
-        exporter = find_exporter(collection, wm.export_format)
+        exporter = find_exporter(collection, scene.export_format)
 
         # Return
         if not exporter:
@@ -353,7 +353,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Set export Path
-        export_format = wm.export_format
+        export_format = scene.export_format
         export_path = generate_export_path(collection.name, export_format, export_dir, search_path, replacement_path)
         success, msg = assign_exporter_path(exporter, export_path)
 
@@ -395,9 +395,9 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
     def execute(self, context):
         results = []  # To store the renaming status of each collection
         prefs = bpy.context.preferences.addons[__package__].preferences
-        wm = context.window_manager
-        settings_col = wm if wm.overwrite_collection_settings else prefs
-        settings_filepath = wm if wm.overwrite_filepath_settings else prefs
+        scene = context.scene
+        settings_col = scene if scene.overwrite_collection_settings else prefs
+        settings_filepath = scene if scene.overwrite_filepath_settings else prefs
 
         collection_list = bpy.data.collections
         if self.outliner:
@@ -417,7 +417,7 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
                 set_active_layer_Collection(collection.name)
 
                 # Find and validate exporter
-                exporter = find_exporter(collection, wm.export_format)
+                exporter = find_exporter(collection, scene.export_format)
 
                 if not exporter:
                     continue
@@ -437,7 +437,7 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
                 search_path = settings_filepath.search_path
                 replacement_path = settings_filepath.replacement_path
 
-                export_path = generate_export_path(collection.name, wm.export_format, export_dir, search_path,
+                export_path = generate_export_path(collection.name, scene.export_format, export_dir, search_path,
                                                    replacement_path)
                 success, msg = assign_exporter_path(exporter, export_path)
                 results.append({'name': collection.name, 'success': success, 'filepath': export_path, 'message': msg})
@@ -471,9 +471,9 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
         success = False
 
         prefs = bpy.context.preferences.addons[__package__].preferences
-        wm = context.window_manager
-        settings_col = wm if wm.overwrite_collection_settings else prefs
-        settings_filepath = wm if wm.overwrite_filepath_settings else prefs
+        scene = context.scene
+        settings_col = scene if scene.overwrite_collection_settings else prefs
+        settings_filepath = scene if scene.overwrite_filepath_settings else prefs
 
         try:
             # Validate collection
@@ -481,18 +481,18 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
             set_active_layer_Collection(collection.name)
 
             # Find and validate exporter
-            exporter = find_exporter(collection, wm.export_format)
+            exporter = find_exporter(collection, scene.export_format)
             exporter_id = get_exporter_id(self, collection, exporter)
 
             # Pre-export checks
-            export_path = add_extension(exporter.export_properties.filepath, wm.export_format)
+            export_path = add_extension(exporter.export_properties.filepath, scene.export_format)
             export_path = clean_relative_path(export_path)
             print('EXPORT PATH: ' + str(export_path))
 
             file_exists_before, file_timestamp_before = pre_export_checks(export_path)
 
             # Apply instance offset if enabled
-            if wm.move_to_origin:
+            if scene.move_to_origin:
                 apply_collection_offset(collection)
 
             # Perform the export
@@ -510,7 +510,7 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
                  'message': str(e)})
 
         finally:
-            if wm.move_to_origin:
+            if scene.move_to_origin:
                 # Revert instance offset and show results
                 apply_collection_offset(collection, inverse=True)
 
@@ -544,9 +544,9 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
         error_count = 0
 
         prefs = bpy.context.preferences.addons[__package__].preferences
-        wm = context.window_manager
-        settings_col = wm if wm.overwrite_collection_settings else prefs
-        settings_filepath = wm if wm.overwrite_filepath_settings else prefs
+        scene = context.scene
+        settings_col = scene if scene.overwrite_collection_settings else prefs
+        settings_filepath = scene if scene.overwrite_filepath_settings else prefs
 
         collection_list = bpy.data.collections
 
@@ -567,7 +567,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 set_active_layer_Collection(collection.name)
 
                 # Find and validate exporter
-                exporter = find_exporter(collection, wm.export_format)
+                exporter = find_exporter(collection, scene.export_format)
 
                 if not exporter:
                     continue
@@ -575,13 +575,13 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 exporter_id = get_exporter_id(self, collection, exporter)
 
                 # Pre-export checks
-                export_path = add_extension(exporter.export_properties.filepath, wm.export_format)
+                export_path = add_extension(exporter.export_properties.filepath, scene.export_format)
                 export_path = clean_relative_path(export_path)
 
                 file_exists_before, file_timestamp_before = pre_export_checks(export_path)
 
                 # Apply instance offset if enabled
-                if wm.move_to_origin:
+                if scene.move_to_origin:
                     apply_collection_offset(collection)
 
                 export_collections.append(collection)
@@ -604,7 +604,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                      'message': str(e)})
 
             finally:
-                if wm.move_to_origin:
+                if scene.move_to_origin:
                     apply_collection_offset(collection, inverse=True)
 
         if error_count == 0:
@@ -637,8 +637,8 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
             self.report({'WARNING'}, "No valid exporter found for the active collection.")
             return {'CANCELLED'}
 
-        wm = context.window_manager
-        exporter = find_exporter(collection, wm.export_format)
+        scene = context.scene
+        exporter = find_exporter(collection, scene.export_format)
         export_path = exporter.export_properties.filepath
         export_dir = os.path.dirname(export_path)
         export_dir = clean_relative_path(os.path.dirname(export_dir))

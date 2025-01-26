@@ -75,18 +75,18 @@ def draw_preset_settings(layout, context):
     """
     Draw the preset property dynamically based on the selected export format.
     """
-    wm = context.window_manager
+    scene = context.scene
     prefs = context.preferences.addons[__package__].preferences
-    export_format = wm.export_format  # Get the currently selected export format
+    export_format = scene.export_format  # Get the currently selected export format
 
     # Dynamically determine the property name
     prop_name = f"simple_export_preset_file_{export_format.lower()}"
 
-    if wm.overwrite_preset_settings:
-        set = wm
+    if scene.overwrite_preset_settings:
+        set = scene
         label = 'Preset'
 
-    else:  # wm.overwrite_preset_settings:
+    else:  # scene.overwrite_preset_settings:
         layout.enabled = False
         set = prefs
         label = 'Default Preset'
@@ -99,41 +99,41 @@ def draw_preset_settings(layout, context):
 
 def draw_properties_with_prefix(layout, context, properties):
     """
-    Draws properties with a * prefix if they differ between the WindowManager and Preferences.
+    Draws properties with a * prefix if they differ between the Scene and Preferences.
 
     Args:
         layout (UILayout): The UI layout to draw in.
         context (Context): The Blender context.
         properties (list): List of property names to compare and draw.
     """
-    wm = context.window_manager
+    scene = context.scene
     prefs = context.preferences.addons[__package__].preferences
 
     for prop_name in properties:
-        # Ensure the property exists in both WindowManager and Preferences
-        if hasattr(wm, prop_name) and hasattr(prefs, prop_name):
-            wm_value = getattr(wm, prop_name)
+        # Ensure the property exists in both Scene and Preferences
+        if hasattr(scene, prop_name) and hasattr(prefs, prop_name):
+            scene_value = getattr(scene, prop_name)
             pref_value = getattr(prefs, prop_name)
 
             from .preferenecs import PROPERTY_METADATA
             text = PROPERTY_METADATA[prop_name]["name"]
 
             # Determine label text with prefix
-            label_prefix = "* " if wm_value != pref_value else ""
+            label_prefix = "* " if scene_value != pref_value else ""
             label_text = f"{label_prefix}{text.replace('_', ' ').title()}"
 
             # Draw the property with dynamic label
             row = layout.row()
-            row.prop(wm, prop_name, text=label_text)
+            row.prop(scene, prop_name, text=label_text)
         else:
             # Debugging note: Property does not exist
-            print(f"Property {prop_name} not found in WindowManager or Preferences")
+            print(f"Property {prop_name} not found in Scene or Preferences")
 
 
 def draw_create_export_collection(layout, context):
-    wm = context.window_manager
+    scene = context.scene
 
-    if not wm.overwrite_collection_settings:
+    if not scene.overwrite_collection_settings:
         layout.enabled = False
 
     # Define properties to check
@@ -152,9 +152,9 @@ def draw_create_export_collection(layout, context):
 
 
 def draw_filepath_settings(layout, context):
-    wm = context.window_manager
+    scene = context.scene
 
-    if not wm.overwrite_filepath_settings:
+    if not scene.overwrite_filepath_settings:
         layout.enabled = False
 
     # Define properties to check
@@ -166,12 +166,12 @@ def draw_filepath_settings(layout, context):
         "search_path",
         "replacement_path",
     ]
-    wm = context.window_manager
+
     # Use the helper function to draw properties
-    layout.prop(wm, "use_custom_export_folder")
-    if wm.use_custom_export_folder:
+    layout.prop(scene, "use_custom_export_folder")
+    if scene.use_custom_export_folder:
         draw_properties_with_prefix(layout, context, properties_foler)
-    if not wm.use_custom_export_folder:
+    if not scene.use_custom_export_folder:
         draw_properties_with_prefix(layout, context, properties)
 
 
@@ -206,7 +206,7 @@ class SIMPLE_EXPORT_menu_base:
 
     def draw(self, context):
         layout = self.layout
-        wm = context.window_manager
+        scene = context.scene
 
         # List Operators
         box = layout.box()
@@ -216,7 +216,7 @@ class SIMPLE_EXPORT_menu_base:
         icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
         row.label(text="Pre Export Operations (BETA)", icon=icon)
         row = col.row()
-        row.prop(wm, 'move_to_origin')
+        row.prop(scene, 'move_to_origin')
 
         col = layout.column(align=True)
         row = col.row()
@@ -257,12 +257,11 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         prefs = context.preferences.addons[__package__].preferences
 
         scene = context.scene
-        wm = context.window_manager
 
         layout = self.layout
 
         # Draw format selection
-        layout.prop(wm, "export_format", text="Format")
+        layout.prop(scene, "export_format", text="Format")
 
         # Export List
         row = layout.row()
@@ -298,17 +297,17 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         # Body
         if body:
             row = body.row()
-            row.prop(wm, 'overwrite_filepath_settings')
+            row.prop(scene, 'overwrite_filepath_settings')
             box = body.box()
             draw_filepath_settings(box, context)
 
             row = body.row()
-            row.prop(wm, 'overwrite_preset_settings')
+            row.prop(scene, 'overwrite_preset_settings')
             box = body.box()
             draw_preset_settings(box, context)
 
             row = body.row()
-            row.prop(wm, 'overwrite_collection_settings')
+            row.prop(scene, 'overwrite_collection_settings')
 
             box = body.box()
             draw_create_export_collection(box, context)
@@ -356,7 +355,7 @@ class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Pa
         op.invert = False
         op = row.operator("scene.select_all_collections", text="None", icon="CHECKBOX_DEHLT")
         op.invert = True
-        
+
         row = layout.row()
         row.template_list("SCENE_UL_CollectionList", "popup", bpy.data, "collections", scene, "collection_index")
 
