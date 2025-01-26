@@ -1,6 +1,5 @@
-import os
-
 import bpy
+import os
 
 from .functions import get_addon_name
 from .uilist import color_tag_icons
@@ -299,15 +298,14 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         # Body
         if body:
             row = body.row()
+            row.prop(wm, 'overwrite_filepath_settings')
+            box = body.box()
+            draw_filepath_settings(box, context)
+
+            row = body.row()
             row.prop(wm, 'overwrite_preset_settings')
             box = body.box()
             draw_preset_settings(box, context)
-
-            row = body.row()
-            row.prop(wm, 'overwrite_filepath_settings')
-
-            box = body.box()
-            draw_filepath_settings(box, context)
 
             row = body.row()
             row.prop(wm, 'overwrite_collection_settings')
