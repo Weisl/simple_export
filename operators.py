@@ -1,6 +1,5 @@
-import os
-
 import bpy
+import os
 
 from .collection_utils import update_collection_offset
 from .functions import ensure_export_folder_exists, apply_collection_offset
@@ -222,7 +221,11 @@ class SIMPLEEXPORTER_PT_FilePathResultsPanel(bpy.types.Panel):
             col_name.label(text=result['name'], icon=icon)
 
             # Info Message Column
-            col_message.label(text=result['filepath'])
+            if result['success']:
+                # Info Message Column
+                col_message.label(text=result['filepath'])
+            else:
+                col_message.label(text=result['message'])
 
 
 # Popup to show export results
@@ -325,6 +328,13 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
         settings_col = scene if scene.overwrite_collection_settings else prefs
         settings_filepath = scene if scene.overwrite_filepath_settings else prefs
 
+        if settings_filepath.use_custom_export_folder:
+            # Return if Custom Export Path is invalid
+            if not settings_filepath.custom_export_path:
+                self.report({'ERROR'}, f"Please specify a Custom Export Folder!")
+                return {'CANCELLED'}
+            export_dir = settings_filepath.custom_export_path
+
         if not settings_filepath.use_custom_export_folder:
             blend_filepath = bpy.data.filepath
             # Return if Blend File hasn't been saved
@@ -332,8 +342,6 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
                 self.report({'ERROR'}, f"Save the Blend file before calling this operator.")
                 return {'CANCELLED'}
             export_dir = os.path.dirname(blend_filepath)
-        else:
-            export_dir = settings_filepath.custom_export_path
 
         # Return if collection not found
         if not collection:
@@ -424,13 +432,14 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
 
                 if settings_filepath.use_custom_export_folder:
                     if not settings_filepath.custom_export_path:
-                        raise ValueError("Invalid Export Path.")
+                        raise ValueError("ERROR: Please specify a Custom Export Folder!")
 
                     export_dir = settings_filepath.custom_export_path
                 else:
                     # Return if Blend File hasn't been saved
                     if not bpy.data.filepath:
                         raise ValueError("Save the Blend file before calling this operator.")
+
                     export_dir = os.path.dirname(bpy.data.filepath)
 
                 # Path variables
@@ -444,7 +453,7 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
 
             except Exception as e:
                 # Handle per-collection errors
-                results.append({'name': collection.name, 'success': False, 'filepath': export_path, 'message': str(e)})
+                results.append({'name': collection.name, 'success': False, 'filepath': '', 'message': str(e)})
 
         # Store results in WindowManager
         context.window_manager.assign_filepath_result_info = str(results)
