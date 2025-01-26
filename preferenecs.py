@@ -800,7 +800,6 @@ def unregister():
 
     # Persistant settings
     del bpy.types.Scene.collection_index
-    del bpy.types.Scene.export_format
     del bpy.types.Collection.simple_export_selected
     del bpy.types.Collection.offset_object
 
