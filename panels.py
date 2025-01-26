@@ -285,7 +285,7 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
 
         # Collapsible Filepath Settings Section
-        header, body = layout.panel("overwrite_settings", default_closed=True)
+        header, body = layout.panel("overwrite_settings", default_closed=False)
 
         # Header
         addon_name = get_addon_name()

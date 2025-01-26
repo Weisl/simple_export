@@ -74,7 +74,7 @@ PROPERTY_METADATA = {
     "use_custom_export_folder": {
         "name": "Custom Folder",
         "description": "Use a custom export folder",
-        "default": False,
+        "default": True,
     },
     "custom_export_path": {
         "name": "Export Folder",
@@ -749,6 +749,12 @@ def register():
         default=0
     )
 
+    bpy.types.WindowManager.overwrite_filepath_settings = bpy.props.BoolProperty(
+        name="Overwrite Filepath",
+        description="Overwrite the settings regarding the generation of the export path defined in the Preferences",
+        default=True)
+
+
     bpy.types.WindowManager.overwrite_collection_settings = bpy.props.BoolProperty(
         name="Overwrite Collection",
         description="Overwrite the settings related to the creation of Export Collections defined in the Preferences",
@@ -757,11 +763,6 @@ def register():
     bpy.types.WindowManager.overwrite_preset_settings = bpy.props.BoolProperty(
         name="Overwrite Preset",
         description="Overwrite the settings regarding the presets",
-        default=False)
-
-    bpy.types.WindowManager.overwrite_filepath_settings = bpy.props.BoolProperty(
-        name="Overwrite Filepath",
-        description="Overwrite the settings regarding the generation of the export path defined in the Preferences",
         default=False)
 
     bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty(
