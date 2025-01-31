@@ -431,6 +431,7 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
                 if not exporter:
                     continue
 
+
                 if settings_filepath.use_custom_export_folder:
                     if not settings_filepath.custom_export_path:
                         raise ValueError("ERROR: Please specify a Custom Export Folder!")
@@ -485,6 +486,8 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
         settings_col = scene if scene.overwrite_collection_settings else prefs
         settings_filepath = scene if scene.overwrite_filepath_settings else prefs
 
+        export_path = ''
+
         try:
             # Validate collection
             collection = validate_collection(self.collection_name)
@@ -493,6 +496,9 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
             # Find and validate exporter
             exporter = find_exporter(collection, scene.export_format)
             exporter_id = get_exporter_id(self, collection, exporter)
+
+            if not exporter.export_properties.filepath:
+                raise ValueError(f"Please specify a export path for {collection.name}.")
 
             # Pre-export  path adjustments
             export_path = add_extension(exporter.export_properties.filepath, scene.export_format)
@@ -519,6 +525,8 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
 
         except Exception as e:
             # Handle errors in one place
+            export_path = export_path or ''
+
             export_results.append(
                 {'name': self.collection_name or "Unknown Collection", 'success': False, 'filepath': export_path,
                  'message': str(e)})
@@ -589,6 +597,9 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 exporter_id = get_exporter_id(self, collection, exporter)
 
                 # Pre-export checks
+                if not exporter.export_properties.filepath:
+                    raise ValueError(f"Please specify a export path for {collection.name}.")
+
                 export_path = add_extension(exporter.export_properties.filepath, scene.export_format)
                 export_path = clean_relative_path(export_path)
 
@@ -617,7 +628,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
             except Exception as e:
                 # Handle errors in one place
                 export_results.append(
-                    {'name': self.collection_name or "Unknown Collection", 'success': False, 'filepath': export_path,
+                    {'name': collection.name or "Unknown Collection", 'success': False, 'filepath': export_path,
                      'message': str(e)})
 
             finally:
