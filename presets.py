@@ -35,7 +35,8 @@ def assign_preset_to_exporter(properties, exporter):
     """Apply parsed properties to the exporter."""
     for prop_name, prop_value in properties.items():
         # ignore filepath
-        if prop_name == 'filepath':
+        if prop_name in ['filepath', 'use_selection']:
+            print(f"Exporter property '{prop_name}' ignored.")
             continue
 
         try:
