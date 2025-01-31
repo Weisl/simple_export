@@ -3,15 +3,15 @@ import os
 import bpy
 
 from .operators import generate_export_path, assign_exporter_path
-from .operators import set_active_layer_Collection
+from .operators import set_active_layer_Collection, get_outliner_collections
 from .panels import EXPORT_FORMATS
 from .presets import assign_preset
 
 
 def generate_collection_name(context, obj_name):
     prefs = bpy.context.preferences.addons[__package__].preferences
-    wm = context.window_manager
-    settings_col = wm if wm.overwrite_collection_settings else prefs
+    scene = context.scene
+    settings_col = scene if scene.overwrite_collection_settings else prefs
 
     collection_name = obj_name
     if getattr(settings_col, 'use_blend_file_name_as_prefix'):
@@ -32,7 +32,7 @@ def generate_collection_name(context, obj_name):
 
 
 def setup_collection(context, collection, active_object, settings_col, settings_filepath):
-    wm = context.window_manager
+    scene = context.scene
     prefs = bpy.context.preferences.addons[__package__].preferences
 
     # Set collection properties
@@ -46,7 +46,7 @@ def setup_collection(context, collection, active_object, settings_col, settings_
     # Assign exporter
     set_active_layer_Collection(collection.name)
 
-    export_data = EXPORT_FORMATS.get(wm.export_format)
+    export_data = EXPORT_FORMATS.get(scene.export_format)
 
     def get_all_exporters():
         return list(collection.exporters)
@@ -59,11 +59,11 @@ def setup_collection(context, collection, active_object, settings_col, settings_
 
     if getattr(settings_col, 'auto_set_preset'):
         # Construct the property name dynamically
-        export_format = wm.export_format.lower()
+        export_format = scene.export_format.lower()
         prop_name = f"simple_export_preset_file_{export_format}"
 
         # Get preset path
-        preset_settings = wm if wm.overwrite_preset_settings else prefs
+        preset_settings = scene if scene.overwrite_preset_settings else prefs
         preset_path = getattr(preset_settings, prop_name, None)
 
         assign_preset(exporter, preset_path)
@@ -73,7 +73,7 @@ def setup_collection(context, collection, active_object, settings_col, settings_
         search_path = getattr(settings_filepath, 'search_path')
         replacement_path = getattr(settings_filepath, 'replacement_path')
 
-        export_format = wm.export_format
+        export_format = scene.export_format
         export_path = generate_export_path(collection.name, export_format, blend_dir, search_path, replacement_path)
         assign_exporter_path(exporter, export_path)
 
@@ -91,9 +91,9 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
         parent_collection = context.scene.parent_collection or context.scene.collection
 
         prefs = bpy.context.preferences.addons[__package__].preferences
-        wm = context.window_manager
-        settings_col = wm if wm.overwrite_collection_settings else prefs
-        settings_filepath = wm if wm.overwrite_filepath_settings else prefs
+        scene = context.scene
+        settings_col = scene if scene.overwrite_collection_settings else prefs
+        settings_filepath = scene if scene.overwrite_filepath_settings else prefs
 
         if not active_object:
             self.report({'WARNING'}, "No active object selected.")
@@ -136,21 +136,30 @@ class EXPORT_OT_AddSettingsToCollection(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        active_collection = context.collection
-        active_object = context.active_object
+        success = 0
+        collection_list = get_outliner_collections(context)
 
-        prefs = bpy.context.preferences.addons[__package__].preferences
-        wm = context.window_manager
-        settings_col = wm if wm.overwrite_collection_settings else prefs
-        settings_filepath = wm if wm.overwrite_filepath_settings else prefs
+        for i, collection in enumerate(collection_list):
 
-        if not active_collection:
+            active_object = context.active_object
+
+            prefs = bpy.context.preferences.addons[__package__].preferences
+            scene = context.scene
+            settings_col = scene if scene.overwrite_collection_settings else prefs
+            settings_filepath = scene if scene.overwrite_filepath_settings else prefs
+
+            if not collection:
+                continue
+
+            setup_collection(context, collection, active_object, settings_col, settings_filepath)
+            success += 1
+
+        # Cancel for No success
+        if success == 0:
             self.report({'WARNING'}, "No active collection selected.")
             return {'CANCELLED'}
 
-        setup_collection(context, active_collection, active_object, settings_col, settings_filepath)
-
-        self.report({'INFO'}, f"Settings added to collection '{active_collection.name}' successfully.")
+        self.report({'INFO'}, f"Settings added to collection '{collection.name}' successfully.")
         return {'FINISHED'}
 
 

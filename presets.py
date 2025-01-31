@@ -35,7 +35,8 @@ def assign_preset_to_exporter(properties, exporter):
     """Apply parsed properties to the exporter."""
     for prop_name, prop_value in properties.items():
         # ignore filepath
-        if prop_name == 'filepath':
+        if prop_name in ['filepath', 'use_selection']:
+            print(f"Exporter property '{prop_name}' ignored.")
             continue
 
         try:
@@ -80,7 +81,7 @@ class SIMPLEEXPORTER_PT_PresetResultsPanel(bpy.types.Panel):
         layout = self.layout
         layout.label(text="Assign Preset:")
 
-        # Get results from WindowManager
+        # Get results from Scene
         results_str = context.window_manager.assign_preset_info_data
         results = eval(results_str) if results_str else []  # Parse results string into a list
 
@@ -126,16 +127,16 @@ class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
     def execute(self, context):
 
         prefs = bpy.context.preferences.addons[__package__].preferences
-        wm = context.window_manager
+        scene = context.scene
 
         collection = bpy.data.collections.get(self.collection_name)
 
         # Construct the property name dynamically
-        export_format = wm.export_format.lower()
+        export_format = scene.export_format.lower()
         prop_name = f"simple_export_preset_file_{export_format}"
 
         # Get preset path
-        preset_settings = wm if wm.overwrite_preset_settings else prefs
+        preset_settings = scene if scene.overwrite_preset_settings else prefs
         preset_path = getattr(preset_settings, prop_name, None)
 
         if not collection:
@@ -147,7 +148,7 @@ class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
             return {'CANCELLED'}
 
         preset_name = os.path.basename(preset_path)
-        exporter = find_exporter(collection, wm.export_format)
+        exporter = find_exporter(collection, scene.export_format)
 
         suceess, msg = assign_preset(exporter, preset_path)
 
@@ -169,14 +170,14 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
     def execute(self, context):
         results = []  # To store the renaming status of each collection
         prefs = bpy.context.preferences.addons[__package__].preferences
-        wm = context.window_manager
+        scene = context.scene
 
         # Construct the property name dynamically
-        export_format = wm.export_format.lower()
+        export_format = scene.export_format.lower()
         prop_name = f"simple_export_preset_file_{export_format}"
 
         # Get preset path
-        preset_settings = wm if wm.overwrite_preset_settings else prefs
+        preset_settings = scene if scene.overwrite_preset_settings else prefs
         preset_path = getattr(preset_settings, prop_name, None)
 
         try:
@@ -194,7 +195,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
                     continue
 
                 # Find and validate exporter
-                exporter = find_exporter(collection, wm.export_format)
+                exporter = find_exporter(collection, scene.export_format)
 
                 if not exporter:
                     continue
@@ -212,7 +213,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}
 
-        # Store results in WindowManager
+        # Store results in Scene
         context.window_manager.assign_preset_info_data = str(results)
 
         # Show results in the panel
@@ -253,7 +254,7 @@ def register():
 
 
 def unregister():
-    del bpy.types.WindowManager.assign_preset_info_data
+    del bpy.types.Scene.assign_preset_info_data
 
     from bpy.utils import unregister_class
     for cls in reversed(classes):
