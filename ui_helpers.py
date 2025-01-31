@@ -35,7 +35,6 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
 
         op = layout.operator("scene.set_export_path_selection", text="Assign Filepaths", icon='FOLDER_REDIRECT')
         op.outliner = True
-        op.collection_name = collection.name
 
         # Open Popup window
         layout.operator("wm.call_panel", text="Open Export Popup",
