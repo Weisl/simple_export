@@ -3,7 +3,7 @@ import os
 import bpy
 
 from .operators import generate_export_path, assign_exporter_path
-from .operators import set_active_layer_Collection
+from .operators import set_active_layer_Collection, get_outliner_collections
 from .panels import EXPORT_FORMATS
 from .presets import assign_preset
 
@@ -136,21 +136,30 @@ class EXPORT_OT_AddSettingsToCollection(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        active_collection = context.collection
-        active_object = context.active_object
+        success = 0
+        collection_list = get_outliner_collections(context)
 
-        prefs = bpy.context.preferences.addons[__package__].preferences
-        scene = context.scene
-        settings_col = scene if scene.overwrite_collection_settings else prefs
-        settings_filepath = scene if scene.overwrite_filepath_settings else prefs
+        for i, collection in enumerate(collection_list):
 
-        if not active_collection:
+            active_object = context.active_object
+
+            prefs = bpy.context.preferences.addons[__package__].preferences
+            scene = context.scene
+            settings_col = scene if scene.overwrite_collection_settings else prefs
+            settings_filepath = scene if scene.overwrite_filepath_settings else prefs
+
+            if not collection:
+                continue
+
+            setup_collection(context, collection, active_object, settings_col, settings_filepath)
+            success += 1
+
+        # Cancel for No success
+        if success == 0:
             self.report({'WARNING'}, "No active collection selected.")
             return {'CANCELLED'}
 
-        setup_collection(context, active_collection, active_object, settings_col, settings_filepath)
-
-        self.report({'INFO'}, f"Settings added to collection '{active_collection.name}' successfully.")
+        self.report({'INFO'}, f"Settings added to collection '{collection.name}' successfully.")
         return {'FINISHED'}
 
 
