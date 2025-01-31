@@ -117,9 +117,10 @@ def get_exporter_id(self, collection, exporter):
 def add_extension(path, export_format):
     from .panels import EXPORT_FORMATS
     file_extension = EXPORT_FORMATS[export_format]["file_extension"]
+    file_extension = f".{file_extension}"
 
     # Check if the filename already has the extension
-    if not path.lower().endswith(path.lower()):
+    if not path.lower().endswith(file_extension.lower()):
         path += file_extension
 
     return path
@@ -493,9 +494,13 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
             exporter = find_exporter(collection, scene.export_format)
             exporter_id = get_exporter_id(self, collection, exporter)
 
-            # Pre-export checks
+            # Pre-export  path adjustments
             export_path = add_extension(exporter.export_properties.filepath, scene.export_format)
             export_path = clean_relative_path(export_path)
+
+            # Apply updates to exporter  (unfortunately necessary for the add extension to work)
+            exporter.export_properties.filepath = export_path
+
             print('EXPORT PATH: ' + str(export_path))
 
             file_exists_before, file_timestamp_before = pre_export_checks(export_path)
@@ -586,6 +591,9 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 # Pre-export checks
                 export_path = add_extension(exporter.export_properties.filepath, scene.export_format)
                 export_path = clean_relative_path(export_path)
+
+                # Apply updates to exporter  (unfortunately necessary for the add extension to work)
+                exporter.export_properties.filepath = export_path
 
                 file_exists_before, file_timestamp_before = pre_export_checks(export_path)
 
