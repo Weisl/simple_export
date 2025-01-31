@@ -507,6 +507,10 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
             # Apply updates to exporter  (unfortunately necessary for the add extension to work)
             exporter.export_properties.filepath = export_path
 
+            # Overwrite settings:
+            # Having use_selection causes unpredictable behavior and is not exposed to the UI.
+            exporter.export_properties.use_selection = False
+
             print('EXPORT PATH: ' + str(export_path))
 
             file_exists_before, file_timestamp_before = pre_export_checks(export_path)
@@ -605,6 +609,10 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
                 # Apply updates to exporter  (unfortunately necessary for the add extension to work)
                 exporter.export_properties.filepath = export_path
+
+                # Overwrite settings:
+                # Having use_selection causes unpredictable behavior and is not exposed to the UI.
+                exporter.export_properties.use_selection = False
 
                 file_exists_before, file_timestamp_before = pre_export_checks(export_path)
 
