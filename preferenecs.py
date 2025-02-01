@@ -5,6 +5,7 @@ import bpy
 from bpy.props import BoolProperty, PointerProperty
 
 from .keymap import remove_key
+from .n_panel import VIEW3D_PT_SimpleExport
 from .properties_panels import EXPORT_FORMATS
 from .properties_panels import get_export_format_items
 
@@ -88,52 +89,82 @@ PROPERTY_METADATA = {
 def get_py_files_for_fbx(self, context):
     return get_py_files(self, context, EXPORT_FORMATS["FBX"]["preset_folder"])
 
+
 def get_py_files_for_obj(self, context):
     return get_py_files(self, context, EXPORT_FORMATS["OBJ"]["preset_folder"])
+
 
 def get_py_files_for_gltf(self, context):
     return get_py_files(self, context, EXPORT_FORMATS["GLTF"]["preset_folder"])
 
+
 def get_py_files_for_usd(self, context):
     return get_py_files(self, context, EXPORT_FORMATS["USD"]["preset_folder"])
+
 
 def get_py_files_for_abc(self, context):
     return get_py_files(self, context, EXPORT_FORMATS["ABC"]["preset_folder"])
 
+
 def get_py_files_for_ply(self, context):
     return get_py_files(self, context, EXPORT_FORMATS["PLY"]["preset_folder"])
 
+
 def get_py_files_for_stl(self, context):
     return get_py_files(self, context, EXPORT_FORMATS["STL"]["preset_folder"])
+
 
 def update_preset_path_for_fbx(self, context):
     context.window_manager.simple_export_preset_file_fbx = self.simple_export_preset_file_fbx
     # print(f"[DEBUG] FBX preset path updated to: {self.simple_export_preset_file_fbx}")
 
+
 def update_preset_path_for_obj(self, context):
     context.window_manager.simple_export_preset_file_obj = self.simple_export_preset_file_obj
     # print(f"[DEBUG] OBJ preset path updated to: {self.simple_export_preset_file_obj}")
+
 
 def update_preset_path_for_gltf(self, context):
     context.window_manager.simple_export_preset_file_gltf = self.simple_export_preset_file_gltf
     # print(f"[DEBUG] glTF preset path updated to: {self.simple_export_preset_file_gltf}")
 
+
 def update_preset_path_for_usd(self, context):
     context.window_manager.simple_export_preset_file_usd = self.simple_export_preset_file_usd
     # print(f"[DEBUG] USD preset path updated to: {self.simple_export_preset_file_usd}")
+
 
 def update_preset_path_for_abc(self, context):
     context.window_manager.simple_export_preset_file_abc = self.simple_export_preset_file_abc
     # print(f"[DEBUG] Alembic preset path updated to: {self.simple_export_preset_file_abc}")
 
+
 def update_preset_path_for_ply(self, context):
     context.window_manager.simple_export_preset_file_ply = self.simple_export_preset_file_ply
     # print(f"[DEBUG] PLY preset path updated to: {self.simple_export_preset_file_ply}")
+
 
 def update_preset_path_for_stl(self, context):
     context.window_manager.simple_export_preset_file_stl = self.simple_export_preset_file_stl
     # print(f"[DEBUG] STL preset path updated to: {self.simple_export_preset_file_stl}")
 
+
+def update_panel_category(self, context):
+    """Update panel tab for simple export"""
+    panels = [
+        VIEW3D_PT_SimpleExport,
+    ]
+
+    for panel in panels:
+        try:
+            bpy.utils.unregister_class(panel)
+        except:
+            pass
+
+        prefs = context.preferences.addons[__package__].preferences
+        panel.bl_category = prefs.panel_category
+        bpy.utils.register_class(panel)
+    return
 
 
 def label_multiline(context, text, parent):
@@ -357,6 +388,11 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     scene_properties: PointerProperty(type=UIListProperties)
     popup_properties: PointerProperty(type=UIListProperties)
 
+    panel_category: bpy.props.StringProperty(name="Category Tab",
+                                             description="The category name used to organize the addon in the properties panel for all the addons",
+                                             default='Simple Exporter',
+                                             update=update_panel_category)  # update = update_panel_position,
+
     ########################################
     # Presets
     simple_export_preset_file_fbx: bpy.props.EnumProperty(
@@ -486,7 +522,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box = layout.box()
             box.label(text="Export Collection")
             box.prop(self, "collection_color")
-            
+
             box.prop(self, "use_blend_file_name_as_prefix")
             box.prop(self, "custom_prefix")
             box.prop(self, "custom_suffix")
@@ -506,6 +542,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
         elif self.prefs_tabs == 'UI':
 
+            layout.prop(self, 'panel_category')
             layout.prop(self, "report_errors_only")
 
             box = layout.box()
@@ -521,6 +558,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.prop(self.popup_properties, "uilist_show_filepath")
             box.prop(self.popup_properties, "uilist_set_filepath")
             box.prop(self.popup_properties, "uilist_set_preset")
+
 
         elif self.prefs_tabs == 'KEYMAP':
             self.keymap_ui(layout, 'Export Popup', 'simple_export_panel', 'wm.call_panel',
@@ -743,6 +781,9 @@ def register():
     from .keymap import add_keymap
     add_keymap()
 
+    # Initialize correct property panel for the Simple Export Panel
+    update_panel_category(None, bpy.context)
+
     bpy.types.Scene.collection_index = bpy.props.IntProperty(
         name="Collection Index",
         description="Index of the active collection in the list",
@@ -753,7 +794,6 @@ def register():
         name="Overwrite Filepath",
         description="Overwrite the settings regarding the generation of the export path defined in the Preferences",
         default=True)
-
 
     bpy.types.Scene.overwrite_collection_settings = bpy.props.BoolProperty(
         name="Overwrite Collection",
