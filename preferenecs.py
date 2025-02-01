@@ -163,7 +163,12 @@ def update_panel_category(self, context):
 
         prefs = context.preferences.addons[__package__].preferences
         panel.bl_category = prefs.panel_category
-        bpy.utils.register_class(panel)
+
+        if prefs.enable_n_panel:
+            try:
+                bpy.utils.register_class(panel)
+            except ValueError:
+                pass  # Avoid duplicate registrations
     return
 
 
@@ -393,6 +398,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                                              default='Simple Exporter',
                                              update=update_panel_category)  # update = update_panel_position,
 
+    enable_n_panel: bpy.props.BoolProperty(
+        name="Enable Simple Export N-Panel",
+        description="Toggle the N-Panel on and off.",
+        default=True,
+        update=update_panel_category)
+
     ########################################
     # Presets
     simple_export_preset_file_fbx: bpy.props.EnumProperty(
@@ -542,6 +553,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
         elif self.prefs_tabs == 'UI':
 
+            layout.prop(self, 'enable_n_panel')
             layout.prop(self, 'panel_category')
             layout.prop(self, "report_errors_only")
 

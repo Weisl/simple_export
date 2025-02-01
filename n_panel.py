@@ -11,6 +11,7 @@ class VIEW3D_PT_SimpleExport(bpy.types.Panel):
     bl_region_type = 'UI'
     bl_category = "Simple Export"
     bl_label = "Simple Export"
+
     def draw(self, context):
         prefs = context.preferences.addons[__package__].preferences
 
