@@ -102,7 +102,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         export_format = scene.export_format
 
-        from .panels import EXPORT_FORMATS
+        from .properties_panels import EXPORT_FORMATS
 
         for collection in bpy.data.collections:
             # Filter collections based on whether they have an exporter with the matching format
