@@ -8,7 +8,8 @@ if "bpy" in locals():
     importlib.reload(collection_utils)
     importlib.reload(collection_operators)
     importlib.reload(operators)
-    importlib.reload(panels)
+    importlib.reload(n - panel)
+    importlib.reload(properties_panel)
     importlib.reload(keymap)
     importlib.reload(preferences)
 
@@ -20,7 +21,8 @@ else:
     from . import collection_utils
     from . import operators
     from . import uilist
-    from . import panels
+    from . import n_panel
+    from . import properties_panels
     from . import keymap
 
 files = [
@@ -30,7 +32,8 @@ files = [
     presets,
     operators,
     uilist,
-    panels,
+    n_panel,
+    properties_panels,
 
     # keymap and preferences should be last
     keymap,

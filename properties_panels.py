@@ -216,7 +216,7 @@ class SIMPLE_EXPORT_menu_base:
         icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
         row.label(text="Pre Export Operations (BETA)", icon=icon)
         row = col.row()
-        row.prop(scene, 'move_to_origin')
+        row.prop(scene, 'move_by_collection_offset')
 
         col = layout.column(align=True)
         row = col.row()

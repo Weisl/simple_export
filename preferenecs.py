@@ -5,8 +5,8 @@ import bpy
 from bpy.props import BoolProperty, PointerProperty
 
 from .keymap import remove_key
-from .panels import EXPORT_FORMATS
-from .panels import get_export_format_items
+from .properties_panels import EXPORT_FORMATS
+from .properties_panels import get_export_format_items
 
 PROPERTY_METADATA = {
     "custom_prefix": {
@@ -65,8 +65,8 @@ PROPERTY_METADATA = {
         "description": "Set Location Offset for collections.",
         "default": True,
     },
-    "move_to_origin": {
-        "name": "Move To Origin",
+    "move_by_collection_offset": {
+        "name": "Move by Collection Offset",
         "description": "Objects are moved to the origin based on the Collection Offset before exporting.",
         "default": False,
     },
@@ -243,10 +243,10 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default="FBX",  # Default value
     )
 
-    move_to_origin: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["move_to_origin"]["name"],
-        description=PROPERTY_METADATA["move_to_origin"]["description"],
-        default=PROPERTY_METADATA["move_to_origin"]["default"],
+    move_by_collection_offset: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["move_by_collection_offset"]["name"],
+        description=PROPERTY_METADATA["move_by_collection_offset"]["description"],
+        default=PROPERTY_METADATA["move_by_collection_offset"]["default"],
     )
 
     use_blend_file_name_as_prefix: bpy.props.BoolProperty(
@@ -498,7 +498,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
             box = layout.box()
             box.label(text="Pre Export Operations")
-            box.prop(self, "move_to_origin")
+            box.prop(self, "move_by_collection_offset")
 
             layout.separator()
             icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
@@ -679,10 +679,10 @@ def initialize_properties_collection_generation():
         description=PROPERTY_METADATA["set_location_offset_on_creation"]["description"],
         default=prefs.set_location_offset_on_creation
     )
-    bpy.types.Scene.move_to_origin = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["move_to_origin"]["name"],
-        description=PROPERTY_METADATA["move_to_origin"]["description"],
-        default=prefs.move_to_origin,
+    bpy.types.Scene.move_by_collection_offset = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["move_by_collection_offset"]["name"],
+        description=PROPERTY_METADATA["move_by_collection_offset"]["description"],
+        default=prefs.move_by_collection_offset,
     )
 
     bpy.types.Scene.auto_set_filepath = bpy.props.BoolProperty(

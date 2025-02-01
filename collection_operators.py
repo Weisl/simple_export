@@ -4,7 +4,7 @@ import bpy
 
 from .operators import generate_export_path, assign_exporter_path
 from .operators import set_active_layer_Collection, get_outliner_collections
-from .panels import EXPORT_FORMATS
+from .properties_panels import EXPORT_FORMATS
 from .presets import assign_preset
 
 

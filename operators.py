@@ -36,7 +36,7 @@ def generate_export_path(collection_name, export_format, export_dir, search_path
     """
 
     export_name = collection_name
-    from .panels import EXPORT_FORMATS
+    from .properties_panels import EXPORT_FORMATS
     export_extension = EXPORT_FORMATS[export_format]["file_extension"]
     export_name += f".{export_extension}"  # or use prefs.export_format to determine extension
     export_path = os.path.join(export_dir, export_name)
@@ -98,7 +98,7 @@ def validate_collection(collection_name):
 
 
 def find_exporter(collection, export_format):
-    from .panels import EXPORT_FORMATS
+    from .properties_panels import EXPORT_FORMATS
     """Find the appropriate exporter for the given collection and format."""
     for exporter in collection.exporters:
         if str(type(exporter.export_properties)) == EXPORT_FORMATS[export_format]["op_type"]:
@@ -115,7 +115,7 @@ def get_exporter_id(self, collection, exporter):
 
 
 def add_extension(path, export_format):
-    from .panels import EXPORT_FORMATS
+    from .properties_panels import EXPORT_FORMATS
     file_extension = EXPORT_FORMATS[export_format]["file_extension"]
     file_extension = f".{file_extension}"
 
@@ -516,7 +516,7 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
             file_exists_before, file_timestamp_before = pre_export_checks(export_path)
 
             # Apply instance offset if enabled
-            if scene.move_to_origin:
+            if scene.move_by_collection_offset:
                 apply_collection_offset(collection)
 
             # Perform the export
@@ -536,7 +536,7 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
                  'message': str(e)})
 
         finally:
-            if scene.move_to_origin:
+            if scene.move_by_collection_offset:
                 # Revert instance offset and show results
                 apply_collection_offset(collection, inverse=True)
 
@@ -617,7 +617,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 file_exists_before, file_timestamp_before = pre_export_checks(export_path)
 
                 # Apply instance offset if enabled
-                if scene.move_to_origin:
+                if scene.move_by_collection_offset:
                     apply_collection_offset(collection)
 
                 export_collections.append(collection)
@@ -640,7 +640,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                      'message': str(e)})
 
             finally:
-                if scene.move_to_origin:
+                if scene.move_by_collection_offset:
                     apply_collection_offset(collection, inverse=True)
 
         if error_count == 0:
