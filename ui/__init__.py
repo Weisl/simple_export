@@ -1,7 +1,7 @@
 from . import n_panel, properties_panels, result_popups, ui_helpers, uilist
 
 files = [
-    # n_panel,
+    n_panel,
     properties_panels,
     result_popups,
     ui_helpers,
