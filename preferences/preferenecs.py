@@ -809,17 +809,17 @@ def register():
     )
 
     bpy.types.Scene.overwrite_filepath_settings = bpy.props.BoolProperty(
-        name="Overwrite Filepath",
+        name="Scene: Filepath",
         description="Overwrite the settings regarding the generation of the export path defined in the Preferences",
         default=True)
 
     bpy.types.Scene.overwrite_collection_settings = bpy.props.BoolProperty(
-        name="Overwrite Collection",
+        name="Scene: Export Collection",
         description="Overwrite the settings related to the creation of Export Collections defined in the Preferences",
         default=False)
 
     bpy.types.Scene.overwrite_preset_settings = bpy.props.BoolProperty(
-        name="Overwrite Preset",
+        name="Scene: Preset",
         description="Overwrite the settings regarding the presets",
         default=False)
 

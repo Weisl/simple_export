@@ -14,12 +14,27 @@ class VIEW3D_PT_SimpleExport(bpy.types.Panel):
     bl_category = "Simple Export"
     bl_label = "Simple Export"
 
+    def draw_header(self, context):
+        layout = self.layout
+        row = layout.row(align=True)
+
+        # Open documentation
+        row.operator("wm.url_open", text="", icon="HELP").url = "https://weisl.github.io/exporter_overview/"
+
+        # Open Preferences
+        addon_name = ADDON_NAME
+        op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
+        op.addon_name = addon_name
+        op.prefs_tabs = 'SETTINGS'
+
+
     def draw(self, context):
         prefs = context.preferences.addons[base_package].preferences
 
         scene = context.scene
 
         layout = self.layout
+        layout.label(text="Batch Export Collections")
 
         # Draw format selection
         layout.prop(scene, "export_format", text="Format")
@@ -47,7 +62,7 @@ class VIEW3D_PT_SimpleExport(bpy.types.Panel):
         addon_name = ADDON_NAME
 
         row = header.row(align=True)
-        row.label(text='Overwrite Preferences')
+        row.label(text='Scene Settings')
         op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
         op.addon_name = addon_name
         op.prefs_tabs = 'SETTINGS'
