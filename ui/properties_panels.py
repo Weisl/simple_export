@@ -125,7 +125,7 @@ def draw_custom_collection_ui(self, context):
 
 
 class SIMPLE_EXPORT_menu_base:
-    bl_label = "Simple Export"
+    bl_label = ""
 
     def draw_header(self, context):
         layout = self.layout
@@ -139,6 +139,11 @@ class SIMPLE_EXPORT_menu_base:
         op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
         op.addon_name = addon_name
         op.prefs_tabs = 'SETTINGS'
+
+       # Open Export Popup
+        op = row.operator("wm.call_panel", text="", icon="WINDOW")
+        op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
+
 
     def draw(self, context):
         layout = self.layout
@@ -164,7 +169,6 @@ class SIMPLE_EXPORT_menu_base:
         op = row.operator("simple_export.set_export_paths", text="Assign Filepaths", icon='FOLDER_REDIRECT')
         op.outliner = False
         op.individual_collection = False
-
 
         col.separator()
         row = col.row()

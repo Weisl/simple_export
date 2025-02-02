@@ -12,7 +12,7 @@ class VIEW3D_PT_SimpleExport(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Simple Export"
-    bl_label = "Simple Export"
+    bl_label = ""
 
     def draw_header(self, context):
         layout = self.layout
@@ -26,6 +26,10 @@ class VIEW3D_PT_SimpleExport(bpy.types.Panel):
         op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
         op.addon_name = addon_name
         op.prefs_tabs = 'SETTINGS'
+        row.label(text="Simple Export")
+        # Open Export Popup
+        op = row.operator("wm.call_panel", text="", icon="WINDOW")
+        op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
 
 
     def draw(self, context):
@@ -51,9 +55,6 @@ class VIEW3D_PT_SimpleExport(bpy.types.Panel):
 
         layout.template_list("SCENE_UL_CollectionList", "npanel", bpy.data, "collections", scene, "collection_index")
 
-        # Button to open the export Popup
-        op = layout.operator("wm.call_panel", text="Open Export Popup")
-        op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
 
         # Collapsible Filepath Settings Section
         header, body = layout.panel("overwrite_settings", default_closed=False)
