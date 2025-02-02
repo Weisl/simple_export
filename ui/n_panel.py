@@ -1,7 +1,8 @@
 import bpy
 
-from .properties_panels import color_tag_icons, get_addon_name, draw_filepath_settings, draw_preset_settings, \
+from extensions.simple_export.ui.properties_panels import COLOR_TAG_ICONS, draw_filepath_settings, draw_preset_settings, \
     draw_create_export_collection
+from ..core.info import ADDON_NAME
 
 
 class VIEW3D_PT_SimpleExport(bpy.types.Panel):
@@ -42,7 +43,7 @@ class VIEW3D_PT_SimpleExport(bpy.types.Panel):
         header, body = layout.panel("overwrite_settings", default_closed=False)
 
         # Header
-        addon_name = get_addon_name()
+        addon_name = ADDON_NAME
 
         row = header.row(align=True)
         row.label(text='Overwrite Preferences')
@@ -73,14 +74,14 @@ class VIEW3D_PT_SimpleExport(bpy.types.Panel):
         color_tag = None
         if context.scene.parent_collection:
             color_tag = context.scene.parent_collection.color_tag
-        icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
+        icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
         row.prop(context.scene, "parent_collection", text="Parent Collection", icon=icon)
 
         # Draw Create Button
         row = layout.row()
         prefs = context.preferences.addons[__package__].preferences
         color_tag = prefs.collection_color
-        icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
+        icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
         row.operator("simple_export.create_export_collection", icon=icon)
 
         # row = layout.row()

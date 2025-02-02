@@ -1,20 +1,9 @@
 import bpy
 import os
 
-from .operators import find_exporter, clean_relative_path
-
-# Map color_tag to icons
-color_tag_icons = {
-    'NONE': 'OUTLINER_COLLECTION',
-    'COLOR_01': 'COLLECTION_COLOR_01',
-    'COLOR_02': 'COLLECTION_COLOR_02',
-    'COLOR_03': 'COLLECTION_COLOR_03',
-    'COLOR_04': 'COLLECTION_COLOR_04',
-    'COLOR_05': 'COLLECTION_COLOR_05',
-    'COLOR_06': 'COLLECTION_COLOR_06',
-    'COLOR_07': 'COLLECTION_COLOR_07',
-    'COLOR_08': 'COLLECTION_COLOR_08',
-}
+from ..core.export_formats import ExportFormats
+from ..functions.exporter_funcs import find_exporter
+from ..functions.path_utils import clean_relative_path
 
 
 class SCENE_UL_CollectionList(bpy.types.UIList):
@@ -31,7 +20,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         # Determine settings based on the list_id
         if self.list_id == "scene":
             settings = prefs.scene_properties
-        elif self.list_id == "popup":
+        else:  # self.list_id == "popup":
             settings = prefs.popup_properties
 
         collection = item
@@ -46,7 +35,6 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         # Ensure there's at least one exporter in the collection
         if not collection.exporters:
             return
-
 
         # Get exporter details
         scene = context.scene
@@ -70,7 +58,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         # Determine the icon based on the collection's color_tag
         color_tag = collection.color_tag
-        icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
+        icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
 
         # Display the collection name with the color icon
         row.label(text=collection.name, icon=icon)
@@ -101,13 +89,12 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         scene = context.scene
 
         export_format = scene.export_format
-
-        from .properties_panels import EXPORT_FORMATS
+        export_format_obj = ExportFormats.get(export_format)
 
         for collection in bpy.data.collections:
             # Filter collections based on whether they have an exporter with the matching format
             has_matching_exporter = any(
-                str(type(exporter.export_properties)) == EXPORT_FORMATS[export_format]["op_type"] for exporter in
+                str(type(exporter.export_properties)) == export_format_obj.op_type for exporter in
                 collection.exporters
             )
 

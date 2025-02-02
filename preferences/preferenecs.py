@@ -1,13 +1,11 @@
+import bpy
 import os
 import textwrap
-
-import bpy
 from bpy.props import BoolProperty, PointerProperty
 
 from .keymap import remove_key
-from .n_panel import VIEW3D_PT_SimpleExport
-from .properties_panels import EXPORT_FORMATS
-from .properties_panels import get_export_format_items
+from ..core.export_formats import ExportFormats
+from ..core.export_formats import get_export_format_items
 
 PROPERTY_METADATA = {
     "custom_prefix": {
@@ -87,31 +85,38 @@ PROPERTY_METADATA = {
 
 # Wrapper functions for each format using the existing `get_py_files` function
 def get_py_files_for_fbx(self, context):
-    return get_py_files(self, context, EXPORT_FORMATS["FBX"]["preset_folder"])
+    export_format = ExportFormats.get("FBX")
+    return get_py_files(self, context, export_format.preset_folder if export_format else None)
 
 
 def get_py_files_for_obj(self, context):
-    return get_py_files(self, context, EXPORT_FORMATS["OBJ"]["preset_folder"])
+    export_format = ExportFormats.get("OBJ")
+    return get_py_files(self, context, export_format.preset_folder if export_format else None)
 
 
 def get_py_files_for_gltf(self, context):
-    return get_py_files(self, context, EXPORT_FORMATS["GLTF"]["preset_folder"])
+    export_format = ExportFormats.get("GLTF")
+    return get_py_files(self, context, export_format.preset_folder if export_format else None)
 
 
 def get_py_files_for_usd(self, context):
-    return get_py_files(self, context, EXPORT_FORMATS["USD"]["preset_folder"])
+    export_format = ExportFormats.get("USD")
+    return get_py_files(self, context, export_format.preset_folder if export_format else None)
 
 
 def get_py_files_for_abc(self, context):
-    return get_py_files(self, context, EXPORT_FORMATS["ABC"]["preset_folder"])
+    export_format = ExportFormats.get("ABC")
+    return get_py_files(self, context, export_format.preset_folder if export_format else None)
 
 
 def get_py_files_for_ply(self, context):
-    return get_py_files(self, context, EXPORT_FORMATS["PLY"]["preset_folder"])
+    export_format = ExportFormats.get("PLY")
+    return get_py_files(self, context, export_format.preset_folder if export_format else None)
 
 
 def get_py_files_for_stl(self, context):
-    return get_py_files(self, context, EXPORT_FORMATS["STL"]["preset_folder"])
+    export_format = ExportFormats.get("STL")
+    return get_py_files(self, context, export_format.preset_folder if export_format else None)
 
 
 def update_preset_path_for_fbx(self, context):
@@ -503,8 +508,11 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             # Iterate through dynamically created properties
             box = layout.box()
             box.label(text="Export Presets")
-            for export_format in EXPORT_FORMATS.keys():
+
+            # Use ExportFormats to get all available formats
+            for export_format in ExportFormats.FORMATS.keys():
                 prop_name = f"simple_export_preset_file_{export_format.lower()}"
+
                 if hasattr(self, prop_name):
                     row = box.row(align=True)
                     row.label(text=f"{export_format} Preset", icon='FILE_SCRIPT')
@@ -586,7 +594,12 @@ classes = (
 
 
 def update_preset_path(self, context):
-    self.preset_path = EXPORT_FORMATS[self.export_format]["preset_folder"]
+    export_format = ExportFormats.get(self.export_format)
+
+    if export_format:
+        self.preset_path = export_format.preset_folder
+    else:
+        self.preset_path = ""  # Fallback in case the format is invalid
 
 
 def get_default_export_format():
@@ -649,13 +662,13 @@ def create_export_format_preset_properties():
     """
     Dynamically create individual preset properties for each export format.
     """
-    for export_format, format_details in EXPORT_FORMATS.items():
-        prop_name = f"simple_export_preset_file_{export_format.lower()}"
-        preset_folder = format_details.get("preset_folder", "")
+    for export_format_key, export_format in ExportFormats.FORMATS.items():
+        prop_name = f"simple_export_preset_file_{export_format_key.lower()}"
+        preset_folder = export_format.preset_folder
 
         # Ensure the folder exists and provide debug information
         if not os.path.isdir(preset_folder):
-            # print(f"[DEBUG] Invalid folder for {export_format}: {preset_folder}")
+            # print(f"[DEBUG] Invalid folder for {export_format_key}: {preset_folder}")
             continue
 
         # print(f"[DEBUG] Creating property: {prop_name} for folder: {preset_folder}")
@@ -668,8 +681,8 @@ def create_export_format_preset_properties():
 
             # Create the property dynamically
             return bpy.props.EnumProperty(
-                name=f"{export_format} Preset File",
-                description=f"Select a preset file for {export_format}",
+                name=f"{export_format_key} Preset File",
+                description=f"Select a preset file for {export_format_key}",
                 items=lambda self, context: get_py_files_for_this_format(self, context),
             )
 
@@ -700,13 +713,6 @@ def initialize_properties_collection_generation():
         name="Overwrite Preset Folder",
         description="Manually override the automatically set preset folder",
         default=False,
-    )
-
-    bpy.types.Scene.preset_path = bpy.props.StringProperty(
-        name="Preset Folder Path",
-        description="Path to the folder containing .py files",
-        default=EXPORT_FORMATS["FBX"]["preset_folder"],  # Dynamically fetch from EXPORT_FORMATS
-        subtype="DIR_PATH",
     )
 
     bpy.types.Scene.custom_prefix = bpy.props.StringProperty(
@@ -840,7 +846,7 @@ def unregister():
     remove_keymap()
 
     # Remove dynamically created properties
-    for export_format in EXPORT_FORMATS.keys():
+    for export_format in ExportFormats.FORMATS.keys():
         prop_name = f"simple_export_preset_file_{export_format.lower()}"
         if hasattr(bpy.types.Scene, prop_name):
             delattr(bpy.types.Scene, prop_name)

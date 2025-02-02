@@ -2,7 +2,7 @@ name: Build Release
 
 on:
   push:
-    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+    tags: [ "v[0-9]+.[0-9]+.[0-9]+" ]
 
 jobs:
   build:
@@ -11,14 +11,14 @@ jobs:
       - uses: actions/checkout@v3
         with:
           path: ${{ github.event.repository.name }}
-      
+
       - name: Zip Repository (excludes .git*)
         run: |
           version_with_underscores=$(echo ${{ github.ref_name }} | tr '.' '_')
           zip -r simple_export_${version_with_underscores}.zip \
             ${{ github.event.repository.name }} \
             -x "${{ github.event.repository.name }}/.git*"
-      
+
       - name: Create versioned build with filtered zip file
         run: |
           version_with_underscores=$(echo ${{ github.ref_name }} | tr '.' '_')

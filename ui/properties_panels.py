@@ -1,74 +1,13 @@
 import bpy
 import os
 
-from .functions import get_addon_name
-from .uilist import color_tag_icons
+from ..core.info import ADDON_NAME, COLOR_TAG_ICONS
 
 
 def get_presets_folder():
     """Retrieve the base path for Blender's presets folder."""
     # Get the user scripts folder dynamically
     return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets", "operator")
-
-
-EXPORT_FORMATS = {
-    "FBX": {
-        "op_name": "IO_FH_fbx",
-        "label": "FBX",
-        "description": "FBX Export",
-        "preset_folder": os.path.join(get_presets_folder(), "export_scene.fbx"),
-        "op_type": "<class 'bpy.types.EXPORT_SCENE_OT_fbx'>",
-        "file_extension": "fbx",
-    },
-    "OBJ": {
-        "op_name": "IO_FH_obj",
-        "label": "OBJ",
-        "description": "Wavefront OBJ Export",
-        "preset_folder": os.path.join(get_presets_folder(), "wm.obj_export"),
-        "op_type": "<class 'bpy.types.WM_OT_obj_export'>",
-        "file_extension": "obj",
-    },
-    "GLTF": {
-        "op_name": "IO_FH_gltf2",
-        "label": "glTF",
-        "description": "glTF 2.0 Export",
-        "preset_folder": os.path.join(get_presets_folder(), "export_scene.gltf"),
-        "op_type": "<class 'bpy.types.EXPORT_SCENE_OT_gltf'>",
-        "file_extension": "glb",
-    },
-    "USD": {
-        "op_name": "IO_FH_usd",
-        "label": "USD",
-        "description": "Universal Scene Description Export",
-        "preset_folder": os.path.join(get_presets_folder(), "wm.usd_export"),
-        "op_type": "<class 'bpy.types.WM_OT_usd_export'>",
-        "file_extension": "usd",
-    },
-    "ABC": {
-        "op_name": "IO_FH_alembic",
-        "label": "Alembic",
-        "description": "Alembic Export",
-        "preset_folder": os.path.join(get_presets_folder(), "wm.alembic_export"),
-        "op_type": "<class 'bpy.types.WM_OT_alembic_export'>",
-        "file_extension": "abc",
-    },
-    "PLY": {
-        "op_name": "IO_FH_ply",
-        "label": "PLY",
-        "description": "Stanford PLY Export",
-        "preset_folder": os.path.join(get_presets_folder(), "wm.ply_export"),
-        "op_type": "<class 'bpy.types.WM_OT_ply_export'>",
-        "file_extension": "ply",
-    },
-    "STL": {
-        "op_name": "IO_FH_stl",
-        "label": "STL",
-        "description": "STL Export",
-        "preset_folder": os.path.join(get_presets_folder(), "wm.stl_export"),
-        "op_type": "<class 'bpy.types.WM_OT_stl_export'>",
-        "file_extension": "stl",
-    },
-}
 
 
 def draw_preset_settings(layout, context):
@@ -115,7 +54,7 @@ def draw_properties_with_prefix(layout, context, properties):
             scene_value = getattr(scene, prop_name)
             pref_value = getattr(prefs, prop_name)
 
-            from .preferenecs import PROPERTY_METADATA
+            from extensions.simple_export.preferences.preferenecs import PROPERTY_METADATA
             text = PROPERTY_METADATA[prop_name]["name"]
 
             # Determine label text with prefix
@@ -184,10 +123,6 @@ def draw_custom_collection_ui(self, context):
     layout.prop(collection, "offset_object", text="Offset Object")
 
 
-def get_export_format_items():
-    return [(key, value["label"], value["description"]) for key, value in EXPORT_FORMATS.items()]
-
-
 class SIMPLE_EXPORT_menu_base:
     bl_label = "Simple Export"
 
@@ -199,7 +134,7 @@ class SIMPLE_EXPORT_menu_base:
         row.operator("wm.url_open", text="", icon="HELP").url = "https://weisl.github.io/exporter_overview/"
 
         # Open Preferences
-        addon_name = get_addon_name()
+        addon_name = ADDON_NAME
         op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
         op.addon_name = addon_name
         op.prefs_tabs = 'SETTINGS'
@@ -286,7 +221,7 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         header, body = layout.panel("overwrite_settings", default_closed=False)
 
         # Header
-        addon_name = get_addon_name()
+        addon_name = ADDON_NAME
 
         row = header.row(align=True)
         row.label(text='Overwrite Preferences')
@@ -317,14 +252,14 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         color_tag = None
         if context.scene.parent_collection:
             color_tag = context.scene.parent_collection.color_tag
-        icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
+        icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
         row.prop(context.scene, "parent_collection", text="Parent Collection", icon=icon)
 
         # Draw Create Button
         row = layout.row()
         prefs = context.preferences.addons[__package__].preferences
         color_tag = prefs.collection_color
-        icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
+        icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
         row.operator("simple_export.create_export_collection", icon=icon)
 
         # row = layout.row()

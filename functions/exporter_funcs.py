@@ -1,0 +1,27 @@
+from extensions.simple_export.core.export_formats import ExportFormats
+
+
+def find_exporter(collection, export_format_key):
+    """
+    Find the appropriate exporter for the given collection and format.
+    """
+    # Retrieve export format object
+    export_format = ExportFormats.get(export_format_key)
+
+    if not export_format:
+        raise ValueError(f"Invalid export format: {export_format_key}")
+
+    # Check collection exporters
+    for exporter in collection.exporters:
+        if str(type(exporter.export_properties)) == export_format.op_type:
+            return exporter
+
+    return None  # Return None if no valid exporter is found
+
+
+def get_exporter_id(self, collection, exporter):
+    """Get the exporter ID within the collection."""
+    for idx, exp in enumerate(collection.exporters):
+        if exp == exporter:
+            return idx
+    raise ValueError(f"{exporter.name} not found in the exporters of collection '{self.collection_name}'.")

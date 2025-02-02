@@ -23,8 +23,8 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
 
         # Determine the icon based on the collection's color_tag
         color_tag = collection.color_tag
-        from .uilist import color_tag_icons
-        icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
+        from .uilist import COLOR_TAG_ICONS
+        icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
 
         layout.separator()
         op = layout.operator("simple_export.export_selected_collections", icon='EXPORT')

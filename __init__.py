@@ -2,52 +2,32 @@
 if "bpy" in locals():
     import importlib
 
-    importlib.reload(uilist)
-    importlib.reload(ui_helpers)
-    importlib.reload(presets)
-    importlib.reload(collection_utils)
-    importlib.reload(collection_operators)
     importlib.reload(operators)
-    importlib.reload(n - panel)
-    importlib.reload(properties_panel)
-    importlib.reload(keymap)
     importlib.reload(preferences)
+    importlib.reload(presets)
+    importlib.reload(ui)
 
 else:
-    from . import preferenecs
-    from . import ui_helpers
-    from . import collection_operators
-    from . import presets
-    from . import collection_utils
     from . import operators
-    from . import uilist
-    from . import n_panel
-    from . import properties_panels
-    from . import keymap
-
-files = [
-    collection_utils,
-    collection_operators,
-    ui_helpers,
-    presets,
-    operators,
-    uilist,
-    n_panel,
-    properties_panels,
-
-    # keymap and preferences should be last
-    keymap,
-    preferenecs, ]
+    from . import preferences
+    from . import presets
+    from . import ui
 
 
 def register():
-    for file in files:
-        file.register()
+    # call the register function of the submodules.
+    operators.register()
+    presets.register()
+    preferences.register()
+    ui.register()
 
 
 def unregister():
-    for file in reversed(files):
-        file.unregister()
+    # call unregister function of the submodules.
+    ui.unregister()
+    preferences.unregister()
+    presets.unregister()
+    operators.unregister()
 
 
 if __name__ == "__main__":
