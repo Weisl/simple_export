@@ -4,9 +4,9 @@ from .. import __package__ as base_package
 from ..core.info import ADDON_NAME
 from ..ui.properties_panels import COLOR_TAG_ICONS, draw_filepath_settings, draw_preset_settings, \
     draw_create_export_collections
+from .properties_panels import SIMPLE_EXPORT_menu_base
 
-
-class VIEW3D_PT_SimpleExport(bpy.types.Panel):
+class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
     """Creates a Panel in the Object properties window"""
 
     bl_space_type = 'VIEW_3D'
@@ -54,6 +54,9 @@ class VIEW3D_PT_SimpleExport(bpy.types.Panel):
         op.invert = True
 
         layout.template_list("SCENE_UL_CollectionList", "npanel", bpy.data, "collections", scene, "collection_index")
+
+        # Draw Export List
+        super().draw(context)
 
 
         # Collapsible Filepath Settings Section
