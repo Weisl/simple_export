@@ -11,6 +11,38 @@ def get_presets_folder():
     return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets", "operator")
 
 
+def draw_properties_with_prefix(setting, layout, context, properties):
+    """
+    Draws properties with a * prefix if they differ between the Scene and Preferences.
+
+    Args:
+        layout (UILayout): The UI layout to draw in.
+        context (Context): The Blender context.
+        properties (list): List of property names to compare and draw.
+    """
+    prefs = context.preferences.addons[base_package].preferences
+
+    for prop_name in properties:
+        # Ensure the property exists in both Scene and Preferences
+        if hasattr(setting, prop_name) and hasattr(prefs, prop_name):
+            scene_value = getattr(setting, prop_name)
+            pref_value = getattr(setting, prop_name)
+
+            from ..preferences.preferenecs import PROPERTY_METADATA
+            text = PROPERTY_METADATA[prop_name]["name"]
+
+            # Determine label text with prefix
+            label_prefix = "* " if scene_value != pref_value else ""
+            label_text = f"{label_prefix}{text.replace('_', ' ').title()}"
+
+            # Draw the property with dynamic label
+            row = layout.row()
+            row.prop(setting, prop_name, text=label_text)
+        else:
+            # Debugging note: Property does not exist
+            print(f"Property {prop_name} not found in Scene or Preferences")
+
+
 def draw_preset_settings(layout, context):
     """
     Draw the preset property dynamically based on the selected export format.
@@ -37,44 +69,15 @@ def draw_preset_settings(layout, context):
         layout.label(text=f"No presets available for {export_format}", icon="ERROR")
 
 
-def draw_properties_with_prefix(layout, context, properties):
-    """
-    Draws properties with a * prefix if they differ between the Scene and Preferences.
-
-    Args:
-        layout (UILayout): The UI layout to draw in.
-        context (Context): The Blender context.
-        properties (list): List of property names to compare and draw.
-    """
+def draw_create_export_collections(layout, context):
     scene = context.scene
     prefs = context.preferences.addons[base_package].preferences
 
-    for prop_name in properties:
-        # Ensure the property exists in both Scene and Preferences
-        if hasattr(scene, prop_name) and hasattr(prefs, prop_name):
-            scene_value = getattr(scene, prop_name)
-            pref_value = getattr(prefs, prop_name)
-
-            from ..preferences.preferenecs import PROPERTY_METADATA
-            text = PROPERTY_METADATA[prop_name]["name"]
-
-            # Determine label text with prefix
-            label_prefix = "* " if scene_value != pref_value else ""
-            label_text = f"{label_prefix}{text.replace('_', ' ').title()}"
-
-            # Draw the property with dynamic label
-            row = layout.row()
-            row.prop(scene, prop_name, text=label_text)
-        else:
-            # Debugging note: Property does not exist
-            print(f"Property {prop_name} not found in Scene or Preferences")
-
-
-def draw_create_export_collections(layout, context):
-    scene = context.scene
+    prop_base = context.scene
 
     if not scene.overwrite_collection_settings:
         layout.enabled = False
+        prop_base = prefs
 
     # Define properties to check
     properties = [
@@ -88,14 +91,18 @@ def draw_create_export_collections(layout, context):
     ]
 
     # Use the helper function to draw properties
-    draw_properties_with_prefix(layout, context, properties)
+    draw_properties_with_prefix(prop_base, layout, context, properties)
 
 
 def draw_filepath_settings(layout, context):
     scene = context.scene
+    prefs = context.preferences.addons[base_package].preferences
+
+    prop_base = context.scene
 
     if not scene.overwrite_filepath_settings:
         layout.enabled = False
+        prop_base = prefs
 
     # Define properties to check
     properties_foler = [
@@ -108,11 +115,11 @@ def draw_filepath_settings(layout, context):
     ]
 
     # Use the helper function to draw properties
-    layout.prop(scene, "use_custom_export_folder")
-    if scene.use_custom_export_folder:
-        draw_properties_with_prefix(layout, context, properties_foler)
-    if not scene.use_custom_export_folder:
-        draw_properties_with_prefix(layout, context, properties)
+    layout.prop(prop_base, "use_custom_export_folder")
+    if prop_base.use_custom_export_folder:
+        draw_properties_with_prefix(prop_base, layout, context, properties_foler)
+    if not prop_base.use_custom_export_folder:
+        draw_properties_with_prefix(prop_base, layout, context, properties)
 
 
 def draw_custom_collection_ui(self, context):
@@ -140,10 +147,9 @@ class SIMPLE_EXPORT_menu_base:
         op.addon_name = addon_name
         op.prefs_tabs = 'SETTINGS'
 
-       # Open Export Popup
+        # Open Export Popup
         op = row.operator("wm.call_panel", text="", icon="WINDOW")
         op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
-
 
     def draw(self, context):
         layout = self.layout
