@@ -1,5 +1,7 @@
 import bpy
 
+from .. import __package__ as base_package
+
 keymaps_items_dict = {"Simple Export Popup": {"name": 'simple_export_panel', "idname": 'wm.call_panel',
                                               "operator": 'SIMPLE_EXPORT_PT_simple_export_popup', "type": 'E',
                                               "value": 'PRESS', "ctrl": False, "shift": True, "alt": True,
@@ -31,7 +33,7 @@ def remove_key(context, idname, properties_name):
 
 def add_keymap():
     context = bpy.context
-    prefs = context.preferences.addons[__package__].preferences
+    prefs = context.preferences.addons[base_package].preferences
 
     for key, valueDic in keymaps_items_dict.items():
         idname = valueDic["idname"]
@@ -85,7 +87,7 @@ class SIMPLE_EXPORT_OT_hotkey(bpy.types.Operator):
     def execute(self, context):
         remove_key(context, self.idname, self.properties_name)
 
-        prefs = bpy.context.preferences.addons[__package__].preferences
+        prefs = context.preferences.addons[base_package].preferences
         setattr(prefs, f'{self.property_prefix}_type', "NONE")
         setattr(prefs, f'{self.property_prefix}_ctrl', False)
         setattr(prefs, f'{self.property_prefix}_shift', False)
@@ -106,7 +108,7 @@ class SIMPLE_EXPORT_OT_change_key(bpy.types.Operator):
         self.my_event = ''
 
     def invoke(self, context, event):
-        prefs = bpy.context.preferences.addons[__package__].preferences
+        prefs = context.preferences.addons[base_package].preferences
         self.prefs = prefs
         setattr(prefs, f'{self.property_prefix}_type', "NONE")
 
@@ -138,8 +140,13 @@ def register():
     for cls in classes:
         register_class(cls)
 
+    add_keymap()
 
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
         unregister_class(cls)
+
+    from .keymap import remove_keymap
+    remove_keymap()
+

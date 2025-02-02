@@ -1,5 +1,7 @@
 import bpy
 
+from .. import __package__ as base_package
+
 
 # Define a function to draw the custom menu item
 def draw_custom_outliner_menu(self, context):
@@ -19,22 +21,25 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         collection = context.collection
 
         # Add your custom menu items here
-        layout.operator('simple_export.add_settings_to_collection', icon='COLLECTION_COLOR_01')
+        layout.operator('simple_export.add_settings_to_collections', icon='COLLECTION_COLOR_01')
 
         # Determine the icon based on the collection's color_tag
         color_tag = collection.color_tag
-        from .uilist import color_tag_icons
-        icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
+        from .uilist import COLOR_TAG_ICONS
+        icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
 
         layout.separator()
-        op = layout.operator("simple_export.export_selected_collections", icon='EXPORT')
+        op = layout.operator("simple_export.export_collections", icon='EXPORT')
         op.outliner = True
+        op.individual_collection = False
 
-        op = layout.operator("simple_export.assign_preset_selection", icon='PRESET_NEW')
+        op = layout.operator("simple_export.assign_presets", icon='PRESET_NEW')
         op.outliner = True
+        op.individual_collection = False
 
-        op = layout.operator("scene.set_export_path_selection", text="Assign Filepaths", icon='FOLDER_REDIRECT')
+        op = layout.operator("simple_export.set_export_paths", text="Assign Filepaths", icon='FOLDER_REDIRECT')
         op.outliner = True
+        op.individual_collection = False
 
         # Open Popup window
         layout.operator("wm.call_panel", text="Open Export Popup",
@@ -56,7 +61,7 @@ class EXPORTER_OT_open_preferences(bpy.types.Operator):
         bpy.context.preferences.active_section = 'ADDONS'
         bpy.data.window_managers["WinMan"].addon_search = self.addon_name
 
-        prefs = context.preferences.addons[__package__].preferences
+        prefs = context.preferences.addons[base_package].preferences
         prefs.prefs_tabs = self.prefs_tabs
 
         import addon_utils
