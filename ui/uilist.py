@@ -81,7 +81,9 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             op.collection_name = collection.name
 
         # Add the Export Collection button
-        op = row.operator("simple_export.export_collection", text="", icon='EXPORT')
+        op = row.operator("simple_export.export_selected_collections", text="", icon='EXPORT')
+        op.outliner = False
+        op.individual_collection = True
         op.collection_name = collection.name
 
     def filter_items(self, context, data, propname):

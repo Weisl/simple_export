@@ -70,7 +70,7 @@ def draw_properties_with_prefix(layout, context, properties):
             print(f"Property {prop_name} not found in Scene or Preferences")
 
 
-def draw_create_export_collection(layout, context):
+def draw_create_export_collections(layout, context):
     scene = context.scene
 
     if not scene.overwrite_collection_settings:
@@ -167,6 +167,7 @@ class SIMPLE_EXPORT_menu_base:
         row = col.row()
         op = row.operator("simple_export.export_selected_collections", text="Export Selected", icon='EXPORT')
         op.outliner = False
+        op.individual_collection = False
 
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
@@ -246,7 +247,7 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
             row.prop(scene, 'overwrite_collection_settings')
 
             box = body.box()
-            draw_create_export_collection(box, context)
+            draw_create_export_collections(box, context)
 
         # Parent selection
         row = layout.row()
@@ -261,10 +262,10 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         prefs = context.preferences.addons[base_package].preferences
         color_tag = prefs.collection_color
         icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
-        row.operator("simple_export.create_export_collection", icon=icon)
+        row.operator("simple_export.create_export_collections", icon=icon)
 
         # row = layout.row()
-        # row.operator("simple_export.add_settings_to_collection")
+        # row.operator("simple_export.add_settings_to_collections")
 
 
 class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Panel):

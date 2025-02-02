@@ -3,7 +3,7 @@ import bpy
 from .. import __package__ as base_package
 from ..core.info import ADDON_NAME
 from ..ui.properties_panels import COLOR_TAG_ICONS, draw_filepath_settings, draw_preset_settings, \
-    draw_create_export_collection
+    draw_create_export_collections
 
 
 class VIEW3D_PT_SimpleExport(bpy.types.Panel):
@@ -68,7 +68,7 @@ class VIEW3D_PT_SimpleExport(bpy.types.Panel):
             row.prop(scene, 'overwrite_collection_settings')
 
             box = body.box()
-            draw_create_export_collection(box, context)
+            draw_create_export_collections(box, context)
 
         # Parent selection
         row = layout.row()
@@ -83,10 +83,10 @@ class VIEW3D_PT_SimpleExport(bpy.types.Panel):
         prefs = context.preferences.addons[base_package].preferences
         color_tag = prefs.collection_color
         icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
-        row.operator("simple_export.create_export_collection", icon=icon)
+        row.operator("simple_export.create_export_collections", icon=icon)
 
         # row = layout.row()
-        # row.operator("simple_export.add_settings_to_collection")
+        # row.operator("simple_export.add_settings_to_collections")
 
 
 classes = (

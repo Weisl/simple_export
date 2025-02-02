@@ -5,11 +5,11 @@ from ..functions.create_collection_func import generate_collection_name, setup_c
 from ..functions.outliner_func import get_outliner_collections
 
 
-class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
+class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
     """
     Create a new collection for the active object and its children.
     """
-    bl_idname = "simple_export.create_export_collection"
+    bl_idname = "simple_export.create_export_collections"
     bl_label = "Create Export Collection"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -54,11 +54,11 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class EXPORT_OT_AddSettingsToCollection(bpy.types.Operator):
+class EXPORT_OT_AddSettingsToCollections(bpy.types.Operator):
     """
     Add export settings to an existing collection.
     """
-    bl_idname = "simple_export.add_settings_to_collection"
+    bl_idname = "simple_export.add_settings_to_collections"
     bl_label = "Add Exporter to Collection"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -91,8 +91,8 @@ class EXPORT_OT_AddSettingsToCollection(bpy.types.Operator):
 
 
 classes = (
-    EXPORT_OT_CreateExportCollection,
-    EXPORT_OT_AddSettingsToCollection,
+    EXPORT_OT_CreateExportCollections,
+    EXPORT_OT_AddSettingsToCollections,
 )
 
 

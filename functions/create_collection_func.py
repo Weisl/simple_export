@@ -55,7 +55,11 @@ def setup_collection(context, collection, active_object, settings_col, settings_
         return list(collection.exporters)
 
     exporters_before = get_all_exporters()
-    bpy.ops.collection.exporter_add(name=export_data["op_name"])
+
+    export_data = ExportFormats.get(scene.export_format)
+    operator_name = export_data.op_name
+
+    bpy.ops.collection.exporter_add(name=operator_name)
     exporters_after = get_all_exporters()
 
     exporter = list(set(exporters_after) - set(exporters_before))[0]

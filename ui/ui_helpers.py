@@ -21,7 +21,7 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         collection = context.collection
 
         # Add your custom menu items here
-        layout.operator('simple_export.add_settings_to_collection', icon='COLLECTION_COLOR_01')
+        layout.operator('simple_export.add_settings_to_collections', icon='COLLECTION_COLOR_01')
 
         # Determine the icon based on the collection's color_tag
         color_tag = collection.color_tag
@@ -31,6 +31,7 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         layout.separator()
         op = layout.operator("simple_export.export_selected_collections", icon='EXPORT')
         op.outliner = True
+        op.individual_collection = False
 
         op = layout.operator("simple_export.assign_preset_selection", icon='PRESET_NEW')
         op.outliner = True
