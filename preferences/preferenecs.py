@@ -7,7 +7,6 @@ from .keymap import remove_key
 from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
 from ..core.export_formats import get_export_format_items
-from ..ui.n_panel import VIEW3D_PT_SimpleExport
 
 PROPERTY_METADATA = {
     "custom_prefix": {
@@ -240,7 +239,8 @@ class UIListProperties(bpy.types.PropertyGroup):
 
 
 class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
-    bl_idname = __package__
+    bl_idname = base_package
+    bl_options = {'REGISTER'}
 
     def update_simple_export_panel_key(self, context):
         """
