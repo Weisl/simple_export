@@ -3,6 +3,7 @@ import os
 
 from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
+from ..core.info import COLOR_TAG_ICONS
 from ..functions.exporter_funcs import find_exporter
 from ..functions.path_utils import clean_relative_path
 
