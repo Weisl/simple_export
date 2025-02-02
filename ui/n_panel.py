@@ -49,7 +49,7 @@ class VIEW3D_PT_SimpleExport(bpy.types.Panel):
         op = row.operator("scene.select_all_collections", text="None", icon="CHECKBOX_DEHLT")
         op.invert = True
 
-        layout.template_list("SCENE_UL_CollectionList", "scene", bpy.data, "collections", scene, "collection_index")
+        layout.template_list("SCENE_UL_CollectionList", "npanel", bpy.data, "collections", scene, "collection_index")
 
         # Button to open the export Popup
         op = layout.operator("wm.call_panel", text="Open Export Popup")

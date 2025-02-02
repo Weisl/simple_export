@@ -22,8 +22,12 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         # Determine settings based on the list_id
         if self.list_id == "scene":
             settings = prefs.scene_properties
-        else:  # self.list_id == "popup":
+        elif self.list_id == "npanel":
+            settings = prefs.npanel_properties
+        else:  # popup":
             settings = prefs.popup_properties
+
+
 
         collection = item
         if not collection:

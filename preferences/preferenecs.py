@@ -400,6 +400,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
     scene_properties: PointerProperty(type=UIListProperties)
     popup_properties: PointerProperty(type=UIListProperties)
+    npanel_properties: PointerProperty(type=UIListProperties)
 
     panel_category: bpy.props.StringProperty(name="Category Tab",
                                              description="The category name used to organize the addon in the properties panel for all the addons",
@@ -564,9 +565,15 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
         elif self.prefs_tabs == 'UI':
 
+            box = layout.box()
+            box.label(text="N Panel")
             layout.prop(self, 'enable_n_panel')
             layout.prop(self, 'panel_category')
-            layout.prop(self, "report_errors_only")
+            box = box.box()
+            box.prop(self.npanel_properties, "uilist_icon")
+            box.prop(self.npanel_properties, "uilist_show_filepath")
+            box.prop(self.npanel_properties, "uilist_set_filepath")
+            box.prop(self.npanel_properties, "uilist_set_preset")
 
             box = layout.box()
             box.label(text="Scene List")
@@ -581,6 +588,10 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.prop(self.popup_properties, "uilist_show_filepath")
             box.prop(self.popup_properties, "uilist_set_filepath")
             box.prop(self.popup_properties, "uilist_set_preset")
+
+            box = layout.box()
+            box.label(text="Warnings")
+            box.prop(self, "report_errors_only")
 
 
         elif self.prefs_tabs == 'KEYMAP':
