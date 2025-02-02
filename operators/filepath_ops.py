@@ -9,95 +9,18 @@ from ..functions.outliner_func import get_outliner_collections
 from ..functions.vallidate_func import validate_collection
 
 
-class SCENE_OT_SetExporterPath(bpy.types.Operator):
-    """
-    Operator to set the exporter path for a collection based on the original and replacement paths defined in the scene properties.
-    """
-    bl_idname = "scene.set_export_path"
-    bl_label = "Set Export Path"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    collection_name: bpy.props.StringProperty()
-
-    def execute(self, context):
-        collection = bpy.data.collections.get(self.collection_name)
-
-        prefs = context.preferences.addons[base_package].preferences
-        scene = context.scene
-        settings_col = scene if scene.overwrite_collection_settings else prefs
-        settings_filepath = scene if scene.overwrite_filepath_settings else prefs
-
-        if settings_filepath.use_custom_export_folder:
-            # Return if Custom Export Path is invalid
-            if not settings_filepath.custom_export_path:
-                self.report({'ERROR'}, f"Please specify a Custom Export Folder!")
-                return {'CANCELLED'}
-            export_dir = settings_filepath.custom_export_path
-
-        if not settings_filepath.use_custom_export_folder:
-            blend_filepath = bpy.data.filepath
-            # Return if Blend File hasn't been saved
-            if not blend_filepath:
-                self.report({'ERROR'}, f"Save the Blend file before calling this operator.")
-                return {'CANCELLED'}
-            export_dir = os.path.dirname(blend_filepath)
-
-        # Return if collection not found
-        if not collection:
-            self.report({'ERROR'}, f"Collection '{self.collection_name}' not found.")
-            return {'CANCELLED'}
-
-        # Path variables
-        search_path = settings_filepath.search_path
-        replacement_path = settings_filepath.replacement_path
-
-        # Add custom exporter
-        exporter = find_exporter(collection, scene.export_format)
-
-        # Return
-        if not exporter:
-            self.report({'ERROR'}, f"Could not add exporter to collection '{collection.name}'.")
-            return {'CANCELLED'}
-
-        # Set export Path
-        export_format = scene.export_format
-        export_path = generate_export_path(collection.name, export_format, export_dir, search_path, replacement_path)
-        success, msg = assign_exporter_path(exporter, export_path)
-
-        self.report({'INFO'}, f"Export path set to {export_path}")
-        return {'FINISHED'}
-
-    def get_custom_exporter_for_collection(self, collection_name, exporter_name):
-        """
-        Retrieve the custom exporter for a given collection.
-
-        Args:
-            collection_name (str): The name of the collection.
-            exporter_name (str): The name of the exporter.
-
-        Returns:
-            bpy.types.PropertyGroup or None: The exporter if found, otherwise None.
-        """
-        collection = bpy.data.collections.get(collection_name)
-        if not collection:
-            return None
-
-        for exporter in collection.exporters:
-            if exporter.name == exporter_name:
-                return exporter
-
-        return None
-
-
 class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
     """
     Operator to set the exporter path for a collection based on the original and replacement paths defined in the scene properties.
     """
-    bl_idname = "scene.set_export_path_selection"
+    bl_idname = "simple_export.set_export_paths"
     bl_label = "Set Export Path"
     bl_options = {'REGISTER', 'UNDO'}
 
-    outliner: bpy.props.BoolProperty()
+    outliner: bpy.props.BoolProperty(default=False)
+    individual_collection: bpy.props.BoolProperty(default=False)
+    collection_name: bpy.props.StringProperty(name="Collection Name", default='',
+                                              description="Name of the collection to process")
 
     def execute(self, context):
         results = []  # To store the renaming status of each collection
@@ -106,10 +29,26 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
         settings_col = scene if scene.overwrite_collection_settings else prefs
         settings_filepath = scene if scene.overwrite_filepath_settings else prefs
 
-        collection_list = bpy.data.collections
+        # Get Export Collections
+        # triggered from outliner
         if self.outliner:
             collection_list = get_outliner_collections(context)
+        #triggered from the UI List
+        elif self.individual_collection:  # Retrieve collection by name
+            collection = bpy.data.collections.get(self.collection_name)
+            collection_list = [collection] if collection else []
+        # default
+        else:
+            collection_list = [
+                col for col in bpy.data.collections
+                if getattr(col, "simple_export_selected", False) and len(getattr(col, "exporters", [])) > 0
+            ]
 
+        if not collection_list:
+            self.report({'WARNING'}, "No valid collections found for export.")
+            return {'CANCELLED'}
+
+        #Iterate over export collections
         for collection in collection_list:
             try:
                 # return early
@@ -163,7 +102,6 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
 
 
 classes = (
-    SCENE_OT_SetExporterPath,
     SCENE_OT_SetExporterPathSelection,
 )
 

@@ -156,16 +156,19 @@ class SIMPLE_EXPORT_menu_base:
 
         col = layout.column(align=True)
         row = col.row()
-        op = row.operator("simple_export.assign_preset_selection", text="Assign Presets", icon='PRESET_NEW')
+        op = row.operator("simple_export.assign_presets", text="Assign Presets", icon='PRESET_NEW')
         op.outliner = False
+        op.individual_collection = False
 
         row = col.row()
-        op = row.operator("scene.set_export_path_selection", text="Assign Filepaths", icon='FOLDER_REDIRECT')
+        op = row.operator("simple_export.set_export_paths", text="Assign Filepaths", icon='FOLDER_REDIRECT')
         op.outliner = False
+        op.individual_collection = False
+
 
         col.separator()
         row = col.row()
-        op = row.operator("simple_export.export_selected_collections", text="Export Selected", icon='EXPORT')
+        op = row.operator("simple_export.export_collections", text="Export Selected", icon='EXPORT')
         op.outliner = False
         op.individual_collection = False
 

@@ -10,9 +10,6 @@ files = [
 
 
 def register():
-    bpy.types.WindowManager.export_data_info = bpy.props.StringProperty(default="[]")
-    bpy.types.WindowManager.assign_filepath_result_info = bpy.props.StringProperty(default="[]")
-
     for file in files:
         file.register()
 
@@ -22,9 +19,6 @@ def register():
 
 
 def unregister():
-    del bpy.types.WindowManager.export_data_info
-    del bpy.types.WindowManager.assign_filepath_result_info
-
     for file in reversed(files):
         file.unregister()
 

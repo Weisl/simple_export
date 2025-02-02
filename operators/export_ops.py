@@ -21,7 +21,7 @@ def call_export_popup(export_results, context):
 
 # Operator to export selected collections
 class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
-    bl_idname = "simple_export.export_selected_collections"
+    bl_idname = "simple_export.export_collections"
     bl_label = "Export Selected"
     bl_options = {'REGISTER', 'UNDO'}
 

@@ -29,15 +29,17 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
 
         layout.separator()
-        op = layout.operator("simple_export.export_selected_collections", icon='EXPORT')
+        op = layout.operator("simple_export.export_collections", icon='EXPORT')
         op.outliner = True
         op.individual_collection = False
 
-        op = layout.operator("simple_export.assign_preset_selection", icon='PRESET_NEW')
+        op = layout.operator("simple_export.assign_presets", icon='PRESET_NEW')
         op.outliner = True
+        op.individual_collection = False
 
-        op = layout.operator("scene.set_export_path_selection", text="Assign Filepaths", icon='FOLDER_REDIRECT')
+        op = layout.operator("simple_export.set_export_paths", text="Assign Filepaths", icon='FOLDER_REDIRECT')
         op.outliner = True
+        op.individual_collection = False
 
         # Open Popup window
         layout.operator("wm.call_panel", text="Open Export Popup",

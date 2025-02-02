@@ -72,16 +72,18 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         if settings.uilist_set_filepath:
             # Buttons for setting the export path and opening the directory
             # Assign Path
-            op = row.operator("scene.set_export_path", text="", icon='FOLDER_REDIRECT')
+            op = row.operator("simple_export.set_export_paths", text="", icon='FOLDER_REDIRECT')
+            op.outliner = False
+            op.individual_collection = True
             op.collection_name = collection.name
 
         if settings.uilist_set_preset:
             # Assign Preset
-            op = row.operator("simple_export.assign_preset", text="", icon='PRESET')
+            op = row.operator("simple_export.assign_presets", text="", icon='PRESET')
             op.collection_name = collection.name
 
         # Add the Export Collection button
-        op = row.operator("simple_export.export_selected_collections", text="", icon='EXPORT')
+        op = row.operator("simple_export.export_collections", text="", icon='EXPORT')
         op.outliner = False
         op.individual_collection = True
         op.collection_name = collection.name
