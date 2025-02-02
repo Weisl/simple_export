@@ -1,4 +1,19 @@
-from extensions.simple_export.core.export_formats import ExportFormats
+from ..core.export_formats import ExportFormats
+
+
+def add_extension(path, export_format_key):
+    export_format = ExportFormats.get(export_format_key)
+
+    if not export_format:
+        raise ValueError(f"Invalid export format: {export_format_key}")
+
+    file_extension = f".{export_format.file_extension}"
+
+    # Check if the filename already has the extension
+    if not path.lower().endswith(file_extension.lower()):
+        path += file_extension
+
+    return path
 
 
 def find_exporter(collection, export_format_key):

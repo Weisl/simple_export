@@ -3,12 +3,13 @@ import os
 
 from .collection_layer import set_active_layer_Collection
 from .preset_func import assign_preset
+from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
 from ..core.export_path_func import generate_export_path, assign_exporter_path
 
 
 def generate_collection_name(context, obj_name):
-    prefs = bpy.context.preferences.addons[__package__].preferences
+    prefs = context.preferences.addons[base_package].preferences
     scene = context.scene
     settings_col = scene if scene.overwrite_collection_settings else prefs
 
@@ -32,7 +33,7 @@ def generate_collection_name(context, obj_name):
 
 def setup_collection(context, collection, active_object, settings_col, settings_filepath):
     scene = context.scene
-    prefs = bpy.context.preferences.addons[__package__].preferences
+    prefs = context.preferences.addons[base_package].preferences
 
     # Set collection properties
     collection['simple_export_selected'] = True

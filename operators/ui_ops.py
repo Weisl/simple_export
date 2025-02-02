@@ -47,3 +47,21 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
         bpy.ops.file.external_operation(filepath=export_dir, operation='FOLDER_OPEN')
         self.report({'INFO'}, f"Opened directory: {export_dir}")
         return {'FINISHED'}
+
+
+classes = (
+    SCENE_OT_SelectAllCollections,
+    SCENE_OT_OpenExportDirectory,
+)
+
+
+def register():
+    from bpy.utils import register_class
+    for cls in classes:
+        register_class(cls)
+
+
+def unregister():
+    from bpy.utils import unregister_class
+    for cls in reversed(classes):
+        unregister_class(cls)

@@ -1,6 +1,7 @@
 import bpy
 import os
 
+from .. import __package__ as base_package
 from ..functions.exporter_funcs import find_exporter
 from ..functions.outliner_func import get_outliner_collections
 from ..functions.preset_func import assign_preset
@@ -63,7 +64,7 @@ class SIMPLEEXPORTER_OT_ApplyPreset(bpy.types.Operator):
 
     def execute(self, context):
 
-        prefs = bpy.context.preferences.addons[__package__].preferences
+        prefs = context.preferences.addons[base_package].preferences
         scene = context.scene
 
         collection = bpy.data.collections.get(self.collection_name)
@@ -106,7 +107,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
 
     def execute(self, context):
         results = []  # To store the renaming status of each collection
-        prefs = bpy.context.preferences.addons[__package__].preferences
+        prefs = context.preferences.addons[base_package].preferences
         scene = context.scene
 
         # Construct the property name dynamically

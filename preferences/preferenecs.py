@@ -4,8 +4,10 @@ import textwrap
 from bpy.props import BoolProperty, PointerProperty
 
 from .keymap import remove_key
+from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
 from ..core.export_formats import get_export_format_items
+from ..ui.n_panel import VIEW3D_PT_SimpleExport
 
 PROPERTY_METADATA = {
     "custom_prefix": {
@@ -154,27 +156,27 @@ def update_preset_path_for_stl(self, context):
     # print(f"[DEBUG] STL preset path updated to: {self.simple_export_preset_file_stl}")
 
 
-def update_panel_category(self, context):
-    """Update panel tab for simple export"""
-    panels = [
-        VIEW3D_PT_SimpleExport,
-    ]
-
-    for panel in panels:
-        try:
-            bpy.utils.unregister_class(panel)
-        except:
-            pass
-
-        prefs = context.preferences.addons[__package__].preferences
-        panel.bl_category = prefs.panel_category
-
-        if prefs.enable_n_panel:
-            try:
-                bpy.utils.register_class(panel)
-            except ValueError:
-                pass  # Avoid duplicate registrations
-    return
+# def update_panel_category(self, context):
+#     """Update panel tab for simple export"""
+#     panels = [
+#         VIEW3D_PT_SimpleExport,
+#     ]
+#
+#     for panel in panels:
+#         try:
+#             bpy.utils.unregister_class(panel)
+#         except:
+#             pass
+#
+#         prefs = context.preferences.addons[base_package].preferences
+#         panel.bl_category = prefs.panel_category
+#
+#         if prefs.enable_n_panel:
+#             try:
+#                 bpy.utils.register_class(panel)
+#             except ValueError:
+#                 pass  # Avoid duplicate registrations
+#     return
 
 
 def label_multiline(context, text, parent):
@@ -398,16 +400,16 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     scene_properties: PointerProperty(type=UIListProperties)
     popup_properties: PointerProperty(type=UIListProperties)
 
-    panel_category: bpy.props.StringProperty(name="Category Tab",
-                                             description="The category name used to organize the addon in the properties panel for all the addons",
-                                             default='Simple Exporter',
-                                             update=update_panel_category)  # update = update_panel_position,
+    # panel_category: bpy.props.StringProperty(name="Category Tab",
+    #                                          description="The category name used to organize the addon in the properties panel for all the addons",
+    #                                          default='Simple Exporter',
+    #                                          update=update_panel_category)  # update = update_panel_position,
 
-    enable_n_panel: bpy.props.BoolProperty(
-        name="Enable Simple Export N-Panel",
-        description="Toggle the N-Panel on and off.",
-        default=True,
-        update=update_panel_category)
+    # enable_n_panel: bpy.props.BoolProperty(
+    #     name="Enable Simple Export N-Panel",
+    #     description="Toggle the N-Panel on and off.",
+    #     default=True,
+    #     update=update_panel_category)
 
     ########################################
     # Presets
@@ -699,7 +701,7 @@ def initialize_format_specific_properties():
 
 # Helper function to initialize Window Manager properties
 def initialize_properties_collection_generation():
-    prefs = bpy.context.preferences.addons[__package__].preferences
+    prefs = bpy.context.preferences.addons[base_package].preferences
 
     bpy.types.Scene.export_format = bpy.props.EnumProperty(
         name="Export Format",
@@ -760,7 +762,7 @@ def initialize_properties_collection_generation():
 
 
 def initialize_properties_file_path():
-    prefs = bpy.context.preferences.addons[__package__].preferences
+    prefs = bpy.context.preferences.addons[base_package].preferences
 
     bpy.types.Scene.search_path = bpy.props.StringProperty(
         name=PROPERTY_METADATA["search_path"]["name"],
@@ -796,11 +798,8 @@ def register():
     for cls in classes:
         register_class(cls)
 
-    from .keymap import add_keymap
-    add_keymap()
-
     # Initialize correct property panel for the Simple Export Panel
-    update_panel_category(None, bpy.context)
+    # update_panel_category(None, bpy.context)
 
     bpy.types.Scene.collection_index = bpy.props.IntProperty(
         name="Collection Index",
@@ -837,14 +836,11 @@ def register():
         description="Select this collection for export",
         default=False)
 
-    bpy.app.timers.register(post_register, first_interval=0.1)
+    bpy.app.timers.register(post_register, first_interval=0.5)
     initialize_format_specific_properties()
 
 
 def unregister():
-    from .keymap import remove_keymap
-    remove_keymap()
-
     # Remove dynamically created properties
     for export_format in ExportFormats.FORMATS.keys():
         prop_name = f"simple_export_preset_file_{export_format.lower()}"

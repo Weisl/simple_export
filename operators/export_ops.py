@@ -1,11 +1,12 @@
 import bpy
 
+from .. import __package__ as base_package
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.collection_offset import apply_collection_offset
 from ..functions.collection_offset import temporarily_disable_offset_handler
-from ..functions.exporter_funcs import find_exporter, get_exporter_id
+from ..functions.exporter_funcs import find_exporter, get_exporter_id, add_extension
 from ..functions.outliner_func import get_outliner_collections
-from ..functions.path_utils import add_extension, clean_relative_path
+from ..functions.path_utils import clean_relative_path
 from ..functions.vallidate_func import validate_collection, post_export_checks, pre_export_checks
 
 
@@ -34,7 +35,7 @@ class SCENE_OT_ExportCollection(bpy.types.Operator):
         temporarily_disable_offset_handler()
         success = False
 
-        prefs = bpy.context.preferences.addons[__package__].preferences
+        prefs = context.preferences.addons[base_package].preferences
         scene = context.scene
         settings_col = scene if scene.overwrite_collection_settings else prefs
         settings_filepath = scene if scene.overwrite_filepath_settings else prefs
@@ -122,7 +123,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
         temporarily_disable_offset_handler()
         error_count = 0
 
-        prefs = bpy.context.preferences.addons[__package__].preferences
+        prefs = context.preferences.addons[base_package].preferences
         scene = context.scene
         settings_col = scene if scene.overwrite_collection_settings else prefs
         settings_filepath = scene if scene.overwrite_filepath_settings else prefs

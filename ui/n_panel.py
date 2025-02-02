@@ -1,8 +1,9 @@
 import bpy
 
-from extensions.simple_export.ui.properties_panels import COLOR_TAG_ICONS, draw_filepath_settings, draw_preset_settings, \
-    draw_create_export_collection
+from .. import __package__ as base_package
 from ..core.info import ADDON_NAME
+from ..ui.properties_panels import COLOR_TAG_ICONS, draw_filepath_settings, draw_preset_settings, \
+    draw_create_export_collection
 
 
 class VIEW3D_PT_SimpleExport(bpy.types.Panel):
@@ -14,7 +15,7 @@ class VIEW3D_PT_SimpleExport(bpy.types.Panel):
     bl_label = "Simple Export"
 
     def draw(self, context):
-        prefs = context.preferences.addons[__package__].preferences
+        prefs = context.preferences.addons[base_package].preferences
 
         scene = context.scene
 
@@ -79,7 +80,7 @@ class VIEW3D_PT_SimpleExport(bpy.types.Panel):
 
         # Draw Create Button
         row = layout.row()
-        prefs = context.preferences.addons[__package__].preferences
+        prefs = context.preferences.addons[base_package].preferences
         color_tag = prefs.collection_color
         icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
         row.operator("simple_export.create_export_collection", icon=icon)

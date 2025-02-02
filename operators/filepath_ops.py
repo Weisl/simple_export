@@ -1,7 +1,8 @@
 import bpy
 import os
 
-from extensions.simple_export.core.export_path_func import generate_export_path, assign_exporter_path
+from .. import __package__ as base_package
+from ..core.export_path_func import generate_export_path, assign_exporter_path
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.exporter_funcs import find_exporter
 from ..functions.outliner_func import get_outliner_collections
@@ -21,7 +22,7 @@ class SCENE_OT_SetExporterPath(bpy.types.Operator):
     def execute(self, context):
         collection = bpy.data.collections.get(self.collection_name)
 
-        prefs = bpy.context.preferences.addons[__package__].preferences
+        prefs = context.preferences.addons[base_package].preferences
         scene = context.scene
         settings_col = scene if scene.overwrite_collection_settings else prefs
         settings_filepath = scene if scene.overwrite_filepath_settings else prefs
@@ -100,7 +101,7 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
 
     def execute(self, context):
         results = []  # To store the renaming status of each collection
-        prefs = bpy.context.preferences.addons[__package__].preferences
+        prefs = context.preferences.addons[base_package].preferences
         scene = context.scene
         settings_col = scene if scene.overwrite_collection_settings else prefs
         settings_filepath = scene if scene.overwrite_filepath_settings else prefs

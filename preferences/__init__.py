@@ -4,8 +4,8 @@ from . import keymap, preferenecs
 from ..functions.collection_offset import update_collection_offset
 
 files = [
-    keymap,
     preferenecs,
+    keymap,
 ]
 
 

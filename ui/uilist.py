@@ -1,6 +1,7 @@
 import bpy
 import os
 
+from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
 from ..functions.exporter_funcs import find_exporter
 from ..functions.path_utils import clean_relative_path
@@ -15,7 +16,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         layout.prop(context.window_manager, "export_format", text="Filter Format")
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        prefs = context.preferences.addons[__package__].preferences
+        prefs = context.preferences.addons[base_package].preferences
 
         # Determine settings based on the list_id
         if self.list_id == "scene":

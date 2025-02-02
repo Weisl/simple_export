@@ -1,6 +1,8 @@
 import bpy
 import os
 
+from ..core.info import COLOR_TAG_ICONS
+
 
 class SIMPLEEXPORTER_PT_FilePathResultsPanel(bpy.types.Panel):
     """Panel to display the results of applying the filepath."""
@@ -44,7 +46,6 @@ class SIMPLEEXPORTER_PT_FilePathResultsPanel(bpy.types.Panel):
             collection = bpy.data.collections[collection_name]
             color_tag = collection.color_tag
 
-            from extensions.simple_export.ui.uilist import COLOR_TAG_ICONS
             icon = COLOR_TAG_ICONS.get(color_tag, 'NONE')
             col_name.label(text=result['name'], icon=icon)
 
@@ -123,3 +124,21 @@ class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
                 op.operation = 'FOLDER_OPEN'
                 export_dir = os.path.dirname(result['filepath'])
                 op.filepath = export_dir
+
+
+classes = (
+    SIMPLEEXPORTER_PT_FilePathResultsPanel,
+    SIMPLEEXPORTER_PT_ExportResultsPanel
+)
+
+
+def register():
+    from bpy.utils import register_class
+    for cls in classes:
+        register_class(cls)
+
+
+def unregister():
+    from bpy.utils import unregister_class
+    for cls in reversed(classes):
+        unregister_class(cls)

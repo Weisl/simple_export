@@ -1,5 +1,6 @@
 import bpy
 
+from .. import __package__ as base_package
 from ..functions.create_collection_func import generate_collection_name, setup_collection
 from ..functions.outliner_func import get_outliner_collections
 
@@ -16,7 +17,7 @@ class EXPORT_OT_CreateExportCollection(bpy.types.Operator):
         active_object = context.active_object
         parent_collection = context.scene.parent_collection or context.scene.collection
 
-        prefs = bpy.context.preferences.addons[__package__].preferences
+        prefs = context.preferences.addons[base_package].preferences
         scene = context.scene
         settings_col = scene if scene.overwrite_collection_settings else prefs
         settings_filepath = scene if scene.overwrite_filepath_settings else prefs
@@ -69,7 +70,7 @@ class EXPORT_OT_AddSettingsToCollection(bpy.types.Operator):
 
             active_object = context.active_object
 
-            prefs = bpy.context.preferences.addons[__package__].preferences
+            prefs = context.preferences.addons[base_package].preferences
             scene = context.scene
             settings_col = scene if scene.overwrite_collection_settings else prefs
             settings_filepath = scene if scene.overwrite_filepath_settings else prefs

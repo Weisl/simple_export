@@ -1,6 +1,7 @@
 import bpy
 import os
 
+from .. import __package__ as base_package
 from ..core.info import ADDON_NAME, COLOR_TAG_ICONS
 
 
@@ -15,7 +16,7 @@ def draw_preset_settings(layout, context):
     Draw the preset property dynamically based on the selected export format.
     """
     scene = context.scene
-    prefs = context.preferences.addons[__package__].preferences
+    prefs = context.preferences.addons[base_package].preferences
     export_format = scene.export_format  # Get the currently selected export format
 
     # Dynamically determine the property name
@@ -46,7 +47,7 @@ def draw_properties_with_prefix(layout, context, properties):
         properties (list): List of property names to compare and draw.
     """
     scene = context.scene
-    prefs = context.preferences.addons[__package__].preferences
+    prefs = context.preferences.addons[base_package].preferences
 
     for prop_name in properties:
         # Ensure the property exists in both Scene and Preferences
@@ -54,7 +55,7 @@ def draw_properties_with_prefix(layout, context, properties):
             scene_value = getattr(scene, prop_name)
             pref_value = getattr(prefs, prop_name)
 
-            from extensions.simple_export.preferences.preferenecs import PROPERTY_METADATA
+            from ..preferences.preferenecs import PROPERTY_METADATA
             text = PROPERTY_METADATA[prop_name]["name"]
 
             # Determine label text with prefix
@@ -189,7 +190,7 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
     bl_context = "output"
 
     def draw(self, context):
-        prefs = context.preferences.addons[__package__].preferences
+        prefs = context.preferences.addons[base_package].preferences
 
         scene = context.scene
 
@@ -257,7 +258,7 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
 
         # Draw Create Button
         row = layout.row()
-        prefs = context.preferences.addons[__package__].preferences
+        prefs = context.preferences.addons[base_package].preferences
         color_tag = prefs.collection_color
         icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
         row.operator("simple_export.create_export_collection", icon=icon)
