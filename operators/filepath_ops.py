@@ -68,7 +68,7 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
                 if not exporter:
                     continue
 
-                if settings_filepath.use_custom_export_folder:
+                if settings_filepath.export_folder_mode == 'ABSOLUTE':
                     if not settings_filepath.custom_export_path:
                         raise ValueError("ERROR: Please specify a Custom Export Folder!")
 

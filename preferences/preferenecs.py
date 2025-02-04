@@ -73,11 +73,17 @@ PROPERTY_METADATA = {
         "default": False,
     },
 
-    "use_custom_export_folder": {
-        "name": "Custom Folder",
-        "description": "Use a custom export folder",
-        "default": True,
+    "export_folder_mode": {
+        "name": "Custom Export Path Mode",
+        "description": "Choose how the export file path is determined",
+        "default": "ABSOLUTE",
+        "items": [
+            ("ABSOLUTE", "Absolute", "Use an absolute file path"),
+            ("RELATIVE", "Relative", "Use a file path relative to the .blend file"),
+            ("MIRROR", "Mirror", "Mirror part of the blend file path with another directory"),
+        ],
     },
+
     "custom_export_path": {
         "name": "Export Folder",
         "description": "Custom folder to export files to.",
@@ -295,10 +301,11 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
     ########################################
     # Filepath
-    use_custom_export_folder: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["use_custom_export_folder"]["name"],
-        description=PROPERTY_METADATA["use_custom_export_folder"]["description"],
-        default=PROPERTY_METADATA["use_custom_export_folder"]["default"],
+    export_folder_mode: bpy.props.EnumProperty(
+        name=PROPERTY_METADATA["export_folder_mode"]["name"],
+        description=PROPERTY_METADATA["export_folder_mode"]["description"],
+        items=PROPERTY_METADATA["export_folder_mode"]["items"],
+        default=PROPERTY_METADATA["export_folder_mode"]["default"],
     )
 
     custom_export_path: bpy.props.StringProperty(
@@ -518,10 +525,11 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
             box = layout.box()
             box.label(text="Export Path")
-            box.prop(self, "use_custom_export_folder")
-            if self.use_custom_export_folder:
+            row = box.row()
+            row.prop(self, "export_folder_mode", expand=True)
+            if self.export_folder_mode == 'ABSOLUTE':
                 box.prop(self, "custom_export_path")
-            if not self.use_custom_export_folder:
+            if self.export_folder_mode != 'ABSOLUTE':
                 texts = []
                 texts.append("Export Path is set relative to the .blend file directory.")
                 texts.append("Use Search and Replace to manipulate the path")
@@ -780,11 +788,13 @@ def initialize_properties_file_path():
         description=PROPERTY_METADATA["replacement_path"]["description"],
         default=prefs.replacement_path
     )
-    bpy.types.Scene.use_custom_export_folder = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["use_custom_export_folder"]["name"],
-        description=PROPERTY_METADATA["use_custom_export_folder"]["description"],
-        default=prefs.use_custom_export_folder
+    bpy.types.Scene.export_folder_mode = bpy.props.EnumProperty(
+        name=PROPERTY_METADATA["export_folder_mode"]["name"],
+        items=PROPERTY_METADATA["export_folder_mode"]["items"],
+        description=PROPERTY_METADATA["export_folder_mode"]["description"],
+        default=prefs.export_folder_mode
     )
+
     bpy.types.Scene.custom_export_path = bpy.props.StringProperty(
         name="Custom Export Path",
         description="Custom directory to export files to.",
@@ -929,7 +939,7 @@ def unregister():
     # filepath
     del bpy.types.Scene.search_path
     del bpy.types.Scene.replacement_path
-    del bpy.types.Scene.use_custom_export_folder
+    del bpy.types.Scene.export_folder_mode
     del bpy.types.Scene.custom_export_path
 
     del bpy.types.Scene.simple_export_preset_file_fbx

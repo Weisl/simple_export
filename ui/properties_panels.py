@@ -115,10 +115,10 @@ def draw_filepath_settings(layout, context):
     ]
 
     # Use the helper function to draw properties
-    layout.prop(prop_base, "use_custom_export_folder")
-    if prop_base.use_custom_export_folder:
+    layout.prop(prop_base, "export_folder_mode")
+    if prop_base.export_folder_mode == 'ABSOLUTE':
         draw_properties_with_prefix(prop_base, layout, context, properties_foler)
-    if not prop_base.use_custom_export_folder:
+    if prop_base.export_folder_mode != 'ABSOLUTE':
         draw_properties_with_prefix(prop_base, layout, context, properties)
 
 
