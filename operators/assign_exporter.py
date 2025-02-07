@@ -48,7 +48,6 @@ classes = (
 
 # Register the scene property
 def register():
-    from bpy.utils import register_class
     Scene = bpy.types.Scene
     Scene.parent_collection = bpy.props.PointerProperty(
         name="Parent Collection",
@@ -59,6 +58,7 @@ def register():
         name="Set Filepath",
         description="Set filepath based on blend file location",
     )
+    from bpy.utils import register_class
     for cls in classes:
         register_class(cls)
 
