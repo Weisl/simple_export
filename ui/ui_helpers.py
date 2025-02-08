@@ -3,49 +3,6 @@ import bpy
 from .. import __package__ as base_package
 
 
-# Define a function to draw the custom menu item
-def draw_custom_outliner_menu(self, context):
-    layout = self.layout
-    layout.separator()
-
-    # Check if the active element is a collection
-    layout.menu(CUSTOM_MT_outliner_simple_export_menu.bl_idname, icon='EXPORT')
-
-
-class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
-    bl_label = "Simple Export"
-    bl_idname = "CUSTOM_MT_outliner_simple_export_menu"
-
-    def draw(self, context):
-        layout = self.layout
-        collection = context.collection
-
-        # Add your custom menu items here
-        layout.operator('simple_export.add_settings_to_collections', icon='COLLECTION_COLOR_01')
-
-        # Determine the icon based on the collection's color_tag
-        color_tag = collection.color_tag
-        from .uilist import COLOR_TAG_ICONS
-        icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
-
-        layout.separator()
-        op = layout.operator("simple_export.export_collections", icon='EXPORT')
-        op.outliner = True
-        op.individual_collection = False
-
-        op = layout.operator("simple_export.assign_presets", icon='PRESET_NEW')
-        op.outliner = True
-        op.individual_collection = False
-
-        op = layout.operator("simple_export.set_export_paths", text="Assign Filepaths", icon='FOLDER_REDIRECT')
-        op.outliner = True
-        op.individual_collection = False
-
-        # Open Popup window
-        layout.operator("wm.call_panel", text="Open Export Popup",
-                        icon='WINDOW').name = "SIMPLE_EXPORT_PT_simple_export_popup"
-
-
 class EXPORTER_OT_open_preferences(bpy.types.Operator):
     """Tooltip"""
     bl_idname = "simple_export.open_preferences"
@@ -83,7 +40,6 @@ class EXPORTER_OT_open_preferences(bpy.types.Operator):
 
 classes = (
     EXPORTER_OT_open_preferences,
-    CUSTOM_MT_outliner_simple_export_menu
 )
 
 
@@ -92,14 +48,8 @@ def register():
     for cls in classes:
         register_class(cls)
 
-    # Add outliner right click sub menu
-    bpy.types.OUTLINER_MT_collection.append(draw_custom_outliner_menu)
-
 
 def unregister():
-    # Remove outliner right click sub menu
-    bpy.types.OUTLINER_MT_collection.remove(draw_custom_outliner_menu)
-
     from bpy.utils import unregister_class
     for cls in reversed(classes):
         unregister_class(cls)

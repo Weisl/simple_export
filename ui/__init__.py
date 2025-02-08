@@ -1,4 +1,4 @@
-from . import n_panel, properties_panels, result_popups, ui_helpers, uilist
+from . import n_panel, properties_panels, result_popups, ui_helpers, uilist, outliner
 
 files = [
     n_panel,
@@ -6,6 +6,7 @@ files = [
     result_popups,
     ui_helpers,
     uilist,
+    outliner,
 ]
 
 
