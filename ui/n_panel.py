@@ -3,6 +3,7 @@ import bpy
 from .properties_panels import SIMPLE_EXPORT_menu_base
 from .. import __package__ as base_package
 from ..core.info import ADDON_NAME
+from ..functions.exporter_funcs import find_exporter
 from ..ui.properties_panels import COLOR_TAG_ICONS, draw_filepath_settings, draw_preset_settings, \
     draw_create_export_collections
 
@@ -56,31 +57,27 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         # Display export list
         layout.template_list("SCENE_UL_CollectionList", "npanel", bpy.data, "collections", scene, "collection_index")
 
-        # Ensure a valid selection before displaying details
+        # Ensure valid selection before showing details
         if 0 <= scene.collection_index < len(bpy.data.collections):
             selected_collection = bpy.data.collections[scene.collection_index]
 
-            # First Compact UI List - Collection Name & Icon
-            layout.template_list(
-                "SCENE_UL_CollectionDetails",
-                "details_general",  # Unique ID for general info
-                bpy.data,
-                "collections",
-                scene,
-                "collection_index",
-                type='COMPACT'
-            )
+            # Active Collection Details Section
+            details_box = layout.box()
+            details_box.label(text=f"Active Collection:", icon='OUTLINER_COLLECTION')
+            
+            # Collection name and icon
+            row = details_box.row(align=True)
+            row.prop(selected_collection, 'name', icon='OUTLINER_COLLECTION')
 
-            # Second Compact UI List - Export Path & Additional Settings
-            layout.template_list(
-                "SCENE_UL_CollectionDetails",
-                "details_export",  # Unique ID for export properties
-                bpy.data,
-                "collections",
-                scene,
-                "collection_index",
-                type='COMPACT'
-            )
+            # Export Path
+            exporter = find_exporter(selected_collection, scene.export_format)
+            if exporter:
+                row = details_box.row(align=True)
+                row.prop(exporter.export_properties, "filepath", text="", expand=True)
+                op = row.operator("simple_export.set_export_paths", text="", icon='FOLDER_REDIRECT')
+                op.outliner = False
+                op.individual_collection = True
+                op.collection_name = selected_collection.name
 
         layout.separator()
 

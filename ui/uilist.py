@@ -115,44 +115,8 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         return flt_flags, flt_neworder
 
 
-class SCENE_UL_CollectionDetails(bpy.types.UIList):
-    """
-    UIList showing details of the currently selected collection.
-    """
-
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        if not item or not item.exporters:
-            return
-
-        scene = context.scene
-        exporter = find_exporter(item, scene.export_format)
-
-        if not exporter:
-            return
-
-        row = layout.row(align=True)
-
-        # Handle different display modes based on list_id
-        if self.list_id == "details_general":
-            # Show name and icon
-            color_tag = item.color_tag
-            collection_icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
-            row.label(text=item.name, icon=collection_icon)
-
-        elif self.list_id == "details_export":
-            # Show export properties (Export Path & Assign Path Button)
-            row.prop(exporter.export_properties, "filepath", text="Export Path", expand=True)
-
-            # Assign Path Button
-            op = row.operator("simple_export.set_export_paths", text="", icon='FOLDER_REDIRECT')
-            op.outliner = False
-            op.individual_collection = True
-            op.collection_name = item.name
-
-
 classes = (
     SCENE_UL_CollectionList,
-    SCENE_UL_CollectionDetails,
 )
 
 
