@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from .path_utils import ensure_export_folder_exists
 

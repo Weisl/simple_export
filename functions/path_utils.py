@@ -1,7 +1,3 @@
-import bpy
-import os
-
-
 def is_really_absolute(path):
     return os.path.abspath(path) == path
 
@@ -23,7 +19,9 @@ def clean_relative_path(path):
 
 
 import os
+
 import bpy
+
 
 def ensure_export_folder_exists(export_path):
     """
@@ -57,4 +55,3 @@ def ensure_export_folder_exists(export_path):
             return False
 
     return True
-

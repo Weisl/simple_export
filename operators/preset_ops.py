@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from .. import __package__ as base_package
 from ..functions.exporter_funcs import find_exporter

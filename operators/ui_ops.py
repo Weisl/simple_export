@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from ..functions.exporter_funcs import find_exporter
 from ..functions.path_utils import clean_relative_path

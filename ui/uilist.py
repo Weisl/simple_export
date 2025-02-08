@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
@@ -26,8 +27,6 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             settings = prefs.npanel_properties
         else:  # popup":
             settings = prefs.popup_properties
-
-
 
         collection = item
         if not collection:

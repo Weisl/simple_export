@@ -1,10 +1,11 @@
 import bpy
 
+from .properties_panels import SIMPLE_EXPORT_menu_base
 from .. import __package__ as base_package
 from ..core.info import ADDON_NAME
 from ..ui.properties_panels import COLOR_TAG_ICONS, draw_filepath_settings, draw_preset_settings, \
     draw_create_export_collections
-from .properties_panels import SIMPLE_EXPORT_menu_base
+
 
 class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
     """Creates a Panel in the Object properties window"""
@@ -31,7 +32,6 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         op = row.operator("wm.call_panel", text="", icon="WINDOW")
         op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
 
-
     def draw(self, context):
         prefs = context.preferences.addons[base_package].preferences
 
@@ -57,7 +57,6 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
 
         # Draw Export List
         super().draw(context)
-
 
         # Collapsible Filepath Settings Section
         header, body = layout.panel("overwrite_settings", default_closed=False)

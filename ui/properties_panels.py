@@ -6,7 +6,6 @@ from .. import __package__ as base_package
 from ..core.info import ADDON_NAME, COLOR_TAG_ICONS
 
 
-
 def get_presets_folder():
     """Retrieve the base path for Blender's presets folder."""
     # Get the user scripts folder dynamically

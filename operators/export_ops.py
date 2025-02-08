@@ -27,8 +27,8 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
     outliner: bpy.props.BoolProperty(default=False)
     individual_collection: bpy.props.BoolProperty(default=False)
-    collection_name: bpy.props.StringProperty(name="Collection Name", default='', description="Name of the collection to process")
-
+    collection_name: bpy.props.StringProperty(name="Collection Name", default='',
+                                              description="Name of the collection to process")
 
     def execute(self, context):
         export_results = []
@@ -57,7 +57,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
             self.report({'WARNING'}, "No valid collections found for export.")
             return {'CANCELLED'}
 
-        #Iterate over export collections
+        # Iterate over export collections
         for collection in collection_list:
             try:
                 # return early

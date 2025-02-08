@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from ..core.info import COLOR_TAG_ICONS
 
