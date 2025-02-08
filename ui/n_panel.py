@@ -81,9 +81,15 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
                 op.outliner = False
                 op.individual_collection = True
                 op.collection_name = selected_collection.name
-        layout.separator()
 
-        # Draw Export List
+            # Collection Offset
+            row = details_box.row(align=True)
+            row.label(text='Collection Offset (BETA)')
+            row = details_box.row(align=True)
+            row.prop(selected_collection, "instance_offset", text='Offset')
+            row.menu("COLLECTION_MT_context_menu_instance_offset", icon='DOWNARROW_HLT', text="")
+
+        # Draw Operator List
         super().draw(context)
 
         # Collapsible Filepath Settings Section
