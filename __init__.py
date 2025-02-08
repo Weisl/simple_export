@@ -13,6 +13,7 @@ else:
     from . import ui
     from . import core
 
+
 def register():
     # call the register function of the submodules.
     operators.register()

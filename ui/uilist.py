@@ -85,6 +85,13 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             op = row.operator("simple_export.assign_presets", text="", icon='PRESET')
             op.collection_name = collection.name
 
+        prev_name = collection.get("prev_name", None)
+        export_filename = os.path.splitext(os.path.basename(export_path))[0]
+
+        if prev_name and prev_name != export_filename:
+            op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
+            op.collection_name = collection.name
+
         # Add the Export Collection button
         op = row.operator("simple_export.export_collections", text="", icon='EXPORT')
         op.outliner = False

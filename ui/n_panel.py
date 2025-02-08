@@ -33,7 +33,6 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
         row.label(text="Simple Export")
 
-
     def draw(self, context):
         prefs = context.preferences.addons[base_package].preferences
 

@@ -157,7 +157,6 @@ class SIMPLE_EXPORT_menu_base:
         op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
         row.label(text="Simple Export")
 
-
     def draw(self, context):
         layout = self.layout
         scene = context.scene

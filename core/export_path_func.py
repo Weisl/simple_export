@@ -126,6 +126,7 @@ def assign_export_path_to_exporter(collection, exporter, scene, settings_filepat
             collection.name, scene.export_format, export_dir,
             settings_filepath.mirror_search_path, settings_filepath.mirror_replacement_path, relative_mode
         )
+
         collection["prev_name"] = collection.name
 
         # Assign path to exporter
