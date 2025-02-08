@@ -4,7 +4,7 @@ import bpy
 
 from .. import __package__ as base_package
 from ..core.info import ADDON_NAME, COLOR_TAG_ICONS
-from ..functions.ui_utils import label_multiline
+
 
 
 def get_presets_folder():
@@ -118,19 +118,15 @@ def draw_filepath_settings(layout, context):
         box.prop(prop_base, "relative_export_path")
 
     if prop_base.export_folder_mode == 'MIRROR':
-        texts = []
-        texts.append("Export Path is set relative to the .blend file directory.")
-        texts.append("Use Search and Replace to manipulate the path")
+        box.prop(prop_base, "mirror_search_path", text="Search Path")
+        box.prop(prop_base, "mirror_replacement_path", text="Replacement Path")
 
-        for text in texts:
-            label_multiline(
-                context=context,
-                text=text,
-                parent=box
-            )
-
-        box.prop(prop_base, "mirror_search_path")
-        box.prop(prop_base, "mirror_replacement_path")
+        # Compute and display the preview
+        from ..preferences.preferenecs import compute_mirror_preview
+        preview_path = compute_mirror_preview(prop_base)  # Pass `self` as settings
+        preview_box = box.box()
+        preview_box.label(text="Preview of Final Path:")
+        preview_box.label(text=preview_path, icon='FILE_FOLDER')
 
 
 def draw_custom_collection_ui(self, context):
