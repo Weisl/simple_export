@@ -98,7 +98,7 @@ def assign_preset_to_exporter(properties, exporter):
     for prop_name, prop_value in properties.items():
         # ignore filepath
         if prop_name in ['filepath', 'use_selection']:
-            print(f"Exporter property '{prop_name}' ignored.")
+            # print(f"Preset property '{prop_name}' ignored.")
             continue
 
         try:

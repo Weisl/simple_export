@@ -1,55 +1,89 @@
 import os
 
+import bpy
+
 from ..core.export_formats import ExportFormats
 from ..functions.path_utils import ensure_export_folder_exists
 
 
-def generate_export_path(collection_name, export_format_key, export_dir, mirror_search_path, replacement_path):
+def generate_export_path(collection_name, export_format_key, export_dir, mirror_search_path, mirror_replacement_path,
+                         relative_mode):
     """
-    Set the export path for a given collection's exporter.
+    Generate and set the correct export path based on the selected filepath mode.
 
     Args:
         collection_name (str): The name of the collection.
-        exporter_dir (str): Path to the export folder.
+        export_format_key (str): Export format key.
+        export_dir (str): Path to the export folder.
         mirror_search_path (str): The original path to be replaced.
-        replacement_path (str): The replacement path to be applied.
-        @param export_dir:
-        @param replacement_path:
-        @param mirror_search_path:
-        @param collection_name:
-        @param export_format_key:
+        mirror_replacement_path (str): The replacement path to be applied.
+        relative_mode (bool): Whether the path is set to relative.
+
+    Returns:
+        str: The computed export path.
     """
 
     # Retrieve export format object
     export_format = ExportFormats.get(export_format_key)
-
     if not export_format:
         raise ValueError(f"Invalid export format: {export_format_key}")
 
     # Construct export filename
     export_extension = export_format.file_extension
     export_name = f"{collection_name}.{export_extension}"
+
+    # Resolve relative paths
+    if relative_mode:
+        blend_dir = bpy.path.abspath("//")  # Get the blend file's directory
+        export_dir = os.path.join(blend_dir, export_dir) if not os.path.isabs(export_dir) else export_dir
+
+    # Apply mirror replacement if needed
+    if mirror_search_path and mirror_replacement_path and mirror_search_path in export_dir:
+        export_dir = export_dir.replace(mirror_search_path, mirror_replacement_path)
+
+    # Ensure directory exists
+    ensure_export_folder_exists(export_dir)
+
+    # Final export path
     export_path = os.path.join(export_dir, export_name)
 
-    # Apply path replacement if needed
-    if mirror_search_path and replacement_path and mirror_search_path in export_path:
-        export_path = export_path.replace(mirror_search_path, replacement_path)
-
-    return export_path
+    return bpy.path.relpath(export_path) if relative_mode else export_path
 
 
-def assign_exporter_path(exporter, export_path):
-    ensure_export_folder_exists(export_path)
+def assign_exporter_path(exporter, export_path, relative_mode):
+    """
+    Assigns the generated export path to the exporter while ensuring the folder exists.
+
+    Args:
+        exporter (object): The export operator object.
+        export_path (str): The computed export file path.
+        relative_mode (bool): Whether to keep the path relative to the .blend file.
+
+    Returns:
+        tuple: (bool, str) -> (Success, Message)
+    """
 
     if not exporter:
-        msg = "No valid exporter found"
-        return False, msg
+        return False, "No valid exporter found"
 
     if not export_path:
-        msg = "Please select a Preset"
-        return False, msg
+        return False, "Please select a Preset"
 
-    # Apply the properties to the exporter
-    exporter.export_properties.filepath = export_path
+    # Convert relative path to absolute only for directory creation
+    absolute_export_path = bpy.path.abspath(export_path)  # Convert to absolute
+    export_dir = os.path.dirname(absolute_export_path)  # Extract folder path
+
+    # Validate that the export directory is a valid absolute path
+    if not os.path.isabs(export_dir) or export_dir in ["", ".", "\\", "//"]:
+        return False, f"Invalid export directory: {export_dir}"
+
+    # Ensure the export folder exists using only absolute paths
+    ensure_export_folder_exists(export_dir)
+
+    # Assign a relative path if the mode is RELATIVE, otherwise use absolute
+    final_export_path = export_path if relative_mode else absolute_export_path
+
+    # Assign the correct path format to the exporter
+    exporter.export_properties.filepath = final_export_path
 
     return True, None
