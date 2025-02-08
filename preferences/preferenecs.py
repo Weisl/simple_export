@@ -1,5 +1,4 @@
 import os
-import textwrap
 
 import bpy
 from bpy.props import BoolProperty, PointerProperty
@@ -26,12 +25,12 @@ PROPERTY_METADATA = {
         "description": "If checked, the Blender file name will be used as a prefix for the export file name.",
         "default": False,
     },
-    "search_path": {
+    "mirror_search_path": {
         "name": "Search",
         "description": "The path to be replaced.",
         "default": "workdata",
     },
-    "replacement_path": {
+    "mirror_replacement_path": {
         "name": "Replace",
         "description": "The path to replace with.",
         "default": "sourcedata",
@@ -65,7 +64,7 @@ PROPERTY_METADATA = {
     "set_location_offset_on_creation": {
         "name": "Collection Offset",
         "description": "Set Location Offset for collections.",
-        "default": True,
+        "default": False,
     },
     "move_by_collection_offset": {
         "name": "Move by Collection Offset",
@@ -73,14 +72,26 @@ PROPERTY_METADATA = {
         "default": False,
     },
 
-    "use_custom_export_folder": {
-        "name": "Custom Folder",
-        "description": "Use a custom export folder",
-        "default": True,
+    "export_folder_mode": {
+        "name": "Custom Export Path Mode",
+        "description": "Choose how the export file path is determined",
+        "default": "ABSOLUTE",
+        "items": [
+            ("ABSOLUTE", "Absolute", "Use an absolute file path"),
+            ("RELATIVE", "Relative", "Use a file path relative to the .blend file"),
+            ("MIRROR", "Mirror", "Mirror part of the blend file path with another directory"),
+        ],
     },
-    "custom_export_path": {
+
+    "absolute_export_path": {
         "name": "Export Folder",
-        "description": "Custom folder to export files to.",
+        "description": "Custom absolute folder to export files to.",
+        "default": '',
+    },
+
+    "relative_export_path": {
+        "name": "Relative Folder Path",
+        "description": "Folder to export files relative to the .blend file.",
         "default": '',
     },
 }
@@ -147,7 +158,7 @@ def update_preset_path_for_ply(self, context):
 
 
 def update_preset_path_for_stl(self, context):
-    context.scene.simple_export_preset_file_stl = self.simple_export_preset_file_stl
+    context.scene.simple_export_preset_file_stl = self.simple_export_preset_file_stlF
 
 
 def update_panel_category(self, context):
@@ -173,12 +184,25 @@ def update_panel_category(self, context):
     return
 
 
-def label_multiline(context, text, parent):
-    chars = int(context.region.width / 7)  # 7 pix on 1 character
-    wrapper = textwrap.TextWrapper(width=chars)
-    text_lines = wrapper.wrap(text=text)
-    for text_line in text_lines:
-        parent.label(text=text_line)
+def update_mirror_preview(self, context):
+    """Update preview when mirror settings change."""
+    compute_mirror_preview(self)  # Pass scene as settings
+
+
+def compute_mirror_preview(settings):
+    """Compute the final mirrored path and return it for display."""
+    blend_path = bpy.path.abspath("//")  # Get the blend file directory
+
+    # Ensure search path is valid
+    if not settings.mirror_search_path or not settings.mirror_replacement_path:
+        return "Invalid search/replacement paths"
+
+    # Ensure blend file path contains the search path before replacing
+    if settings.mirror_search_path in blend_path:
+        export_path = blend_path.replace(settings.mirror_search_path, settings.mirror_replacement_path)
+        return bpy.path.relpath(export_path) if "//" in export_path else export_path
+
+    return "Search path not found in blend file path"
 
 
 def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_export_panel_ctrl,
@@ -207,7 +231,7 @@ def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_
     kmi.active = simple_export_panel_active
 
 
-# Scene properties to define search_path and replacement_path
+# Scene properties to define mirror_search_path and mirror_replacement_path
 
 
 class UIListProperties(bpy.types.PropertyGroup):
@@ -236,6 +260,32 @@ class UIListProperties(bpy.types.PropertyGroup):
 class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     bl_idname = base_package
     bl_options = {'REGISTER'}
+
+    def get_relative_path(self):
+        """Ensure the stored path is always relative to the .blend file"""
+        stored_path = self.get("relative_export_path", "")
+
+        if stored_path:
+            return bpy.path.relpath(stored_path)  # Use Blender's built-in function
+        return ""
+
+    def set_relative_path(self, value):
+        """Convert any assigned path to a direct relative path"""
+        blend_dir = bpy.path.abspath("//")  # Get absolute blend directory
+
+        if not blend_dir:
+            self["relative_export_path"] = value  # Store as-is if no .blend file
+            return
+
+        absolute_path = bpy.path.abspath(value)  # Convert input to absolute path
+
+        try:
+            # Use `os.path.relpath()` to ensure a clean direct relative path
+            relative_path = os.path.relpath(absolute_path, blend_dir)
+            self["relative_export_path"] = f"//{relative_path.replace(os.sep, '/')}"
+        except ValueError:
+            # Path is outside the blend directory, reset to empty
+            self["relative_export_path"] = ""
 
     def update_simple_export_panel_key(self, context):
         """
@@ -295,28 +345,40 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
     ########################################
     # Filepath
-    use_custom_export_folder: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["use_custom_export_folder"]["name"],
-        description=PROPERTY_METADATA["use_custom_export_folder"]["description"],
-        default=PROPERTY_METADATA["use_custom_export_folder"]["default"],
+    export_folder_mode: bpy.props.EnumProperty(
+        name=PROPERTY_METADATA["export_folder_mode"]["name"],
+        description=PROPERTY_METADATA["export_folder_mode"]["description"],
+        items=PROPERTY_METADATA["export_folder_mode"]["items"],
+        default=PROPERTY_METADATA["export_folder_mode"]["default"],
     )
 
-    custom_export_path: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["custom_export_path"]["name"],
-        description=PROPERTY_METADATA["custom_export_path"]["description"],
-        default=PROPERTY_METADATA["custom_export_path"]["default"],
+    absolute_export_path: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["absolute_export_path"]["name"],
+        description=PROPERTY_METADATA["absolute_export_path"]["description"],
+        default=PROPERTY_METADATA["absolute_export_path"]["default"],
         subtype='DIR_PATH')
 
-    search_path: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["search_path"]["name"],
-        description=PROPERTY_METADATA["search_path"]["description"],
-        default=PROPERTY_METADATA["search_path"]["default"],
+    relative_export_path: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["relative_export_path"]["name"],
+        description=PROPERTY_METADATA["relative_export_path"]["description"],
+        default=PROPERTY_METADATA["relative_export_path"]["default"],
+        subtype='DIR_PATH',
+        get=get_relative_path,  # Always return a relative path
+        set=set_relative_path  # Convert to relative on assignment
     )
 
-    replacement_path: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["replacement_path"]["name"],
-        description=PROPERTY_METADATA["replacement_path"]["description"],
-        default=PROPERTY_METADATA["replacement_path"]["default"],
+    mirror_search_path: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["mirror_search_path"]["name"],
+        description=PROPERTY_METADATA["mirror_search_path"]["description"],
+        default=PROPERTY_METADATA["mirror_search_path"]["default"],
+        update=update_mirror_preview,
+    )
+
+    mirror_replacement_path: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["mirror_replacement_path"]["name"],
+        description=PROPERTY_METADATA["mirror_replacement_path"]["description"],
+        default=PROPERTY_METADATA["mirror_replacement_path"]["default"],
+        update=update_mirror_preview,
     )
 
     ########################################
@@ -518,23 +580,24 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
             box = layout.box()
             box.label(text="Export Path")
-            box.prop(self, "use_custom_export_folder")
-            if self.use_custom_export_folder:
-                box.prop(self, "custom_export_path")
-            if not self.use_custom_export_folder:
-                texts = []
-                texts.append("Export Path is set relative to the .blend file directory.")
-                texts.append("Use Search and Replace to manipulate the path")
+            row = box.row()
+            row.prop(self, "export_folder_mode", expand=True)
 
-                for text in texts:
-                    label_multiline(
-                        context=context,
-                        text=text,
-                        parent=box
-                    )
+            if self.export_folder_mode == 'ABSOLUTE':
+                box.prop(self, "absolute_export_path")
 
-                box.prop(self, "search_path")
-                box.prop(self, "replacement_path")
+            if self.export_folder_mode == 'RELATIVE':
+                box.prop(self, "relative_export_path")
+
+            if self.export_folder_mode == 'MIRROR':
+                box.prop(self, "mirror_search_path", text="Search Path")
+                box.prop(self, "mirror_replacement_path", text="Replacement Path")
+
+                # Compute and display the preview
+                preview_path = compute_mirror_preview(self)  # Pass `self` as settings
+                preview_box = box.box()
+                preview_box.label(text="Preview of Final Path:")
+                preview_box.label(text=preview_path, icon='FILE_FOLDER')
 
             box = layout.box()
             box.label(text="Export Collection")
@@ -555,7 +618,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
             layout.separator()
             icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
-            layout.prop(self, "simple_export_debug", icon=icon)
+            layout.prop(self, "simple_export_debug")
 
         elif self.prefs_tabs == 'UI':
 
@@ -770,26 +833,37 @@ def initialize_properties_collection_generation():
 def initialize_properties_file_path():
     prefs = bpy.context.preferences.addons[base_package].preferences
 
-    bpy.types.Scene.search_path = bpy.props.StringProperty(
-        name=PROPERTY_METADATA["search_path"]["name"],
-        description=PROPERTY_METADATA["search_path"]["description"],
-        default=prefs.search_path
+    bpy.types.Scene.mirror_search_path = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["mirror_search_path"]["name"],
+        description=PROPERTY_METADATA["mirror_search_path"]["description"],
+        default=prefs.mirror_search_path,
+        update=update_mirror_preview
     )
-    bpy.types.Scene.replacement_path = bpy.props.StringProperty(
-        name=PROPERTY_METADATA["replacement_path"]["name"],
-        description=PROPERTY_METADATA["replacement_path"]["description"],
-        default=prefs.replacement_path
+    bpy.types.Scene.mirror_replacement_path = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["mirror_replacement_path"]["name"],
+        description=PROPERTY_METADATA["mirror_replacement_path"]["description"],
+        default=prefs.mirror_replacement_path,
+        update=update_mirror_preview
     )
-    bpy.types.Scene.use_custom_export_folder = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["use_custom_export_folder"]["name"],
-        description=PROPERTY_METADATA["use_custom_export_folder"]["description"],
-        default=prefs.use_custom_export_folder
+    bpy.types.Scene.export_folder_mode = bpy.props.EnumProperty(
+        name=PROPERTY_METADATA["export_folder_mode"]["name"],
+        items=PROPERTY_METADATA["export_folder_mode"]["items"],
+        description=PROPERTY_METADATA["export_folder_mode"]["description"],
+        default=prefs.export_folder_mode
     )
-    bpy.types.Scene.custom_export_path = bpy.props.StringProperty(
-        name="Custom Export Path",
-        description="Custom directory to export files to.",
+
+    bpy.types.Scene.absolute_export_path = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["absolute_export_path"]["name"],
+        description=PROPERTY_METADATA["absolute_export_path"]["description"],
         subtype='DIR_PATH',
-        default=prefs.custom_export_path
+        default=prefs.absolute_export_path
+    )
+
+    bpy.types.Scene.relative_export_path = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["relative_export_path"]["name"],
+        description=PROPERTY_METADATA["relative_export_path"]["description"],
+        subtype='DIR_PATH',
+        default=prefs.relative_export_path
     )
 
 
@@ -927,10 +1001,11 @@ def unregister():
     del bpy.types.Scene.collection_color
 
     # filepath
-    del bpy.types.Scene.search_path
-    del bpy.types.Scene.replacement_path
-    del bpy.types.Scene.use_custom_export_folder
-    del bpy.types.Scene.custom_export_path
+    del bpy.types.Scene.mirror_search_path
+    del bpy.types.Scene.mirror_replacement_path
+    del bpy.types.Scene.export_folder_mode
+    del bpy.types.Scene.absolute_export_path
+    del bpy.types.Scene.relative_export_path
 
     del bpy.types.Scene.simple_export_preset_file_fbx
     del bpy.types.Scene.simple_export_preset_file_obj

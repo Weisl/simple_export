@@ -1,11 +1,12 @@
-import bpy
 import os
+
+import bpy
 
 from .collection_layer import set_active_layer_Collection
 from .preset_func import assign_preset
 from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
-from ..core.export_path_func import generate_export_path, assign_exporter_path
+from ..core.export_path_func import assign_export_path_to_exporter
 
 
 def generate_collection_name(context, obj_name):
@@ -76,12 +77,6 @@ def setup_collection(context, collection, active_object, settings_col, settings_
         assign_preset(exporter, preset_path)
 
     if getattr(settings_col, 'auto_set_filepath'):
-        blend_dir = os.path.dirname(bpy.data.filepath)
-        search_path = getattr(settings_filepath, 'search_path')
-        replacement_path = getattr(settings_filepath, 'replacement_path')
-
-        export_format = scene.export_format
-        export_path = generate_export_path(collection.name, export_format, blend_dir, search_path, replacement_path)
-        assign_exporter_path(exporter, export_path)
+        success, export_path, msg = assign_export_path_to_exporter(collection, exporter, scene, settings_filepath)
 
     return exporter

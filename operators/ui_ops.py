@@ -1,8 +1,42 @@
-import bpy
 import os
+
+import bpy
 
 from ..functions.exporter_funcs import find_exporter
 from ..functions.path_utils import clean_relative_path
+
+
+class SIMPLE_OT_GoToCollectionExporter(bpy.types.Operator):
+    """Go to the selected collection's properties and focus on the exporter"""
+    bl_idname = "simple_export.go_to_collection_exporter"
+    bl_label = "Go to Collection Exporter"
+
+    collection_name: bpy.props.StringProperty()
+
+    def execute(self, context):
+        # Get the selected collection
+        collection = bpy.data.collections.get(self.collection_name)
+        if not collection:
+            self.report({'WARNING'}, f"Collection '{self.collection_name}' not found.")
+            return {'CANCELLED'}
+
+        # Ensure a properties editor is open and set the correct context
+        for area in context.screen.areas:
+            if area.type == 'PROPERTIES':
+                for space in area.spaces:
+                    if space.type == 'PROPERTIES':
+                        space.context = 'COLLECTION'
+                        context.view_layer.active_layer_collection = context.view_layer.layer_collection.children.get(
+                            collection.name
+                        )
+                        break
+                break
+        else:
+            self.report({'ERROR'}, "No properties editor found. Please open one manually.")
+            return {'CANCELLED'}
+
+        self.report({'INFO'}, f"Focused on Collection: {collection.name}")
+        return {'FINISHED'}
 
 
 class SCENE_OT_SelectAllCollections(bpy.types.Operator):
@@ -52,6 +86,7 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
 classes = (
     SCENE_OT_SelectAllCollections,
     SCENE_OT_OpenExportDirectory,
+    SIMPLE_OT_GoToCollectionExporter,
 )
 
 

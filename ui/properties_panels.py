@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from .. import __package__ as base_package
 from ..core.info import ADDON_NAME, COLOR_TAG_ICONS
@@ -104,22 +105,27 @@ def draw_filepath_settings(layout, context):
         layout.enabled = False
         prop_base = prefs
 
-    # Define properties to check
-    properties_foler = [
-        "custom_export_path",
-    ]
+    box = layout.box()
+    box.label(text="Path Mode")
+    row = box.row()
+    row.prop(prop_base, "export_folder_mode", expand=True)
 
-    properties = [
-        "search_path",
-        "replacement_path",
-    ]
+    if prop_base.export_folder_mode == 'ABSOLUTE':
+        box.prop(prop_base, "absolute_export_path")
 
-    # Use the helper function to draw properties
-    layout.prop(prop_base, "use_custom_export_folder")
-    if prop_base.use_custom_export_folder:
-        draw_properties_with_prefix(prop_base, layout, context, properties_foler)
-    if not prop_base.use_custom_export_folder:
-        draw_properties_with_prefix(prop_base, layout, context, properties)
+    if prop_base.export_folder_mode == 'RELATIVE':
+        box.prop(prop_base, "relative_export_path")
+
+    if prop_base.export_folder_mode == 'MIRROR':
+        box.prop(prop_base, "mirror_search_path", text="Search Path")
+        box.prop(prop_base, "mirror_replacement_path", text="Replacement Path")
+
+        # Compute and display the preview
+        from ..preferences.preferenecs import compute_mirror_preview
+        preview_path = compute_mirror_preview(prop_base)  # Pass `self` as settings
+        preview_box = box.box()
+        preview_box.label(text="Preview of Final Path:")
+        preview_box.label(text=preview_path, icon='FILE_FOLDER')
 
 
 def draw_custom_collection_ui(self, context):
@@ -146,10 +152,11 @@ class SIMPLE_EXPORT_menu_base:
         op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
         op.addon_name = addon_name
         op.prefs_tabs = 'SETTINGS'
-
         # Open Export Popup
         op = row.operator("wm.call_panel", text="", icon="WINDOW")
         op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
+        row.label(text="Simple Export")
+
 
     def draw(self, context):
         layout = self.layout

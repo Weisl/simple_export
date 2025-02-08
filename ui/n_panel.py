@@ -1,10 +1,12 @@
 import bpy
 
+from .properties_panels import SIMPLE_EXPORT_menu_base
 from .. import __package__ as base_package
 from ..core.info import ADDON_NAME
+from ..functions.exporter_funcs import find_exporter
 from ..ui.properties_panels import COLOR_TAG_ICONS, draw_filepath_settings, draw_preset_settings, \
     draw_create_export_collections
-from .properties_panels import SIMPLE_EXPORT_menu_base
+
 
 class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
     """Creates a Panel in the Object properties window"""
@@ -26,10 +28,10 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
         op.addon_name = addon_name
         op.prefs_tabs = 'SETTINGS'
-        row.label(text="Simple Export")
         # Open Export Popup
         op = row.operator("wm.call_panel", text="", icon="WINDOW")
         op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
+        row.label(text="Simple Export")
 
 
     def draw(self, context):
@@ -53,11 +55,43 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         op = row.operator("scene.select_all_collections", text="None", icon="CHECKBOX_DEHLT")
         op.invert = True
 
+        # Display export list
         layout.template_list("SCENE_UL_CollectionList", "npanel", bpy.data, "collections", scene, "collection_index")
 
-        # Draw Export List
-        super().draw(context)
+        # Ensure valid selection before showing details
+        if 0 <= scene.collection_index < len(bpy.data.collections):
+            selected_collection = bpy.data.collections[scene.collection_index]
 
+            # Active Collection Details Section
+            details_box = layout.box()
+            details_box.label(text=f"Active Collection:", icon='OUTLINER_COLLECTION')
+
+            # Collection name and icon
+            row = details_box.row(align=True)
+            row.prop(selected_collection, 'name', icon='OUTLINER_COLLECTION')
+            op = row.operator("simple_export.go_to_collection_exporter", text="",
+                              icon='PROPERTIES')
+            op.collection_name = selected_collection.name
+
+            # Export Path
+            exporter = find_exporter(selected_collection, scene.export_format)
+            if exporter:
+                row = details_box.row(align=True)
+                row.prop(exporter.export_properties, "filepath", text="", expand=True)
+                op = row.operator("simple_export.set_export_paths", text="", icon='FOLDER_REDIRECT')
+                op.outliner = False
+                op.individual_collection = True
+                op.collection_name = selected_collection.name
+
+            # Collection Offset
+            row = details_box.row(align=True)
+            row.label(text='Collection Offset (BETA)')
+            row = details_box.row(align=True)
+            row.prop(selected_collection, "instance_offset", text='Offset')
+            row.menu("COLLECTION_MT_context_menu_instance_offset", icon='DOWNARROW_HLT', text="")
+
+        # Draw Operator List
+        super().draw(context)
 
         # Collapsible Filepath Settings Section
         header, body = layout.panel("overwrite_settings", default_closed=False)

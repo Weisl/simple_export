@@ -142,6 +142,7 @@ def register():
 
     add_keymap()
 
+
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
@@ -149,4 +150,3 @@ def unregister():
 
     from .keymap import remove_keymap
     remove_keymap()
-

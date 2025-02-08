@@ -65,6 +65,12 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         return {'FINISHED'}
 
 
+def add_export_collections_to_menu(self, context):
+    """Adds the Simple Export create export collections operator to the object context menu."""
+    self.layout.separator()
+    self.layout.operator("simple_export.create_export_collections", icon='COLLECTION_COLOR_01')
+
+
 classes = (
     EXPORT_OT_CreateExportCollections,
 )
@@ -76,9 +82,13 @@ def register():
     for cls in classes:
         register_class(cls)
 
+    bpy.types.VIEW3D_MT_object_context_menu.append(add_export_collections_to_menu)
+
 
 def unregister():
     from bpy.utils import unregister_class
 
     for cls in reversed(classes):
         unregister_class(cls)
+
+    bpy.types.VIEW3D_MT_object_context_menu.remove(add_export_collections_to_menu)

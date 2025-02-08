@@ -27,8 +27,8 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
     outliner: bpy.props.BoolProperty(default=False)
     individual_collection: bpy.props.BoolProperty(default=False)
-    collection_name: bpy.props.StringProperty(name="Collection Name", default='', description="Name of the collection to process")
-
+    collection_name: bpy.props.StringProperty(name="Collection Name", default='',
+                                              description="Name of the collection to process")
 
     def execute(self, context):
         export_results = []
@@ -42,14 +42,11 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
         settings_filepath = scene if scene.overwrite_filepath_settings else prefs
 
         # Get Export Collections
-        # triggered from outliner
         if self.outliner:
             collection_list = get_outliner_collections(context)
-        #triggered from the UI List
         elif self.individual_collection:  # Retrieve collection by name
             collection = bpy.data.collections.get(self.collection_name)
             collection_list = [collection] if collection else []
-        # default
         else:
             collection_list = [
                 col for col in bpy.data.collections
@@ -60,7 +57,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
             self.report({'WARNING'}, "No valid collections found for export.")
             return {'CANCELLED'}
 
-        #Iterate over export collections
+        # Iterate over export collections
         for collection in collection_list:
             try:
                 # return early
@@ -87,10 +84,11 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                     raise ValueError(f"Please specify a export path for {collection.name}.")
 
                 export_path = add_extension(exporter.export_properties.filepath, scene.export_format)
-                export_path = clean_relative_path(export_path)
 
                 # Apply updates to exporter  (unfortunately necessary for the add extension to work)
                 exporter.export_properties.filepath = export_path
+
+                export_path = clean_relative_path(export_path)
 
                 # Overwrite settings:
                 # Having use_selection causes unpredictable behavior and is not exposed to the UI.

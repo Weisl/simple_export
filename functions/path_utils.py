@@ -1,7 +1,3 @@
-import bpy
-import os
-
-
 def is_really_absolute(path):
     return os.path.abspath(path) == path
 
@@ -22,22 +18,35 @@ def clean_relative_path(path):
     return path
 
 
+import os
+
+import bpy
+
+
 def ensure_export_folder_exists(export_path):
     """
     Ensure the directory for the export path exists, creating it if necessary.
-    Handles both relative and absolute paths properly.
+    Properly handles both relative and absolute paths.
     """
-    export_dir = os.path.dirname(export_path)
 
-    # Convert relative path (//) to absolute path
-    if not os.path.isabs(export_dir):
-        export_dir = bpy.path.abspath(export_dir)
+    if not export_path:
+        print("ERROR: Export path is empty.")
+        return False
 
-    # Normalize to handle slashes, backslashes, and . correctly
+    # Convert entire export_path to absolute first
+    absolute_export_path = bpy.path.abspath(export_path)
+
+    # Extract the directory portion and normalize
+    export_dir = os.path.dirname(absolute_export_path)
     export_dir = os.path.normpath(export_dir)
 
+    # Ensure directory is valid
+    if not os.path.isabs(export_dir) or export_dir in ["", ".", "\\", "//"]:
+        print(f"ERROR: Invalid export directory: {export_dir}")
+        return False
+
     # Ensure directory exists
-    if export_dir and not os.path.exists(export_dir):
+    if not os.path.exists(export_dir):
         try:
             os.makedirs(export_dir, exist_ok=True)
             print(f"Created export directory: {export_dir}")
