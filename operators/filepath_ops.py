@@ -64,9 +64,9 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
                 # Determine filepath mode
                 export_dir = None
                 if settings_filepath.export_folder_mode == 'ABSOLUTE':
-                    if not settings_filepath.custom_export_path:
+                    if not settings_filepath.absolute_export_path:
                         raise ValueError("ERROR: Please specify a Custom Export Folder!")
-                    export_dir = settings_filepath.custom_export_path
+                    export_dir = settings_filepath.absolute_export_path
                     relative_mode = False
 
                 elif settings_filepath.export_folder_mode == 'RELATIVE':

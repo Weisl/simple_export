@@ -985,7 +985,8 @@ def unregister():
     del bpy.types.Scene.mirror_search_path
     del bpy.types.Scene.mirror_replacement_path
     del bpy.types.Scene.export_folder_mode
-    del bpy.types.Scene.custom_export_path
+    del bpy.types.Scene.absolute_export_path
+    del bpy.types.Scene.relative_export_path
 
     del bpy.types.Scene.simple_export_preset_file_fbx
     del bpy.types.Scene.simple_export_preset_file_obj
