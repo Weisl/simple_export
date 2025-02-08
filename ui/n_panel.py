@@ -28,10 +28,11 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
         op.addon_name = addon_name
         op.prefs_tabs = 'SETTINGS'
-        row.label(text="Simple Export")
         # Open Export Popup
         op = row.operator("wm.call_panel", text="", icon="WINDOW")
         op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
+        row.label(text="Simple Export")
+
 
     def draw(self, context):
         prefs = context.preferences.addons[base_package].preferences
