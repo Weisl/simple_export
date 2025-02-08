@@ -53,7 +53,36 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         op = row.operator("scene.select_all_collections", text="None", icon="CHECKBOX_DEHLT")
         op.invert = True
 
+        # Display export list
         layout.template_list("SCENE_UL_CollectionList", "npanel", bpy.data, "collections", scene, "collection_index")
+
+        # Ensure a valid selection before displaying details
+        if 0 <= scene.collection_index < len(bpy.data.collections):
+            selected_collection = bpy.data.collections[scene.collection_index]
+
+            # First Compact UI List - Collection Name & Icon
+            layout.template_list(
+                "SCENE_UL_CollectionDetails",
+                "details_general",  # Unique ID for general info
+                bpy.data,
+                "collections",
+                scene,
+                "collection_index",
+                type='COMPACT'
+            )
+
+            # Second Compact UI List - Export Path & Additional Settings
+            layout.template_list(
+                "SCENE_UL_CollectionDetails",
+                "details_export",  # Unique ID for export properties
+                bpy.data,
+                "collections",
+                scene,
+                "collection_index",
+                type='COMPACT'
+            )
+
+        layout.separator()
 
         # Draw Export List
         super().draw(context)
