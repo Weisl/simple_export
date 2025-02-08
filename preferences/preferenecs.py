@@ -1,5 +1,4 @@
 import os
-import textwrap
 
 import bpy
 from bpy.props import BoolProperty, PointerProperty
@@ -8,6 +7,7 @@ from .keymap import remove_key
 from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
 from ..core.export_formats import get_export_format_items
+from ..functions.ui_utils import label_multiline
 from ..ui.n_panel import VIEW3D_PT_SimpleExport
 
 PROPERTY_METADATA = {
@@ -79,8 +79,8 @@ PROPERTY_METADATA = {
         "default": "ABSOLUTE",
         "items": [
             ("ABSOLUTE", "Absolute", "Use an absolute file path"),
-            ("MIRROR", "Mirror", "Mirror part of the blend file path with another directory"),
             ("RELATIVE", "Relative", "Use a file path relative to the .blend file"),
+            ("MIRROR", "Mirror", "Mirror part of the blend file path with another directory"),
         ],
     },
 
@@ -183,14 +183,6 @@ def update_panel_category(self, context):
             except ValueError:
                 pass  # Avoid duplicate registrations
     return
-
-
-def label_multiline(context, text, parent):
-    chars = int(context.region.width / 7)  # 7 pix on 1 character
-    wrapper = textwrap.TextWrapper(width=chars)
-    text_lines = wrapper.wrap(text=text)
-    for text_line in text_lines:
-        parent.label(text=text_line)
 
 
 def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_export_panel_ctrl,
@@ -842,15 +834,15 @@ def initialize_properties_file_path():
     )
 
     bpy.types.Scene.absolute_export_path = bpy.props.StringProperty(
-        name="Custom Export Path",
-        description="Custom directory to export files to.",
+        name=PROPERTY_METADATA["absolute_export_path"]["name"],
+        description=PROPERTY_METADATA["absolute_export_path"]["description"],
         subtype='DIR_PATH',
         default=prefs.absolute_export_path
     )
 
     bpy.types.Scene.relative_export_path = bpy.props.StringProperty(
-        name="Custom Export Path",
-        description="Custom directory to export files to.",
+        name=PROPERTY_METADATA["relative_export_path"]["name"],
+        description=PROPERTY_METADATA["relative_export_path"]["description"],
         subtype='DIR_PATH',
         default=prefs.relative_export_path
     )

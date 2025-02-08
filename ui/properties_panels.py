@@ -1,8 +1,10 @@
-import bpy
 import os
+
+import bpy
 
 from .. import __package__ as base_package
 from ..core.info import ADDON_NAME, COLOR_TAG_ICONS
+from ..functions.ui_utils import label_multiline
 
 
 def get_presets_folder():
@@ -104,22 +106,31 @@ def draw_filepath_settings(layout, context):
         layout.enabled = False
         prop_base = prefs
 
-    # Define properties to check
-    properties_foler = [
-        "custom_export_path",
-    ]
+    box = layout.box()
+    box.label(text="Path Mode")
+    row = box.row()
+    row.prop(prop_base, "export_folder_mode", expand=True)
 
-    properties = [
-        "mirror_search_path",
-        "replacement_path",
-    ]
-
-    # Use the helper function to draw properties
-    layout.prop(prop_base, "export_folder_mode")
     if prop_base.export_folder_mode == 'ABSOLUTE':
-        draw_properties_with_prefix(prop_base, layout, context, properties_foler)
-    if prop_base.export_folder_mode != 'ABSOLUTE':
-        draw_properties_with_prefix(prop_base, layout, context, properties)
+        box.prop(prop_base, "absolute_export_path")
+
+    if prop_base.export_folder_mode == 'RELATIVE':
+        box.prop(prop_base, "relative_export_path")
+
+    if prop_base.export_folder_mode == 'MIRROR':
+        texts = []
+        texts.append("Export Path is set relative to the .blend file directory.")
+        texts.append("Use Search and Replace to manipulate the path")
+
+        for text in texts:
+            label_multiline(
+                context=context,
+                text=text,
+                parent=box
+            )
+
+        box.prop(prop_base, "mirror_search_path")
+        box.prop(prop_base, "mirror_replacement_path")
 
 
 def draw_custom_collection_ui(self, context):
