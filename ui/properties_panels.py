@@ -110,7 +110,7 @@ def draw_filepath_settings(layout, context):
     ]
 
     properties = [
-        "search_path",
+        "mirror_search_path",
         "replacement_path",
     ]
 

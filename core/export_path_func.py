@@ -4,18 +4,18 @@ from ..core.export_formats import ExportFormats
 from ..functions.path_utils import ensure_export_folder_exists
 
 
-def generate_export_path(collection_name, export_format_key, export_dir, search_path, replacement_path):
+def generate_export_path(collection_name, export_format_key, export_dir, mirror_search_path, replacement_path):
     """
     Set the export path for a given collection's exporter.
 
     Args:
         collection_name (str): The name of the collection.
         exporter_dir (str): Path to the export folder.
-        search_path (str): The original path to be replaced.
+        mirror_search_path (str): The original path to be replaced.
         replacement_path (str): The replacement path to be applied.
         @param export_dir:
         @param replacement_path:
-        @param search_path:
+        @param mirror_search_path:
         @param collection_name:
         @param export_format_key:
     """
@@ -32,8 +32,8 @@ def generate_export_path(collection_name, export_format_key, export_dir, search_
     export_path = os.path.join(export_dir, export_name)
 
     # Apply path replacement if needed
-    if search_path and replacement_path and search_path in export_path:
-        export_path = export_path.replace(search_path, replacement_path)
+    if mirror_search_path and replacement_path and mirror_search_path in export_path:
+        export_path = export_path.replace(mirror_search_path, replacement_path)
 
     return export_path
 

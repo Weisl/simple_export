@@ -77,11 +77,11 @@ def setup_collection(context, collection, active_object, settings_col, settings_
 
     if getattr(settings_col, 'auto_set_filepath'):
         blend_dir = os.path.dirname(bpy.data.filepath)
-        search_path = getattr(settings_filepath, 'search_path')
+        mirror_search_path = getattr(settings_filepath, 'mirror_search_path')
         replacement_path = getattr(settings_filepath, 'replacement_path')
 
         export_format = scene.export_format
-        export_path = generate_export_path(collection.name, export_format, blend_dir, search_path, replacement_path)
+        export_path = generate_export_path(collection.name, export_format, blend_dir, mirror_search_path, replacement_path)
         assign_exporter_path(exporter, export_path)
 
     return exporter

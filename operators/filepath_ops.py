@@ -81,10 +81,10 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
                     export_dir = os.path.dirname(bpy.data.filepath)
 
                 # Path variables
-                search_path = settings_filepath.search_path
+                mirror_search_path = settings_filepath.mirror_search_path
                 replacement_path = settings_filepath.replacement_path
 
-                export_path = generate_export_path(collection.name, scene.export_format, export_dir, search_path,
+                export_path = generate_export_path(collection.name, scene.export_format, export_dir, mirror_search_path,
                                                    replacement_path)
                 success, msg = assign_exporter_path(exporter, export_path)
                 results.append({'name': collection.name, 'success': success, 'filepath': export_path, 'message': msg})
