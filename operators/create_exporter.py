@@ -68,7 +68,7 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
 def add_export_collections_to_menu(self, context):
     """Adds the Simple Export create export collections operator to the object context menu."""
     self.layout.separator()
-    self.layout.operator("simple_export.create_export_collections", icon="OUTLINER_COLLECTION")
+    self.layout.operator("simple_export.create_export_collections", icon='COLLECTION_COLOR_01')
 
 
 classes = (
