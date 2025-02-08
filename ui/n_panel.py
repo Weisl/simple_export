@@ -64,10 +64,13 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
             # Active Collection Details Section
             details_box = layout.box()
             details_box.label(text=f"Active Collection:", icon='OUTLINER_COLLECTION')
-            
+
             # Collection name and icon
             row = details_box.row(align=True)
             row.prop(selected_collection, 'name', icon='OUTLINER_COLLECTION')
+            op = row.operator("simple_export.go_to_collection_exporter", text="",
+                              icon='PROPERTIES')
+            op.collection_name = selected_collection.name
 
             # Export Path
             exporter = find_exporter(selected_collection, scene.export_format)
@@ -78,7 +81,6 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
                 op.outliner = False
                 op.individual_collection = True
                 op.collection_name = selected_collection.name
-
         layout.separator()
 
         # Draw Export List
