@@ -7,7 +7,6 @@ from .keymap import remove_key
 from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
 from ..core.export_formats import get_export_format_items
-from ..functions.ui_utils import label_multiline
 from ..ui.n_panel import VIEW3D_PT_SimpleExport
 
 PROPERTY_METADATA = {
@@ -159,7 +158,7 @@ def update_preset_path_for_ply(self, context):
 
 
 def update_preset_path_for_stl(self, context):
-    context.scene.simple_export_preset_file_stl = self.simple_export_preset_file_stl
+    context.scene.simple_export_preset_file_stl = self.simple_export_preset_file_stlF
 
 
 def update_panel_category(self, context):
@@ -183,6 +182,27 @@ def update_panel_category(self, context):
             except ValueError:
                 pass  # Avoid duplicate registrations
     return
+
+
+def update_mirror_preview(self, context):
+    """Update preview when mirror settings change."""
+    compute_mirror_preview(self)  # Pass scene as settings
+
+
+def compute_mirror_preview(settings):
+    """Compute the final mirrored path and return it for display."""
+    blend_path = bpy.path.abspath("//")  # Get the blend file directory
+
+    # Ensure search path is valid
+    if not settings.mirror_search_path or not settings.mirror_replacement_path:
+        return "Invalid search/replacement paths"
+
+    # Ensure blend file path contains the search path before replacing
+    if settings.mirror_search_path in blend_path:
+        export_path = blend_path.replace(settings.mirror_search_path, settings.mirror_replacement_path)
+        return bpy.path.relpath(export_path) if "//" in export_path else export_path
+
+    return "Search path not found in blend file path"
 
 
 def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_export_panel_ctrl,
@@ -351,12 +371,14 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         name=PROPERTY_METADATA["mirror_search_path"]["name"],
         description=PROPERTY_METADATA["mirror_search_path"]["description"],
         default=PROPERTY_METADATA["mirror_search_path"]["default"],
+        update=update_mirror_preview,
     )
 
     mirror_replacement_path: bpy.props.StringProperty(
         name=PROPERTY_METADATA["mirror_replacement_path"]["name"],
         description=PROPERTY_METADATA["mirror_replacement_path"]["description"],
         default=PROPERTY_METADATA["mirror_replacement_path"]["default"],
+        update=update_mirror_preview,
     )
 
     ########################################
@@ -568,19 +590,14 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                 box.prop(self, "relative_export_path")
 
             if self.export_folder_mode == 'MIRROR':
-                texts = []
-                texts.append("Export Path is set relative to the .blend file directory.")
-                texts.append("Use Search and Replace to manipulate the path")
+                box.prop(self, "mirror_search_path", text="Search Path")
+                box.prop(self, "mirror_replacement_path", text="Replacement Path")
 
-                for text in texts:
-                    label_multiline(
-                        context=context,
-                        text=text,
-                        parent=box
-                    )
-
-                box.prop(self, "mirror_search_path")
-                box.prop(self, "mirror_replacement_path")
+                # Compute and display the preview
+                preview_path = compute_mirror_preview(self)  # Pass `self` as settings
+                preview_box = box.box()
+                preview_box.label(text="Preview of Final Path:")
+                preview_box.label(text=preview_path, icon='FILE_FOLDER')
 
             box = layout.box()
             box.label(text="Export Collection")
@@ -819,12 +836,14 @@ def initialize_properties_file_path():
     bpy.types.Scene.mirror_search_path = bpy.props.StringProperty(
         name=PROPERTY_METADATA["mirror_search_path"]["name"],
         description=PROPERTY_METADATA["mirror_search_path"]["description"],
-        default=prefs.mirror_search_path
+        default=prefs.mirror_search_path,
+        update=update_mirror_preview
     )
     bpy.types.Scene.mirror_replacement_path = bpy.props.StringProperty(
         name=PROPERTY_METADATA["mirror_replacement_path"]["name"],
         description=PROPERTY_METADATA["mirror_replacement_path"]["description"],
-        default=prefs.mirror_replacement_path
+        default=prefs.mirror_replacement_path,
+        update=update_mirror_preview
     )
     bpy.types.Scene.export_folder_mode = bpy.props.EnumProperty(
         name=PROPERTY_METADATA["export_folder_mode"]["name"],
