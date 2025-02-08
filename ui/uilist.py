@@ -9,6 +9,18 @@ from ..functions.exporter_funcs import find_exporter
 from ..functions.path_utils import clean_relative_path
 
 
+def prev_name_in_export_path(prev_name, export_path):
+    """Check if the previous collection name is in the export path filename."""
+    export_filename = os.path.splitext(os.path.basename(export_path))[0]
+    return prev_name in export_filename if prev_name else False
+
+
+def current_name_not_in_export_path(collection_name, export_path):
+    """Check if the current collection name is NOT in the export path filename."""
+    export_filename = os.path.splitext(os.path.basename(export_path))[0]
+    return collection_name not in export_filename
+
+
 class SCENE_UL_CollectionList(bpy.types.UIList):
     """
     UIList displaying all collections with an exporter matching the selected export type.
@@ -83,6 +95,12 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         if settings.uilist_set_preset:
             # Assign Preset
             op = row.operator("simple_export.assign_presets", text="", icon='PRESET')
+            op.collection_name = collection.name
+
+        prev_name = collection.get("prev_name", None)
+
+        if prev_name_in_export_path(prev_name, export_path) and prev_name != collection.name:
+            op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
             op.collection_name = collection.name
 
         # Add the Export Collection button
