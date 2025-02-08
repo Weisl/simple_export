@@ -79,8 +79,8 @@ PROPERTY_METADATA = {
         "default": "ABSOLUTE",
         "items": [
             ("ABSOLUTE", "Absolute", "Use an absolute file path"),
-            ("RELATIVE", "Relative", "Use a file path relative to the .blend file"),
             ("MIRROR", "Mirror", "Mirror part of the blend file path with another directory"),
+            ("RELATIVE", "Relative", "Use a file path relative to the .blend file"),
         ],
     },
 
@@ -529,7 +529,9 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             row.prop(self, "export_folder_mode", expand=True)
             if self.export_folder_mode == 'ABSOLUTE':
                 box.prop(self, "custom_export_path")
-            if self.export_folder_mode != 'ABSOLUTE':
+            if self.export_folder_mode == 'RELATIVE':
+                box.prop(self, "custom_export_path")
+            else:  # self.export_folder_mode == 'MIRROR'
                 texts = []
                 texts.append("Export Path is set relative to the .blend file directory.")
                 texts.append("Use Search and Replace to manipulate the path")
@@ -563,7 +565,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
             layout.separator()
             icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
-            layout.prop(self, "simple_export_debug", icon=icon)
+            layout.prop(self, "simple_export_debug")
 
         elif self.prefs_tabs == 'UI':
 
