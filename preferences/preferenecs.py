@@ -64,7 +64,7 @@ PROPERTY_METADATA = {
     "set_location_offset_on_creation": {
         "name": "Collection Offset",
         "description": "Set Location Offset for collections.",
-        "default": True,
+        "default": False,
     },
     "move_by_collection_offset": {
         "name": "Move by Collection Offset",
