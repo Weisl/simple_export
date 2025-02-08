@@ -199,4 +199,4 @@ def unregister():
 
     del bpy.types.WindowManager.export_data_info
     del bpy.types.WindowManager.assign_filepath_result_info
-    del bpy.types.Scene.assign_preset_info_data
+    del bpy.types.WindowManager.assign_preset_info_data
