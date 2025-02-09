@@ -124,8 +124,14 @@ def draw_filepath_settings(layout, context):
         from ..preferences.preferenecs import compute_mirror_preview
         preview_path = compute_mirror_preview(prop_base)  # Pass `self` as settings
         preview_box = box.box()
-        preview_box.label(text="Preview of Final Path:")
-        preview_box.label(text=preview_path, icon='FILE_FOLDER')
+        preview_box.label(text="Export Folder Preview:")
+        row = preview_box.row(align=True)
+        row.label(text=preview_path)
+
+        if os.path.exists(preview_path):
+            op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
+            op.operation = 'FOLDER_OPEN'
+            op.filepath = preview_path
 
 
 def draw_custom_collection_ui(self, context):
