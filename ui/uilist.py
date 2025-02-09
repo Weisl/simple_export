@@ -93,10 +93,9 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         prev_name = collection.get("prev_name", None)
 
-        if collection_name_mismatch(collection.name, export_path):
+        if exporter.export_properties.filepath and collection_name_mismatch(collection.name, export_path):
             op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
             op.collection_name = collection.name
-            op.description = f"Collection name does not match export filename. Click to rename."
 
         # Add the Export Collection button
         op = row.operator("simple_export.export_collections", text="", icon='EXPORT')

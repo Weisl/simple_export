@@ -11,9 +11,10 @@ from ..functions.vallidate_func import validate_collection
 
 
 class SIMPLEEXPORT_OT_FixExportFilename(bpy.types.Operator):
-    """Replace the previous filename in the export path with the current collection name"""
+    bl_description = "The current filename does not match the collection name. Update the filename to be the collection name"
     bl_idname = "simple_export.fix_export_filename"
     bl_label = "Fix Export Filename"
+    bl_options = {"REGISTER", "UNDO"}
 
     collection_name: bpy.props.StringProperty()
 
