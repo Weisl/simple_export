@@ -251,7 +251,7 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         addon_name = ADDON_NAME
 
         row = header.row(align=True)
-        row.label(text='Overwrite Preferences')
+        row.label(text='Scene Settings')
         op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
         op.addon_name = addon_name
         op.prefs_tabs = 'SETTINGS'

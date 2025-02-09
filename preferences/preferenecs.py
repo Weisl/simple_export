@@ -1,6 +1,3 @@
-import os
-
-import bpy
 from bpy.props import BoolProperty, PointerProperty
 
 from .keymap import remove_key
@@ -237,9 +234,6 @@ def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_
 import bpy
 import os
 
-import bpy
-import os
-
 
 def get_relative_path(instance):
     """Ensure the stored path is always relative to the .blend file."""
@@ -301,6 +295,7 @@ def get_absolute_path(instance):
     if stored_path:
         return bpy.path.abspath(stored_path)  # Convert to absolute path
     return ""
+
 
 def set_absolute_path(instance, value):
     """Convert any assigned path to an absolute path."""
