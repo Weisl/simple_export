@@ -625,8 +625,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
                 if hasattr(self, prop_name):
                     row = box.row(align=True)
-                    row.label(text=f"{export_format} Preset", icon='FILE_SCRIPT')
-                    row.prop(self, prop_name, text="")
+                    if getattr(self, prop_name) == "":
+                        row.label(text=f"{export_format} Preset", icon='FILE_SCRIPT')
+                        row.label(text=f"Create Export Presets to assign", icon='FILE_SCRIPT')
+                    else:
+                        row.label(text=f"{export_format} Preset", icon='FILE_SCRIPT')
+                        row.prop(self, prop_name, text="")
 
             box = layout.box()
             box.label(text="Export Path")
@@ -771,7 +775,7 @@ def get_py_files(self=None, context=None, folder=None):
 
     if not folder or not os.path.isdir(folder):
         # print(f"[DEBUG] Invalid folder: {folder}")
-        return [("", "Create Presets", "No path specified")]
+        return [("NONE", "Create Presets", "Create export presets in Blender's default export window before assigning them in Simple Export.")]
 
     try:
         files = [
@@ -780,10 +784,10 @@ def get_py_files(self=None, context=None, folder=None):
             if f.endswith(".py")
         ]
         # print(f"[DEBUG] Files found in {folder}: {files}")
-        return files if files else [("", "No Files", "No .py files found")]
+        return files if files else [("NONE", "No Files", "Create presets in the default export windows before assigning them.")]
     except Exception as e:
         # print(f"[DEBUG ERROR] Error reading files in {folder}: {e}")
-        return [("", "Error", str(e))]
+        return [("NONE", "Error", str(e))]
 
 
 def create_export_format_preset_properties():
