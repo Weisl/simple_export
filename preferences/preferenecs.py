@@ -1068,10 +1068,3 @@ def unregister():
     del bpy.types.Scene.absolute_export_path
     del bpy.types.Scene.relative_export_path
 
-    del bpy.types.Scene.simple_export_preset_file_fbx
-    del bpy.types.Scene.simple_export_preset_file_obj
-    del bpy.types.Scene.simple_export_preset_file_gltf
-    del bpy.types.Scene.simple_export_preset_file_usd
-    del bpy.types.Scene.simple_export_preset_file_abc
-    del bpy.types.Scene.simple_export_preset_file_ply
-    del bpy.types.Scene.simple_export_preset_file_stl
