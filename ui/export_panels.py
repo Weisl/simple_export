@@ -259,20 +259,7 @@ class SIMPLE_EXPORT_menu_base:
 
     def draw_header(self, context):
         layout = self.layout
-        row = layout.row(align=True)
-
-        # Open documentation
-        row.operator("wm.url_open", text="", icon="HELP").url = "https://weisl.github.io/exporter_overview/"
-
-        # Open Preferences
-        addon_name = ADDON_NAME
-        op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
-        op.addon_name = addon_name
-        op.prefs_tabs = 'SETTINGS'
-        # Open Export Popup
-        op = row.operator("wm.call_panel", text="", icon="WINDOW")
-        op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
-        row.label(text="Simple Export")
+        draw_simple_export_header(layout)
 
     def draw(self, context):
         layout = self.layout
@@ -316,7 +303,6 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
 
     def draw_header(self, context):
         layout = self.layout
-        from .export_panels import draw_simple_export_header
         draw_simple_export_header(layout)
 
     def draw(self, context):
@@ -364,80 +350,25 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
 
     def draw(self, context):
         prefs = context.preferences.addons[base_package].preferences
-
         scene = context.scene
 
         layout = self.layout
+        layout.label(text="Batch Export Collections")
 
         # Draw format selection
         layout.prop(scene, "export_format", text="Format")
 
-        # Export List
-        row = layout.row()
-        row.label(text="Export List")
+        list_id = "scene"
 
-        row = layout.row(align=True)
-        op = row.operator("scene.select_all_collections", text="All", icon="CHECKBOX_HLT")
-        op.invert = False
-        op = row.operator("scene.select_all_collections", text="None", icon="CHECKBOX_DEHLT")
-        op.invert = True
+        draw_export_list(layout, list_id, scene)
 
-        layout.template_list("SCENE_UL_CollectionList", "scene", bpy.data, "collections", scene, "collection_index")
-
-        # Draw Export List
+        # Draw Operator List
         super().draw(context)
 
-        # Button to open the export Popup
-        op = layout.operator("wm.call_panel", text="Open Export Popup")
-        op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
+        draw_active_list_element(layout, scene)
 
-        # Collapsible Filepath Settings Section
-        header, body = layout.panel("overwrite_settings", default_closed=False)
-
-        # Header
-        addon_name = ADDON_NAME
-
-        row = header.row(align=True)
-        row.label(text='Scene Settings')
-        op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
-        op.addon_name = addon_name
-        op.prefs_tabs = 'SETTINGS'
-
-        # Body
-        if body:
-            row = body.row()
-            row.prop(scene, 'overwrite_filepath_settings')
-            box = body.box()
-            draw_filepath_settings(box, context)
-
-            row = body.row()
-            row.prop(scene, 'overwrite_preset_settings')
-            box = body.box()
-            draw_preset_settings(box, context)
-
-            row = body.row()
-            row.prop(scene, 'overwrite_collection_settings')
-
-            box = body.box()
-            draw_create_export_collections(box, context)
-
-        # Parent selection
-        row = layout.row()
-        color_tag = None
-        if context.scene.parent_collection:
-            color_tag = context.scene.parent_collection.color_tag
-        icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
-        row.prop(context.scene, "parent_collection", text="Parent Collection", icon=icon)
-
-        # Draw Create Button
-        row = layout.row()
-        prefs = context.preferences.addons[base_package].preferences
-        color_tag = prefs.collection_color
-        icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
-        row.operator("simple_export.create_export_collections", icon=icon)
-
-        # row = layout.row()
-        # row.operator("simple_export.add_settings_to_collections")
+        draw_scene_settings_overwrite(context, layout, scene)
+        draw_collection_creation(context, layout)
 
 
 class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
