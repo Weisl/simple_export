@@ -45,7 +45,7 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
             # Gather hierarchy of children recursively
             def collect_children(obj):
                 return [obj] + [child for child in bpy.data.objects if
-                                child.parent == obj and child in selected_objects]
+                                child.parent == obj]
 
             hierarchy_objects = collect_children(top_object)
 
