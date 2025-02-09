@@ -12,6 +12,12 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
     bl_label = "Create Export Collections"
     bl_options = {'REGISTER', 'UNDO'}
 
+    only_selection: bpy.props.BoolProperty(
+        name="Only affect selection",
+        description="Only affect selected objects",
+        default=False
+    )
+
     def execute(self, context):
         selected_objects = context.selected_objects
         parent_collection = context.scene.parent_collection or context.scene.collection
@@ -29,6 +35,7 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
             self.report({'WARNING'}, "No valid parent collection selected. Falling back to the scene collection.")
             parent_collection = context.scene.collection
 
+
         # Identify top-level objects (objects without a selected parent)
         top_level_objects = [obj for obj in selected_objects if not obj.parent or obj.parent not in selected_objects]
 
@@ -42,9 +49,11 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
             export_collection = bpy.data.collections.new(collection_name)
             parent_collection.children.link(export_collection)
 
+
+            objects = selected_objects if self.only_selection else bpy.data.objects
             # Gather hierarchy of children recursively
             def collect_children(obj):
-                return [obj] + [child for child in bpy.data.objects if
+                return [obj] + [child for child in objects if
                                 child.parent == obj]
 
             hierarchy_objects = collect_children(top_object)
