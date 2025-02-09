@@ -1,8 +1,7 @@
-from . import n_panel, properties_panels, result_popups, ui_helpers, uilist, outliner
+from . import export_panels, result_popups, ui_helpers, uilist, outliner
 
 files = [
-    n_panel,
-    properties_panels,
+    export_panels,
     result_popups,
     ui_helpers,
     uilist,

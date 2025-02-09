@@ -4,7 +4,7 @@ from .keymap import remove_key
 from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
 from ..core.export_formats import get_export_format_items
-from ..ui.n_panel import VIEW3D_PT_SimpleExport
+from ..ui.export_panels import VIEW3D_PT_SimpleExport
 
 PROPERTY_METADATA = {
     "custom_prefix": {
