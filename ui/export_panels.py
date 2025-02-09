@@ -7,6 +7,20 @@ from ..core.info import ADDON_NAME, COLOR_TAG_ICONS
 from ..functions.exporter_funcs import find_exporter
 
 
+def draw_pre_export_operations(col, scene):
+    # Ensure the panel is collapsed by default
+    header, body = col.panel(idname="PRE_EXPORT_OPERATIONS_PANEL", default_closed=True)
+
+    icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
+
+    # Draw the panel header
+    header.label(text="Pre Export Operations (BETA)", icon=icon)
+
+    # Check if the panel is expanded before drawing elements
+    if body:
+        body.prop(scene, 'move_by_collection_offset')
+
+
 def draw_simple_export_header(layout):
     row = layout.row(align=True)
     # Open documentation
@@ -265,15 +279,6 @@ class SIMPLE_EXPORT_menu_base:
         layout = self.layout
         scene = context.scene
 
-        # List Operators
-        box = layout.box()
-        col = box.column(align=True)
-        row = col.row()
-
-        icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
-        row.label(text="Pre Export Operations (BETA)", icon=icon)
-        row = col.row()
-        row.prop(scene, 'move_by_collection_offset')
 
         col = layout.column(align=True)
         row = col.row()
@@ -287,6 +292,11 @@ class SIMPLE_EXPORT_menu_base:
         op.individual_collection = False
 
         col.separator()
+
+        box = col.box()
+        draw_pre_export_operations(box, scene)
+
+
         row = col.row()
         op = row.operator("simple_export.export_collections", text="Export Selected", icon='EXPORT')
         op.outliner = False
