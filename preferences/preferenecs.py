@@ -1,12 +1,10 @@
-import os
-import textwrap
-
-import bpy
 from bpy.props import BoolProperty, PointerProperty
 
 from .keymap import remove_key
-from .panels import EXPORT_FORMATS
-from .panels import get_export_format_items
+from .. import __package__ as base_package
+from ..core.export_formats import ExportFormats
+from ..core.export_formats import get_export_format_items
+from ..ui.export_panels import VIEW3D_PT_SimpleExport
 
 PROPERTY_METADATA = {
     "custom_prefix": {
@@ -24,12 +22,12 @@ PROPERTY_METADATA = {
         "description": "If checked, the Blender file name will be used as a prefix for the export file name.",
         "default": False,
     },
-    "search_path": {
+    "mirror_search_path": {
         "name": "Search",
         "description": "The path to be replaced.",
         "default": "workdata",
     },
-    "replacement_path": {
+    "mirror_replacement_path": {
         "name": "Replace",
         "description": "The path to replace with.",
         "default": "sourcedata",
@@ -63,22 +61,34 @@ PROPERTY_METADATA = {
     "set_location_offset_on_creation": {
         "name": "Collection Offset",
         "description": "Set Location Offset for collections.",
-        "default": True,
+        "default": False,
     },
-    "move_to_origin": {
-        "name": "Move To Origin",
+    "move_by_collection_offset": {
+        "name": "Move by Collection Offset",
         "description": "Objects are moved to the origin based on the Collection Offset before exporting.",
         "default": False,
     },
 
-    "use_custom_export_folder": {
-        "name": "Custom Folder",
-        "description": "Use a custom export folder",
-        "default": True,
+    "export_folder_mode": {
+        "name": "Custom Export Path Mode",
+        "description": "Choose how the export file path is determined",
+        "default": "ABSOLUTE",
+        "items": [
+            ("ABSOLUTE", "Absolute", "Use an absolute file path"),
+            ("RELATIVE", "Relative", "Use a file path relative to the .blend file"),
+            ("MIRROR", "Mirror", "Mirror part of the blend file path with another directory"),
+        ],
     },
-    "custom_export_path": {
+
+    "absolute_export_path": {
         "name": "Export Folder",
-        "description": "Custom folder to export files to.",
+        "description": "Custom absolute folder to export files to.",
+        "default": '',
+    },
+
+    "relative_export_path": {
+        "name": "Relative Folder Path",
+        "description": "Folder to export files relative to the .blend file.",
         "default": '',
     },
 }
@@ -86,62 +96,110 @@ PROPERTY_METADATA = {
 
 # Wrapper functions for each format using the existing `get_py_files` function
 def get_py_files_for_fbx(self, context):
-    return get_py_files(self, context, EXPORT_FORMATS["FBX"]["preset_folder"])
+    export_format = ExportFormats.get("FBX")
+    return get_py_files(self, context, export_format.preset_folder if export_format else None)
+
 
 def get_py_files_for_obj(self, context):
-    return get_py_files(self, context, EXPORT_FORMATS["OBJ"]["preset_folder"])
+    export_format = ExportFormats.get("OBJ")
+    return get_py_files(self, context, export_format.preset_folder if export_format else None)
+
 
 def get_py_files_for_gltf(self, context):
-    return get_py_files(self, context, EXPORT_FORMATS["GLTF"]["preset_folder"])
+    export_format = ExportFormats.get("GLTF")
+    return get_py_files(self, context, export_format.preset_folder if export_format else None)
+
 
 def get_py_files_for_usd(self, context):
-    return get_py_files(self, context, EXPORT_FORMATS["USD"]["preset_folder"])
+    export_format = ExportFormats.get("USD")
+    return get_py_files(self, context, export_format.preset_folder if export_format else None)
+
 
 def get_py_files_for_abc(self, context):
-    return get_py_files(self, context, EXPORT_FORMATS["ABC"]["preset_folder"])
+    export_format = ExportFormats.get("ABC")
+    return get_py_files(self, context, export_format.preset_folder if export_format else None)
+
 
 def get_py_files_for_ply(self, context):
-    return get_py_files(self, context, EXPORT_FORMATS["PLY"]["preset_folder"])
+    export_format = ExportFormats.get("PLY")
+    return get_py_files(self, context, export_format.preset_folder if export_format else None)
+
 
 def get_py_files_for_stl(self, context):
-    return get_py_files(self, context, EXPORT_FORMATS["STL"]["preset_folder"])
+    export_format = ExportFormats.get("STL")
+    return get_py_files(self, context, export_format.preset_folder if export_format else None)
+
 
 def update_preset_path_for_fbx(self, context):
-    context.window_manager.simple_export_preset_file_fbx = self.simple_export_preset_file_fbx
-    # print(f"[DEBUG] FBX preset path updated to: {self.simple_export_preset_file_fbx}")
+    context.scene.simple_export_preset_file_fbx = self.simple_export_preset_file_fbx
+
 
 def update_preset_path_for_obj(self, context):
-    context.window_manager.simple_export_preset_file_obj = self.simple_export_preset_file_obj
-    # print(f"[DEBUG] OBJ preset path updated to: {self.simple_export_preset_file_obj}")
+    context.scene.simple_export_preset_file_obj = self.simple_export_preset_file_obj
+
 
 def update_preset_path_for_gltf(self, context):
-    context.window_manager.simple_export_preset_file_gltf = self.simple_export_preset_file_gltf
-    # print(f"[DEBUG] glTF preset path updated to: {self.simple_export_preset_file_gltf}")
+    context.scene.simple_export_preset_file_gltf = self.simple_export_preset_file_gltf
+
 
 def update_preset_path_for_usd(self, context):
-    context.window_manager.simple_export_preset_file_usd = self.simple_export_preset_file_usd
-    # print(f"[DEBUG] USD preset path updated to: {self.simple_export_preset_file_usd}")
+    context.scene.simple_export_preset_file_usd = self.simple_export_preset_file_usd
+
 
 def update_preset_path_for_abc(self, context):
-    context.window_manager.simple_export_preset_file_abc = self.simple_export_preset_file_abc
-    # print(f"[DEBUG] Alembic preset path updated to: {self.simple_export_preset_file_abc}")
+    context.scene.simple_export_preset_file_abc = self.simple_export_preset_file_abc
+
 
 def update_preset_path_for_ply(self, context):
-    context.window_manager.simple_export_preset_file_ply = self.simple_export_preset_file_ply
-    # print(f"[DEBUG] PLY preset path updated to: {self.simple_export_preset_file_ply}")
+    context.scene.simple_export_preset_file_ply = self.simple_export_preset_file_ply
+
 
 def update_preset_path_for_stl(self, context):
-    context.window_manager.simple_export_preset_file_stl = self.simple_export_preset_file_stl
-    # print(f"[DEBUG] STL preset path updated to: {self.simple_export_preset_file_stl}")
+    context.scene.simple_export_preset_file_stl = self.simple_export_preset_file_stlF
 
 
+def update_panel_category(self, context):
+    """Update panel tab for simple export"""
+    panels = [
+        VIEW3D_PT_SimpleExport,
+    ]
 
-def label_multiline(context, text, parent):
-    chars = int(context.region.width / 7)  # 7 pix on 1 character
-    wrapper = textwrap.TextWrapper(width=chars)
-    text_lines = wrapper.wrap(text=text)
-    for text_line in text_lines:
-        parent.label(text=text_line)
+    for panel in panels:
+        try:
+            bpy.utils.unregister_class(panel)
+        except:
+            pass
+
+        prefs = context.preferences.addons[base_package].preferences
+        panel.bl_category = prefs.panel_category
+
+        if prefs.enable_n_panel:
+            try:
+                bpy.utils.register_class(panel)
+            except ValueError:
+                pass  # Avoid duplicate registrations
+    return
+
+
+def update_mirror_preview(self, context):
+    """Update preview when mirror settings change."""
+    compute_mirror_preview(self)  # Pass scene as settings
+
+
+def compute_mirror_preview(settings):
+    """Compute the final mirrored path and return it for display."""
+    blend_path = bpy.path.abspath("//")  # Get the blend file directory
+
+    # Ensure search path is valid
+    if not settings.mirror_search_path or not settings.mirror_replacement_path:
+        return "Invalid search/replacement paths"
+
+    # Ensure blend file path contains the search path before replacing
+    if settings.mirror_search_path in blend_path:
+        export_path = blend_path.replace(settings.mirror_search_path, settings.mirror_replacement_path)
+        return bpy.path.relpath(export_path) if "//" in export_path else export_path
+
+    return "Search path not found in blend file path"
 
 
 def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_export_panel_ctrl,
@@ -170,7 +228,83 @@ def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_
     kmi.active = simple_export_panel_active
 
 
-# Scene properties to define search_path and replacement_path
+# Scene properties to define mirror_search_path and mirror_replacement_path
+
+
+import bpy
+import os
+
+
+def get_relative_path(instance):
+    """Ensure the stored path is always relative to the .blend file."""
+    if isinstance(instance, bpy.types.AddonPreferences):
+        # If called from AddonPreferences
+        stored_path = instance.get("relative_export_path", "")
+    elif isinstance(instance, bpy.types.Scene):
+        # If called from Scene (fallback)
+        stored_path = instance.get("relative_export_path", "")
+    else:
+        return ""
+
+    if stored_path:
+        return bpy.path.relpath(stored_path)  # Use Blender's built-in function
+    return ""
+
+
+def set_relative_path(instance, value):
+    """Convert any assigned path to a direct relative path."""
+    blend_dir = bpy.path.abspath("//")  # Get absolute blend directory
+
+    if not blend_dir:
+        if isinstance(instance, bpy.types.AddonPreferences):
+            instance["relative_export_path"] = value  # Store as-is
+        elif isinstance(instance, bpy.types.Scene):
+            instance["relative_export_path"] = value  # Store in scene
+        return
+
+    absolute_path = bpy.path.abspath(value)  # Convert input to absolute path
+
+    try:
+        # Use `os.path.relpath()` to ensure a clean direct relative path
+        relative_path = os.path.relpath(absolute_path, blend_dir)
+        formatted_path = f"//{relative_path.replace(os.sep, '/')}"
+
+        if isinstance(instance, bpy.types.AddonPreferences):
+            instance["relative_export_path"] = formatted_path
+        elif isinstance(instance, bpy.types.Scene):
+            instance["relative_export_path"] = formatted_path
+    except ValueError:
+        # Path is outside the blend directory, reset to empty
+        if isinstance(instance, bpy.types.AddonPreferences):
+            instance["relative_export_path"] = ""
+        elif isinstance(instance, bpy.types.Scene):
+            instance["relative_export_path"] = ""
+
+
+def get_absolute_path(instance):
+    """Ensure the stored path is always an absolute path."""
+    if isinstance(instance, bpy.types.AddonPreferences):
+        # If called from AddonPreferences
+        stored_path = instance.get("absolute_export_path", "")
+    elif isinstance(instance, bpy.types.Scene):
+        # If called from Scene (fallback)
+        stored_path = instance.get("absolute_export_path", "")
+    else:
+        return ""
+
+    if stored_path:
+        return bpy.path.abspath(stored_path)  # Convert to absolute path
+    return ""
+
+
+def set_absolute_path(instance, value):
+    """Convert any assigned path to an absolute path."""
+    absolute_path = bpy.path.abspath(value)  # Ensure absolute path format
+
+    if isinstance(instance, bpy.types.AddonPreferences):
+        instance["absolute_export_path"] = absolute_path
+    elif isinstance(instance, bpy.types.Scene):
+        instance["absolute_export_path"] = absolute_path
 
 
 class UIListProperties(bpy.types.PropertyGroup):
@@ -197,7 +331,8 @@ class UIListProperties(bpy.types.PropertyGroup):
 
 
 class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
-    bl_idname = __package__
+    bl_idname = base_package
+    bl_options = {'REGISTER'}
 
     def update_simple_export_panel_key(self, context):
         """
@@ -243,10 +378,10 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default="FBX",  # Default value
     )
 
-    move_to_origin: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["move_to_origin"]["name"],
-        description=PROPERTY_METADATA["move_to_origin"]["description"],
-        default=PROPERTY_METADATA["move_to_origin"]["default"],
+    move_by_collection_offset: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["move_by_collection_offset"]["name"],
+        description=PROPERTY_METADATA["move_by_collection_offset"]["description"],
+        default=PROPERTY_METADATA["move_by_collection_offset"]["default"],
     )
 
     use_blend_file_name_as_prefix: bpy.props.BoolProperty(
@@ -257,28 +392,43 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
     ########################################
     # Filepath
-    use_custom_export_folder: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["use_custom_export_folder"]["name"],
-        description=PROPERTY_METADATA["use_custom_export_folder"]["description"],
-        default=PROPERTY_METADATA["use_custom_export_folder"]["default"],
+    export_folder_mode: bpy.props.EnumProperty(
+        name=PROPERTY_METADATA["export_folder_mode"]["name"],
+        description=PROPERTY_METADATA["export_folder_mode"]["description"],
+        items=PROPERTY_METADATA["export_folder_mode"]["items"],
+        default=PROPERTY_METADATA["export_folder_mode"]["default"],
     )
 
-    custom_export_path: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["custom_export_path"]["name"],
-        description=PROPERTY_METADATA["custom_export_path"]["description"],
-        default=PROPERTY_METADATA["custom_export_path"]["default"],
-        subtype='DIR_PATH')
-
-    search_path: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["search_path"]["name"],
-        description=PROPERTY_METADATA["search_path"]["description"],
-        default=PROPERTY_METADATA["search_path"]["default"],
+    absolute_export_path: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["absolute_export_path"]["name"],
+        description=PROPERTY_METADATA["absolute_export_path"]["description"],
+        default=PROPERTY_METADATA["absolute_export_path"]["default"],
+        subtype='DIR_PATH',
+        get=get_absolute_path,  # Use shared absolute path getter
+        set=set_absolute_path  # Use shared absolute path setter
     )
 
-    replacement_path: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["replacement_path"]["name"],
-        description=PROPERTY_METADATA["replacement_path"]["description"],
-        default=PROPERTY_METADATA["replacement_path"]["default"],
+    relative_export_path: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["relative_export_path"]["name"],
+        description=PROPERTY_METADATA["relative_export_path"]["description"],
+        default=PROPERTY_METADATA["relative_export_path"]["default"],
+        subtype='DIR_PATH',
+        get=get_relative_path,  # Use the same getter
+        set=set_relative_path  # Use the same setter
+    )
+
+    mirror_search_path: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["mirror_search_path"]["name"],
+        description=PROPERTY_METADATA["mirror_search_path"]["description"],
+        default=PROPERTY_METADATA["mirror_search_path"]["default"],
+        update=update_mirror_preview,
+    )
+
+    mirror_replacement_path: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["mirror_replacement_path"]["name"],
+        description=PROPERTY_METADATA["mirror_replacement_path"]["description"],
+        default=PROPERTY_METADATA["mirror_replacement_path"]["default"],
+        update=update_mirror_preview,
     )
 
     ########################################
@@ -356,6 +506,18 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
     scene_properties: PointerProperty(type=UIListProperties)
     popup_properties: PointerProperty(type=UIListProperties)
+    npanel_properties: PointerProperty(type=UIListProperties)
+
+    panel_category: bpy.props.StringProperty(name="Category Tab",
+                                             description="The category name used to organize the addon in the properties panel for all the addons",
+                                             default='Simple Exporter',
+                                             update=update_panel_category)  # update = update_panel_position,
+
+    enable_n_panel: bpy.props.BoolProperty(
+        name="Enable Simple Export N-Panel",
+        description="Toggle the N-Panel on and off.",
+        default=True,
+        update=update_panel_category)
 
     ########################################
     # Presets
@@ -456,37 +618,52 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             # Iterate through dynamically created properties
             box = layout.box()
             box.label(text="Export Presets")
-            for export_format in EXPORT_FORMATS.keys():
+
+            # Use ExportFormats to get all available formats
+            for export_format in ExportFormats.FORMATS.keys():
                 prop_name = f"simple_export_preset_file_{export_format.lower()}"
+
                 if hasattr(self, prop_name):
                     row = box.row(align=True)
-                    row.label(text=f"{export_format} Preset", icon='FILE_SCRIPT')
-                    row.prop(self, prop_name, text="")
+                    if getattr(self, prop_name) == "":
+                        row.label(text=f"{export_format} Preset", icon='FILE_SCRIPT')
+                        row.label(text=f"Create Export Presets to assign", icon='FILE_SCRIPT')
+                    else:
+                        row.label(text=f"{export_format} Preset", icon='FILE_SCRIPT')
+                        row.prop(self, prop_name, text="")
 
             box = layout.box()
             box.label(text="Export Path")
-            box.prop(self, "use_custom_export_folder")
-            if self.use_custom_export_folder:
-                box.prop(self, "custom_export_path")
-            if not self.use_custom_export_folder:
-                texts = []
-                texts.append("Export Path is set relative to the .blend file directory.")
-                texts.append("Use Search and Replace to manipulate the path")
+            row = box.row()
+            row.prop(self, "export_folder_mode", expand=True)
 
-                for text in texts:
-                    label_multiline(
-                        context=context,
-                        text=text,
-                        parent=box
-                    )
+            if self.export_folder_mode == 'ABSOLUTE':
+                box.prop(self, "absolute_export_path")
 
-                box.prop(self, "search_path")
-                box.prop(self, "replacement_path")
+            if self.export_folder_mode == 'RELATIVE':
+                box.prop(self, "relative_export_path")
+
+            if self.export_folder_mode == 'MIRROR':
+                box.prop(self, "mirror_search_path", text="Search Path")
+                box.prop(self, "mirror_replacement_path", text="Replacement Path")
+
+                # Compute and display the preview
+                from ..preferences.preferenecs import compute_mirror_preview
+                preview_path = compute_mirror_preview(self)  # Pass `self` as settings
+                preview_box = box.box()
+                preview_box.label(text="Export Folder Preview:")
+                row = preview_box.row(align=True)
+                row.label(text=preview_path)
+
+                if os.path.exists(preview_path):
+                    op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
+                    op.operation = 'FOLDER_OPEN'
+                    op.filepath = preview_path
 
             box = layout.box()
             box.label(text="Export Collection")
             box.prop(self, "collection_color")
-            
+
             box.prop(self, "use_blend_file_name_as_prefix")
             box.prop(self, "custom_prefix")
             box.prop(self, "custom_suffix")
@@ -498,15 +675,23 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
             box = layout.box()
             box.label(text="Pre Export Operations")
-            box.prop(self, "move_to_origin")
+            box.prop(self, "move_by_collection_offset")
 
             layout.separator()
             icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
-            layout.prop(self, "simple_export_debug", icon=icon)
+            layout.prop(self, "simple_export_debug")
 
         elif self.prefs_tabs == 'UI':
 
-            layout.prop(self, "report_errors_only")
+            box = layout.box()
+            box.label(text="N Panel")
+            layout.prop(self, 'enable_n_panel')
+            layout.prop(self, 'panel_category')
+            box = box.box()
+            box.prop(self.npanel_properties, "uilist_icon")
+            box.prop(self.npanel_properties, "uilist_show_filepath")
+            box.prop(self.npanel_properties, "uilist_set_filepath")
+            box.prop(self.npanel_properties, "uilist_set_preset")
 
             box = layout.box()
             box.label(text="Scene List")
@@ -522,6 +707,11 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.prop(self.popup_properties, "uilist_set_filepath")
             box.prop(self.popup_properties, "uilist_set_preset")
 
+            box = layout.box()
+            box.label(text="Warnings")
+            box.prop(self, "report_errors_only")
+
+
         elif self.prefs_tabs == 'KEYMAP':
             self.keymap_ui(layout, 'Export Popup', 'simple_export_panel', 'wm.call_panel',
                            "SIMPLE_EXPORT_PT_simple_export_popup")
@@ -536,7 +726,12 @@ classes = (
 
 
 def update_preset_path(self, context):
-    self.preset_path = EXPORT_FORMATS[self.export_format]["preset_folder"]
+    export_format = ExportFormats.get(self.export_format)
+
+    if export_format:
+        self.preset_path = export_format.preset_folder
+    else:
+        self.preset_path = ""  # Fallback in case the format is invalid
 
 
 def get_default_export_format():
@@ -580,7 +775,7 @@ def get_py_files(self=None, context=None, folder=None):
 
     if not folder or not os.path.isdir(folder):
         # print(f"[DEBUG] Invalid folder: {folder}")
-        return [("", "No Presets", "No path specified")]
+        return [("NONE", "Create Presets", "Create export presets in Blender's default export window before assigning them in Simple Export.")]
 
     try:
         files = [
@@ -589,23 +784,23 @@ def get_py_files(self=None, context=None, folder=None):
             if f.endswith(".py")
         ]
         # print(f"[DEBUG] Files found in {folder}: {files}")
-        return files if files else [("", "No Files", "No .py files found")]
+        return files if files else [("NONE", "No Files", "Create presets in the default export windows before assigning them.")]
     except Exception as e:
         # print(f"[DEBUG ERROR] Error reading files in {folder}: {e}")
-        return [("", "Error", str(e))]
+        return [("NONE", "Error", str(e))]
 
 
 def create_export_format_preset_properties():
     """
     Dynamically create individual preset properties for each export format.
     """
-    for export_format, format_details in EXPORT_FORMATS.items():
-        prop_name = f"simple_export_preset_file_{export_format.lower()}"
-        preset_folder = format_details.get("preset_folder", "")
+    for export_format_key, export_format in ExportFormats.FORMATS.items():
+        prop_name = f"simple_export_preset_file_{export_format_key.lower()}"
+        preset_folder = export_format.preset_folder
 
         # Ensure the folder exists and provide debug information
         if not os.path.isdir(preset_folder):
-            # print(f"[DEBUG] Invalid folder for {export_format}: {preset_folder}")
+            # print(f"[DEBUG] Invalid folder for {export_format_key}: {preset_folder}")
             continue
 
         # print(f"[DEBUG] Creating property: {prop_name} for folder: {preset_folder}")
@@ -618,8 +813,8 @@ def create_export_format_preset_properties():
 
             # Create the property dynamically
             return bpy.props.EnumProperty(
-                name=f"{export_format} Preset File",
-                description=f"Select a preset file for {export_format}",
+                name=f"{export_format_key} Preset File",
+                description=f"Select a preset file for {export_format_key}",
                 items=lambda self, context: get_py_files_for_this_format(self, context),
             )
 
@@ -636,7 +831,7 @@ def initialize_format_specific_properties():
 
 # Helper function to initialize Window Manager properties
 def initialize_properties_collection_generation():
-    prefs = bpy.context.preferences.addons[__package__].preferences
+    prefs = bpy.context.preferences.addons[base_package].preferences
 
     bpy.types.Scene.export_format = bpy.props.EnumProperty(
         name="Export Format",
@@ -650,13 +845,6 @@ def initialize_properties_collection_generation():
         name="Overwrite Preset Folder",
         description="Manually override the automatically set preset folder",
         default=False,
-    )
-
-    bpy.types.Scene.preset_path = bpy.props.StringProperty(
-        name="Preset Folder Path",
-        description="Path to the folder containing .py files",
-        default=EXPORT_FORMATS["FBX"]["preset_folder"],  # Dynamically fetch from EXPORT_FORMATS
-        subtype="DIR_PATH",
     )
 
     bpy.types.Scene.custom_prefix = bpy.props.StringProperty(
@@ -679,10 +867,10 @@ def initialize_properties_collection_generation():
         description=PROPERTY_METADATA["set_location_offset_on_creation"]["description"],
         default=prefs.set_location_offset_on_creation
     )
-    bpy.types.Scene.move_to_origin = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["move_to_origin"]["name"],
-        description=PROPERTY_METADATA["move_to_origin"]["description"],
-        default=prefs.move_to_origin,
+    bpy.types.Scene.move_by_collection_offset = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["move_by_collection_offset"]["name"],
+        description=PROPERTY_METADATA["move_by_collection_offset"]["description"],
+        default=prefs.move_by_collection_offset,
     )
 
     bpy.types.Scene.auto_set_filepath = bpy.props.BoolProperty(
@@ -704,28 +892,43 @@ def initialize_properties_collection_generation():
 
 
 def initialize_properties_file_path():
-    prefs = bpy.context.preferences.addons[__package__].preferences
+    prefs = bpy.context.preferences.addons[base_package].preferences
 
-    bpy.types.Scene.search_path = bpy.props.StringProperty(
-        name=PROPERTY_METADATA["search_path"]["name"],
-        description=PROPERTY_METADATA["search_path"]["description"],
-        default=prefs.search_path
+    bpy.types.Scene.mirror_search_path = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["mirror_search_path"]["name"],
+        description=PROPERTY_METADATA["mirror_search_path"]["description"],
+        default=prefs.mirror_search_path,
+        update=update_mirror_preview
     )
-    bpy.types.Scene.replacement_path = bpy.props.StringProperty(
-        name=PROPERTY_METADATA["replacement_path"]["name"],
-        description=PROPERTY_METADATA["replacement_path"]["description"],
-        default=prefs.replacement_path
+    bpy.types.Scene.mirror_replacement_path = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["mirror_replacement_path"]["name"],
+        description=PROPERTY_METADATA["mirror_replacement_path"]["description"],
+        default=prefs.mirror_replacement_path,
+        update=update_mirror_preview
     )
-    bpy.types.Scene.use_custom_export_folder = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["use_custom_export_folder"]["name"],
-        description=PROPERTY_METADATA["use_custom_export_folder"]["description"],
-        default=prefs.use_custom_export_folder
+    bpy.types.Scene.export_folder_mode = bpy.props.EnumProperty(
+        name=PROPERTY_METADATA["export_folder_mode"]["name"],
+        items=PROPERTY_METADATA["export_folder_mode"]["items"],
+        description=PROPERTY_METADATA["export_folder_mode"]["description"],
+        default=prefs.export_folder_mode
     )
-    bpy.types.Scene.custom_export_path = bpy.props.StringProperty(
-        name="Custom Export Path",
-        description="Custom directory to export files to.",
+
+    bpy.types.Scene.absolute_export_path = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["absolute_export_path"]["name"],
+        description=PROPERTY_METADATA["absolute_export_path"]["description"],
         subtype='DIR_PATH',
-        default=prefs.custom_export_path
+        default=prefs.absolute_export_path,
+        get=get_absolute_path,  # Use shared absolute path getter
+        set=set_absolute_path  # Use shared absolute path setter
+    )
+
+    bpy.types.Scene.relative_export_path = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["relative_export_path"]["name"],
+        description=PROPERTY_METADATA["relative_export_path"]["description"],
+        subtype='DIR_PATH',
+        default=prefs.relative_export_path,
+        get=get_relative_path,  # Use extracted getter
+        set=set_relative_path  # Use extracted setter
     )
 
 
@@ -740,8 +943,8 @@ def register():
     for cls in classes:
         register_class(cls)
 
-    from .keymap import add_keymap
-    add_keymap()
+    # Initialize correct property panel for the Simple Export Panel
+    update_panel_category(None, bpy.context)
 
     bpy.types.Scene.collection_index = bpy.props.IntProperty(
         name="Collection Index",
@@ -750,18 +953,17 @@ def register():
     )
 
     bpy.types.Scene.overwrite_filepath_settings = bpy.props.BoolProperty(
-        name="Overwrite Filepath",
+        name="Scene: Filepath",
         description="Overwrite the settings regarding the generation of the export path defined in the Preferences",
         default=True)
 
-
     bpy.types.Scene.overwrite_collection_settings = bpy.props.BoolProperty(
-        name="Overwrite Collection",
+        name="Scene: Export Collection",
         description="Overwrite the settings related to the creation of Export Collections defined in the Preferences",
         default=False)
 
     bpy.types.Scene.overwrite_preset_settings = bpy.props.BoolProperty(
-        name="Overwrite Preset",
+        name="Scene: Preset",
         description="Overwrite the settings regarding the presets",
         default=False)
 
@@ -779,16 +981,64 @@ def register():
         description="Select this collection for export",
         default=False)
 
-    bpy.app.timers.register(post_register, first_interval=0.1)
+    ########################################
+    # Presets
+    bpy.types.Scene.simple_export_preset_file_fbx = bpy.props.EnumProperty(
+        name="FBX Preset File",
+        description="Select a preset file for FBX",
+        items=lambda self, context: get_py_files_for_fbx(self, context),
+        update=update_preset_path_for_fbx,
+    )
+
+    bpy.types.Scene.simple_export_preset_file_obj = bpy.props.EnumProperty(
+        name="OBJ Preset File",
+        description="Select a preset file for OBJ",
+        items=lambda self, context: get_py_files_for_obj(self, context),
+        update=update_preset_path_for_obj,
+    )
+
+    bpy.types.Scene.simple_export_preset_file_gltf = bpy.props.EnumProperty(
+        name="glTF Preset File",
+        description="Select a preset file for glTF",
+        items=lambda self, context: get_py_files_for_gltf(self, context),
+        update=update_preset_path_for_gltf,
+    )
+
+    bpy.types.Scene.simple_export_preset_file_usd = bpy.props.EnumProperty(
+        name="USD Preset File",
+        description="Select a preset file for USD",
+        items=lambda self, context: get_py_files_for_usd(self, context),
+        update=update_preset_path_for_usd,
+    )
+
+    bpy.types.Scene.simple_export_preset_file_abc = bpy.props.EnumProperty(
+        name="Alembic Preset File",
+        description="Select a preset file for Alembic",
+        items=lambda self, context: get_py_files_for_abc(self, context),
+        update=update_preset_path_for_abc,
+    )
+
+    bpy.types.Scene.simple_export_preset_file_ply = bpy.props.EnumProperty(
+        name="PLY Preset File",
+        description="Select a preset file for PLY",
+        items=lambda self, context: get_py_files_for_ply(self, context),
+        update=update_preset_path_for_ply,
+    )
+
+    bpy.types.Scene.simple_export_preset_file_stl = bpy.props.EnumProperty(
+        name="STL Preset File",
+        description="Select a preset file for STL",
+        items=lambda self, context: get_py_files_for_stl(self, context),
+        update=update_preset_path_for_stl,
+    )
+
+    bpy.app.timers.register(post_register, first_interval=0.5)
     initialize_format_specific_properties()
 
 
 def unregister():
-    from .keymap import remove_keymap
-    remove_keymap()
-
     # Remove dynamically created properties
-    for export_format in EXPORT_FORMATS.keys():
+    for export_format in ExportFormats.FORMATS.keys():
         prop_name = f"simple_export_preset_file_{export_format.lower()}"
         if hasattr(bpy.types.Scene, prop_name):
             delattr(bpy.types.Scene, prop_name)
@@ -816,7 +1066,9 @@ def unregister():
     del bpy.types.Scene.collection_color
 
     # filepath
-    del bpy.types.Scene.search_path
-    del bpy.types.Scene.replacement_path
-    del bpy.types.Scene.use_custom_export_folder
-    del bpy.types.Scene.custom_export_path
+    del bpy.types.Scene.mirror_search_path
+    del bpy.types.Scene.mirror_replacement_path
+    del bpy.types.Scene.export_folder_mode
+    del bpy.types.Scene.absolute_export_path
+    del bpy.types.Scene.relative_export_path
+

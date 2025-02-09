@@ -1,20 +1,18 @@
-import bpy
 import os
 
-from .operators import find_exporter, clean_relative_path
+import bpy
 
-# Map color_tag to icons
-color_tag_icons = {
-    'NONE': 'OUTLINER_COLLECTION',
-    'COLOR_01': 'COLLECTION_COLOR_01',
-    'COLOR_02': 'COLLECTION_COLOR_02',
-    'COLOR_03': 'COLLECTION_COLOR_03',
-    'COLOR_04': 'COLLECTION_COLOR_04',
-    'COLOR_05': 'COLLECTION_COLOR_05',
-    'COLOR_06': 'COLLECTION_COLOR_06',
-    'COLOR_07': 'COLLECTION_COLOR_07',
-    'COLOR_08': 'COLLECTION_COLOR_08',
-}
+from .. import __package__ as base_package
+from ..core.export_formats import ExportFormats
+from ..core.info import COLOR_TAG_ICONS
+from ..functions.exporter_funcs import find_exporter
+from ..functions.path_utils import clean_relative_path
+
+
+def collection_name_mismatch(collection_name, export_path):
+    """Check if the collection name does not match the export file name exactly."""
+    export_filename = os.path.splitext(os.path.basename(export_path))[0]
+    return collection_name != export_filename
 
 
 class SCENE_UL_CollectionList(bpy.types.UIList):
@@ -26,12 +24,14 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         layout.prop(context.window_manager, "export_format", text="Filter Format")
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        prefs = context.preferences.addons[__package__].preferences
+        prefs = context.preferences.addons[base_package].preferences
 
         # Determine settings based on the list_id
         if self.list_id == "scene":
             settings = prefs.scene_properties
-        elif self.list_id == "popup":
+        elif self.list_id == "npanel":
+            settings = prefs.npanel_properties
+        else:  # popup":
             settings = prefs.popup_properties
 
         collection = item
@@ -46,7 +46,6 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         # Ensure there's at least one exporter in the collection
         if not collection.exporters:
             return
-
 
         # Get exporter details
         scene = context.scene
@@ -70,7 +69,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         # Determine the icon based on the collection's color_tag
         color_tag = collection.color_tag
-        icon = color_tag_icons.get(color_tag, 'OUTLINER_COLLECTION')
+        icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
 
         # Display the collection name with the color icon
         row.label(text=collection.name, icon=icon)
@@ -82,16 +81,26 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         if settings.uilist_set_filepath:
             # Buttons for setting the export path and opening the directory
             # Assign Path
-            op = row.operator("scene.set_export_path", text="", icon='FOLDER_REDIRECT')
+            op = row.operator("simple_export.set_export_paths", text="", icon='FOLDER_REDIRECT')
+            op.outliner = False
+            op.individual_collection = True
             op.collection_name = collection.name
 
         if settings.uilist_set_preset:
             # Assign Preset
-            op = row.operator("simple_export.assign_preset", text="", icon='PRESET')
+            op = row.operator("simple_export.assign_presets", text="", icon='PRESET')
+            op.collection_name = collection.name
+
+        prev_name = collection.get("prev_name", None)
+
+        if exporter.export_properties.filepath and collection_name_mismatch(collection.name, export_path):
+            op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
             op.collection_name = collection.name
 
         # Add the Export Collection button
-        op = row.operator("simple_export.export_collection", text="", icon='EXPORT')
+        op = row.operator("simple_export.export_collections", text="", icon='EXPORT')
+        op.outliner = False
+        op.individual_collection = True
         op.collection_name = collection.name
 
     def filter_items(self, context, data, propname):
@@ -101,13 +110,12 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         scene = context.scene
 
         export_format = scene.export_format
-
-        from .panels import EXPORT_FORMATS
+        export_format_obj = ExportFormats.get(export_format)
 
         for collection in bpy.data.collections:
             # Filter collections based on whether they have an exporter with the matching format
             has_matching_exporter = any(
-                str(type(exporter.export_properties)) == EXPORT_FORMATS[export_format]["op_type"] for exporter in
+                str(type(exporter.export_properties)) == export_format_obj.op_type for exporter in
                 collection.exporters
             )
 
