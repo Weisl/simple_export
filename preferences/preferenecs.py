@@ -234,6 +234,84 @@ def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_
 # Scene properties to define mirror_search_path and mirror_replacement_path
 
 
+import bpy
+import os
+
+import bpy
+import os
+
+
+def get_relative_path(instance):
+    """Ensure the stored path is always relative to the .blend file."""
+    if isinstance(instance, bpy.types.AddonPreferences):
+        # If called from AddonPreferences
+        stored_path = instance.get("relative_export_path", "")
+    elif isinstance(instance, bpy.types.Scene):
+        # If called from Scene (fallback)
+        stored_path = instance.get("relative_export_path", "")
+    else:
+        return ""
+
+    if stored_path:
+        return bpy.path.relpath(stored_path)  # Use Blender's built-in function
+    return ""
+
+
+def set_relative_path(instance, value):
+    """Convert any assigned path to a direct relative path."""
+    blend_dir = bpy.path.abspath("//")  # Get absolute blend directory
+
+    if not blend_dir:
+        if isinstance(instance, bpy.types.AddonPreferences):
+            instance["relative_export_path"] = value  # Store as-is
+        elif isinstance(instance, bpy.types.Scene):
+            instance["relative_export_path"] = value  # Store in scene
+        return
+
+    absolute_path = bpy.path.abspath(value)  # Convert input to absolute path
+
+    try:
+        # Use `os.path.relpath()` to ensure a clean direct relative path
+        relative_path = os.path.relpath(absolute_path, blend_dir)
+        formatted_path = f"//{relative_path.replace(os.sep, '/')}"
+
+        if isinstance(instance, bpy.types.AddonPreferences):
+            instance["relative_export_path"] = formatted_path
+        elif isinstance(instance, bpy.types.Scene):
+            instance["relative_export_path"] = formatted_path
+    except ValueError:
+        # Path is outside the blend directory, reset to empty
+        if isinstance(instance, bpy.types.AddonPreferences):
+            instance["relative_export_path"] = ""
+        elif isinstance(instance, bpy.types.Scene):
+            instance["relative_export_path"] = ""
+
+
+def get_absolute_path(instance):
+    """Ensure the stored path is always an absolute path."""
+    if isinstance(instance, bpy.types.AddonPreferences):
+        # If called from AddonPreferences
+        stored_path = instance.get("absolute_export_path", "")
+    elif isinstance(instance, bpy.types.Scene):
+        # If called from Scene (fallback)
+        stored_path = instance.get("absolute_export_path", "")
+    else:
+        return ""
+
+    if stored_path:
+        return bpy.path.abspath(stored_path)  # Convert to absolute path
+    return ""
+
+def set_absolute_path(instance, value):
+    """Convert any assigned path to an absolute path."""
+    absolute_path = bpy.path.abspath(value)  # Ensure absolute path format
+
+    if isinstance(instance, bpy.types.AddonPreferences):
+        instance["absolute_export_path"] = absolute_path
+    elif isinstance(instance, bpy.types.Scene):
+        instance["absolute_export_path"] = absolute_path
+
+
 class UIListProperties(bpy.types.PropertyGroup):
     uilist_icon: BoolProperty(
         name="Show Icon",
@@ -260,32 +338,6 @@ class UIListProperties(bpy.types.PropertyGroup):
 class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     bl_idname = base_package
     bl_options = {'REGISTER'}
-
-    def get_relative_path(self):
-        """Ensure the stored path is always relative to the .blend file"""
-        stored_path = self.get("relative_export_path", "")
-
-        if stored_path:
-            return bpy.path.relpath(stored_path)  # Use Blender's built-in function
-        return ""
-
-    def set_relative_path(self, value):
-        """Convert any assigned path to a direct relative path"""
-        blend_dir = bpy.path.abspath("//")  # Get absolute blend directory
-
-        if not blend_dir:
-            self["relative_export_path"] = value  # Store as-is if no .blend file
-            return
-
-        absolute_path = bpy.path.abspath(value)  # Convert input to absolute path
-
-        try:
-            # Use `os.path.relpath()` to ensure a clean direct relative path
-            relative_path = os.path.relpath(absolute_path, blend_dir)
-            self["relative_export_path"] = f"//{relative_path.replace(os.sep, '/')}"
-        except ValueError:
-            # Path is outside the blend directory, reset to empty
-            self["relative_export_path"] = ""
 
     def update_simple_export_panel_key(self, context):
         """
@@ -356,15 +408,18 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         name=PROPERTY_METADATA["absolute_export_path"]["name"],
         description=PROPERTY_METADATA["absolute_export_path"]["description"],
         default=PROPERTY_METADATA["absolute_export_path"]["default"],
-        subtype='DIR_PATH')
+        subtype='DIR_PATH',
+        get=get_absolute_path,  # Use shared absolute path getter
+        set=set_absolute_path  # Use shared absolute path setter
+    )
 
     relative_export_path: bpy.props.StringProperty(
         name=PROPERTY_METADATA["relative_export_path"]["name"],
         description=PROPERTY_METADATA["relative_export_path"]["description"],
         default=PROPERTY_METADATA["relative_export_path"]["default"],
         subtype='DIR_PATH',
-        get=get_relative_path,  # Always return a relative path
-        set=set_relative_path  # Convert to relative on assignment
+        get=get_relative_path,  # Use the same getter
+        set=set_relative_path  # Use the same setter
     )
 
     mirror_search_path: bpy.props.StringProperty(
@@ -856,14 +911,18 @@ def initialize_properties_file_path():
         name=PROPERTY_METADATA["absolute_export_path"]["name"],
         description=PROPERTY_METADATA["absolute_export_path"]["description"],
         subtype='DIR_PATH',
-        default=prefs.absolute_export_path
+        default=prefs.absolute_export_path,
+        get=get_absolute_path,  # Use shared absolute path getter
+        set=set_absolute_path  # Use shared absolute path setter
     )
 
     bpy.types.Scene.relative_export_path = bpy.props.StringProperty(
         name=PROPERTY_METADATA["relative_export_path"]["name"],
         description=PROPERTY_METADATA["relative_export_path"]["description"],
         subtype='DIR_PATH',
-        default=prefs.relative_export_path
+        default=prefs.relative_export_path,
+        get=get_relative_path,  # Use extracted getter
+        set=set_relative_path  # Use extracted setter
     )
 
 
