@@ -1,10 +1,17 @@
+import bpy
 import os
 
-import bpy
+from .. import __package__ as base_package
 
 
 def get_presets_folder():
-    """Retrieve the base path for Blender's presets folder."""
+    """Retrieve the preset folder, using override if set, else default to Blender's location."""
+    prefs = bpy.context.preferences.addons[base_package].preferences
+
+    if prefs.preset_path_override and os.path.isdir(prefs.preset_path_override):
+        return prefs.preset_path_override
+
+    # Default Blender location
     return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets", "operator")
 
 
@@ -16,9 +23,14 @@ class ExportFormat:
         self.op_name = op_name
         self.label = label
         self.description = description
-        self.preset_folder = os.path.join(get_presets_folder(), preset_subfolder)
+        self.preset_subfolder = preset_subfolder  # Store only subfolder name
         self.op_type = op_type
         self.file_extension = file_extension
+
+    @property
+    def preset_folder(self):
+        """Dynamically retrieve the preset folder when accessed."""
+        return os.path.join(get_presets_folder(), self.preset_subfolder)
 
     def __repr__(self):
         return f"<ExportFormat {self.label} ({self.file_extension})>"

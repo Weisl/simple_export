@@ -521,6 +521,13 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
     ########################################
     # Presets
+    preset_path_override: bpy.props.StringProperty(
+        name="Custom Preset Folder",
+        description="Override the default Blender preset folder",
+        subtype='DIR_PATH',
+        update=lambda self, context: update_preset_path(self, context)
+    )
+
     simple_export_preset_file_fbx: bpy.props.EnumProperty(
         name="FBX Preset File",
         description="Select a preset file for FBX",
@@ -618,6 +625,14 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             # Iterate through dynamically created properties
             box = layout.box()
             box.label(text="Export Presets")
+
+            # Add custom preset folder setting
+            box.prop(self, "preset_path_override")
+
+            # Display the actual preset folder being used
+            from ..core.export_formats import get_presets_folder
+            box.label(text=f"Active Preset Folder: {get_presets_folder()}")
+
 
             # Use ExportFormats to get all available formats
             for export_format in ExportFormats.FORMATS.keys():
