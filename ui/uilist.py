@@ -89,6 +89,8 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         if settings.uilist_set_preset:
             # Assign Preset
             op = row.operator("simple_export.assign_presets", text="", icon='PRESET')
+            op.outliner = False
+            op.individual_collection = True
             op.collection_name = collection.name
 
         prev_name = collection.get("prev_name", None)
