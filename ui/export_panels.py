@@ -122,7 +122,8 @@ def draw_active_list_element(layout, scene):
             box.prop(selected_collection, "offset_object", text="Offset Object")
 
             # Add an operator button to manually update the offset if needed
-            op = box.operator("object.set_collection_offset", text="Set Collection Offset")
+            op = box.operator("object.set_collection_offset", text="Set Offset from Object")
+            
             op.collection_name = selected_collection.name
 
 

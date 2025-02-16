@@ -1,16 +1,24 @@
 import bpy
+from bpy.app.handlers import persistent
 
-from ..functions.collection_offset import set_collection_offset_from_object
 from ..functions.collection_layer import set_active_layer_Collection
+from ..functions.collection_offset import set_collection_offset_from_object
 
-def update_collection_offset(scene):
-    """Update the collection offset when the object is moved."""
+
+@persistent
+def update_collection_offset(depsgraph):
+    """Update collection offsets for collections with an assigned root_object."""
+    print("Depsgraph update triggered")
+
     for collection in bpy.data.collections:
-        obj = collection.get("offset_object", None)
-        if obj:
-            if collection.instance_offset != obj.location:
-                set_collection_offset_from_object(collection, obj)
+        # Get the assigned offset object
+        offset_obj = getattr(collection, "root_object", None)
 
+        if offset_obj and isinstance(offset_obj, bpy.types.Object):
+            # Check if instance_offset needs updating
+            if collection.instance_offset != offset_obj.location:
+                print(f"Updating collection '{collection.name}' offset to: {offset_obj.location}")
+                collection.instance_offset = offset_obj.location
 
 
 class OBJECT_OT_set_collection_offset(bpy.types.Operator):
@@ -41,14 +49,15 @@ class OBJECT_OT_set_collection_offset(bpy.types.Operator):
 
         return {'FINISHED'}
 
+
 classes = (
     OBJECT_OT_set_collection_offset,
 )
 
 
 def register():
-    bpy.types.Collection.offset_object = bpy.props.PointerProperty(
-        name="Offset Object",
+    bpy.types.Collection.root_object = bpy.props.PointerProperty(
+        name="Root Object",
         type=bpy.types.Object,
         description="Object to be used for setting the collection offset"
     )
@@ -57,8 +66,10 @@ def register():
     for cls in classes:
         register_class(cls)
 
+    """add the handler."""
     if update_collection_offset not in bpy.app.handlers.depsgraph_update_post:
         bpy.app.handlers.depsgraph_update_post.append(update_collection_offset)
+        print("Registered object location tracker")
 
 
 def unregister():
@@ -66,7 +77,9 @@ def unregister():
     for cls in reversed(classes):
         unregister_class(cls)
 
-    del bpy.types.Collection.offset_object
+    del bpy.types.Collection.root_object
 
+    """remove the handler."""
     if update_collection_offset in bpy.app.handlers.depsgraph_update_post:
         bpy.app.handlers.depsgraph_update_post.remove(update_collection_offset)
+        print("Unregistered object location tracker")

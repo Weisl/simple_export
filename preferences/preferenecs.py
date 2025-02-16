@@ -969,10 +969,6 @@ def register():
         description="Select this collection for export",
         default=False)
 
-    bpy.types.Collection.offset_object = bpy.props.PointerProperty(
-        name="Offset Object", type=bpy.types.Object,
-        description="Object to be used for setting the collection offset")
-
     bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty(
         name="Select for Export",
         description="Select this collection for export",
@@ -1048,7 +1044,6 @@ def unregister():
     # Persistant settings
     del bpy.types.Scene.collection_index
     del bpy.types.Collection.simple_export_selected
-    del bpy.types.Collection.offset_object
 
     del bpy.types.Scene.overwrite_filepath_settings
     del bpy.types.Scene.overwrite_collection_settings
