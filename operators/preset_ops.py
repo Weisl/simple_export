@@ -1,11 +1,12 @@
+import bpy
 import os
 
-import bpy
-
 from .. import __package__ as base_package
+from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.exporter_funcs import find_exporter
 from ..functions.outliner_func import get_outliner_collections
 from ..functions.preset_func import assign_preset
+from ..functions.vallidate_func import validate_collection
 
 
 class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
@@ -31,60 +32,57 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
         preset_settings = scene if scene.overwrite_preset_settings else prefs
         preset_path = getattr(preset_settings, prop_name, None)
 
-        try:
-            # Validate preset path
-            self.validate_preset_path(preset_path)
+        # Get Export Collections
+        if self.outliner:
+            collection_list = get_outliner_collections(context)
+        elif self.individual_collection:
+            collection = bpy.data.collections.get(self.collection_name)
+            collection_list = [collection] if collection else []
+        else:
+            collection_list = [
+                col for col in bpy.data.collections
+                if getattr(col, "simple_export_selected", False) and len(getattr(col, "exporters", [])) > 0
+            ]
 
-            # Get Export Collections
-            # triggered from outliner
-            if self.outliner:
-                collection_list = get_outliner_collections(context)
-            # triggered from the UI List
-            elif self.individual_collection:  # Retrieve collection by name
-                collection = bpy.data.collections.get(self.collection_name)
-                collection_list = [collection] if collection else []
-            # default
-            else:
-                collection_list = [
-                    col for col in bpy.data.collections
-                    if getattr(col, "simple_export_selected", False) and len(getattr(col, "exporters", [])) > 0
-                ]
+        if not collection_list:
+            self.report({'WARNING'}, "No valid collections found for export.")
+            return {'CANCELLED'}
 
-            if not collection_list:
-                self.report({'WARNING'}, "No valid collections found for export.")
-                return {'CANCELLED'}
+        # Validate preset path
+        self.validate_preset_path(preset_path)
 
-            # Iterate over export collections
-            for collection in collection_list:
+        # Iterate over export collections
+        for collection in collection_list:
+            try:
 
-                # return early
-                if not collection.simple_export_selected or len(collection.exporters) == 0:
+                if not collection.simple_export_selected and not self.individual_collection:  # Don't check selected for individual collection
                     continue
 
-                # Find and validate exporter
-                exporter = find_exporter(collection, scene.export_format)
+                if not collection.exporters:
+                    continue
 
+                collection = validate_collection(collection.name)
+                if not collection:
+                    continue
+
+                set_active_layer_Collection(collection.name)
+
+                # Find the appropriate exporter
+                exporter = find_exporter(collection, scene.export_format)
                 if not exporter:
                     continue
 
-                try:
-                    # Process each collection
-                    result = self.apply_preset_to_collections(collection, preset_path, exporter)
-                    results.append(result)
-                except Exception as e:
-                    # Handle per-collection errors
-                    results.append({'name': collection.name, 'success': False, 'message': str(e)})
+                result = self.apply_preset_to_collections(collection, preset_path, exporter)
+                results.append(result)
 
-        except Exception as e:
-            # Handle global errors
-            self.report({'ERROR'}, str(e))
-            return {'CANCELLED'}
+            except Exception as e:
+                # Handle per-collection errors
+                results.append({'name': collection.name, 'success': False, 'message': str(e)})
 
         # Store results in Scene
         context.window_manager.assign_preset_info_data = str(results)
-
-        # Show results in the panel
         bpy.ops.wm.call_panel(name="SIMPLEEXPORTER_PT_PresetResultsPanel")
+
         return {'FINISHED'}
 
     def validate_preset_path(self, preset_path):

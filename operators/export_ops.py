@@ -60,11 +60,12 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
         # Iterate over export collections
         for collection in collection_list:
             try:
-                # return early
-                if not collection.simple_export_selected or len(collection.exporters) == 0:
+                if not collection.simple_export_selected and not self.individual_collection:  # Don't check selected for individual collection
                     continue
 
-                # Validate collection
+                if not collection.exporters:
+                    continue
+
                 collection = validate_collection(collection.name)
                 if not collection:
                     continue
