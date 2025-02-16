@@ -114,8 +114,16 @@ def draw_active_list_element(layout, scene):
             row = box.row(align=True)
             row.label(text='Collection Offset (BETA)')
             row = box.row(align=True)
+
+            # Draw existing instancing properties
             row.prop(selected_collection, "instance_offset", text='Offset')
-            row.menu("COLLECTION_MT_context_menu_instance_offset", icon='DOWNARROW_HLT', text="")
+
+            # Add the Object Picker
+            box.prop(selected_collection, "offset_object", text="Offset Object")
+
+            # Add an operator button to manually update the offset if needed
+            op = box.operator("object.set_collection_offset", text="Set Collection Offset")
+            op.collection_name = selected_collection.name
 
 
 def draw_export_list(layout, list_id, scene):

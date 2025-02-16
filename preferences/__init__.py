@@ -1,11 +1,12 @@
 import bpy
 
-from . import keymap, preferenecs
+from . import keymap, preferenecs, collection_setup
 from ..functions.collection_offset import update_collection_offset
 
 files = [
     preferenecs,
     keymap,
+    collection_setup
 ]
 
 

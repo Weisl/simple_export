@@ -525,7 +525,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         name="Custom Preset Folder",
         description="Override the default Blender preset folder",
         subtype='DIR_PATH',
-        update=lambda self, context: update_preset_path(self, context)
     )
 
     simple_export_preset_file_fbx: bpy.props.EnumProperty(
@@ -740,22 +739,6 @@ classes = (
 )
 
 
-def update_preset_path(self, context):
-    export_format = ExportFormats.get(self.export_format)
-
-    if export_format:
-        self.preset_path = export_format.preset_folder
-    else:
-        self.preset_path = ""  # Fallback in case the format is invalid
-
-
-def get_default_export_format():
-    """Fetch default export format from add-on preferences or fallback to FBX."""
-    try:
-        return bpy.context.preferences.addons[__package__].preferences.default_export_format
-    except (AttributeError, KeyError):
-        print('Fallback to FBX')
-        return "FBX"  # Fallback default
 
 
 def update_scene_preset_path(self, context):
@@ -852,8 +835,7 @@ def initialize_properties_collection_generation():
         name="Export Format",
         description="Select the export format",
         items=get_export_format_items(),  # Dynamically generated items from EXPORT_FORMATS
-        default=get_default_export_format(),
-        update=update_preset_path,  # Update the preset path when export format changes
+        default=prefs.default_export_format,
     )
 
     bpy.types.Scene.override_path = bpy.props.BoolProperty(

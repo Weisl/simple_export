@@ -132,7 +132,10 @@ class SIMPLE_EXPORT_OT_change_key(bpy.types.Operator):
         return {'FINISHED'}
 
 
-classes = (SIMPLE_EXPORT_OT_change_key, SIMPLE_EXPORT_OT_hotkey,)
+classes = (
+    SIMPLE_EXPORT_OT_change_key,
+    SIMPLE_EXPORT_OT_hotkey,
+)
 
 
 def register():
