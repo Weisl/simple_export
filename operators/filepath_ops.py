@@ -1,6 +1,5 @@
-import os
-
 import bpy
+import os
 
 from .. import __package__ as base_package
 from ..core.export_path_func import assign_export_path_to_exporter
@@ -69,6 +68,7 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
                 if getattr(col, "simple_export_selected", False) and len(getattr(col, "exporters", [])) > 0
             ]
 
+
         if not collection_list:
             self.report({'WARNING'}, "No valid collections found for export.")
             return {'CANCELLED'}
@@ -76,7 +76,10 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
         # Iterate over collections
         for collection in collection_list:
             try:
-                if not collection.simple_export_selected or not collection.exporters:
+                if not collection.simple_export_selected and not self.individual_collection:  # Don't check selected for individual collection
+                    continue
+
+                if not collection.exporters:
                     continue
 
                 collection = validate_collection(collection.name)
