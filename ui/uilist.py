@@ -14,6 +14,82 @@ def collection_name_mismatch(collection_name, export_path):
     return collection_name != export_filename
 
 
+class OBJECT_OT_root_object_actions(bpy.types.Operator):
+    """Perform actions on the root object"""
+    bl_idname = "object.root_object_actions"
+    bl_label = "Root Object Actions"
+
+    action: bpy.props.StringProperty()
+
+    def execute(self, context):
+        collection_name = context.scene.menu_collection_name
+        collection = bpy.data.collections.get(collection_name)
+
+        if not collection:
+            self.report({'ERROR'}, f"Collection '{collection_name}' not found")
+            return {'CANCELLED'}
+
+        if self.action == "remove":
+            collection.root_object = None
+            self.report({'INFO'}, "Root object removed")
+
+        elif self.action == "select_root":
+            obj = collection.root_object
+            if obj and obj.name in context.scene.objects:
+                bpy.ops.object.select_all(action='DESELECT')
+                obj.select_set(True)
+                context.view_layer.objects.active = obj
+                self.report({'INFO'}, f"Selected root object: {obj.name}")
+            else:
+                self.report({'WARNING'}, "Root object not found in scene")
+
+        elif self.action == "select_content":
+            bpy.ops.object.select_all(action='DESELECT')
+            for obj in collection.objects:
+                obj.select_set(True)
+            self.report({'INFO'}, f"Selected all objects in collection '{collection.name}'")
+
+        elif self.action == "unhide_content":
+            for obj in collection.objects:
+                obj.hide_set(False)
+            self.report({'INFO'}, f"Unhid all objects in collection '{collection.name}'")
+
+        else:
+            self.report({'ERROR'}, "Unknown action")
+
+        return {'FINISHED'}
+
+
+class OBJECT_OT_set_menu_collection(bpy.types.Operator):
+    """Set the collection name and open the menu"""
+    bl_idname = "object.set_menu_collection"
+    bl_label = "Set Menu Collection"
+
+    collection_name: bpy.props.StringProperty()
+
+    def execute(self, context):
+        context.scene.menu_collection_name = self.collection_name
+        bpy.ops.wm.call_menu(name="OBJECT_MT_root_object_menu")
+        return {'FINISHED'}
+
+
+class OBJECT_MT_root_object_menu(bpy.types.Menu):
+    """Root Object Action Menu"""
+    bl_idname = "OBJECT_MT_root_object_menu"
+    bl_label = "Root Object Actions"
+
+    def draw(self, context):
+        layout = self.layout
+
+        layout.operator("object.root_object_actions", text="Remove Root Object", icon='X').action = "remove"
+        layout.operator("object.root_object_actions", text="Select Root Object",
+                        icon='RESTRICT_SELECT_OFF').action = "select_root"
+        layout.operator("object.root_object_actions", text="Select Collection Content",
+                        icon='OUTLINER_COLLECTION').action = "select_content"
+        layout.operator("object.root_object_actions", text="Unhide Collection Content",
+                        icon='HIDE_OFF').action = "unhide_content"
+
+
 class OBJECT_OT_select_root(bpy.types.Operator):
     """Select the root object"""
     bl_idname = "object.select_root"
@@ -119,13 +195,17 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         prev_name = collection.get("prev_name", None)
 
         if settings.uilist_set_root:
+            # Display Empty or Eyedropper button depending on the root_object state
             if collection.root_object:
-                # Display button with Empty icon to select the root object
-                op = layout.operator("object.select_root", text="", icon='EMPTY_AXIS')
+                op = row.operator("object.select_root", text="", icon='EMPTY_AXIS')
                 op.collection_name = collection.name
             else:
-                # Display eyedropper to assign root object
-                layout.prop(collection, "root_object", text="", icon='EYEDROPPER')
+                row.prop(collection, "root_object", text="", icon='EYEDROPPER')
+
+                op.collection_name = collection.name
+            # Add arrow button that sets the collection name and opens the menu
+            arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
+            arrow_op.collection_name = collection.name
 
         if exporter.export_properties.filepath and collection_name_mismatch(collection.name, export_path):
             op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
@@ -164,6 +244,9 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 classes = (
     SCENE_UL_CollectionList,
     OBJECT_OT_select_root,
+    OBJECT_MT_root_object_menu,
+    OBJECT_OT_set_menu_collection,
+    OBJECT_OT_root_object_actions,
 )
 
 
@@ -171,6 +254,10 @@ def register():
     from bpy.utils import register_class
 
     bpy.types.Scene.collection_index = bpy.props.IntProperty()
+    bpy.types.Scene.menu_collection_name = bpy.props.StringProperty(
+        name="Menu Collection Name",
+        description="Temporary storage for collection name"
+    )
 
     for cls in classes:
         register_class(cls)
