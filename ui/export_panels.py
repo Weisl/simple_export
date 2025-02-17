@@ -102,6 +102,7 @@ def draw_active_list_element(layout, scene):
 
             # Export Path
             exporter = find_exporter(selected_collection, scene.export_format)
+
             if exporter:
                 row = box.row(align=True)
                 row.prop(exporter.export_properties, "filepath", text="", expand=True)
@@ -110,21 +111,31 @@ def draw_active_list_element(layout, scene):
                 op.individual_collection = True
                 op.collection_name = selected_collection.name
 
-            # Collection Offset
+            # Collection Center
             row = box.row(align=True)
-            row.label(text='Collection Offset (BETA)')
+            row.label(text='Collection Center')
             row = box.row(align=True)
-
-            # Draw existing instancing properties
-            row.prop(selected_collection, "instance_offset", text='Offset')
-
             # Add the Object Picker
-            box.prop(selected_collection, "offset_object", text="Offset Object")
+            box.prop(selected_collection, "root_object", text="Root Object")
 
-            # Add an operator button to manually update the offset if needed
-            op = box.operator("object.set_collection_offset", text="Set Offset from Object")
-            
-            op.collection_name = selected_collection.name
+            box_offset = box.box()
+
+            if selected_collection.root_object:
+                box_offset.enabled = False
+                box_offset.label(text="Collection Center (from Object)")
+                row.prop(selected_collection, "instance_offset", text='Collection Center')
+
+            else:
+                row = box_offset.row(align=True)
+                # Draw existing instancing properties
+                row.prop(selected_collection, "instance_offset", text='Collection Center')
+
+                # Add an operator button to manually update the offset if needed
+                op = box_offset.operator("object.set_collection_offset_cursor", text="Set Offset from Cursor")
+                op = box_offset.operator("object.set_collection_offset_object", text="Set Offset from Object")
+                op.collection_name = selected_collection.name
+
+
 
 
 def draw_export_list(layout, list_id, scene):
@@ -274,7 +285,7 @@ def draw_custom_collection_ui(self, context):
     collection = context.collection
 
     # Add the Object Picker
-    layout.prop(collection, "offset_object", text="Offset Object")
+    layout.prop(collection, "root_object", text="Offset Object")
 
 
 class SIMPLE_EXPORT_menu_base:

@@ -1,4 +1,4 @@
-from . import assign_exporter, export_ops, filepath_ops, preset_ops, ui_ops, create_exporter
+from . import assign_exporter, export_ops, filepath_ops, preset_ops, ui_ops, create_exporter, collection_offset_ops
 
 files = [
     assign_exporter,
@@ -7,6 +7,7 @@ files = [
     preset_ops,
     ui_ops,
     create_exporter,
+    collection_offset_ops,
 ]
 
 

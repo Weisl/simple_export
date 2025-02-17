@@ -59,13 +59,13 @@ PROPERTY_METADATA = {
         "default": True,
     },
     "set_location_offset_on_creation": {
-        "name": "Collection Offset",
+        "name": "Collection Center",
         "description": "Set Location Offset for collections.",
         "default": False,
     },
     "move_by_collection_offset": {
-        "name": "Move by Collection Offset",
-        "description": "Objects are moved to the origin based on the Collection Offset before exporting.",
+        "name": "Move by Collection Center",
+        "description": "Objects are moved to the origin based on the Collection Center before exporting.",
         "default": False,
     },
 

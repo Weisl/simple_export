@@ -29,19 +29,17 @@ def apply_collection_offset(collection, inverse=False):
             apply_location_offset(obj, collection_offset, inverse)
 
 
-def set_collection_offset_from_object(collection, obj):
-    """Set the collection offset to the object's location."""
-    if collection and obj:
-        collection.instance_offset = obj.location
-
 
 def update_collection_offset(scene):
     """Update the collection offset when the object is moved."""
     for collection in bpy.data.collections:
-        obj = collection.get("offset_object", None)
+        obj = collection.get("root_object", None)
         if obj:
-            if collection.instance_offset != obj.location:
-                set_collection_offset_from_object(collection, obj)
+            obj_location = obj.location.copy()
+            if collection.instance_offset != obj_location:
+                # Set the collection offset to the object's location
+                set_collection_offset(collection, obj_location)
+
 
 
 def temporarily_disable_offset_handler():
@@ -54,3 +52,11 @@ def reenable_offset_handler():
     """Re-enables the collection offset update handler."""
     if update_collection_offset not in bpy.app.handlers.depsgraph_update_post:
         bpy.app.handlers.depsgraph_update_post.append(update_collection_offset)
+
+
+def set_collection_offset(collection, location):
+    """Set the offset of the specified collection to the given location."""
+    if collection and collection.instance_offset:
+        collection.instance_offset = location
+    else:
+        print(f"Collection '{collection.name}' does not have an instance offset.")
