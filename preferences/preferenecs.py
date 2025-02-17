@@ -329,6 +329,12 @@ class UIListProperties(bpy.types.PropertyGroup):
         default=True
     )
 
+    uilist_set_root: BoolProperty(
+        name="Show Root Object",
+        description="Toggle visibility of the preset in the UI list",
+        default=True
+    )
+
 
 class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     bl_idname = base_package

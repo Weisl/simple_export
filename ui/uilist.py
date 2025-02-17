@@ -1,6 +1,5 @@
-import os
-
 import bpy
+import os
 
 from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
@@ -13,6 +12,30 @@ def collection_name_mismatch(collection_name, export_path):
     """Check if the collection name does not match the export file name exactly."""
     export_filename = os.path.splitext(os.path.basename(export_path))[0]
     return collection_name != export_filename
+
+
+class OBJECT_OT_select_root(bpy.types.Operator):
+    """Select the root object"""
+    bl_idname = "object.select_root"
+    bl_label = "Select Root Object"
+
+    collection_name: bpy.props.StringProperty()
+
+    def execute(self, context):
+        collection = bpy.data.collections.get(self.collection_name)
+        if collection and collection.root_object:
+            obj = collection.root_object
+            # Check if object is present by name
+            if obj.name in context.scene.objects:
+                bpy.ops.object.select_all(action='DESELECT')
+                obj.select_set(True)
+                context.view_layer.objects.active = obj
+                self.report({'INFO'}, f"Selected root object: {obj.name}")
+            else:
+                self.report({'WARNING'}, "Root object not found in the active scene")
+        else:
+            self.report({'WARNING'}, "No root object assigned")
+        return {'FINISHED'}
 
 
 class SCENE_UL_CollectionList(bpy.types.UIList):
@@ -95,6 +118,15 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         prev_name = collection.get("prev_name", None)
 
+        if settings.uilist_set_root:
+            if collection.root_object:
+                # Display button with Empty icon to select the root object
+                op = layout.operator("object.select_root", text="", icon='EMPTY_AXIS')
+                op.collection_name = collection.name
+            else:
+                # Display eyedropper to assign root object
+                layout.prop(collection, "root_object", text="", icon='EYEDROPPER')
+
         if exporter.export_properties.filepath and collection_name_mismatch(collection.name, export_path):
             op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
             op.collection_name = collection.name
@@ -131,6 +163,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
 classes = (
     SCENE_UL_CollectionList,
+    OBJECT_OT_select_root,
 )
 
 
