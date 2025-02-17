@@ -112,27 +112,31 @@ def draw_active_list_element(layout, scene):
                 op.collection_name = selected_collection.name
 
             # Collection Center
+
             row = box.row(align=True)
-            row.label(text='Collection Center')
+            row.label(text='Root Object')
+
             row = box.row(align=True)
             # Add the Object Picker
             box.prop(selected_collection, "root_object", text="Root Object")
 
-            box_offset = box.box()
-
+            root_box = box.box()
             if selected_collection.root_object:
-                box_offset.enabled = False
-                box_offset.label(text="Collection Center (from Object)")
+                root_box.enabled = False
+                row = root_box.row(align=True)
+                # Draw existing instancing properties
                 row.prop(selected_collection, "instance_offset", text='Collection Center')
 
             else:
-                row = box_offset.row(align=True)
+                root_box.enabled = True
+                row = root_box.row(align=True)
                 # Draw existing instancing properties
                 row.prop(selected_collection, "instance_offset", text='Collection Center')
 
                 # Add an operator button to manually update the offset if needed
-                op = box_offset.operator("object.set_collection_offset_cursor", text="Set Offset from Cursor")
-                op = box_offset.operator("object.set_collection_offset_object", text="Set Offset from Object")
+                op = root_box.operator("object.set_collection_offset_cursor", text="Set Offset from Cursor")
+                op.collection_name = selected_collection.name
+                op = root_box.operator("object.set_collection_offset_object", text="Set Offset from Object")
                 op.collection_name = selected_collection.name
 
 

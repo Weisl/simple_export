@@ -34,7 +34,7 @@ class OBJECT_OT_set_collection_offset_cursor(bpy.types.Operator):
 
 class OBJECT_OT_set_collection_offset_object(bpy.types.Operator):
     """Set the collection offset to the selected object's location."""
-    bl_idname = "object.set_collection_offset"
+    bl_idname = "object.set_collection_offset_object"
     bl_label = "Set Collection Center"
     bl_options = {'REGISTER', 'UNDO'}
 
