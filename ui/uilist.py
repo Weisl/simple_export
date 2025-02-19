@@ -200,9 +200,9 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 op = row.operator("object.select_root", text="", icon='EMPTY_AXIS')
                 op.collection_name = collection.name
             else:
-                row.prop(collection, "root_object", text="", icon='EYEDROPPER')
-
+                op = row.prop(collection, "root_object", text="", icon='EYEDROPPER')
                 op.collection_name = collection.name
+                
             # Add arrow button that sets the collection name and opens the menu
             arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
             arrow_op.collection_name = collection.name
