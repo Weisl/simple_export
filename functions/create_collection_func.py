@@ -15,13 +15,13 @@ def generate_collection_name(context, obj_name):
     settings_col = scene if scene.overwrite_collection_settings else prefs
 
     collection_name = obj_name
-    if getattr(settings_col, 'use_blend_file_name_as_prefix'):
+    if getattr(settings_col, 'collection_file_name_prefix'):
         blend_file_name = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
         if not collection_name.startswith(blend_file_name):
             collection_name = blend_file_name + "_" + collection_name
 
-    prefix = getattr(settings_col, 'custom_prefix')
-    suffix = getattr(settings_col, 'custom_suffix')
+    prefix = getattr(settings_col, 'collection_custom_prefix')
+    suffix = getattr(settings_col, 'collection_custom_suffix')
 
     if prefix and not collection_name.startswith(prefix):
         collection_name = prefix + "_" + collection_name

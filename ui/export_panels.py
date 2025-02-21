@@ -232,9 +232,9 @@ def draw_create_export_collections(layout, context):
     # Define properties to check
     properties = [
         "collection_color",
-        "use_blend_file_name_as_prefix",
-        "custom_prefix",
-        "custom_suffix",
+        "collection_file_name_prefix",
+        "collection_custom_prefix",
+        "collection_custom_suffix",
         "auto_set_filepath",
         "auto_set_preset",
         "set_location_offset_on_creation"
@@ -254,33 +254,38 @@ def draw_filepath_settings(layout, context):
         layout.enabled = False
         prop_base = prefs
 
-    box = layout.box()
-    box.label(text="Path Mode")
-    row = box.row()
+    layout.label(text="Export Path Mode")
+    row = layout.row()
     row.prop(prop_base, "export_folder_mode", expand=True)
 
     if prop_base.export_folder_mode == 'ABSOLUTE':
-        box.prop(prop_base, "absolute_export_path")
+        layout.prop(prop_base, "absolute_export_path")
 
     if prop_base.export_folder_mode == 'RELATIVE':
-        box.prop(prop_base, "relative_export_path")
+        layout.prop(prop_base, "relative_export_path")
 
     if prop_base.export_folder_mode == 'MIRROR':
-        box.prop(prop_base, "mirror_search_path", text="Search Path")
-        box.prop(prop_base, "mirror_replacement_path", text="Replacement Path")
+        layout.prop(prop_base, "mirror_search_path", text="Search Path")
+        layout.prop(prop_base, "mirror_replacement_path", text="Replacement Path")
 
         # Compute and display the preview
         from ..preferences.preferenecs import compute_mirror_preview
         preview_path = compute_mirror_preview(prop_base)  # Pass `self` as settings
-        preview_box = box.box()
-        preview_box.label(text="Export Folder Preview:")
-        row = preview_box.row(align=True)
+        layout.label(text="Export Folder Preview:")
+        row = layout.row(align=True)
         row.label(text=preview_path)
 
         if os.path.exists(preview_path):
             op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
             op.operation = 'FOLDER_OPEN'
             op.filepath = preview_path
+
+    layout.label(text="Export File Name")
+
+    # export file name
+    layout.prop(prop_base, "filename_file_name_prefix")
+    layout.prop(prop_base, "filename_custom_prefix")
+    layout.prop(prop_base, "filename_custom_suffix")
 
 
 def draw_custom_collection_ui(self, context):

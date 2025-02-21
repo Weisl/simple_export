@@ -7,21 +7,38 @@ from ..core.export_formats import get_export_format_items
 from ..ui.export_panels import VIEW3D_PT_SimpleExport
 
 PROPERTY_METADATA = {
-    "custom_prefix": {
+    "collection_custom_prefix": {
         "name": "Prefix",
-        "description": "Custom prefix to add to the export file name.",
+        "description": "Custom prefix added to export collections.",
         "default": "",
     },
-    "custom_suffix": {
+    "collection_custom_suffix": {
         "name": "Suffix",
-        "description": "Custom suffix to add to the export file name.",
+        "description": "Custom suffix added to the export collections.",
         "default": "",
     },
-    "use_blend_file_name_as_prefix": {
-        "name": "File Name",
-        "description": "If checked, the Blender file name will be used as a prefix for the export file name.",
+    "collection_file_name_prefix": {
+        "name": "File Name Prefix",
+        "description": "Add the blend file name as prefix to the export collections.",
         "default": False,
     },
+
+    "filename_custom_prefix": {
+        "name": "Prefix",
+        "description": "Custom prefix added when to the export filename.",
+        "default": "",
+    },
+    "filename_custom_suffix": {
+        "name": "Suffix",
+        "description": "Custom suffix added when to the export filename.",
+        "default": "",
+    },
+    "filename_file_name_prefix": {
+        "name": "Blend File Prefix",
+        "description": "Add the blend file name as prefix to the export filename.",
+        "default": False,
+    },
+
     "mirror_search_path": {
         "name": "Search",
         "description": "The path to be replaced.",
@@ -390,7 +407,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=PROPERTY_METADATA["move_by_collection_offset"]["default"],
     )
 
-    use_blend_file_name_as_prefix: bpy.props.BoolProperty(
+    collection_file_name_prefix: bpy.props.BoolProperty(
         name="Use Blend File Name as Prefix",
         description="If checked, the Blender file name will be used as a prefix for the export file name.",
         default=False
@@ -438,18 +455,39 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     )
 
     ########################################
-    # Collection Name
+    # Filename
 
-    custom_prefix: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["custom_prefix"]["name"],
-        description=PROPERTY_METADATA["custom_prefix"]["description"],
-        default=PROPERTY_METADATA["custom_prefix"]["default"],
+    filename_custom_prefix: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["filename_custom_prefix"]["name"],
+        description=PROPERTY_METADATA["filename_custom_prefix"]["description"],
+        default=PROPERTY_METADATA["filename_custom_prefix"]["default"],
     )
 
-    custom_suffix: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["custom_suffix"]["name"],
-        description=PROPERTY_METADATA["custom_suffix"]["description"],
-        default=PROPERTY_METADATA["custom_suffix"]["default"],
+    filename_custom_suffix: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["filename_custom_suffix"]["name"],
+        description=PROPERTY_METADATA["filename_custom_suffix"]["description"],
+        default=PROPERTY_METADATA["filename_custom_suffix"]["default"],
+    )
+
+    filename_file_name_prefix: bpy.props.BoolProperty(
+        name="Use Blend File Name as Prefix",
+        description="If checked, the Blender file name will be used as a prefix for the export file name.",
+        default=False
+    )
+
+    ########################################
+    # Collection Name
+
+    collection_custom_prefix: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["collection_custom_prefix"]["name"],
+        description=PROPERTY_METADATA["collection_custom_prefix"]["description"],
+        default=PROPERTY_METADATA["collection_custom_prefix"]["default"],
+    )
+
+    collection_custom_suffix: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["collection_custom_suffix"]["name"],
+        description=PROPERTY_METADATA["collection_custom_suffix"]["description"],
+        default=PROPERTY_METADATA["collection_custom_suffix"]["default"],
     )
 
     ########################################
@@ -638,7 +676,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             from ..core.export_formats import get_presets_folder
             box.label(text=f"Active Preset Folder: {get_presets_folder()}")
 
-
             # Use ExportFormats to get all available formats
             for export_format in ExportFormats.FORMATS.keys():
                 prop_name = f"simple_export_preset_file_{export_format.lower()}"
@@ -670,6 +707,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                 # Compute and display the preview
                 from ..preferences.preferenecs import compute_mirror_preview
                 preview_path = compute_mirror_preview(self)  # Pass `self` as settings
+
                 preview_box = box.box()
                 preview_box.label(text="Export Folder Preview:")
                 row = preview_box.row(align=True)
@@ -680,13 +718,23 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                     op.operation = 'FOLDER_OPEN'
                     op.filepath = preview_path
 
+            # export file name
+            box.prop(self, "filename_file_name_prefix")
+            box.prop(self, "filename_custom_prefix")
+            box.prop(self, "filename_custom_suffix")
+
+            # COLLECTION
             box = layout.box()
             box.label(text="Export Collection")
+            # collection name
+
+            box.prop(self, "collection_file_name_prefix")
+            box.prop(self, "collection_custom_prefix")
+            box.prop(self, "collection_custom_suffix")
+
+            # collection color
             box.prop(self, "collection_color")
 
-            box.prop(self, "use_blend_file_name_as_prefix")
-            box.prop(self, "custom_prefix")
-            box.prop(self, "custom_suffix")
             # Collection offset
             box.prop(self, "set_location_offset_on_creation")
             # Collection offset
@@ -745,8 +793,6 @@ classes = (
 )
 
 
-
-
 def update_scene_preset_path(self, context):
     """Update the full path of the selected preset in the scene property."""
     try:
@@ -779,7 +825,8 @@ def get_py_files(self=None, context=None, folder=None):
 
     if not folder or not os.path.isdir(folder):
         # print(f"[DEBUG] Invalid folder: {folder}")
-        return [("NONE", "Create Presets", "Create export presets in Blender's default export window before assigning them in Simple Export.")]
+        return [("NONE", "Create Presets",
+                 "Create export presets in Blender's default export window before assigning them in Simple Export.")]
 
     try:
         files = [
@@ -788,7 +835,8 @@ def get_py_files(self=None, context=None, folder=None):
             if f.endswith(".py")
         ]
         # print(f"[DEBUG] Files found in {folder}: {files}")
-        return files if files else [("NONE", "No Files", "Create presets in the default export windows before assigning them.")]
+        return files if files else [
+            ("NONE", "No Files", "Create presets in the default export windows before assigning them.")]
     except Exception as e:
         # print(f"[DEBUG ERROR] Error reading files in {folder}: {e}")
         return [("NONE", "Error", str(e))]
@@ -850,21 +898,41 @@ def initialize_properties_collection_generation():
         default=False,
     )
 
-    bpy.types.Scene.custom_prefix = bpy.props.StringProperty(
-        name=PROPERTY_METADATA["custom_prefix"]["name"],
-        description=PROPERTY_METADATA["custom_prefix"]["description"],
-        default=prefs.custom_prefix
+    # collection Naming
+    bpy.types.Scene.collection_custom_prefix = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["collection_custom_prefix"]["name"],
+        description=PROPERTY_METADATA["collection_custom_prefix"]["description"],
+        default=prefs.collection_custom_prefix
     )
-    bpy.types.Scene.custom_suffix = bpy.props.StringProperty(
-        name=PROPERTY_METADATA["custom_suffix"]["name"],
-        description=PROPERTY_METADATA["custom_suffix"]["description"],
-        default=prefs.custom_suffix
+    bpy.types.Scene.collection_custom_suffix = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["collection_custom_suffix"]["name"],
+        description=PROPERTY_METADATA["collection_custom_suffix"]["description"],
+        default=prefs.collection_custom_suffix
     )
-    bpy.types.Scene.use_blend_file_name_as_prefix = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["use_blend_file_name_as_prefix"]["name"],
-        description=PROPERTY_METADATA["use_blend_file_name_as_prefix"]["description"],
-        default=prefs.use_blend_file_name_as_prefix
+    bpy.types.Scene.collection_file_name_prefix = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["collection_file_name_prefix"]["name"],
+        description=PROPERTY_METADATA["collection_file_name_prefix"]["description"],
+        default=prefs.collection_file_name_prefix
     )
+
+    # filename settings
+    bpy.types.Scene.filename_custom_prefix = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["filename_custom_prefix"]["name"],
+        description=PROPERTY_METADATA["filename_custom_prefix"]["description"],
+        default=prefs.filename_custom_prefix
+    )
+    bpy.types.Scene.filename_custom_suffix = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["filename_custom_suffix"]["name"],
+        description=PROPERTY_METADATA["filename_custom_suffix"]["description"],
+        default=prefs.filename_custom_suffix
+    )
+    bpy.types.Scene.filename_file_name_prefix = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["filename_file_name_prefix"]["name"],
+        description=PROPERTY_METADATA["filename_file_name_prefix"]["description"],
+        default=prefs.filename_file_name_prefix
+    )
+
+    # Collection creation settings
     bpy.types.Scene.set_location_offset_on_creation = bpy.props.BoolProperty(
         name=PROPERTY_METADATA["set_location_offset_on_creation"]["name"],
         description=PROPERTY_METADATA["set_location_offset_on_creation"]["description"],
@@ -1055,9 +1123,12 @@ def unregister():
     del bpy.types.Scene.overwrite_collection_settings
 
     # Collection creation
-    del bpy.types.Scene.custom_prefix
-    del bpy.types.Scene.custom_suffix
-    del bpy.types.Scene.use_blend_file_name_as_prefix
+    del bpy.types.Scene.collection_custom_prefix
+    del bpy.types.Scene.collection_custom_suffix
+    del bpy.types.Scene.collection_file_name_prefix
+    del bpy.types.Scene.filename_file_name_prefix
+    del bpy.types.Scene.filename_custom_prefix
+    del bpy.types.Scene.filename_custom_suffix
     del bpy.types.Scene.set_location_offset_on_creation
     del bpy.types.Scene.auto_set_filepath
     del bpy.types.Scene.auto_set_preset
@@ -1069,4 +1140,3 @@ def unregister():
     del bpy.types.Scene.export_folder_mode
     del bpy.types.Scene.absolute_export_path
     del bpy.types.Scene.relative_export_path
-
