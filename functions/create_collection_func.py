@@ -9,25 +9,19 @@ from ..core.export_formats import ExportFormats
 from ..core.export_path_func import assign_export_path_to_exporter
 
 
-def generate_collection_name(context, obj_name):
-    prefs = context.preferences.addons[base_package].preferences
-    scene = context.scene
-    settings_col = scene if scene.overwrite_collection_settings else prefs
-
-    collection_name = obj_name
-    if getattr(settings_col, 'collection_file_name_prefix'):
-        blend_file_name = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
-        if not collection_name.startswith(blend_file_name):
-            collection_name = blend_file_name + "_" + collection_name
-
-    prefix = getattr(settings_col, 'collection_custom_prefix')
-    suffix = getattr(settings_col, 'collection_custom_suffix')
+def generate_base_name(entity_name, prefix='', suffix='', use_file_name=False):
+    collection_name = entity_name
 
     if prefix and not collection_name.startswith(prefix):
         collection_name = prefix + "_" + collection_name
 
     if suffix and not collection_name.endswith(suffix):
         collection_name = collection_name + "_" + suffix
+
+    if use_file_name:
+        file_name_prefix = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
+        if not collection_name.startswith(file_name_prefix):
+            collection_name = file_name_prefix + "_" + collection_name
 
     return collection_name
 
@@ -43,6 +37,10 @@ def setup_collection(context, collection, active_object, settings_col, settings_
 
     if getattr(settings_col, 'collection_set_location_offset_on_creation'):
         collection.instance_offset = active_object.location
+
+    if getattr(settings_col, 'collection_set_location_offset_object'):
+        collection.root_object = active_object
+
 
     # Assign exporter
     set_active_layer_Collection(collection.name)
