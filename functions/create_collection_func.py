@@ -41,7 +41,7 @@ def setup_collection(context, collection, active_object, settings_col, settings_
     color_tag = getattr(settings_col, 'collection_color')
     collection.color_tag = color_tag
 
-    if getattr(settings_col, 'set_location_offset_on_creation'):
+    if getattr(settings_col, 'collection_set_location_offset_on_creation'):
         collection.instance_offset = active_object.location
 
     # Assign exporter
@@ -65,7 +65,7 @@ def setup_collection(context, collection, active_object, settings_col, settings_
 
     exporter = list(set(exporters_after) - set(exporters_before))[0]
 
-    if getattr(settings_col, 'auto_set_preset'):
+    if getattr(settings_col, 'collection_auto_set_preset'):
         # Construct the property name dynamically
         export_format = scene.export_format.lower()
         prop_name = f"simple_export_preset_file_{export_format}"
@@ -76,7 +76,7 @@ def setup_collection(context, collection, active_object, settings_col, settings_
 
         assign_preset(exporter, preset_path)
 
-    if getattr(settings_col, 'auto_set_filepath'):
+    if getattr(settings_col, 'collection_auto_set_filepath'):
         success, export_path, msg = assign_export_path_to_exporter(collection, exporter, scene, settings_filepath)
 
     return exporter

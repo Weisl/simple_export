@@ -65,20 +65,25 @@ PROPERTY_METADATA = {
         ],
         "default": 'NONE',
     },
-    "auto_set_filepath": {
-        "name": "Export Path",
+    "collection_auto_set_filepath": {
+        "name": "Set Export Path",
         "description": "##### Set filepath when creating an Exporter Collection.",
         "default": True,
     },
-    "auto_set_preset": {
-        "name": "Export Preset",
+    "collection_auto_set_preset": {
+        "name": "Set Export Preset",
         "description": "Set export preset when creating an Exporter Collection.",
         "default": True,
     },
-    "set_location_offset_on_creation": {
-        "name": "Collection Center",
+    "collection_set_location_offset_on_creation": {
+        "name": "Set Collection Center Location",
         "description": "Set Location Offset for collections.",
         "default": False,
+    },
+    "collection_set_location_offset_object": {
+        "name": "Set Collection Center Object",
+        "description": "Assign Collection Offset Object.",
+        "default": True,
     },
     "move_by_collection_offset": {
         "name": "Move by Collection Center",
@@ -493,10 +498,15 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     ########################################
     # Collections
 
-    set_location_offset_on_creation: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["set_location_offset_on_creation"]["name"],
-        description=PROPERTY_METADATA["set_location_offset_on_creation"]["description"],
-        default=PROPERTY_METADATA["set_location_offset_on_creation"]["default"],
+    collection_set_location_offset_on_creation: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["collection_set_location_offset_on_creation"]["name"],
+        description=PROPERTY_METADATA["collection_set_location_offset_on_creation"]["description"],
+        default=PROPERTY_METADATA["collection_set_location_offset_on_creation"]["default"],
+    )
+    collection_set_location_offset_object: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["collection_set_location_offset_object"]["name"],
+        description=PROPERTY_METADATA["collection_set_location_offset_object"]["description"],
+        default=PROPERTY_METADATA["collection_set_location_offset_object"]["default"],
     )
 
     collection_color: bpy.props.EnumProperty(
@@ -506,16 +516,16 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=PROPERTY_METADATA["collection_color"]["default"],
     )
 
-    auto_set_filepath: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["auto_set_filepath"]["name"],
-        description=PROPERTY_METADATA["auto_set_filepath"]["description"],
-        default=PROPERTY_METADATA["auto_set_filepath"]["default"],
+    collection_auto_set_filepath: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["collection_auto_set_filepath"]["name"],
+        description=PROPERTY_METADATA["collection_auto_set_filepath"]["description"],
+        default=PROPERTY_METADATA["collection_auto_set_filepath"]["default"],
     )
 
-    auto_set_preset: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["auto_set_preset"]["name"],
-        description=PROPERTY_METADATA["auto_set_preset"]["description"],
-        default=PROPERTY_METADATA["auto_set_preset"]["default"],
+    collection_auto_set_preset: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["collection_auto_set_preset"]["name"],
+        description=PROPERTY_METADATA["collection_auto_set_preset"]["description"],
+        default=PROPERTY_METADATA["collection_auto_set_preset"]["default"],
     )
     ###################################################################
     # KEYMAP
@@ -736,10 +746,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.prop(self, "collection_color")
 
             # Collection offset
-            box.prop(self, "set_location_offset_on_creation")
+            box.prop(self, "collection_set_location_offset_on_creation")
+            box.prop(self, "collection_set_location_offset_object")
+
             # Collection offset
-            box.prop(self, "auto_set_filepath")
-            box.prop(self, "auto_set_preset")
+            box.prop(self, "collection_auto_set_filepath")
+            box.prop(self, "collection_auto_set_preset")
 
             box = layout.box()
             box.label(text="Pre Export Operations")
@@ -933,26 +945,27 @@ def initialize_properties_collection_generation():
     )
 
     # Collection creation settings
-    bpy.types.Scene.set_location_offset_on_creation = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["set_location_offset_on_creation"]["name"],
-        description=PROPERTY_METADATA["set_location_offset_on_creation"]["description"],
-        default=prefs.set_location_offset_on_creation
-    )
-    bpy.types.Scene.move_by_collection_offset = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["move_by_collection_offset"]["name"],
-        description=PROPERTY_METADATA["move_by_collection_offset"]["description"],
-        default=prefs.move_by_collection_offset,
+    bpy.types.Scene.collection_set_location_offset_on_creation = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["collection_set_location_offset_on_creation"]["name"],
+        description=PROPERTY_METADATA["collection_set_location_offset_on_creation"]["description"],
+        default=prefs.collection_set_location_offset_on_creation
     )
 
-    bpy.types.Scene.auto_set_filepath = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["auto_set_filepath"]["name"],
-        description=PROPERTY_METADATA["auto_set_filepath"]["description"],
-        default=prefs.auto_set_filepath
+    bpy.types.Scene.collection_set_location_offset_object = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["collection_set_location_offset_object"]["name"],
+        description=PROPERTY_METADATA["collection_set_location_offset_object"]["description"],
+        default=prefs.collection_set_location_offset_object
     )
-    bpy.types.Scene.auto_set_preset = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["auto_set_preset"]["name"],
-        description=PROPERTY_METADATA["auto_set_preset"]["description"],
-        default=prefs.auto_set_preset
+
+    bpy.types.Scene.collection_auto_set_filepath = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["collection_auto_set_filepath"]["name"],
+        description=PROPERTY_METADATA["collection_auto_set_filepath"]["description"],
+        default=prefs.collection_auto_set_filepath
+    )
+    bpy.types.Scene.collection_auto_set_preset = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["collection_auto_set_preset"]["name"],
+        description=PROPERTY_METADATA["collection_auto_set_preset"]["description"],
+        default=prefs.collection_auto_set_preset
     )
     bpy.types.Scene.collection_color = bpy.props.EnumProperty(
         name=PROPERTY_METADATA["collection_color"]["name"],
@@ -961,6 +974,12 @@ def initialize_properties_collection_generation():
         default=prefs.collection_color
     )
 
+    # Pre Export operations
+    bpy.types.Scene.move_by_collection_offset = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["move_by_collection_offset"]["name"],
+        description=PROPERTY_METADATA["move_by_collection_offset"]["description"],
+        default=prefs.move_by_collection_offset,
+    )
 
 def initialize_properties_file_path():
     prefs = bpy.context.preferences.addons[base_package].preferences
@@ -1129,9 +1148,10 @@ def unregister():
     del bpy.types.Scene.filename_file_name_prefix
     del bpy.types.Scene.filename_custom_prefix
     del bpy.types.Scene.filename_custom_suffix
-    del bpy.types.Scene.set_location_offset_on_creation
-    del bpy.types.Scene.auto_set_filepath
-    del bpy.types.Scene.auto_set_preset
+    del bpy.types.Scene.collection_set_location_offset_on_creation
+    del bpy.types.Scene.collection_set_location_offset_object
+    del bpy.types.Scene.collection_auto_set_filepath
+    del bpy.types.Scene.collection_auto_set_preset
     del bpy.types.Scene.collection_color
 
     # filepath

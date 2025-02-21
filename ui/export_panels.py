@@ -235,13 +235,16 @@ def draw_create_export_collections(layout, context):
         "collection_file_name_prefix",
         "collection_custom_prefix",
         "collection_custom_suffix",
-        "auto_set_filepath",
-        "auto_set_preset",
-        "set_location_offset_on_creation"
+        "collection_auto_set_filepath",
+        "collection_auto_set_preset",
     ]
 
     # Use the helper function to draw properties
     draw_properties_with_prefix(prop_base, layout, context, properties)
+
+    # Collection offset
+    layout.prop(prop_base, "collection_set_location_offset_on_creation")
+    layout.prop(prop_base, "collection_set_location_offset_object")
 
 
 def draw_filepath_settings(layout, context):
