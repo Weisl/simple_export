@@ -1,5 +1,4 @@
 import bpy
-import os
 
 from .. import __package__ as base_package
 from ..functions.create_collection_func import generate_base_name, setup_collection
@@ -43,7 +42,8 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         suffix = getattr(settings_col, 'collection_custom_suffix')
 
         for top_object in top_level_objects:
-            collection_name = generate_base_name(context, top_object.name, prefix, suffix, getattr(settings_col, 'collection_file_name_prefix'))
+            collection_name = generate_base_name(top_object.name, prefix, suffix,
+                                                 getattr(settings_col, 'collection_file_name_prefix'))
 
             if collection_name in bpy.data.collections:
                 self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Skipping.")

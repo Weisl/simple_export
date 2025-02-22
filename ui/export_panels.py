@@ -70,6 +70,11 @@ def draw_scene_settings_overwrite(context, layout, scene):
         draw_filepath_settings(box, context)
 
         row = body.row()
+        row.prop(scene, 'overwrite_filename_settings')
+        box = body.box()
+        draw_name_settings(box, context)
+
+        row = body.row()
         row.prop(scene, 'overwrite_preset_settings')
         box = body.box()
         draw_preset_settings(box, context)
@@ -283,6 +288,16 @@ def draw_filepath_settings(layout, context):
             op.operation = 'FOLDER_OPEN'
             op.filepath = preview_path
 
+
+def draw_name_settings(layout, context):
+    scene = context.scene
+    prefs = context.preferences.addons[base_package].preferences
+
+    prop_base = context.scene
+
+    if not scene.overwrite_filename_settings:
+        layout.enabled = False
+        prop_base = prefs
     layout.label(text="Export File Name")
 
     # export file name

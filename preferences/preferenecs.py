@@ -728,6 +728,10 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                     op.operation = 'FOLDER_OPEN'
                     op.filepath = preview_path
 
+            # Export FILENAME
+            box = layout.box()
+            box.label(text="Export Filename")
+
             # export file name
             box.prop(self, "filename_file_name_prefix")
             box.prop(self, "filename_custom_prefix")
@@ -981,6 +985,7 @@ def initialize_properties_collection_generation():
         default=prefs.move_by_collection_offset,
     )
 
+
 def initialize_properties_file_path():
     prefs = bpy.context.preferences.addons[base_package].preferences
 
@@ -1045,6 +1050,11 @@ def register():
     bpy.types.Scene.overwrite_filepath_settings = bpy.props.BoolProperty(
         name="Scene: Filepath",
         description="Overwrite the settings regarding the generation of the export path defined in the Preferences",
+        default=True)
+
+    bpy.types.Scene.overwrite_filename_settings = bpy.props.BoolProperty(
+        name="Scene: Filename",
+        description="Overwrite the settings regarding the generation of the export file name defined in the Preferences",
         default=True)
 
     bpy.types.Scene.overwrite_collection_settings = bpy.props.BoolProperty(
