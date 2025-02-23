@@ -25,11 +25,12 @@ class EXPORT_OT_AddSettingsToCollections(bpy.types.Operator):
             scene = context.scene
             settings_col = scene if scene.overwrite_collection_settings else prefs
             settings_filepath = scene if scene.overwrite_filepath_settings else prefs
+            settings_filename = scene if scene.overwrite_filename_settings else prefs
 
             if not collection:
                 continue
             last_collection_name = collection.name
-            setup_collection(context, collection, active_object, settings_col, settings_filepath)
+            setup_collection(context, collection, active_object, settings_col, settings_filepath, settings_filename)
             success += 1
 
         # Cancel for No success

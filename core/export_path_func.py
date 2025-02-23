@@ -88,7 +88,7 @@ def assign_exporter_path(exporter, export_path, relative_mode):
     return True, None
 
 
-def assign_export_path_to_exporter(collection, exporter, scene, settings_filepath):
+def assign_export_path_to_exporter(collection, exporter, scene, settings_filepath, settings_filename):
     """
     Assigns an export path to the given exporter based on the configured file path settings.
 
@@ -122,8 +122,8 @@ def assign_export_path_to_exporter(collection, exporter, scene, settings_filepat
 
         from ..functions.create_collection_func import generate_base_name
 
-        base_name = generate_base_name(collection.name, settings_filepath.filename_custom_prefix, settings_filepath.filename_custom_suffix,
-                                       settings_filepath.filename_file_name_prefix)
+        base_name = generate_base_name(collection.name, settings_filename.filename_custom_prefix, settings_filename.filename_custom_suffix,
+                                       settings_filename.filename_file_name_prefix)
 
         # Generate final export path
         export_path = generate_export_path(

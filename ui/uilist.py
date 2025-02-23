@@ -8,10 +8,11 @@ from ..functions.exporter_funcs import find_exporter
 from ..functions.path_utils import clean_relative_path
 
 
-def collection_name_mismatch(collection_name, export_path):
+def collection_name_mismatch(base_name, export_path):
     """Check if the collection name does not match the export file name exactly."""
     export_filename = os.path.splitext(os.path.basename(export_path))[0]
-    return collection_name != export_filename
+
+    return base_name != export_filename
 
 
 class OBJECT_OT_root_object_actions(bpy.types.Operator):
@@ -124,6 +125,8 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         prefs = context.preferences.addons[base_package].preferences
+        scene = context.scene
+        settings_filename = scene if scene.overwrite_filename_settings else prefs
 
         # Determine settings based on the list_id
         if self.list_id == "scene":
@@ -206,7 +209,12 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
             arrow_op.collection_name = collection.name
 
-        if exporter.export_properties.filepath and collection_name_mismatch(collection.name, export_path):
+        from ..functions.create_collection_func import generate_base_name
+
+        base_name = generate_base_name(collection.name, settings_filename.filename_custom_prefix, settings_filename.filename_custom_suffix,
+                                       settings_filename.filename_file_name_prefix)
+
+        if exporter.export_properties.filepath and collection_name_mismatch(base_name, export_path):
             op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
             op.collection_name = collection.name
 

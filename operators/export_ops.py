@@ -38,8 +38,6 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
         prefs = context.preferences.addons[base_package].preferences
         scene = context.scene
-        settings_col = scene if scene.overwrite_collection_settings else prefs
-        settings_filepath = scene if scene.overwrite_filepath_settings else prefs
 
         # Get Export Collections
         if self.outliner:

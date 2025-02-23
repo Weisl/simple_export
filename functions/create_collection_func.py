@@ -26,7 +26,7 @@ def generate_base_name(entity_name, prefix='', suffix='', use_file_name=False):
     return collection_name
 
 
-def setup_collection(context, collection, active_object, settings_col, settings_filepath):
+def setup_collection(context, collection, active_object, settings_col, settings_filepath, settings_filename):
     scene = context.scene
     prefs = context.preferences.addons[base_package].preferences
 
@@ -75,6 +75,6 @@ def setup_collection(context, collection, active_object, settings_col, settings_
         assign_preset(exporter, preset_path)
 
     if getattr(settings_col, 'collection_auto_set_filepath'):
-        success, export_path, msg = assign_export_path_to_exporter(collection, exporter, scene, settings_filepath)
+        success, export_path, msg = assign_export_path_to_exporter(collection, exporter, scene, settings_filepath, settings_filename)
 
     return exporter

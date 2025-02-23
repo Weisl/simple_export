@@ -26,6 +26,7 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         scene = context.scene
         settings_col = scene if scene.overwrite_collection_settings else prefs
         settings_filepath = scene if scene.overwrite_filepath_settings else prefs
+        settings_filename = scene if scene.overwrite_filename_settings else prefs
 
         if not selected_objects:
             self.report({'WARNING'}, "No objects selected.")
@@ -69,7 +70,7 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
                     if col != export_collection:
                         col.objects.unlink(obj)
 
-            setup_collection(context, export_collection, top_object, settings_col, settings_filepath)
+            setup_collection(context, export_collection, top_object, settings_col, settings_filepath, settings_filename)
 
             self.report({'INFO'},
                         f"Export collection '{export_collection.name}' created successfully for '{top_object.name}'.")
