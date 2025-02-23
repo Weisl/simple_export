@@ -199,7 +199,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         if settings.uilist_set_root:
             # Display Empty or Eyedropper button depending on the root_object state
-            if collection.root_object:
+            if collection.use_root_object and collection.root_object:
                 op = row.operator("object.select_root", text="", icon='EMPTY_AXIS')
                 op.collection_name = collection.name
             else:

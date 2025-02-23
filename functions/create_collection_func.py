@@ -38,9 +38,11 @@ def setup_collection(context, collection, active_object, settings_col, settings_
     if getattr(settings_col, 'collection_set_location_offset_on_creation'):
         collection.instance_offset = active_object.location
 
-    if getattr(settings_col, 'collection_set_location_offset_object'):
-        collection.root_object = active_object
+    if getattr(settings_col, 'collection_use_root_offset_object'):
+        collection['use_root_object'] = settings_col.collection_use_root_offset_object
 
+    if getattr(settings_col, 'collection_set_root_offset_object'):
+        collection['root_object'] = active_object
 
     # Assign exporter
     set_active_layer_Collection(collection.name)
@@ -75,6 +77,7 @@ def setup_collection(context, collection, active_object, settings_col, settings_
         assign_preset(exporter, preset_path)
 
     if getattr(settings_col, 'collection_auto_set_filepath'):
-        success, export_path, msg = assign_export_path_to_exporter(collection, exporter, scene, settings_filepath, settings_filename)
+        success, export_path, msg = assign_export_path_to_exporter(collection, exporter, scene, settings_filepath,
+                                                                   settings_filename)
 
     return exporter
