@@ -40,7 +40,7 @@ class SIMPLEEXPORT_OT_FixExportFilename(bpy.types.Operator):
                                        settings_filename.filename_custom_suffix,
                                        settings_filename.filename_file_name_prefix)
 
-        new_export_path = os.path.join(export_dir, f"{collection.name}{ext}")
+        new_export_path = os.path.join(export_dir, f"{base_name}{ext}")
         exporter.export_properties.filepath = new_export_path
         collection["prev_name"] = collection.name
 
