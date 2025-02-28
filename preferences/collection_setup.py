@@ -26,7 +26,7 @@ def register():
     )
     bpy.types.Collection.use_root_object = bpy.props.BoolProperty(
         name="Use Root Object",
-        type=bpy.types.Object,
+        default=True,
         description="Specify Collection offset with a root object",
     )
 

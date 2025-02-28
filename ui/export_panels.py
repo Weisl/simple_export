@@ -122,20 +122,10 @@ def draw_active_list_element(layout, scene):
             row.label(text='Root Object')
 
             row = box.row(align=True)
-            # Add the Object Picker
-            if selected_collection:
-                box.prop(selected_collection, "root_object", text="Root Object")
 
-            root_box = box.box()
-            if selected_collection and selected_collection.root_object:
-                root_box.enabled = False
-                row = root_box.row(align=True)
-                # Draw existing instancing properties
-                row.prop(selected_collection, "instance_offset", text='Collection Center')
-
-            else:
-                root_box.enabled = True
-                row = root_box.row(align=True)
+            # No valid root object
+            if not selected_collection['use_root_object'] or (selected_collection['use_root_object'] and selected_collection['root_object']):
+                root_box = box.box()
                 # Draw existing instancing properties
                 row.prop(selected_collection, "instance_offset", text='Collection Center')
 
@@ -144,6 +134,16 @@ def draw_active_list_element(layout, scene):
                 op.collection_name = selected_collection.name
                 op = root_box.operator("object.set_collection_offset_object", text="Set Offset from Object")
                 op.collection_name = selected_collection.name
+
+            # Add the Object Picker
+            else:
+                box.prop(selected_collection, "root_object", text="Root Object")
+
+                root_box = box.box()
+                root_box.enabled = False
+                row = root_box.row(align=True)
+                # Draw existing instancing properties
+                row.prop(selected_collection, "instance_offset", text='Collection Center')
 
 
 def draw_export_list(layout, list_id, scene):
