@@ -24,6 +24,11 @@ def register():
         type=bpy.types.Object,
         description="Object to be used for setting the collection offset"
     )
+    bpy.types.Collection.use_root_object = bpy.props.BoolProperty(
+        name="Use Root Object",
+        default=True,
+        description="Specify Collection offset with a root object",
+    )
 
     """add the handler."""
     if update_collection_offset not in bpy.app.handlers.depsgraph_update_post:
@@ -33,6 +38,7 @@ def register():
 
 def unregister():
     del bpy.types.Collection.root_object
+    del bpy.types.Collection.use_root_object
 
     """remove the handler."""
     if update_collection_offset in bpy.app.handlers.depsgraph_update_post:

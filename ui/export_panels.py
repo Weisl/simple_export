@@ -122,19 +122,10 @@ def draw_active_list_element(layout, scene):
             row.label(text='Root Object')
 
             row = box.row(align=True)
-            # Add the Object Picker
-            box.prop(selected_collection, "root_object", text="Root Object")
 
-            root_box = box.box()
-            if selected_collection.root_object:
-                root_box.enabled = False
-                row = root_box.row(align=True)
-                # Draw existing instancing properties
-                row.prop(selected_collection, "instance_offset", text='Collection Center')
-
-            else:
-                root_box.enabled = True
-                row = root_box.row(align=True)
+            # No valid root object
+            if not selected_collection['use_root_object'] or (selected_collection['use_root_object'] and selected_collection['root_object']):
+                root_box = box.box()
                 # Draw existing instancing properties
                 row.prop(selected_collection, "instance_offset", text='Collection Center')
 
@@ -144,7 +135,15 @@ def draw_active_list_element(layout, scene):
                 op = root_box.operator("object.set_collection_offset_object", text="Set Offset from Object")
                 op.collection_name = selected_collection.name
 
+            # Add the Object Picker
+            else:
+                box.prop(selected_collection, "root_object", text="Root Object")
 
+                root_box = box.box()
+                root_box.enabled = False
+                row = root_box.row(align=True)
+                # Draw existing instancing properties
+                row.prop(selected_collection, "instance_offset", text='Collection Center')
 
 
 def draw_export_list(layout, list_id, scene):
@@ -175,6 +174,7 @@ def draw_properties_with_prefix(setting, layout, context, properties):
         context (Context): The Blender context.
         properties (list): List of property names to compare and draw.
     """
+
     prefs = context.preferences.addons[base_package].preferences
 
     for prop_name in properties:
@@ -249,7 +249,7 @@ def draw_create_export_collections(layout, context):
 
     # Collection offset
     layout.prop(prop_base, "collection_set_location_offset_on_creation")
-    layout.prop(prop_base, "collection_set_location_offset_object")
+    layout.prop(prop_base, "collection_set_root_offset_object")
 
 
 def draw_filepath_settings(layout, context):
@@ -326,7 +326,6 @@ class SIMPLE_EXPORT_menu_base:
         layout = self.layout
         scene = context.scene
 
-
         col = layout.column(align=True)
         row = col.row()
         op = row.operator("simple_export.assign_presets", text="Assign Presets", icon='PRESET_NEW')
@@ -342,7 +341,6 @@ class SIMPLE_EXPORT_menu_base:
 
         box = col.box()
         draw_pre_export_operations(box, scene)
-
 
         row = col.row()
         op = row.operator("simple_export.export_collections", text="Export Selected", icon='EXPORT')

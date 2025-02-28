@@ -34,7 +34,7 @@ def update_collection_offset(scene):
     """Update the collection offset when the object is moved."""
     for collection in bpy.data.collections:
         obj = collection.get("root_object", None)
-        if obj:
+        if obj and collection.use_root_object:
             obj_location = obj.location.copy()
             if collection.instance_offset != obj_location:
                 # Set the collection offset to the object's location
