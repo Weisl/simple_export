@@ -18,7 +18,7 @@ PROPERTY_METADATA = {
         "default": "",
     },
     "collection_file_name_prefix": {
-        "name": "File Name Prefix",
+        "name": "Blend Name as Prefix",
         "description": "Add the blend file name as prefix to the export collections.",
         "default": False,
     },
@@ -227,7 +227,7 @@ def compute_mirror_preview(settings):
         export_path = blend_path.replace(settings.mirror_search_path, settings.mirror_replacement_path)
         return bpy.path.relpath(export_path) if "//" in export_path else export_path
 
-    return "Search path not found in blend file path"
+    return "Search Path not found in current blend file path"
 
 
 def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_export_panel_ctrl,
@@ -419,9 +419,9 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     )
 
     collection_file_name_prefix: bpy.props.BoolProperty(
-        name="Use Blend File Name as Prefix",
-        description="If checked, the Blender file name will be used as a prefix for the export file name.",
-        default=False
+        name=PROPERTY_METADATA["collection_file_name_prefix"]["name"],
+        description=PROPERTY_METADATA["collection_file_name_prefix"]["description"],
+        default=PROPERTY_METADATA["collection_file_name_prefix"]["default"],
     )
 
     ########################################

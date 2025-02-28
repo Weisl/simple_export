@@ -123,27 +123,45 @@ def draw_active_list_element(layout, scene):
 
             row = box.row(align=True)
 
+            box.prop(selected_collection, "use_root_object", text="Use Root Object")
+
             # No valid root object
-            if not selected_collection['use_root_object'] or (selected_collection['use_root_object'] and selected_collection['root_object']):
+            if not selected_collection['use_root_object']:
                 root_box = box.box()
+                row = root_box.row(align=True)
                 # Draw existing instancing properties
                 row.prop(selected_collection, "instance_offset", text='Collection Center')
 
+                col = root_box.column(align=True)
                 # Add an operator button to manually update the offset if needed
-                op = root_box.operator("object.set_collection_offset_cursor", text="Set Offset from Cursor")
+                op = col.operator("object.set_collection_offset_cursor", text="Set Offset from Cursor")
                 op.collection_name = selected_collection.name
-                op = root_box.operator("object.set_collection_offset_object", text="Set Offset from Object")
+                op = col.operator("object.set_collection_offset_object", text="Set Offset from Object")
                 op.collection_name = selected_collection.name
 
             # Add the Object Picker
             else:
                 box.prop(selected_collection, "root_object", text="Root Object")
-
                 root_box = box.box()
-                root_box.enabled = False
-                row = root_box.row(align=True)
-                # Draw existing instancing properties
-                row.prop(selected_collection, "instance_offset", text='Collection Center')
+
+                if selected_collection["root_object"]:
+                    root_box.enabled = False
+                    row = root_box.row(align=True)
+                    # Draw existing instancing properties
+                    row.prop(selected_collection, "instance_offset", text='Collection Center')
+                else:
+                    row = root_box.row(align=True)
+                    # Draw existing instancing properties
+                    row.prop(selected_collection, "instance_offset", text='Collection Center')
+
+                    col = root_box.column(align=True)
+                    # Add an operator button to manually update the offset if needed
+                    op = col.operator("object.set_collection_offset_cursor", text="Set Offset from Cursor")
+                    op.collection_name = selected_collection.name
+                    op = col.operator("object.set_collection_offset_object", text="Set Offset from Object")
+                    op.collection_name = selected_collection.name
+
+
 
 
 def draw_export_list(layout, list_id, scene):
