@@ -101,7 +101,7 @@ def draw_active_list_element(layout, scene):
             # Collection name and icon
             row = box.row(align=True)
             row.prop(selected_collection, 'name', icon='OUTLINER_COLLECTION')
-            op = row.operator("simple_export.go_to_collection_exporter", text="",
+            op = row.operator("simple_export.open_exporter_in_properties", text="",
                               icon='PROPERTIES')
             op.collection_name = selected_collection.name
 

@@ -19,15 +19,15 @@ def update_collection_offset(depsgraph):
 
 
 def register():
-    bpy.types.Collection.root_object = bpy.props.PointerProperty(
-        name="Root Object",
-        type=bpy.types.Object,
-        description="Object to be used for setting the collection offset"
-    )
     bpy.types.Collection.use_root_object = bpy.props.BoolProperty(
         name="Use Root Object",
         default=True,
         description="Specify Collection offset with a root object",
+    )
+    bpy.types.Collection.root_object = bpy.props.PointerProperty(
+        name="Root Object",
+        type=bpy.types.Object,
+        description="Object to be used for setting the collection offset"
     )
 
     """add the handler."""

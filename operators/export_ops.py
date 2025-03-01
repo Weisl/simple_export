@@ -115,7 +115,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
             except Exception as e:
                 # Handle errors in one place
                 export_results.append(
-                    {'name': collection.name or "Unknown Collection", 'success': False, 'filepath': export_path,
+                    {'name': collection.name or "Unknown Collection", 'success': False, 'filepath': '',
                      'message': str(e)})
 
             finally:

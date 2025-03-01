@@ -21,9 +21,10 @@ class OBJECT_OT_root_object_actions(bpy.types.Operator):
     bl_label = "Root Object Actions"
 
     action: bpy.props.StringProperty()
+    collection_name: bpy.props.StringProperty()
 
     def execute(self, context):
-        collection_name = context.scene.menu_collection_name
+        collection_name = self.collection_name
         collection = bpy.data.collections.get(collection_name)
 
         if not collection:
@@ -55,6 +56,11 @@ class OBJECT_OT_root_object_actions(bpy.types.Operator):
                 obj.hide_set(False)
             self.report({'INFO'}, f"Unhid all objects in collection '{collection.name}'")
 
+        elif self.action == "hide_content":
+            for obj in collection.objects:
+                obj.hide_set(True)
+            self.report({'INFO'}, f"Hid all objects in collection '{collection.name}'")
+
         else:
             self.report({'ERROR'}, "Unknown action")
 
@@ -70,25 +76,60 @@ class OBJECT_OT_set_menu_collection(bpy.types.Operator):
 
     def execute(self, context):
         context.scene.menu_collection_name = self.collection_name
-        bpy.ops.wm.call_menu(name="OBJECT_MT_root_object_menu")
+        bpy.ops.wm.call_menu(name="COLLECTION_MT_root_object_menu")
         return {'FINISHED'}
 
 
-class OBJECT_MT_root_object_menu(bpy.types.Menu):
+class COLLECTION_MT_root_object_menu(bpy.types.Menu):
     """Root Object Action Menu"""
-    bl_idname = "OBJECT_MT_root_object_menu"
-    bl_label = "Root Object Actions"
+    bl_idname = "COLLECTION_MT_root_object_menu"
+    bl_label = "Collection Actions"
 
     def draw(self, context):
         layout = self.layout
+        collection_name = context.scene.menu_collection_name
 
-        layout.operator("object.root_object_actions", text="Remove Root Object", icon='X').action = "remove"
-        layout.operator("object.root_object_actions", text="Select Root Object",
-                        icon='RESTRICT_SELECT_OFF').action = "select_root"
-        layout.operator("object.root_object_actions", text="Select Collection Content",
-                        icon='OUTLINER_COLLECTION').action = "select_content"
-        layout.operator("object.root_object_actions", text="Unhide Collection Content",
-                        icon='HIDE_OFF').action = "unhide_content"
+        op = layout.operator("object.root_object_actions", text="Remove Root Object", icon='X')
+        op.action = "remove"
+        op.collection_name = collection_name
+
+        op = layout.operator("object.root_object_actions", text="Select Root Object",
+                             icon='RESTRICT_SELECT_OFF')
+        op.action = "select_root"
+        op.collection_name = collection_name
+
+        layout.separator()
+
+        op = layout.operator("object.root_object_actions", text="Select Collection Content",
+                             icon='OUTLINER_COLLECTION')
+        op.action = "select_content"
+        op.collection_name = collection_name
+
+        op = layout.operator("object.root_object_actions", text="Hide Collection Content",
+                             icon='HIDE_ON')
+        op.action = "hide_content"
+        op.collection_name = collection_name
+
+        op = layout.operator("object.root_object_actions", text="Unide Collection Content",
+                             icon='HIDE_OFF')
+        op.action = "unhide_content"
+        op.collection_name = collection_name
+
+
+        layout.separator()
+
+        op = layout.operator("simple_export.set_export_paths", icon='FOLDER_REDIRECT')
+        op.outliner = False
+        op.individual_collection = True
+        op.collection_name = collection_name
+
+        op = layout.operator("simple_export.assign_presets", icon='PRESET')
+        op.outliner = False
+        op.individual_collection = True
+        op.collection_name = collection_name
+
+        op = layout.operator("simple_export.open_exporter_in_properties", icon='PROPERTIES')
+        op.collection_name = collection_name
 
 
 class OBJECT_OT_select_root(bpy.types.Operator):
@@ -202,14 +243,15 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 op.collection_name = collection.name
             else:
                 row.prop(collection, "root_object", text="")
-                
-            # Add arrow button that sets the collection name and opens the menu
-            arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
-            arrow_op.collection_name = collection.name
+
+        # Add arrow button that sets the collection name and opens the menu
+        arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
+        arrow_op.collection_name = collection.name
 
         from ..functions.create_collection_func import generate_base_name
 
-        base_name = generate_base_name(collection.name, settings_filename.filename_custom_prefix, settings_filename.filename_custom_suffix,
+        base_name = generate_base_name(collection.name, settings_filename.filename_custom_prefix,
+                                       settings_filename.filename_custom_suffix,
                                        settings_filename.filename_file_name_prefix)
 
         if exporter.export_properties.filepath and collection_name_mismatch(base_name, export_path):
@@ -249,7 +291,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 classes = (
     SCENE_UL_CollectionList,
     OBJECT_OT_select_root,
-    OBJECT_MT_root_object_menu,
+    COLLECTION_MT_root_object_menu,
     OBJECT_OT_set_menu_collection,
     OBJECT_OT_root_object_actions,
 )
