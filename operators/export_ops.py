@@ -35,6 +35,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
         export_collections = []
         temporarily_disable_offset_handler()
         error_count = 0
+        success_count = 0
 
         prefs = context.preferences.addons[base_package].preferences
         scene = context.scene
@@ -110,6 +111,8 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                     {'name': collection.name, 'success': success, 'filepath': export_path, 'message': message})
                 if not success:
                     error_count += 1
+                else:
+                    success_count += 1
 
 
             except Exception as e:
@@ -117,6 +120,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 export_results.append(
                     {'name': collection.name or "Unknown Collection", 'success': False, 'filepath': '',
                      'message': str(e)})
+                error_count += 1
 
             finally:
                 if scene.move_by_collection_offset:
@@ -129,9 +133,12 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 call_export_popup(export_results, context)
 
             return {'FINISHED'}
-
+        elif success_count > 0:
+            self.report({'WARNING'}, f"Some Exports failed: see result windows and console")
+            call_export_popup(export_results, context)
+            return {'CANCELLED'}
         else:
-            self.report({'WARNING'}, f"Export with Errors: See Result windows or console for further information.")
+            self.report({'ERROR'}, f"Exports Failed: See result windows and console.")
             call_export_popup(export_results, context)
             return {'CANCELLED'}
 
