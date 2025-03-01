@@ -51,9 +51,9 @@ def register():
         description="Select this collection for export",
         default=False)
 
+    # Delay execution to ensure Blender has initialized bpy.data.collections
+    bpy.app.timers.register(ensure_collection_properties, first_interval=0.1)
 
-    # Ensure properties exist when the add-on is first enabled
-    ensure_collection_properties()
     # Register handler to ensure properties are set when loading an older .blend file
     bpy.app.handlers.load_post.append(load_post_handler)
 
