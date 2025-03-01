@@ -1092,15 +1092,6 @@ def register():
         description="Overwrite the settings regarding the presets",
         default=False)
 
-    bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty(
-        name="Selected Collection",
-        description="Select this collection for export",
-        default=False)
-
-    bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty(
-        name="Select for Export",
-        description="Select this collection for export",
-        default=False)
 
     ########################################
     # Presets
@@ -1171,7 +1162,7 @@ def unregister():
 
     # Persistant settings
     del bpy.types.Scene.collection_index
-    del bpy.types.Collection.simple_export_selected
+
 
     del bpy.types.Scene.overwrite_filepath_settings
     del bpy.types.Scene.overwrite_collection_settings

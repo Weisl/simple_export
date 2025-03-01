@@ -126,7 +126,7 @@ def draw_active_list_element(layout, scene):
             box.prop(selected_collection, "use_root_object", text="Use Root Object")
 
             # No valid root object
-            if not selected_collection['use_root_object']:
+            if not selected_collection.use_root_object:
                 root_box = box.box()
                 row = root_box.row(align=True)
                 # Draw existing instancing properties

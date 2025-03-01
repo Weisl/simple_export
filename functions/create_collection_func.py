@@ -31,7 +31,7 @@ def setup_collection(context, collection, active_object, settings_col, settings_
     prefs = context.preferences.addons[base_package].preferences
 
     # Set collection properties
-    collection['simple_export_selected'] = True
+    collection.simple_export_selected = True
     color_tag = getattr(settings_col, 'collection_color')
     collection.color_tag = color_tag
 
@@ -39,10 +39,10 @@ def setup_collection(context, collection, active_object, settings_col, settings_
         collection.instance_offset = active_object.location
 
     if getattr(settings_col, 'collection_use_root_offset_object'):
-        collection['use_root_object'] = settings_col.collection_use_root_offset_object
+        collection.use_root_object = settings_col.collection_use_root_offset_object
 
     if getattr(settings_col, 'collection_set_root_offset_object'):
-        collection['root_object'] = active_object
+        collection.root_object = active_object
 
     # Assign exporter
     set_active_layer_Collection(collection.name)
