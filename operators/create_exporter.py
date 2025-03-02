@@ -51,6 +51,7 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
                 continue
 
             export_collection = bpy.data.collections.new(collection_name)
+            
             parent_collection.children.link(export_collection)
 
             objects = selected_objects if self.only_selection else bpy.data.objects
