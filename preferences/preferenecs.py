@@ -974,10 +974,10 @@ def initialize_properties_collection_generation():
         default=prefs.collection_set_location_offset_on_creation
     )
 
-    bpy.types.Scene.collection_set_root_offset_object = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["collection_set_root_offset_object"]["name"],
-        description=PROPERTY_METADATA["collection_set_root_offset_object"]["description"],
-        default=prefs.collection_set_root_offset_object
+    bpy.types.Scene.collection_use_root_offset_object = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["collection_use_root_offset_object"]["name"],
+        description=PROPERTY_METADATA["collection_use_root_offset_object"]["description"],
+        default=prefs.collection_use_root_offset_object
     )
 
     bpy.types.Scene.collection_set_root_offset_object = bpy.props.BoolProperty(
