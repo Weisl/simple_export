@@ -95,26 +95,32 @@ def draw_active_list_element(layout, scene):
         header, body = layout.panel(idname="ACTIVE_COL_PANEL", default_closed=True)
         header.label(text=f"Active Collection:", icon='OUTLINER_COLLECTION')
 
-        # Check if the panel is expanded before adding UI elements
         if body:
+
+
+            # Export Path
+            exporter = find_exporter(selected_collection, scene.export_format)
+
+            # Return early
+            if not exporter:
+                layout.label(text='Select Collection', icon='INFO')
+                return
+
             box = layout.box()
             # Collection name and icon
             row = box.row(align=True)
+
             row.prop(selected_collection, 'name', icon='OUTLINER_COLLECTION')
             op = row.operator("simple_export.open_exporter_in_properties", text="",
                               icon='PROPERTIES')
             op.collection_name = selected_collection.name
 
-            # Export Path
-            exporter = find_exporter(selected_collection, scene.export_format)
-
-            if exporter:
-                row = box.row(align=True)
-                row.prop(exporter.export_properties, "filepath", text="", expand=True)
-                op = row.operator("simple_export.set_export_paths", text="", icon='FOLDER_REDIRECT')
-                op.outliner = False
-                op.individual_collection = True
-                op.collection_name = selected_collection.name
+            row = box.row(align=True)
+            row.prop(exporter.export_properties, "filepath", text="", expand=True)
+            op = row.operator("simple_export.set_export_paths", text="", icon='FOLDER_REDIRECT')
+            op.outliner = False
+            op.individual_collection = True
+            op.collection_name = selected_collection.name
 
             # Collection Center
 
@@ -160,8 +166,6 @@ def draw_active_list_element(layout, scene):
                     op.collection_name = selected_collection.name
                     op = col.operator("object.set_collection_offset_object", text="Set Offset from Object")
                     op.collection_name = selected_collection.name
-
-
 
 
 def draw_export_list(layout, list_id, scene):
