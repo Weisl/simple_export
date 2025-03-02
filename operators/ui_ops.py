@@ -6,10 +6,10 @@ from ..functions.exporter_funcs import find_exporter
 from ..functions.path_utils import clean_relative_path
 
 
-class SIMPLE_OT_GoToCollectionExporter(bpy.types.Operator):
+class SIMPLE_OT_OpenCollectionExporterProperties(bpy.types.Operator):
     """Go to the selected collection's properties and focus on the exporter"""
-    bl_idname = "simple_export.go_to_collection_exporter"
-    bl_label = "Go to Collection Exporter"
+    bl_idname = "simple_export.open_exporter_in_properties"
+    bl_label = "Open Exporter Properties"
 
     collection_name: bpy.props.StringProperty()
 
@@ -86,7 +86,7 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
 classes = (
     SCENE_OT_SelectAllCollections,
     SCENE_OT_OpenExportDirectory,
-    SIMPLE_OT_GoToCollectionExporter,
+    SIMPLE_OT_OpenCollectionExporterProperties,
 )
 
 

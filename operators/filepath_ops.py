@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from .. import __package__ as base_package
 from ..core.export_path_func import assign_export_path_to_exporter
@@ -7,7 +8,7 @@ from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.exporter_funcs import find_exporter
 from ..functions.outliner_func import get_outliner_collections
 from ..functions.vallidate_func import validate_collection
-
+from ..functions.create_collection_func import generate_base_name
 
 class SIMPLEEXPORT_OT_FixExportFilename(bpy.types.Operator):
     bl_description = "The current filename does not match the collection name. Update the filename to be the collection name"
@@ -27,11 +28,19 @@ class SIMPLEEXPORT_OT_FixExportFilename(bpy.types.Operator):
         if not exporter:
             return {'CANCELLED'}
 
+        prefs = context.preferences.addons[base_package].preferences
+        scene = context.scene
+        settings_filename = scene if scene.overwrite_filename_settings else prefs
+
         export_path = exporter.export_properties.filepath
         export_dir = os.path.dirname(export_path)
         _, ext = os.path.splitext(export_path)
 
-        new_export_path = os.path.join(export_dir, f"{collection.name}{ext}")
+        base_name = generate_base_name(collection.name, settings_filename.filename_custom_prefix,
+                                       settings_filename.filename_custom_suffix,
+                                       settings_filename.filename_file_name_prefix)
+
+        new_export_path = os.path.join(export_dir, f"{base_name}{ext}")
         exporter.export_properties.filepath = new_export_path
         collection["prev_name"] = collection.name
 
@@ -53,8 +62,8 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
         results = []
         prefs = context.preferences.addons[base_package].preferences
         scene = context.scene
-        settings_col = scene if scene.overwrite_collection_settings else prefs
         settings_filepath = scene if scene.overwrite_filepath_settings else prefs
+        settings_filename = scene if scene.overwrite_filename_settings else prefs
 
         # Get Export Collections
         if self.outliner:
@@ -67,7 +76,6 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
                 col for col in bpy.data.collections
                 if getattr(col, "simple_export_selected", False) and len(getattr(col, "exporters", [])) > 0
             ]
-
 
         if not collection_list:
             self.report({'WARNING'}, "No valid collections found for export.")
@@ -95,7 +103,7 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
 
                 # Assign export path using the extracted function
                 success, export_path, msg = assign_export_path_to_exporter(collection, exporter, scene,
-                                                                           settings_filepath)
+                                                                           settings_filepath, settings_filename)
 
                 results.append({'name': collection.name, 'success': success, 'filepath': export_path, 'message': msg})
 

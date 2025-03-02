@@ -1,7 +1,7 @@
 import bpy
 
 from .. import __package__ as base_package
-from ..functions.create_collection_func import generate_collection_name, setup_collection
+from ..functions.create_collection_func import generate_base_name, setup_collection
 
 
 class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
@@ -26,6 +26,7 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         scene = context.scene
         settings_col = scene if scene.overwrite_collection_settings else prefs
         settings_filepath = scene if scene.overwrite_filepath_settings else prefs
+        settings_filename = scene if scene.overwrite_filename_settings else prefs
 
         if not selected_objects:
             self.report({'WARNING'}, "No objects selected.")
@@ -35,12 +36,15 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
             self.report({'WARNING'}, "No valid parent collection selected. Falling back to the scene collection.")
             parent_collection = context.scene.collection
 
-
         # Identify top-level objects (objects without a selected parent)
         top_level_objects = [obj for obj in selected_objects if not obj.parent or obj.parent not in selected_objects]
 
+        prefix = getattr(settings_col, 'collection_custom_prefix')
+        suffix = getattr(settings_col, 'collection_custom_suffix')
+
         for top_object in top_level_objects:
-            collection_name = generate_collection_name(context, top_object.name)
+            collection_name = generate_base_name(top_object.name, prefix, suffix,
+                                                 getattr(settings_col, 'collection_file_name_prefix'))
 
             if collection_name in bpy.data.collections:
                 self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Skipping.")
@@ -49,8 +53,8 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
             export_collection = bpy.data.collections.new(collection_name)
             parent_collection.children.link(export_collection)
 
-
             objects = selected_objects if self.only_selection else bpy.data.objects
+
             # Gather hierarchy of children recursively
             def collect_children(obj):
                 return [obj] + [child for child in objects if
@@ -66,7 +70,8 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
                     if col != export_collection:
                         col.objects.unlink(obj)
 
-            setup_collection(context, export_collection, top_object, settings_col, settings_filepath)
+            print(f"PATH = {settings_filepath}")
+            setup_collection(context, export_collection, top_object, settings_col, settings_filepath, settings_filename)
 
             self.report({'INFO'},
                         f"Export collection '{export_collection.name}' created successfully for '{top_object.name}'.")

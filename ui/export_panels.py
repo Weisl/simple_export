@@ -70,6 +70,11 @@ def draw_scene_settings_overwrite(context, layout, scene):
         draw_filepath_settings(box, context)
 
         row = body.row()
+        row.prop(scene, 'overwrite_filename_settings')
+        box = body.box()
+        draw_name_settings(box, context)
+
+        row = body.row()
         row.prop(scene, 'overwrite_preset_settings')
         box = body.box()
         draw_preset_settings(box, context)
@@ -90,41 +95,75 @@ def draw_active_list_element(layout, scene):
         header, body = layout.panel(idname="ACTIVE_COL_PANEL", default_closed=True)
         header.label(text=f"Active Collection:", icon='OUTLINER_COLLECTION')
 
-        # Check if the panel is expanded before adding UI elements
         if body:
+            # Export Path
+            exporter = find_exporter(selected_collection, scene.export_format)
+
+            # Return early
+            if not exporter:
+                layout.label(text='Select Collection', icon='INFO')
+                return
+
             box = layout.box()
             # Collection name and icon
             row = box.row(align=True)
+
             row.prop(selected_collection, 'name', icon='OUTLINER_COLLECTION')
-            op = row.operator("simple_export.go_to_collection_exporter", text="",
+            op = row.operator("simple_export.open_exporter_in_properties", text="",
                               icon='PROPERTIES')
             op.collection_name = selected_collection.name
 
-            # Export Path
-            exporter = find_exporter(selected_collection, scene.export_format)
-            if exporter:
-                row = box.row(align=True)
-                row.prop(exporter.export_properties, "filepath", text="", expand=True)
-                op = row.operator("simple_export.set_export_paths", text="", icon='FOLDER_REDIRECT')
-                op.outliner = False
-                op.individual_collection = True
+            row = box.row(align=True)
+            row.prop(exporter.export_properties, "filepath", text="", expand=True)
+            op = row.operator("simple_export.set_export_paths", text="", icon='FOLDER_REDIRECT')
+            op.outliner = False
+            op.individual_collection = True
+            op.collection_name = selected_collection.name
+
+            # Collection Center
+
+            row = box.row(align=True)
+            row.label(text='Root Object')
+
+            row = box.row(align=True)
+
+            box.prop(selected_collection, "use_root_object", text="Use Root Object")
+
+            # No valid root object
+            if not selected_collection.use_root_object:
+                root_box = box.box()
+                row = root_box.row(align=True)
+                # Draw existing instancing properties
+                row.prop(selected_collection, "instance_offset", text='Collection Center')
+
+                col = root_box.column(align=True)
+                # Add an operator button to manually update the offset if needed
+                op = col.operator("object.set_collection_offset_cursor", text="Set Offset from Cursor")
+                op.collection_name = selected_collection.name
+                op = col.operator("object.set_collection_offset_object", text="Set Offset from Object")
                 op.collection_name = selected_collection.name
 
-            # Collection Offset
-            row = box.row(align=True)
-            row.label(text='Collection Offset (BETA)')
-            row = box.row(align=True)
-
-            # Draw existing instancing properties
-            row.prop(selected_collection, "instance_offset", text='Offset')
-
             # Add the Object Picker
-            box.prop(selected_collection, "offset_object", text="Offset Object")
+            else:
+                box.prop(selected_collection, "root_object", text="Root Object")
+                root_box = box.box()
 
-            # Add an operator button to manually update the offset if needed
-            op = box.operator("object.set_collection_offset", text="Set Offset from Object")
-            
-            op.collection_name = selected_collection.name
+                if selected_collection["root_object"]:
+                    root_box.enabled = False
+                    row = root_box.row(align=True)
+                    # Draw existing instancing properties
+                    row.prop(selected_collection, "instance_offset", text='Collection Center')
+                else:
+                    row = root_box.row(align=True)
+                    # Draw existing instancing properties
+                    row.prop(selected_collection, "instance_offset", text='Collection Center')
+
+                    col = root_box.column(align=True)
+                    # Add an operator button to manually update the offset if needed
+                    op = col.operator("object.set_collection_offset_cursor", text="Set Offset from Cursor")
+                    op.collection_name = selected_collection.name
+                    op = col.operator("object.set_collection_offset_object", text="Set Offset from Object")
+                    op.collection_name = selected_collection.name
 
 
 def draw_export_list(layout, list_id, scene):
@@ -155,6 +194,7 @@ def draw_properties_with_prefix(setting, layout, context, properties):
         context (Context): The Blender context.
         properties (list): List of property names to compare and draw.
     """
+
     prefs = context.preferences.addons[base_package].preferences
 
     for prop_name in properties:
@@ -217,16 +257,19 @@ def draw_create_export_collections(layout, context):
     # Define properties to check
     properties = [
         "collection_color",
-        "use_blend_file_name_as_prefix",
-        "custom_prefix",
-        "custom_suffix",
-        "auto_set_filepath",
-        "auto_set_preset",
-        "set_location_offset_on_creation"
+        "collection_file_name_prefix",
+        "collection_custom_prefix",
+        "collection_custom_suffix",
+        "collection_auto_set_filepath",
+        "collection_auto_set_preset",
     ]
 
     # Use the helper function to draw properties
     draw_properties_with_prefix(prop_base, layout, context, properties)
+
+    # Collection offset
+    layout.prop(prop_base, "collection_set_location_offset_on_creation")
+    layout.prop(prop_base, "collection_set_root_offset_object")
 
 
 def draw_filepath_settings(layout, context):
@@ -239,27 +282,25 @@ def draw_filepath_settings(layout, context):
         layout.enabled = False
         prop_base = prefs
 
-    box = layout.box()
-    box.label(text="Path Mode")
-    row = box.row()
+    layout.label(text="Export Path Mode")
+    row = layout.row()
     row.prop(prop_base, "export_folder_mode", expand=True)
 
     if prop_base.export_folder_mode == 'ABSOLUTE':
-        box.prop(prop_base, "absolute_export_path")
+        layout.prop(prop_base, "absolute_export_path")
 
     if prop_base.export_folder_mode == 'RELATIVE':
-        box.prop(prop_base, "relative_export_path")
+        layout.prop(prop_base, "relative_export_path")
 
     if prop_base.export_folder_mode == 'MIRROR':
-        box.prop(prop_base, "mirror_search_path", text="Search Path")
-        box.prop(prop_base, "mirror_replacement_path", text="Replacement Path")
+        layout.prop(prop_base, "mirror_search_path", text="Search Path")
+        layout.prop(prop_base, "mirror_replacement_path", text="Replacement Path")
 
         # Compute and display the preview
         from ..preferences.preferenecs import compute_mirror_preview
         preview_path = compute_mirror_preview(prop_base)  # Pass `self` as settings
-        preview_box = box.box()
-        preview_box.label(text="Export Folder Preview:")
-        row = preview_box.row(align=True)
+        layout.label(text="Export Folder Preview:")
+        row = layout.row(align=True)
         row.label(text=preview_path)
 
         if os.path.exists(preview_path):
@@ -268,13 +309,30 @@ def draw_filepath_settings(layout, context):
             op.filepath = preview_path
 
 
+def draw_name_settings(layout, context):
+    scene = context.scene
+    prefs = context.preferences.addons[base_package].preferences
+
+    prop_base = context.scene
+
+    if not scene.overwrite_filename_settings:
+        layout.enabled = False
+        prop_base = prefs
+    layout.label(text="Export File Name")
+
+    # export file name
+    layout.prop(prop_base, "filename_file_name_prefix")
+    layout.prop(prop_base, "filename_custom_prefix")
+    layout.prop(prop_base, "filename_custom_suffix")
+
+
 def draw_custom_collection_ui(self, context):
     """Draw custom UI in the COLLECTION_PT_instancing panel."""
     layout = self.layout
     collection = context.collection
 
     # Add the Object Picker
-    layout.prop(collection, "offset_object", text="Offset Object")
+    layout.prop(collection, "root_object", text="Offset Object")
 
 
 class SIMPLE_EXPORT_menu_base:
@@ -287,7 +345,6 @@ class SIMPLE_EXPORT_menu_base:
     def draw(self, context):
         layout = self.layout
         scene = context.scene
-
 
         col = layout.column(align=True)
         row = col.row()
@@ -304,7 +361,6 @@ class SIMPLE_EXPORT_menu_base:
 
         box = col.box()
         draw_pre_export_operations(box, scene)
-
 
         row = col.row()
         op = row.operator("simple_export.export_collections", text="Export Selected", icon='EXPORT')

@@ -1,12 +1,11 @@
-import os
-
 import bpy
+import os
 
 from ..core.export_formats import ExportFormats
 from ..functions.path_utils import ensure_export_folder_exists
 
 
-def generate_export_path(collection_name, export_format_key, export_dir, mirror_search_path, mirror_replacement_path,
+def generate_export_path(base_name, export_format_key, export_dir, mirror_search_path, mirror_replacement_path,
                          relative_mode):
     """
     Generate and set the correct export path based on the selected filepath mode.
@@ -30,7 +29,7 @@ def generate_export_path(collection_name, export_format_key, export_dir, mirror_
 
     # Construct export filename
     export_extension = export_format.file_extension
-    export_name = f"{collection_name}.{export_extension}"
+    export_name = f"{base_name}.{export_extension}"
 
     # Resolve relative paths
     if relative_mode:
@@ -89,7 +88,7 @@ def assign_exporter_path(exporter, export_path, relative_mode):
     return True, None
 
 
-def assign_export_path_to_exporter(collection, exporter, scene, settings_filepath):
+def assign_export_path_to_exporter(collection, exporter, scene, settings_filepath, settings_filename):
     """
     Assigns an export path to the given exporter based on the configured file path settings.
 
@@ -107,23 +106,28 @@ def assign_export_path_to_exporter(collection, exporter, scene, settings_filepat
             relative_mode = False
 
         elif settings_filepath.export_folder_mode == 'RELATIVE':
-            if not bpy.data.filepath:
-                raise ValueError("Save the Blend file before calling this operator.")
+            if not settings_filepath.relative_export_path:
+                raise ValueError("ERROR: Please specify a relative Export Folder Location.")
             export_dir = settings_filepath.relative_export_path
             relative_mode = True
 
         elif settings_filepath.export_folder_mode == 'MIRROR':
             if not bpy.data.filepath:
-                raise ValueError("Save the Blend file before calling this operator.")
+                raise ValueError("ERROR: Please save the Blend file before calling this operator.")
             export_dir = os.path.dirname(bpy.data.filepath)
-            relative_mode = False  # Mirrored paths are not inherently relative
+            relative_mode = False
 
         else:
             raise ValueError(f"Unknown export folder mode: {settings_filepath.export_folder_mode}")
 
+        from ..functions.create_collection_func import generate_base_name
+
+        base_name = generate_base_name(collection.name, settings_filename.filename_custom_prefix, settings_filename.filename_custom_suffix,
+                                       settings_filename.filename_file_name_prefix)
+
         # Generate final export path
         export_path = generate_export_path(
-            collection.name, scene.export_format, export_dir,
+            base_name, scene.export_format, export_dir,
             settings_filepath.mirror_search_path, settings_filepath.mirror_replacement_path, relative_mode
         )
 
