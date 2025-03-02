@@ -42,15 +42,15 @@ class PRINT_OT_collection_names(bpy.types.Operator):
     bl_label = "Print Collection Names"
 
     def execute(self, context):
-        print("[Collection Tracker] Checking for changes before execution...")
+        # DEBUG: print("[Collection Tracker] Checking for changes before execution...")
 
         ensure_previous_name_stored()  # Ensure all collections have `prev_name`
         previous_states = check_collection_name_changes()  # Detect renames & get previous names
 
-        print("[Collection Tracker] Current Collections:")
+        #DEBUG print("[Collection Tracker] Current Collections:")
         for collection in bpy.data.collections:
             prev_name = previous_states.get(collection.name, collection.name)  # Use stored state
-            print(f" - {collection.name} (Previous: {prev_name})")
+            #DEBUG: print(f" - {collection.name} (Previous: {prev_name})")
 
         return {'FINISHED'}
 
