@@ -70,7 +70,6 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
                     if col != export_collection:
                         col.objects.unlink(obj)
 
-            # DEBUG print(f"PATH = {settings_filepath}")
             setup_collection(context, export_collection, top_object, settings_col, settings_filepath, settings_filename)
 
             self.report({'INFO'},
