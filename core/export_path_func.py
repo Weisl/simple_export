@@ -1,12 +1,12 @@
-import bpy
 import os
+
+import bpy
 
 from ..core.export_formats import ExportFormats
 from ..functions.path_utils import ensure_export_folder_exists
 
 
-def generate_export_path(base_name, export_format_key, export_dir, mirror_search_path, mirror_replacement_path,
-                         relative_mode):
+def generate_export_path(base_name, export_format_key, export_dir, relative_mode=False):
     """
     Generate and set the correct export path based on the selected filepath mode.
 
@@ -35,10 +35,6 @@ def generate_export_path(base_name, export_format_key, export_dir, mirror_search
     if relative_mode:
         blend_dir = bpy.path.abspath("//")  # Get the blend file's directory
         export_dir = os.path.join(blend_dir, export_dir) if not os.path.isabs(export_dir) else export_dir
-
-    # Apply mirror replacement if needed
-    if mirror_search_path and mirror_replacement_path and mirror_search_path in export_dir:
-        export_dir = export_dir.replace(mirror_search_path, mirror_replacement_path)
 
     # Ensure directory exists
     ensure_export_folder_exists(export_dir)
@@ -88,7 +84,69 @@ def assign_exporter_path(exporter, export_path, relative_mode):
     return True, None
 
 
-def assign_export_path_to_exporter(collection, exporter, scene, settings_filepath, settings_filename):
+def get_export_path(settings_filepath, use_defaults=False):
+    """
+    Determines the correct export directory based on the user's settings.
+
+    If use_defaults is True, it will return sensible defaults instead of raising errors.
+
+    :param settings_filepath: The file path settings from scene or addon preferences.
+    :param use_defaults: If True, uses fallback values instead of raising errors.
+    :return: Tuple (export_dir: str, relative_mode: bool)
+    """
+    export_dir = None
+    relative_mode = False
+
+    if settings_filepath.export_folder_mode == 'ABSOLUTE':
+        if not settings_filepath.absolute_export_path:
+            if use_defaults:
+                export_dir = "./"
+                relative_mode = True
+            else:
+                raise ValueError("ERROR: Please specify a Custom Export Folder!")
+        else:
+            export_dir = settings_filepath.absolute_export_path
+            relative_mode = False
+
+    elif settings_filepath.export_folder_mode == 'RELATIVE':
+        if not settings_filepath.relative_export_path:
+            if use_defaults:
+                export_dir = "./"
+                relative_mode = True
+            else:
+                raise ValueError("ERROR: Please specify a relative Export Folder Location.")
+        else:
+            export_dir = settings_filepath.relative_export_path
+            relative_mode = True
+
+    elif settings_filepath.export_folder_mode == 'MIRROR':
+        if not bpy.data.filepath:  # is file saved
+            if use_defaults:
+                export_dir = "./"
+                relative_mode = True
+            else:
+                raise ValueError("ERROR: Please save the Blend file before calling this operator.")
+        else:
+            export_dir = os.path.dirname(bpy.data.filepath)
+            relative_mode = False
+
+        # Apply mirror replacement if needed
+        if settings_filepath.mirror_search_path and settings_filepath.mirror_replacement_path and settings_filepath.mirror_search_path in export_dir:
+            export_dir = export_dir.replace(settings_filepath.mirror_search_path,
+                                            settings_filepath.mirror_replacement_path)
+
+    else:
+        if use_defaults:
+            export_dir = "./"
+            relative_mode = True
+        else:
+            raise ValueError(f"Unknown export folder mode: {settings_filepath.export_folder_mode}")
+
+    return export_dir, relative_mode
+
+
+def assign_export_path_to_exporter(collection, exporter, scene, settings_filepath, settings_filename,
+                                   use_defaults=False):
     """
     Assigns an export path to the given exporter based on the configured file path settings.
 
@@ -96,40 +154,29 @@ def assign_export_path_to_exporter(collection, exporter, scene, settings_filepat
     :param exporter: The exporter assigned to the collection.
     :param scene: The current scene context.
     :param settings_filepath: Filepath settings from either scene or addon preferences.
+    :param settings_filename: Object containing filename customization settings.
+    :param use_defaults: If True, uses default settings instead of raising errors when paths are missing.
+
     :return: Tuple (success: bool, export_path: str, message: str)
     """
+
     try:
-        if settings_filepath.export_folder_mode == 'ABSOLUTE':
-            if not settings_filepath.absolute_export_path:
-                raise ValueError("ERROR: Please specify a Custom Export Folder!")
-            export_dir = settings_filepath.absolute_export_path
-            relative_mode = False
-
-        elif settings_filepath.export_folder_mode == 'RELATIVE':
-            if not settings_filepath.relative_export_path:
-                raise ValueError("ERROR: Please specify a relative Export Folder Location.")
-            export_dir = settings_filepath.relative_export_path
-            relative_mode = True
-
-        elif settings_filepath.export_folder_mode == 'MIRROR':
-            if not bpy.data.filepath:
-                raise ValueError("ERROR: Please save the Blend file before calling this operator.")
-            export_dir = os.path.dirname(bpy.data.filepath)
-            relative_mode = False
-
-        else:
-            raise ValueError(f"Unknown export folder mode: {settings_filepath.export_folder_mode}")
+        # Get the export directory and relative mode, handling errors based on use_defaults
+        export_dir, relative_mode = get_export_path(settings_filepath, use_defaults)
 
         from ..functions.create_collection_func import generate_base_name
 
-        base_name = generate_base_name(collection.name, settings_filename.filename_custom_prefix, settings_filename.filename_custom_suffix,
-                                       settings_filename.filename_file_name_prefix)
+        base_name = generate_base_name(
+            collection.name,
+            settings_filename.filename_custom_prefix,
+            settings_filename.filename_custom_suffix,
+            settings_filename.filename_file_name_prefix
+        )
 
         # Generate final export path
         export_path = generate_export_path(
             base_name, scene.export_format, export_dir,
-            settings_filepath.mirror_search_path, settings_filepath.mirror_replacement_path, relative_mode
-        )
+            settings_filepath.mirror_search_path)
 
         collection["prev_name"] = collection.name
 
