@@ -34,7 +34,7 @@ PROPERTY_METADATA = {
         "default": "",
     },
     "filename_file_name_prefix": {
-        "name": "Blend File Prefix",
+        "name": "Use Blend File Name as Prefix",
         "description": "Add the blend file name as prefix to the export filename.",
         "default": False,
     },
@@ -481,9 +481,9 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     )
 
     filename_file_name_prefix: bpy.props.BoolProperty(
-        name="Use Blend File Name as Prefix",
-        description="If checked, the Blender file name will be used as a prefix for the export file name.",
-        default=False
+        name=PROPERTY_METADATA["filename_file_name_prefix"]["name"],
+        description=PROPERTY_METADATA["filename_file_name_prefix"]["description"],
+        default=PROPERTY_METADATA["filename_file_name_prefix"]["default"],
     )
 
     ########################################
@@ -1080,7 +1080,7 @@ def register():
     bpy.types.Scene.overwrite_filename_settings = bpy.props.BoolProperty(
         name="Scene: Filename",
         description="Overwrite the settings regarding the generation of the export file name defined in the Preferences",
-        default=True)
+        default=False)
 
     bpy.types.Scene.overwrite_collection_settings = bpy.props.BoolProperty(
         name="Scene: Export Collection",
