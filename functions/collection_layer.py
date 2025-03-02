@@ -2,9 +2,9 @@ import bpy
 
 
 def recursiveLayerCollection(layerColl, collName):
-    # print(f"Checking collection: {layerColl.name}")  # Debug print
+    # DEBUG: print(f"Checking collection: {layerColl.name}")  # Debug print
     if layerColl.name == collName:
-        # print(f"Found collection: {collName}")  # Debug print
+        # DEBUG: print(f"Found collection: {collName}")  # Debug print
         return layerColl
     for layer in layerColl.children:
         found = recursiveLayerCollection(layer, collName)

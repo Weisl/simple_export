@@ -5,7 +5,7 @@ from bpy.app.handlers import persistent
 @persistent
 def update_collection_offset(depsgraph):
     """Update collection offsets for collections with an assigned root_object."""
-    print("Depsgraph update triggered")
+    # DEBUG print("Depsgraph update triggered")
 
     for collection in bpy.data.collections:
         # Get the assigned offset object
@@ -14,7 +14,7 @@ def update_collection_offset(depsgraph):
         if offset_obj and isinstance(offset_obj, bpy.types.Object):
             # Check if instance_offset needs updating
             if collection.instance_offset != offset_obj.location:
-                print(f"Updating collection '{collection.name}' offset to: {offset_obj.location}")
+                # DEBUG print(f"Updating collection '{collection.name}' offset to: {offset_obj.location}")
                 collection.instance_offset = offset_obj.location
 
 
