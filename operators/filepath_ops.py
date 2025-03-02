@@ -5,10 +5,11 @@ import bpy
 from .. import __package__ as base_package
 from ..core.export_path_func import assign_export_path_to_exporter
 from ..functions.collection_layer import set_active_layer_Collection
+from ..functions.create_collection_func import generate_base_name
 from ..functions.exporter_funcs import find_exporter
 from ..functions.outliner_func import get_outliner_collections
 from ..functions.vallidate_func import validate_collection
-from ..functions.create_collection_func import generate_base_name
+
 
 class SIMPLEEXPORT_OT_FixExportFilename(bpy.types.Operator):
     bl_description = "The current filename does not match the collection name. Update the filename to be the collection name"

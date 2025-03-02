@@ -78,6 +78,6 @@ def setup_collection(context, collection, active_object, settings_col, settings_
 
     if getattr(settings_col, 'collection_auto_set_filepath'):
         success, export_path, msg = assign_export_path_to_exporter(collection, exporter, scene, settings_filepath,
-                                                                   settings_filename)
+                                                                   settings_filename, use_defaults=True)
 
     return exporter
