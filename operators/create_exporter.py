@@ -1,7 +1,33 @@
+import os
+
 import bpy
 
 from .. import __package__ as base_package
 from ..functions.create_collection_func import generate_base_name, setup_collection
+
+
+def get_export_path(settings_filepath):
+    """Returns the export path based on user settings, blend file location, or fallback to relative path."""
+
+    # If the user has set a filepath, use it
+    if settings_filepath.export_folder_mode == 'ABSOLUTE':
+        if settings_filepath.absolute_export_path:
+            return settings_filepath.absolute_export_path
+
+    if settings_filepath.export_folder_mode == 'RELATIVE':
+        if not settings_filepath.relative_export_path:
+            return settings_filepath.relative_export_path
+
+    if settings_filepath.export_folder_mode == 'MIRROR':
+        if not bpy.data.filepath:
+            return os.path.dirname(bpy.data.filepath)
+
+    if bpy.data.filepath:
+        return os.path.dirname(bpy.data.filepath)  # Blend file directory
+
+    else:
+        return "./"  # Current working directory (unsaved blend file case)
+
 
 
 class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
@@ -70,6 +96,9 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
                     if col != export_collection:
                         col.objects.unlink(obj)
 
+            settings_filepath = get_export_path(settings_filepath)
+
+            print(f"PATH = {settings_filepath}")
             setup_collection(context, export_collection, top_object, settings_col, settings_filepath, settings_filename)
 
             self.report({'INFO'},

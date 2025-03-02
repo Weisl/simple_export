@@ -107,13 +107,13 @@ def assign_export_path_to_exporter(collection, exporter, scene, settings_filepat
 
         elif settings_filepath.export_folder_mode == 'RELATIVE':
             if not settings_filepath.relative_export_path:
-                raise ValueError("Save the Blend file before calling this operator.")
+                raise ValueError("ERROR: Please specify a relative Export Folder Location.")
             export_dir = settings_filepath.relative_export_path
             relative_mode = True
 
         elif settings_filepath.export_folder_mode == 'MIRROR':
             if not bpy.data.filepath:
-                raise ValueError("Save the Blend file before calling this operator.")
+                raise ValueError("ERROR: Please save the Blend file before calling this operator.")
             export_dir = os.path.dirname(bpy.data.filepath)
             relative_mode = False
 

@@ -96,8 +96,6 @@ def draw_active_list_element(layout, scene):
         header.label(text=f"Active Collection:", icon='OUTLINER_COLLECTION')
 
         if body:
-
-
             # Export Path
             exporter = find_exporter(selected_collection, scene.export_format)
 
