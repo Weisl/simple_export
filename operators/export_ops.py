@@ -36,6 +36,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
         temporarily_disable_offset_handler()
         error_count = 0
         success_count = 0
+        offset = (0.0, 0.0, 0.0)
 
         prefs = context.preferences.addons[base_package].preferences
         scene = context.scene
@@ -98,7 +99,9 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
                 # Apply instance offset if enabled
                 if scene.move_by_collection_offset:
-                    apply_collection_offset(collection)
+                    offset = collection.instance_offset.copy()
+                    # print(f'Offset 1 = {offset}')
+                    apply_collection_offset(collection, offset)
 
                 export_collections.append(collection)
 
@@ -124,7 +127,11 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
             finally:
                 if scene.move_by_collection_offset:
-                    apply_collection_offset(collection, inverse=True)
+                    # if not offset:
+                    #     print('ERROR: Position Reset is missing the offset input')
+                    #     continue
+                    # print(f'Offset 2 = {offset}')
+                    apply_collection_offset(collection, offset, inverse=True)
 
         if error_count == 0:
             self.report({'INFO'}, f"Export Sucessful")
