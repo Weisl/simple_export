@@ -3,7 +3,6 @@ import bpy
 from .. import __package__ as base_package
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.collection_offset import apply_collection_offset
-from ..functions.collection_offset import temporarily_disable_offset_handler
 from ..functions.exporter_funcs import find_exporter, get_exporter_id, add_extension
 from ..functions.outliner_func import get_outliner_collections
 from ..functions.path_utils import clean_relative_path
@@ -33,9 +32,10 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
     def execute(self, context):
         export_results = []
         export_collections = []
-        temporarily_disable_offset_handler()
+
         error_count = 0
         success_count = 0
+        offset = (0.0, 0.0, 0.0)
 
         prefs = context.preferences.addons[base_package].preferences
         scene = context.scene
@@ -98,7 +98,9 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
                 # Apply instance offset if enabled
                 if scene.move_by_collection_offset:
-                    apply_collection_offset(collection)
+                    offset = collection.instance_offset.copy()
+                    # print(f'Offset 1 = {offset}')
+                    apply_collection_offset(collection, offset)
 
                 export_collections.append(collection)
 
@@ -124,7 +126,11 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
             finally:
                 if scene.move_by_collection_offset:
-                    apply_collection_offset(collection, inverse=True)
+                    # if not offset:
+                    #     print('ERROR: Position Reset is missing the offset input')
+                    #     continue
+                    # print(f'Offset 2 = {offset}')
+                    apply_collection_offset(collection, offset, inverse=True)
 
         if error_count == 0:
             self.report({'INFO'}, f"Export Sucessful")
