@@ -9,13 +9,14 @@ def update_collection_offset(depsgraph):
 
     for collection in bpy.data.collections:
         # Get the assigned offset object
-        offset_obj = getattr(collection, "root_object", None)
+        if collection.use_root_object:
+            offset_obj = getattr(collection, "root_object", None)
 
-        if offset_obj and isinstance(offset_obj, bpy.types.Object):
-            # Check if instance_offset needs updating
-            if collection.instance_offset != offset_obj.location:
-                # DEBUG print(f"Updating collection '{collection.name}' offset to: {offset_obj.location}")
-                collection.instance_offset = offset_obj.location
+            if offset_obj and isinstance(offset_obj, bpy.types.Object):
+                # Check if instance_offset needs updating
+                if collection.instance_offset != offset_obj.location:
+                    # DEBUG print(f"Updating collection '{collection.name}' offset to: {offset_obj.location}")
+                    collection.instance_offset = offset_obj.location
 
 
 def ensure_collection_properties():

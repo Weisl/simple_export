@@ -1,4 +1,3 @@
-import bpy
 from mathutils import Matrix
 
 
@@ -26,31 +25,6 @@ def apply_collection_offset(collection, offset, inverse=False):
     for obj in collection.all_objects:
         if obj.parent is None:  # Only apply to top-level objects
             apply_location_offset(obj, offset, inverse)
-
-
-
-def update_collection_offset(scene):
-    """Update the collection offset when the object is moved."""
-    for collection in bpy.data.collections:
-        obj = collection.get("root_object", None)
-        if obj and collection.use_root_object:
-            obj_location = obj.location.copy()
-            if collection.instance_offset != obj_location:
-                # Set the collection offset to the object's location
-                set_collection_offset(collection, obj_location)
-
-
-
-def temporarily_disable_offset_handler():
-    """Temporarily removes the collection offset update handler."""
-    if update_collection_offset in bpy.app.handlers.depsgraph_update_post:
-        bpy.app.handlers.depsgraph_update_post.remove(update_collection_offset)
-
-
-def reenable_offset_handler():
-    """Re-enables the collection offset update handler."""
-    if update_collection_offset not in bpy.app.handlers.depsgraph_update_post:
-        bpy.app.handlers.depsgraph_update_post.append(update_collection_offset)
 
 
 def set_collection_offset(collection, location):
