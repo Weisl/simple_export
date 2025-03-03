@@ -18,15 +18,14 @@ def apply_location_offset(obj, collection_offset, inverse=False):
     obj.matrix_world = new_loc @ rot.to_matrix().to_4x4() @ Matrix.Diagonal(scale).to_4x4()
 
 
-def apply_collection_offset(collection, inverse=False):
+def apply_collection_offset(collection, offset, inverse=False):
     """
     Applies or removes the collection's instance offset to all top-level objects in the collection.
     """
-    collection_offset = collection.instance_offset
 
     for obj in collection.all_objects:
         if obj.parent is None:  # Only apply to top-level objects
-            apply_location_offset(obj, collection_offset, inverse)
+            apply_location_offset(obj, offset, inverse)
 
 
 

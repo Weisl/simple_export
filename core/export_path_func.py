@@ -162,7 +162,7 @@ def assign_export_path_to_exporter(collection, exporter, scene, settings_filepat
     try:
         # Get the export directory and relative mode, handling errors based on use_defaults
         export_dir, is_relative_path = get_export_path(settings_filepath, use_defaults)
-        print(f'DEBUG: export_dir: {export_dir}, is_relative_path: {is_relative_path}')
+        # print(f'DEBUG: export_dir: {export_dir}, is_relative_path: {is_relative_path}')
 
         from ..functions.create_collection_func import generate_base_name
 
@@ -176,7 +176,7 @@ def assign_export_path_to_exporter(collection, exporter, scene, settings_filepat
         # Generate final export path
         export_path = generate_export_path(
             base_name, scene.export_format, export_dir, is_relative_path=is_relative_path)
-        print(f'DEBUG: export_path: {export_path}')
+        # print(f'DEBUG: export_path: {export_path}')
 
         collection["prev_name"] = collection.name
 
