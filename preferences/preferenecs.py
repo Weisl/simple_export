@@ -66,12 +66,12 @@ PROPERTY_METADATA = {
         "default": 'NONE',
     },
     "collection_auto_set_filepath": {
-        "name": "Set Export Path",
+        "name": "Assign Export Path",
         "description": "##### Set filepath when creating an Exporter Collection.",
         "default": True,
     },
     "collection_auto_set_preset": {
-        "name": "Set Export Preset",
+        "name": "Assign Export Preset",
         "description": "Set export preset when creating an Exporter Collection.",
         "default": True,
     },
@@ -87,7 +87,7 @@ PROPERTY_METADATA = {
     },
 
     "collection_use_root_offset_object": {
-        "name": "Use Root Object as Collection Center Object",
+        "name": "Assign Root Object",
         "description": "Use root object as Collection Offset.",
         "default": True,
     },
