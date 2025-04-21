@@ -580,7 +580,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
     panel_category: bpy.props.StringProperty(name="Category Tab",
                                              description="The category name used to organize the addon in the properties panel for all the addons",
-                                             default='Simple Exporter',
+                                             default='Simple Export',
                                              update=update_panel_category)  # update = update_panel_position,
 
     enable_n_panel: bpy.props.BoolProperty(
