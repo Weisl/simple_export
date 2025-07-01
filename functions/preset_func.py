@@ -123,7 +123,8 @@ def assign_preset(exporter, preset_path):
 
     # Parse the preset file and remove filepath
     preset_properties = parse_preset_file(preset_path)
-    if not preset_properties:
+
+    if preset_properties:
         del preset_properties['filepath']
 
     # Apply the properties to the exporter
