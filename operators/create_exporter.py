@@ -27,6 +27,12 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         default=""
     )
 
+    use_numbering: bpy.props.BoolProperty(
+        name="Use Numbering",
+        description="Add numbered suffix to collection names",
+        default=True
+    )
+
     def execute(self, context):
         selected_objects = context.selected_objects
         parent_collection = context.scene.parent_collection
@@ -50,10 +56,10 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         suffix = getattr(settings_col, 'collection_custom_suffix', '')
 
         for index, top_object in enumerate(top_level_objects):
-            # Generate a padded index string
-            padded_index = f"{index:03}"  # This will pad the index with zeros to a width of 3
+            # Generate a padded index string if numbering is enabled
+            padded_index = f"{index:03}" if self.use_numbering else ""
 
-            # Use the provided collection_name or generate a new one, and append the padded index
+            # Use the provided collection_name or generate a new one, and append the padded index if applicable
             collection_name = f"{self.overwrite_collection_name}_{padded_index}" if self.overwrite_collection_name else generate_base_name(
                 top_object.name, prefix, suffix, getattr(settings_col, 'collection_file_name_prefix', '')
             )
@@ -105,6 +111,11 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
                         f"Export collection '{export_collection.name}' created successfully for '{top_object.name}'.")
 
         return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "overwrite_collection_name")
+        layout.prop(self, "use_numbering")
 
 
 def add_export_collections_to_menu(self, context):
