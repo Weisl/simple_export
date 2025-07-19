@@ -180,6 +180,8 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
 
     def setup_exporter_assignments(self, context, collection, prefs):
         """Handle all exporter-related assignments for the collection."""
+        scene = context.scene
+        settings_col = scene if scene.overwrite_collection_settings else prefs
         exporter = self.assign_exporter(context, collection)
         if exporter:
             self.assign_preset_to_exporter(context, exporter, settings_col, prefs)
