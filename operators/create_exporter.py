@@ -21,6 +21,12 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         options={'HIDDEN'}  # This hides it from the UI
     )
 
+    overwrite_collection_name: bpy.props.StringProperty(
+        name="Overwrite Collection Name",
+        description="Overwrite the bane for the newly created export collection",
+        default=""
+    )
+
     def execute(self, context):
         selected_objects = context.selected_objects
         parent_collection = context.scene.parent_collection
@@ -43,8 +49,10 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         suffix = getattr(settings_col, 'collection_custom_suffix', '')
 
         for top_object in top_level_objects:
-            collection_name = generate_base_name(top_object.name, prefix, suffix,
-                                                 getattr(settings_col, 'collection_file_name_prefix', ''))
+            # Use the provided collection_name or generate a new one
+            collection_name = self.overwrite_collection_name if self.overwrite_collection_name else generate_base_name(
+                top_object.name, prefix, suffix, getattr(settings_col, 'collection_file_name_prefix', '')
+            )
 
             if collection_name in bpy.data.collections:
                 self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Skipping.")
