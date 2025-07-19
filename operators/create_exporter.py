@@ -27,15 +27,18 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         default=""
     )
 
-    use_numbering: bpy.props.BoolProperty(
-        name="Use Numbering",
-        description="Add numbered suffix to collection names",
+    individual_collections: bpy.props.BoolProperty(
+        name="Individual Collections",
+        description="Create individual collections for each object with numbering",
         default=True
     )
 
     def execute(self, context):
         selected_objects = context.selected_objects
-        parent_collection = context.scene.parent_collection
+
+        if not selected_objects:
+            self.report({'WARNING'}, "No objects selected.")
+            return {'CANCELLED'}
 
         # Get preferences and settings
         prefs = context.preferences.addons[base_package].preferences
@@ -45,77 +48,74 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         settings_filepath = scene if scene.overwrite_filepath_settings else prefs
         settings_filename = scene if scene.overwrite_filename_settings else prefs
 
-        if not selected_objects:
-            self.report({'WARNING'}, "No objects selected.")
-            return {'CANCELLED'}
-
-        # Identify top-level objects (objects without a selected parent)
-        top_level_objects = [obj for obj in selected_objects if not obj.parent or obj.parent not in selected_objects]
-
         prefix = getattr(settings_col, 'collection_custom_prefix', '')
         suffix = getattr(settings_col, 'collection_custom_suffix', '')
 
-        for index, top_object in enumerate(top_level_objects):
-            # Generate a padded index string if numbering is enabled
-            padded_index = f"{index:03}" if self.use_numbering else ""
+        if self.individual_collections:
+            # Create individual collections for each object
+            for index, top_object in enumerate(selected_objects):
+                if not top_object.parent or top_object.parent not in selected_objects:
+                    padded_index = f"{index:03}"
+                    collection_name = f"{self.overwrite_collection_name}_{padded_index}" if self.overwrite_collection_name else generate_base_name(
+                        top_object.name, prefix, suffix, getattr(settings_col, 'collection_file_name_prefix', '')
+                    )
 
-            # Use the provided collection_name or generate a new one, and append the padded index if applicable
-            collection_name = f"{self.overwrite_collection_name}_{padded_index}" if self.overwrite_collection_name else generate_base_name(
-                top_object.name, prefix, suffix, getattr(settings_col, 'collection_file_name_prefix', '')
-            )
+                    # Create a new collection
+                    export_collection = bpy.data.collections.new(collection_name)
+                    context.scene.collection.children.link(export_collection)
 
+                    objects = selected_objects if self.only_selection else bpy.data.objects
+                    hierarchy_objects = self.collect_children(top_object, objects)
+
+                    for obj in hierarchy_objects:
+                        if export_collection not in obj.users_collection:
+                            export_collection.objects.link(obj)
+                        for col in obj.users_collection:
+                            if col != export_collection:
+                                col.objects.unlink(obj)
+
+                    setup_collection(context, export_collection, top_object, settings_col, settings_filepath,
+                                     settings_filename)
+                    self.report({'INFO'},
+                                f"Export collection '{export_collection.name}' created successfully for '{top_object.name}'.")
+
+        else:
+            # Create a single collection for all objects
+            collection_name = self.overwrite_collection_name if self.overwrite_collection_name else "Combined_Collection"
+
+            # Check if the collection already exists, but don't cancel the operation
             if collection_name in bpy.data.collections:
-                self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Skipping.")
-                continue
+                export_collection = bpy.data.collections[collection_name]
+                self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Using existing collection.")
+            else:
+                export_collection = bpy.data.collections.new(collection_name)
+                context.scene.collection.children.link(export_collection)
 
-            # Create a new collection
-            export_collection = bpy.data.collections.new(collection_name)
+            for top_object in selected_objects:
+                if not top_object.parent or top_object.parent not in selected_objects:
+                    objects = selected_objects if self.only_selection else bpy.data.objects
+                    hierarchy_objects = self.collect_children(top_object, objects)
 
-            # Determine the parent collection
-            if parent_collection is None:
-                if top_object.users_collection:
-                    parent_collection = top_object.users_collection[0]
-                else:
-                    parent_collection = context.scene.collection
-                    self.report({'WARNING'},
-                                f"No valid parent collection found for object '{top_object.name}'. Falling back to the scene collection.")
-            elif not isinstance(parent_collection, bpy.types.Collection):
-                self.report({'WARNING'}, "No valid parent collection selected. Falling back to the scene collection.")
-                parent_collection = context.scene.collection
+                    for obj in hierarchy_objects:
+                        if export_collection not in obj.users_collection:
+                            export_collection.objects.link(obj)
+                        for col in obj.users_collection:
+                            if col != export_collection:
+                                col.objects.unlink(obj)
 
-            # Link the new collection to the parent collection
-            parent_collection.children.link(export_collection)
-
-            # Determine the objects to process
-            objects = selected_objects if self.only_selection else bpy.data.objects
-
-            # Recursively collect children of the top-level object
-            def collect_children(obj):
-                children = [child for child in objects if child.parent == obj]
-                return [obj] + [child for child in children]
-
-            hierarchy_objects = collect_children(top_object)
-
-            # Link objects to the new collection and unlink from others
-            for obj in hierarchy_objects:
-                if export_collection not in obj.users_collection:
-                    export_collection.objects.link(obj)
-                for col in obj.users_collection:
-                    if col != export_collection:
-                        col.objects.unlink(obj)
-
-            # Setup the collection with additional settings
-            setup_collection(context, export_collection, top_object, settings_col, settings_filepath, settings_filename)
-
-            self.report({'INFO'},
-                        f"Export collection '{export_collection.name}' created successfully for '{top_object.name}'.")
+            setup_collection(context, export_collection, None, settings_col, settings_filepath, settings_filename)
+            self.report({'INFO'}, f"Export collection '{export_collection.name}' created successfully for all objects.")
 
         return {'FINISHED'}
+
+    def collect_children(self, obj, objects):
+        children = [child for child in objects if child.parent == obj]
+        return [obj] + [child for child in children]
 
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "overwrite_collection_name")
-        layout.prop(self, "use_numbering")
+        layout.prop(self, "individual_collections")
 
 
 def add_export_collections_to_menu(self, context):
