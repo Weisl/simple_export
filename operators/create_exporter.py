@@ -36,6 +36,20 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         default=""
     )
 
+    set_collection_root: bpy.props.BoolProperty(
+        name="Set Root Object",
+        description="Set a root object to define the Collection Offset center.",
+        default=True
+    )
+
+    from ..preferences.preferenecs import PROPERTY_METADATA
+    collection_color: bpy.props.EnumProperty(
+        name=PROPERTY_METADATA["collection_color"]["name"],
+        description=PROPERTY_METADATA["collection_color"]["description"],
+        items=PROPERTY_METADATA["collection_color"]["items"],
+        default=PROPERTY_METADATA["collection_color"]["default"],
+    )
+
     def execute(self, context):
         selected_objects = context.selected_objects
 
@@ -65,6 +79,10 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
                     objects = selected_objects if self.only_selection else bpy.data.objects
                     hierarchy_objects = self.collect_children(top_object, objects)
 
+                    # Set collection color if specified
+                    if self.collection_color:
+                        export_collection.color_tag = self.collection_color
+
                     for obj in hierarchy_objects:
                         if export_collection not in obj.users_collection:
                             export_collection.objects.link(obj)
@@ -88,6 +106,10 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
                         export_collection = bpy.data.collections.new(collection_name)
                         parent_collection = self.determine_parent_collection(context, top_object)
                         parent_collection.children.link(export_collection)
+
+                        # Set collection color if specified
+                        if self.collection_color:
+                            export_collection.color_tag = self.collection_color
 
                         objects = selected_objects if self.only_selection else bpy.data.objects
                         hierarchy_objects = self.collect_children(top_object, objects)
@@ -161,6 +183,8 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         layout = self.layout
         layout.prop(self, "overwrite_collection_name")
         layout.prop(self, "use_numbering")
+        layout.prop(self, "set_collection_root")
+        layout.prop(self, "collection_color")
         layout.prop_search(self, "parent_collection_name", bpy.data, "collections")
 
 
