@@ -522,9 +522,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=PROPERTY_METADATA["collection_set_root_offset_object"]["default"],
     )
 
-
-
-
     collection_color: bpy.props.EnumProperty(
         name=PROPERTY_METADATA["collection_color"]["name"],
         description=PROPERTY_METADATA["collection_color"]["description"],
@@ -770,7 +767,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.prop(self, "collection_use_root_offset_object")
             if self.collection_use_root_offset_object:
                 box.prop(self, "collection_set_root_offset_object")
-
 
             # Collection offset
             box.prop(self, "collection_auto_set_filepath")
@@ -1092,7 +1088,6 @@ def register():
         description="Overwrite the settings regarding the presets",
         default=False)
 
-
     ########################################
     # Presets
     bpy.types.Scene.simple_export_preset_file_fbx = bpy.props.EnumProperty(
@@ -1162,7 +1157,6 @@ def unregister():
 
     # Persistant settings
     del bpy.types.Scene.collection_index
-
 
     del bpy.types.Scene.overwrite_filepath_settings
     del bpy.types.Scene.overwrite_collection_settings
