@@ -14,10 +14,10 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
     bl_idname = "simple_export.assign_presets"
     bl_label = "Assign Presets"
 
-    outliner: bpy.props.BoolProperty(default=False)
-    individual_collection: bpy.props.BoolProperty(default=False)
+    outliner: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
+    individual_collection: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
     collection_name: bpy.props.StringProperty(name="Collection Name", default='',
-                                              description="Name of the collection to process")
+                                              description="Name of the collection to process", options={'HIDDEN'})
 
     def execute(self, context):
         results = []  # To store the renaming status of each collection

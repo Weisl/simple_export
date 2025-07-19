@@ -1,6 +1,5 @@
-import os
-
 import bpy
+import os
 
 from .. import __package__ as base_package
 from ..core.export_path_func import assign_export_path_to_exporter
@@ -17,7 +16,7 @@ class SIMPLEEXPORT_OT_FixExportFilename(bpy.types.Operator):
     bl_label = "Fix Export Filename"
     bl_options = {"REGISTER", "UNDO"}
 
-    collection_name: bpy.props.StringProperty()
+    collection_name: bpy.props.StringProperty(options={'HIDDEN'})
 
     def execute(self, context):
         collection = bpy.data.collections.get(self.collection_name)
@@ -54,10 +53,12 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
     bl_label = "Set Export Path"
     bl_options = {'REGISTER', 'UNDO'}
 
-    outliner: bpy.props.BoolProperty(default=False)
-    individual_collection: bpy.props.BoolProperty(default=False)
+    outliner: bpy.props.BoolProperty(default=False,
+                                     options={'HIDDEN'})
+    individual_collection: bpy.props.BoolProperty(default=False,
+                                                  options={'HIDDEN'})
     collection_name: bpy.props.StringProperty(name="Collection Name", default='',
-                                              description="Name of the collection to process")
+                                              description="Name of the collection to process", options={'HIDDEN'})
 
     def execute(self, context):
         results = []
