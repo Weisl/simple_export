@@ -17,7 +17,8 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
     only_selection: bpy.props.BoolProperty(
         name="Only affect selection",
         description="Only affect selected objects",
-        default=False
+        default=False,
+        options={'HIDDEN'}  # This hides it from the UI
     )
 
     def execute(self, context):
@@ -60,7 +61,8 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
                 else:
                     # Fallback to the scene collection if the object has no collections
                     parent_collection = context.scene.collection
-                    self.report({'WARNING'}, f"No valid parent collection found for object '{top_object.name}'. Falling back to the scene collection.")
+                    self.report({'WARNING'},
+                                f"No valid parent collection found for object '{top_object.name}'. Falling back to the scene collection.")
             elif not isinstance(parent_collection, bpy.types.Collection):
                 self.report({'WARNING'}, "No valid parent collection selected. Falling back to the scene collection.")
                 parent_collection = context.scene.collection
@@ -90,7 +92,8 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
             # Setup the collection with additional settings
             setup_collection(context, export_collection, top_object, settings_col, settings_filepath, settings_filename)
 
-            self.report({'INFO'}, f"Export collection '{export_collection.name}' created successfully for '{top_object.name}'.")
+            self.report({'INFO'},
+                        f"Export collection '{export_collection.name}' created successfully for '{top_object.name}'.")
 
         return {'FINISHED'}
 
