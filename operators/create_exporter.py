@@ -18,12 +18,12 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         name="Only affect selection",
         description="Only affect selected objects",
         default=False,
-        options={'HIDDEN'}  # This hides it from the UI
+        options={'HIDDEN'}
     )
 
     overwrite_collection_name: bpy.props.StringProperty(
         name="Overwrite Collection Name",
-        description="Overwrite the bane for the newly created export collection",
+        description="Overwrite the name for the newly created export collection",
         default=""
     )
 
@@ -34,6 +34,7 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         # Get preferences and settings
         prefs = context.preferences.addons[base_package].preferences
         scene = context.scene
+
         settings_col = scene if scene.overwrite_collection_settings else prefs
         settings_filepath = scene if scene.overwrite_filepath_settings else prefs
         settings_filename = scene if scene.overwrite_filename_settings else prefs
@@ -48,9 +49,12 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         prefix = getattr(settings_col, 'collection_custom_prefix', '')
         suffix = getattr(settings_col, 'collection_custom_suffix', '')
 
-        for top_object in top_level_objects:
-            # Use the provided collection_name or generate a new one
-            collection_name = self.overwrite_collection_name if self.overwrite_collection_name else generate_base_name(
+        for index, top_object in enumerate(top_level_objects):
+            # Generate a padded index string
+            padded_index = f"{index:03}"  # This will pad the index with zeros to a width of 3
+
+            # Use the provided collection_name or generate a new one, and append the padded index
+            collection_name = f"{self.overwrite_collection_name}_{padded_index}" if self.overwrite_collection_name else generate_base_name(
                 top_object.name, prefix, suffix, getattr(settings_col, 'collection_file_name_prefix', '')
             )
 
@@ -63,11 +67,9 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
 
             # Determine the parent collection
             if parent_collection is None:
-                # If parent_collection is not specified, use the collection of the top_object
                 if top_object.users_collection:
                     parent_collection = top_object.users_collection[0]
                 else:
-                    # Fallback to the scene collection if the object has no collections
                     parent_collection = context.scene.collection
                     self.report({'WARNING'},
                                 f"No valid parent collection found for object '{top_object.name}'. Falling back to the scene collection.")
@@ -92,7 +94,6 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
             for obj in hierarchy_objects:
                 if export_collection not in obj.users_collection:
                     export_collection.objects.link(obj)
-
                 for col in obj.users_collection:
                     if col != export_collection:
                         col.objects.unlink(obj)
