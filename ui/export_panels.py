@@ -51,6 +51,7 @@ def draw_collection_creation(context, layout):
     icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
     op = row.operator("simple_export.create_export_collections", icon=icon)
     op.overwrite_collection_name = ""
+    op.use_numbering = False
 
 
 def draw_scene_settings_overwrite(context, layout, scene):

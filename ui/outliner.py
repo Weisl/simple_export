@@ -15,6 +15,7 @@ def draw_custom_outliner_menu(self, context):
         op = layout.operator('simple_export.create_export_collections', text="Create Export Collections",
                         icon='COLLECTION_COLOR_01')
         op.overwrite_collection_name = ""
+        op.use_numbering = False
 
 
 class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
