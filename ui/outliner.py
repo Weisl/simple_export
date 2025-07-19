@@ -12,8 +12,9 @@ def draw_custom_outliner_menu(self, context):
         layout.menu(CUSTOM_MT_outliner_simple_export_menu.bl_idname, icon='EXPORT')
     elif isinstance(selected_element, bpy.types.Object):
         # Show only 'Create Export Collections' for objects
-        layout.operator('simple_export.create_export_collections', text="Create Export Collections",
+        op = layout.operator('simple_export.create_export_collections', text="Create Export Collections",
                         icon='COLLECTION_COLOR_01')
+        op.overwrite_collection_name = ""
 
 
 class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):

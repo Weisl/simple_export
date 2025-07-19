@@ -49,7 +49,8 @@ def draw_collection_creation(context, layout):
     prefs = context.preferences.addons[base_package].preferences
     color_tag = prefs.collection_color
     icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
-    row.operator("simple_export.create_export_collections", icon=icon)
+    op = row.operator("simple_export.create_export_collections", icon=icon)
+    op.overwrite_collection_name = ""
 
 
 def draw_scene_settings_overwrite(context, layout, scene):

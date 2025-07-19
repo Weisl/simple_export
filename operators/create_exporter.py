@@ -4,6 +4,14 @@ from .. import __package__ as base_package
 from ..functions.create_collection_func import generate_base_name, setup_collection
 
 
+import bpy
+from .. import __package__ as base_package
+from ..functions.create_collection_func import generate_base_name, setup_collection
+
+import bpy
+from .. import __package__ as base_package
+from ..functions.create_collection_func import generate_base_name, setup_collection
+
 class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
     """
     Create a new collection for each selected object and its children, preserving hierarchy.
@@ -32,6 +40,18 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         description="Create individual collections for each object with numbering",
         default=True
     )
+
+    is_adjusted: bpy.props.BoolProperty(
+        default=False,
+        options={'HIDDEN'}
+    )
+
+    def invoke(self, context, event):
+        # Reset the overwrite_collection_name property only if not adjusted
+        if not self.is_adjusted:
+            self.overwrite_collection_name = ""
+        self.is_adjusted = False
+        return self.execute(context)
 
     def execute(self, context):
         selected_objects = context.selected_objects
@@ -74,10 +94,8 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
                             if col != export_collection:
                                 col.objects.unlink(obj)
 
-                    setup_collection(context, export_collection, top_object, settings_col, settings_filepath,
-                                     settings_filename)
-                    self.report({'INFO'},
-                                f"Export collection '{export_collection.name}' created successfully for '{top_object.name}'.")
+                    setup_collection(context, export_collection, top_object, settings_col, settings_filepath, settings_filename)
+                    self.report({'INFO'}, f"Export collection '{export_collection.name}' created successfully for '{top_object.name}'.")
 
         else:
             # Create a single collection for all objects
@@ -117,11 +135,17 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         layout.prop(self, "overwrite_collection_name")
         layout.prop(self, "individual_collections")
 
+    def modal(self, context, event):
+        # This method is not strictly necessary unless you have modal operations
+        # It's included here to demonstrate where you might handle adjustments
+        return {'FINISHED'}
+
 
 def add_export_collections_to_menu(self, context):
     """Adds the Simple Export create export collections operator to the object context menu."""
     self.layout.separator()
-    self.layout.operator("simple_export.create_export_collections", icon='COLLECTION_COLOR_01')
+    op = self.layout.operator("simple_export.create_export_collections", icon='COLLECTION_COLOR_01')
+    op.overwrite_collection_name = ""
 
 
 classes = (
