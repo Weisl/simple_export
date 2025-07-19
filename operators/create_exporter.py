@@ -7,7 +7,9 @@ from ..functions.create_collection_func import generate_base_name, setup_collect
 class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
     """
     Create a new collection for each selected object and its children, preserving hierarchy.
+    This operator ensures that each top-level selected object and its children are placed in a new collection.
     """
+
     bl_idname = "simple_export.create_export_collections"
     bl_label = "Create Export Collections"
     bl_options = {'REGISTER', 'UNDO'}
@@ -20,8 +22,9 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
 
     def execute(self, context):
         selected_objects = context.selected_objects
-        parent_collection = context.scene.parent_collection or context.scene.collection
+        parent_collection = context.scene.parent_collection
 
+        # Get preferences and settings
         prefs = context.preferences.addons[base_package].preferences
         scene = context.scene
         settings_col = scene if scene.overwrite_collection_settings else prefs
@@ -32,37 +35,50 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
             self.report({'WARNING'}, "No objects selected.")
             return {'CANCELLED'}
 
-        if not isinstance(parent_collection, bpy.types.Collection):
-            self.report({'WARNING'}, "No valid parent collection selected. Falling back to the scene collection.")
-            parent_collection = context.scene.collection
-
         # Identify top-level objects (objects without a selected parent)
         top_level_objects = [obj for obj in selected_objects if not obj.parent or obj.parent not in selected_objects]
 
-        prefix = getattr(settings_col, 'collection_custom_prefix')
-        suffix = getattr(settings_col, 'collection_custom_suffix')
+        prefix = getattr(settings_col, 'collection_custom_prefix', '')
+        suffix = getattr(settings_col, 'collection_custom_suffix', '')
 
         for top_object in top_level_objects:
             collection_name = generate_base_name(top_object.name, prefix, suffix,
-                                                 getattr(settings_col, 'collection_file_name_prefix'))
+                                                 getattr(settings_col, 'collection_file_name_prefix', ''))
 
             if collection_name in bpy.data.collections:
                 self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Skipping.")
                 continue
 
+            # Create a new collection
             export_collection = bpy.data.collections.new(collection_name)
-            
+
+            # Determine the parent collection
+            if parent_collection is None:
+                # If parent_collection is not specified, use the collection of the top_object
+                if top_object.users_collection:
+                    parent_collection = top_object.users_collection[0]
+                else:
+                    # Fallback to the scene collection if the object has no collections
+                    parent_collection = context.scene.collection
+                    self.report({'WARNING'}, f"No valid parent collection found for object '{top_object.name}'. Falling back to the scene collection.")
+            elif not isinstance(parent_collection, bpy.types.Collection):
+                self.report({'WARNING'}, "No valid parent collection selected. Falling back to the scene collection.")
+                parent_collection = context.scene.collection
+
+            # Link the new collection to the parent collection
             parent_collection.children.link(export_collection)
 
+            # Determine the objects to process
             objects = selected_objects if self.only_selection else bpy.data.objects
 
-            # Gather hierarchy of children recursively
+            # Recursively collect children of the top-level object
             def collect_children(obj):
-                return [obj] + [child for child in objects if
-                                child.parent == obj]
+                children = [child for child in objects if child.parent == obj]
+                return [obj] + [child for child in children]
 
             hierarchy_objects = collect_children(top_object)
 
+            # Link objects to the new collection and unlink from others
             for obj in hierarchy_objects:
                 if export_collection not in obj.users_collection:
                     export_collection.objects.link(obj)
@@ -71,10 +87,10 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
                     if col != export_collection:
                         col.objects.unlink(obj)
 
+            # Setup the collection with additional settings
             setup_collection(context, export_collection, top_object, settings_col, settings_filepath, settings_filename)
 
-            self.report({'INFO'},
-                        f"Export collection '{export_collection.name}' created successfully for '{top_object.name}'.")
+            self.report({'INFO'}, f"Export collection '{export_collection.name}' created successfully for '{top_object.name}'.")
 
         return {'FINISHED'}
 
