@@ -62,6 +62,20 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         op = layout.operator("simple_export.set_export_paths", text="Assign Filepaths", icon='FOLDER_REDIRECT')
         op.outliner = True
         op.individual_collection = False
+        
+        # Get and set all properties
+        from .export_panels import get_set_export_paths_properties
+        props = get_set_export_paths_properties(context)
+        
+        # Set all properties
+        op.export_folder_mode = props['export_folder_mode']
+        op.absolute_export_path = props['absolute_export_path']
+        op.relative_export_path = props['relative_export_path']
+        op.mirror_search_path = props['mirror_search_path']
+        op.mirror_replacement_path = props['mirror_replacement_path']
+        op.filename_custom_prefix = props['filename_custom_prefix']
+        op.filename_custom_suffix = props['filename_custom_suffix']
+        op.filename_file_name_prefix = props['filename_file_name_prefix']
 
         # Open Popup window
         layout.operator("wm.call_panel", text="Open Export Popup",

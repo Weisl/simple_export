@@ -122,6 +122,20 @@ class COLLECTION_MT_root_object_menu(bpy.types.Menu):
         op.outliner = False
         op.individual_collection = True
         op.collection_name = collection_name
+        
+        # Get and set all properties
+        from .export_panels import get_set_export_paths_properties
+        props = get_set_export_paths_properties(context)
+        
+        # Set all properties
+        op.export_folder_mode = props['export_folder_mode']
+        op.absolute_export_path = props['absolute_export_path']
+        op.relative_export_path = props['relative_export_path']
+        op.mirror_search_path = props['mirror_search_path']
+        op.mirror_replacement_path = props['mirror_replacement_path']
+        op.filename_custom_prefix = props['filename_custom_prefix']
+        op.filename_custom_suffix = props['filename_custom_suffix']
+        op.filename_file_name_prefix = props['filename_file_name_prefix']
 
         op = layout.operator("simple_export.assign_presets", icon='PRESET')
         op.outliner = False
@@ -165,9 +179,8 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         layout.prop(context.window_manager, "export_format", text="Filter Format")
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        from .. import __package__ as base_package
         prefs = context.preferences.addons[base_package].preferences
-        scene = context.scene
-        settings_filename = scene if scene.overwrite_filename_settings else prefs
 
         # Determine settings based on the list_id
         if self.list_id == "scene":
@@ -228,6 +241,20 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             op.outliner = False
             op.individual_collection = True
             op.collection_name = collection.name
+            
+            # Get and set all properties
+            from .export_panels import get_set_export_paths_properties
+            props = get_set_export_paths_properties(context)
+            
+            # Set all properties
+            op.export_folder_mode = props['export_folder_mode']
+            op.absolute_export_path = props['absolute_export_path']
+            op.relative_export_path = props['relative_export_path']
+            op.mirror_search_path = props['mirror_search_path']
+            op.mirror_replacement_path = props['mirror_replacement_path']
+            op.filename_custom_prefix = props['filename_custom_prefix']
+            op.filename_custom_suffix = props['filename_custom_suffix']
+            op.filename_file_name_prefix = props['filename_file_name_prefix']
 
         if settings.uilist_set_preset:
             # Assign Preset
@@ -249,14 +276,20 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         arrow_op.collection_name = collection.name
 
         from ..functions.create_collection_func import generate_base_name
+        from .export_panels import get_filename_properties
 
-        base_name = generate_base_name(collection.name, settings_filename.filename_custom_prefix,
-                                       settings_filename.filename_custom_suffix,
-                                       settings_filename.filename_file_name_prefix)
+        # Get filename properties
+        filename_props = get_filename_properties(context)
+        base_name = generate_base_name(collection.name, filename_props['filename_custom_prefix'],
+                                       filename_props['filename_custom_suffix'],
+                                       filename_props['filename_file_name_prefix'])
 
         if exporter.export_properties.filepath and collection_name_mismatch(base_name, export_path):
             op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
             op.collection_name = collection.name
+            op.filename_custom_prefix = filename_props['filename_custom_prefix']
+            op.filename_custom_suffix = filename_props['filename_custom_suffix']
+            op.filename_file_name_prefix = filename_props['filename_file_name_prefix']
 
         # Add the Export Collection button
         op = row.operator("simple_export.export_collections", text="", icon='EXPORT')

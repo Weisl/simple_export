@@ -87,6 +87,63 @@ def get_operator_properties(context):
     }
 
 
+def get_filename_properties(context):
+    """Gather filename properties from preferences and scene settings."""
+    prefs = context.preferences.addons[base_package].preferences
+    scene = context.scene
+    
+    # Determine which settings to use (scene overwrites preferences)
+    settings_filename = scene if scene.overwrite_filename_settings else prefs
+    
+    # Get filename properties
+    filename_custom_prefix = getattr(settings_filename, 'filename_custom_prefix', '')
+    filename_custom_suffix = getattr(settings_filename, 'filename_custom_suffix', '')
+    filename_file_name_prefix = getattr(settings_filename, 'filename_file_name_prefix', False)
+    
+    return {
+        'filename_custom_prefix': filename_custom_prefix,
+        'filename_custom_suffix': filename_custom_suffix,
+        'filename_file_name_prefix': filename_file_name_prefix,
+    }
+
+
+def get_filepath_properties(context):
+    """Gather filepath properties from preferences and scene settings."""
+    prefs = context.preferences.addons[base_package].preferences
+    scene = context.scene
+    
+    # Determine which settings to use (scene overwrites preferences)
+    settings_filepath = scene if scene.overwrite_filepath_settings else prefs
+    
+    # Get filepath properties
+    export_folder_mode = getattr(settings_filepath, 'export_folder_mode', 'RELATIVE')
+    absolute_export_path = getattr(settings_filepath, 'absolute_export_path', '')
+    relative_export_path = getattr(settings_filepath, 'relative_export_path', '')
+    mirror_search_path = getattr(settings_filepath, 'mirror_search_path', '')
+    mirror_replacement_path = getattr(settings_filepath, 'mirror_replacement_path', '')
+    
+    return {
+        'export_folder_mode': export_folder_mode,
+        'absolute_export_path': absolute_export_path,
+        'relative_export_path': relative_export_path,
+        'mirror_search_path': mirror_search_path,
+        'mirror_replacement_path': mirror_replacement_path,
+    }
+
+
+def get_set_export_paths_properties(context):
+    """Gather all properties needed for the set_export_paths operator."""
+    filepath_props = get_filepath_properties(context)
+    filename_props = get_filename_properties(context)
+    
+    # Combine all properties
+    all_props = {}
+    all_props.update(filepath_props)
+    all_props.update(filename_props)
+    
+    return all_props
+
+
 def draw_collection_creation(context, layout):
     # Parent selection
     row = layout.row()
@@ -190,6 +247,19 @@ def draw_active_list_element(layout, scene):
             op.outliner = False
             op.individual_collection = True
             op.collection_name = selected_collection.name
+            
+            # Get and set all properties
+            props = get_set_export_paths_properties(context)
+            
+            # Set all properties
+            op.export_folder_mode = props['export_folder_mode']
+            op.absolute_export_path = props['absolute_export_path']
+            op.relative_export_path = props['relative_export_path']
+            op.mirror_search_path = props['mirror_search_path']
+            op.mirror_replacement_path = props['mirror_replacement_path']
+            op.filename_custom_prefix = props['filename_custom_prefix']
+            op.filename_custom_suffix = props['filename_custom_suffix']
+            op.filename_file_name_prefix = props['filename_file_name_prefix']
 
             # Collection Center
 
@@ -427,6 +497,19 @@ class SIMPLE_EXPORT_menu_base:
         op = row.operator("simple_export.set_export_paths", text="Assign Filepaths", icon='FOLDER_REDIRECT')
         op.outliner = False
         op.individual_collection = False
+        
+        # Get and set all properties
+        props = get_set_export_paths_properties(context)
+        
+        # Set all properties
+        op.export_folder_mode = props['export_folder_mode']
+        op.absolute_export_path = props['absolute_export_path']
+        op.relative_export_path = props['relative_export_path']
+        op.mirror_search_path = props['mirror_search_path']
+        op.mirror_replacement_path = props['mirror_replacement_path']
+        op.filename_custom_prefix = props['filename_custom_prefix']
+        op.filename_custom_suffix = props['filename_custom_suffix']
+        op.filename_file_name_prefix = props['filename_file_name_prefix']
 
         col.separator()
 

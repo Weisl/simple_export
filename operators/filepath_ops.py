@@ -17,6 +17,25 @@ class SIMPLEEXPORT_OT_FixExportFilename(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     collection_name: bpy.props.StringProperty(options={'HIDDEN'})
+    
+    # Filename properties
+    filename_custom_prefix: bpy.props.StringProperty(
+        name="Custom Prefix",
+        description="Custom prefix for filenames",
+        default=""
+    )
+    
+    filename_custom_suffix: bpy.props.StringProperty(
+        name="Custom Suffix", 
+        description="Custom suffix for filenames",
+        default=""
+    )
+    
+    filename_file_name_prefix: bpy.props.BoolProperty(
+        name="Use File Name as Prefix",
+        description="Use the blend file name as prefix for filenames",
+        default=False
+    )
 
     def execute(self, context):
         collection = bpy.data.collections.get(self.collection_name)
@@ -28,17 +47,13 @@ class SIMPLEEXPORT_OT_FixExportFilename(bpy.types.Operator):
         if not exporter:
             return {'CANCELLED'}
 
-        prefs = context.preferences.addons[base_package].preferences
-        scene = context.scene
-        settings_filename = scene if scene.overwrite_filename_settings else prefs
-
         export_path = exporter.export_properties.filepath
         export_dir = os.path.dirname(export_path)
         _, ext = os.path.splitext(export_path)
 
-        base_name = generate_base_name(collection.name, settings_filename.filename_custom_prefix,
-                                       settings_filename.filename_custom_suffix,
-                                       settings_filename.filename_file_name_prefix)
+        base_name = generate_base_name(collection.name, self.filename_custom_prefix,
+                                       self.filename_custom_suffix,
+                                       self.filename_file_name_prefix)
 
         new_export_path = os.path.join(export_dir, f"{base_name}{ext}")
         exporter.export_properties.filepath = new_export_path
@@ -59,13 +74,100 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
                                                   options={'HIDDEN'})
     collection_name: bpy.props.StringProperty(name="Collection Name", default='',
                                               description="Name of the collection to process", options={'HIDDEN'})
+    
+    # Filepath properties
+    export_folder_mode: bpy.props.EnumProperty(
+        name="Export Folder Mode",
+        description="Mode for determining export folder",
+        items=[
+            ('ABSOLUTE', "Absolute", "Use absolute path"),
+            ('RELATIVE', "Relative", "Use relative path"),
+            ('MIRROR', "Mirror", "Mirror blend file location")
+        ],
+        default='RELATIVE'
+    )
+    
+    absolute_export_path: bpy.props.StringProperty(
+        name="Absolute Export Path",
+        description="Absolute path for exports",
+        default="",
+        subtype='DIR_PATH'
+    )
+    
+    relative_export_path: bpy.props.StringProperty(
+        name="Relative Export Path", 
+        description="Relative path for exports",
+        default="",
+        subtype='DIR_PATH'
+    )
+    
+    mirror_search_path: bpy.props.StringProperty(
+        name="Mirror Search Path",
+        description="Path to search for in mirror mode",
+        default=""
+    )
+    
+    mirror_replacement_path: bpy.props.StringProperty(
+        name="Mirror Replacement Path",
+        description="Path to replace with in mirror mode", 
+        default=""
+    )
+    
+    # Filename properties
+    filename_custom_prefix: bpy.props.StringProperty(
+        name="Custom Prefix",
+        description="Custom prefix for filenames",
+        default=""
+    )
+    
+    filename_custom_suffix: bpy.props.StringProperty(
+        name="Custom Suffix", 
+        description="Custom suffix for filenames",
+        default=""
+    )
+    
+    filename_file_name_prefix: bpy.props.BoolProperty(
+        name="Use File Name as Prefix",
+        description="Use the blend file name as prefix for filenames",
+        default=False
+    )
 
     def execute(self, context):
         results = []
-        prefs = context.preferences.addons[base_package].preferences
         scene = context.scene
-        settings_filepath = scene if scene.overwrite_filepath_settings else prefs
-        settings_filename = scene if scene.overwrite_filename_settings else prefs
+        
+        # Create mock objects that mimic the settings objects
+        class MockFilepathSettings:
+            def __init__(self, props):
+                self.export_folder_mode = props['export_folder_mode']
+                self.absolute_export_path = props['absolute_export_path']
+                self.relative_export_path = props['relative_export_path']
+                self.mirror_search_path = props['mirror_search_path']
+                self.mirror_replacement_path = props['mirror_replacement_path']
+        
+        class MockFilenameSettings:
+            def __init__(self, props):
+                self.filename_custom_prefix = props['filename_custom_prefix']
+                self.filename_custom_suffix = props['filename_custom_suffix']
+                self.filename_file_name_prefix = props['filename_file_name_prefix']
+        
+        # Create mock settings objects from operator properties
+        filepath_props = {
+            'export_folder_mode': self.export_folder_mode,
+            'absolute_export_path': self.absolute_export_path,
+            'relative_export_path': self.relative_export_path,
+            'mirror_search_path': self.mirror_search_path,
+            'mirror_replacement_path': self.mirror_replacement_path,
+        }
+        
+        filename_props = {
+            'filename_custom_prefix': self.filename_custom_prefix,
+            'filename_custom_suffix': self.filename_custom_suffix,
+            'filename_file_name_prefix': self.filename_file_name_prefix,
+        }
+        
+        settings_filepath = MockFilepathSettings(filepath_props)
+        settings_filename = MockFilenameSettings(filename_props)
 
         # Get Export Collections
         if self.outliner:

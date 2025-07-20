@@ -90,7 +90,7 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         name="Export Filepath",
         description="Filepath for the export",
         default="",
-        subtype='FILE_PATH'
+        subtype='DIR_PATH'
     )
 
     collection_custom_prefix: bpy.props.StringProperty(
