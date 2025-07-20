@@ -57,6 +57,10 @@ def get_operator_properties(context):
     # Get preset and filepath properties
     overwrite_preset = getattr(settings_col, 'collection_auto_set_preset', False)
     overwrite_filepath = getattr(settings_col, 'collection_auto_set_filepath', False)
+
+    # Assign_preset and assign_export_filepath follow the same logic
+    assign_preset = overwrite_preset
+    assign_export_filepath = overwrite_filepath
     
     # Get preset filepath if auto-set is enabled
     preset_filepath = ""
@@ -82,6 +86,8 @@ def get_operator_properties(context):
         'use_root_object': use_root_object,
         'preset_filepath': preset_filepath,
         'export_filepath': export_filepath,
+        'assign_preset': assign_preset,
+        'assign_export_filepath': assign_export_filepath,
     }
 
 
@@ -174,6 +180,8 @@ def draw_collection_creation(context, layout):
     op.use_root_object = props['use_root_object']
     op.preset_filepath = props['preset_filepath']
     op.export_filepath = props['export_filepath']
+    op.assign_preset = props['assign_preset']
+    op.assign_export_filepath = props['assign_export_filepath']
 
 
 def draw_scene_settings_overwrite(context, layout, scene):

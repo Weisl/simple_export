@@ -99,6 +99,17 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         default=False
     )
 
+    assign_preset: bpy.props.BoolProperty(
+        name="Assign Preset",
+        description="Assign the preset to the exporter",
+        default=True
+    )
+
+    assign_export_filepath: bpy.props.BoolProperty(
+        name="Assign Export Folder",
+        description="Assign the export folder to the exporter",
+        default=True
+    )
 
 
     def execute(self, context):
@@ -265,13 +276,13 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
             return None
 
     def assign_preset_to_exporter(self, context, exporter):
-        """Assign a preset to the exporter if a preset filepath is provided."""
-        if self.preset_filepath:
+        """Assign a preset to the exporter if assign_preset is True and a preset filepath is provided."""
+        if self.assign_preset and self.preset_filepath:
             assign_preset(exporter, self.preset_filepath)
 
     def assign_filepath_to_exporter(self, context, collection, exporter):
-        """Assign a file path to the exporter if an export filepath is provided."""
-        if self.export_filepath and hasattr(exporter, 'filepath'):
+        """Assign a file path to the exporter if assign_export_filepath is True and an export filepath is provided."""
+        if self.assign_export_filepath and self.export_filepath and hasattr(exporter, 'filepath'):
             exporter.filepath = self.export_filepath
 
 
@@ -311,10 +322,12 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         # Preset and filepath settings
         box = layout.box()
         box.label(text="Preset")
+        box.prop(self, "assign_preset")
         box.prop(self, "preset_filepath")
 
         box = layout.box()
         box.label(text="Export Folder:")
+        box.prop(self, "assign_export_filepath")
         box.prop(self, "export_filepath")
 
 
@@ -341,6 +354,8 @@ def add_export_collections_to_menu(self, context):
     op.use_root_object = props['use_root_object']
     op.preset_filepath = props['preset_filepath']
     op.export_filepath = props['export_filepath']
+    op.assign_preset = props['assign_preset']
+    op.assign_export_filepath = props['assign_export_filepath']
 
 
 classes = (
