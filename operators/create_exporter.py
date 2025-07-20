@@ -22,8 +22,6 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
     )
 
 
-
-
     # User-facing Properties
     overwrite_naming: bpy.props.BoolProperty(
         name="Overwrite Naming",
@@ -66,7 +64,7 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
     use_root_object: bpy.props.BoolProperty(
         name="Use Root Object",
         description="Use a root object for the collection",
-        default=False
+        default=True
     )
 
     overwrite_preset: bpy.props.BoolProperty(
@@ -305,7 +303,7 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
             box.prop(self, "overwrite_collection_name")
             box.prop(self, "use_numbering")
         
-        layout.prop(self, "set_collection_root")
+        layout.prop(self, "use_root_object")
         layout.prop(self, "collection_color")
         layout.prop_search(self, "parent_collection_name", bpy.data, "collections")
         
