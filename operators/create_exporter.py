@@ -210,9 +210,13 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
                 getattr(self, 'collection_custom_suffix', ''),
                 getattr(self, 'collection_file_name_prefix', '')
             )
-            export_collection = self.create_and_setup_collection(context, collection_name, top_object)
-            if export_collection:
-                exporter_collections.append((export_collection, top_object))
+            # Skip creation if collection already exists
+            if collection_name in bpy.data.collections:
+                export_collection = bpy.data.collections[collection_name]
+                self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Using existing collection.")
+            else:
+                export_collection = self.create_and_setup_collection(context, collection_name, top_object)
+            exporter_collections.append((export_collection, top_object))
         return exporter_collections
 
     def create_numbered_collections(self, context, top_objects):
@@ -221,9 +225,12 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         for index, top_object in enumerate(top_objects):
             padded_index = f"{index:03}"
             collection_name = f"{self.overwrite_collection_name}_{padded_index}"
-            export_collection = self.create_and_setup_collection(context, collection_name, top_object)
-            if export_collection:
-                exporter_collections.append((export_collection, top_object))
+            if collection_name in bpy.data.collections:
+                export_collection = bpy.data.collections[collection_name]
+                self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Using existing collection.")
+            else:
+                export_collection = self.create_and_setup_collection(context, collection_name, top_object)
+            exporter_collections.append((export_collection, top_object))
         return exporter_collections
 
     def create_single_collection(self, context, top_objects):
@@ -409,11 +416,12 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
 
         # --- Collection Settings Section ---
         box = layout.box()
+        box.prop_search(self, "parent_collection_name", bpy.data, "collections")
         box.label(text="Collection Settings")
         box.prop(self, "collection_color")
         box.prop(self, "collection_instance_offset")
         box.prop(self, "use_root_object")
-        box.prop_search(self, "parent_collection_name", bpy.data, "collections")
+
         # Optionally: add root object picker if use_root_object is True
         # box.prop(self, "root_object")
 
