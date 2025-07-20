@@ -93,6 +93,26 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         subtype='FILE_PATH'
     )
 
+    collection_custom_prefix: bpy.props.StringProperty(
+        name="Custom Prefix",
+        description="Custom prefix for collection names",
+        default=""
+    )
+
+    collection_custom_suffix: bpy.props.StringProperty(
+        name="Custom Suffix",
+        description="Custom suffix for collection names",
+        default=""
+    )
+
+    collection_file_name_prefix: bpy.props.BoolProperty(
+        name="Use File Name as Prefix",
+        description="Use the blend file name as prefix for collection names",
+        default=False
+    )
+
+
+
     def execute(self, context):
         """Execute the operator to create export collections."""
         selected_objects = context.selected_objects

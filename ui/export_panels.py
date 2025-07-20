@@ -36,6 +36,57 @@ def draw_simple_export_header(layout):
     row.label(text="Simple Export")
 
 
+def get_operator_properties(context):
+    """Gather operator properties from preferences and scene settings."""
+    prefs = context.preferences.addons[base_package].preferences
+    scene = context.scene
+    
+    # Determine which settings to use (scene overwrites preferences)
+    settings_col = scene if scene.overwrite_collection_settings else prefs
+    
+    # Get naming properties
+    prefix = getattr(settings_col, 'collection_custom_prefix', '')
+    suffix = getattr(settings_col, 'collection_custom_suffix', '')
+    file_name_prefix = getattr(settings_col, 'collection_file_name_prefix', False)
+    
+    # Get collection properties
+    collection_color = getattr(settings_col, 'collection_color', 'NONE')
+    collection_instance_offset = getattr(settings_col, 'collection_set_location_offset_on_creation', False)
+    use_root_object = getattr(settings_col, 'collection_use_root_offset_object', True)
+    
+    # Get preset and filepath properties
+    overwrite_preset = getattr(settings_col, 'collection_auto_set_preset', False)
+    overwrite_filepath = getattr(settings_col, 'collection_auto_set_filepath', False)
+    
+    # Get preset filepath if auto-set is enabled
+    preset_filepath = ""
+    if overwrite_preset:
+        export_format = scene.export_format.lower()
+        prop_name = f"simple_export_preset_file_{export_format}"
+        preset_settings = scene if scene.overwrite_preset_settings else prefs
+        preset_filepath = getattr(preset_settings, prop_name, "")
+    
+    # Get export filepath if auto-set is enabled
+    export_filepath = ""
+    if overwrite_filepath:
+        # This would need to be calculated based on the collection and export settings
+        # For now, we'll leave it empty and let the operator handle it
+        pass
+    
+    return {
+        'collection_custom_prefix': prefix,
+        'collection_custom_suffix': suffix,
+        'collection_file_name_prefix': file_name_prefix,
+        'collection_color': collection_color,
+        'collection_instance_offset': collection_instance_offset,
+        'use_root_object': use_root_object,
+        'overwrite_preset': overwrite_preset,
+        'overwrite_filepath': overwrite_filepath,
+        'preset_filepath': preset_filepath,
+        'export_filepath': export_filepath,
+    }
+
+
 def draw_collection_creation(context, layout):
     # Parent selection
     row = layout.row()
@@ -50,8 +101,26 @@ def draw_collection_creation(context, layout):
     color_tag = prefs.collection_color
     icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
     op = row.operator("simple_export.create_export_collections", icon=icon)
+    
+    # Set default properties
+    op.only_selection = True
+    op.overwrite_naming = False
     op.overwrite_collection_name = ""
     op.use_numbering = False
+    op.parent_collection_name = context.scene.parent_collection.name if context.scene.parent_collection else ""
+    
+    # Get and set properties from preferences/scene
+    props = get_operator_properties(context)
+    op.collection_custom_prefix = props['collection_custom_prefix']
+    op.collection_custom_suffix = props['collection_custom_suffix']
+    op.collection_file_name_prefix = props['collection_file_name_prefix']
+    op.collection_color = props['collection_color']
+    op.collection_instance_offset = props['collection_instance_offset']
+    op.use_root_object = props['use_root_object']
+    op.overwrite_preset = props['overwrite_preset']
+    op.overwrite_filepath = props['overwrite_filepath']
+    op.preset_filepath = props['preset_filepath']
+    op.export_filepath = props['export_filepath']
 
 
 def draw_scene_settings_overwrite(context, layout, scene):
