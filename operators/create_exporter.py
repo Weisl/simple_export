@@ -111,6 +111,41 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         default=True
     )
 
+    export_folder_mode: bpy.props.EnumProperty(
+        name="Export Path Mode",
+        description="Choose how the export folder is determined",
+        items=[
+            ('RELATIVE', "Relative", "Use a path relative to the blend file"),
+            ('ABSOLUTE', "Absolute", "Use an absolute path"),
+            ('MIRROR', "Mirror", "Mirror a source path to a target path"),
+        ],
+        default='RELATIVE',
+    )
+    absolute_export_path: bpy.props.StringProperty(
+        name="Absolute Export Path",
+        description="Absolute path for export",
+        subtype='DIR_PATH',
+        default=""
+    )
+    relative_export_path: bpy.props.StringProperty(
+        name="Relative Export Path",
+        description="Relative path for export",
+        subtype='DIR_PATH',
+        default=""
+    )
+    mirror_search_path: bpy.props.StringProperty(
+        name="Search Path",
+        description="Path to search for mirroring",
+        subtype='DIR_PATH',
+        default=""
+    )
+    mirror_replacement_path: bpy.props.StringProperty(
+        name="Replacement Path",
+        description="Replacement path for mirroring",
+        subtype='DIR_PATH',
+        default=""
+    )
+
 
     def execute(self, context):
         """Execute the operator to create export collections."""
@@ -281,9 +316,45 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
             assign_preset(exporter, self.preset_filepath)
 
     def assign_filepath_to_exporter(self, context, collection, exporter):
-        """Assign a file path to the exporter if assign_export_filepath is True and an export filepath is provided."""
-        if self.assign_export_filepath and self.export_filepath and hasattr(exporter, 'filepath'):
-            exporter.filepath = self.export_filepath
+        """Assign a file path to the exporter if assign_export_filepath is True and export folder settings are provided."""
+        if not self.assign_export_filepath or not hasattr(exporter, 'filepath'):
+            return
+
+        # Prepare a settings-like object for get_export_path
+        class SettingsFilepath:
+            export_folder_mode = self.export_folder_mode
+            absolute_export_path = self.absolute_export_path
+            relative_export_path = self.relative_export_path
+            mirror_search_path = self.mirror_search_path
+            mirror_replacement_path = self.mirror_replacement_path
+
+        # Prepare a settings-like object for filename
+        class SettingsFilename:
+            filename_custom_prefix = getattr(self, 'filename_custom_prefix', '')
+            filename_custom_suffix = getattr(self, 'filename_custom_suffix', '')
+            filename_file_name_prefix = getattr(self, 'filename_file_name_prefix', False)
+
+        from ..core.export_path_func import get_export_path, generate_export_path
+        from ..functions.create_collection_func import generate_base_name
+
+        # Get export directory and relative mode
+        export_dir, is_relative_path = get_export_path(SettingsFilepath, use_defaults=True)
+        # Generate base name for the file
+        base_name = generate_base_name(
+            collection.name,
+            getattr(self, 'filename_custom_prefix', ''),
+            getattr(self, 'filename_custom_suffix', ''),
+            getattr(self, 'filename_file_name_prefix', False)
+        )
+        # Generate the final export path
+        scene = context.scene
+        export_path = generate_export_path(
+            base_name,
+            scene.export_format,
+            export_dir,
+            is_relative_path=is_relative_path
+        )
+        exporter.filepath = export_path
 
 
     def determine_parent_collection(self, context, top_object):
@@ -319,16 +390,18 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         layout.prop(self, "collection_color")
         layout.prop_search(self, "parent_collection_name", bpy.data, "collections")
         
-        # Preset and filepath settings
+        # Preset settings
         box = layout.box()
         box.label(text="Preset")
         box.prop(self, "assign_preset")
         box.prop(self, "preset_filepath")
 
+        # Export Folder settings (reuse UI)
+        from ..ui.export_panels import draw_operator_filepath_settings
         box = layout.box()
         box.label(text="Export Folder:")
         box.prop(self, "assign_export_filepath")
-        box.prop(self, "export_filepath")
+        draw_operator_filepath_settings(box, self)
 
 
 def add_export_collections_to_menu(self, context):
@@ -344,8 +417,9 @@ def add_export_collections_to_menu(self, context):
     op.parent_collection_name = context.scene.parent_collection.name if context.scene.parent_collection else ""
     
     # Get and set properties from preferences/scene
-    from ..ui.export_panels import get_operator_properties
+    from ..ui.export_panels import get_operator_properties, get_set_export_paths_properties
     props = get_operator_properties(context)
+    path_props = get_set_export_paths_properties(context)
     op.collection_custom_prefix = props['collection_custom_prefix']
     op.collection_custom_suffix = props['collection_custom_suffix']
     op.collection_file_name_prefix = props['collection_file_name_prefix']
@@ -356,6 +430,11 @@ def add_export_collections_to_menu(self, context):
     op.export_filepath = props['export_filepath']
     op.assign_preset = props['assign_preset']
     op.assign_export_filepath = props['assign_export_filepath']
+    op.export_folder_mode = path_props['export_folder_mode']
+    op.absolute_export_path = path_props['absolute_export_path']
+    op.relative_export_path = path_props['relative_export_path']
+    op.mirror_search_path = path_props['mirror_search_path']
+    op.mirror_replacement_path = path_props['mirror_replacement_path']
 
 
 classes = (

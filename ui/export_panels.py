@@ -136,15 +136,19 @@ def get_filepath_properties(context):
 
 
 def get_set_export_paths_properties(context):
-    """Gather all properties needed for the set_export_paths operator."""
+    """Gather all properties needed for the set_export_paths operator and export folder UI."""
     filepath_props = get_filepath_properties(context)
     filename_props = get_filename_properties(context)
-    
     # Combine all properties
     all_props = {}
     all_props.update(filepath_props)
     all_props.update(filename_props)
-    
+    # Explicitly include export folder settings for clarity
+    all_props['export_folder_mode'] = filepath_props['export_folder_mode']
+    all_props['absolute_export_path'] = filepath_props['absolute_export_path']
+    all_props['relative_export_path'] = filepath_props['relative_export_path']
+    all_props['mirror_search_path'] = filepath_props['mirror_search_path']
+    all_props['mirror_replacement_path'] = filepath_props['mirror_replacement_path']
     return all_props
 
 
@@ -172,6 +176,7 @@ def draw_collection_creation(context, layout):
     
     # Get and set properties from preferences/scene
     props = get_operator_properties(context)
+    path_props = get_set_export_paths_properties(context)
     op.collection_custom_prefix = props['collection_custom_prefix']
     op.collection_custom_suffix = props['collection_custom_suffix']
     op.collection_file_name_prefix = props['collection_file_name_prefix']
@@ -182,6 +187,11 @@ def draw_collection_creation(context, layout):
     op.export_filepath = props['export_filepath']
     op.assign_preset = props['assign_preset']
     op.assign_export_filepath = props['assign_export_filepath']
+    op.export_folder_mode = path_props['export_folder_mode']
+    op.absolute_export_path = path_props['absolute_export_path']
+    op.relative_export_path = path_props['relative_export_path']
+    op.mirror_search_path = path_props['mirror_search_path']
+    op.mirror_replacement_path = path_props['mirror_replacement_path']
 
 
 def draw_scene_settings_overwrite(context, layout, scene):
@@ -478,6 +488,41 @@ def draw_custom_collection_ui(self, context):
 
     # Add the Object Picker
     layout.prop(collection, "root_object", text="Offset Object")
+
+
+def draw_operator_filepath_settings(layout, op):
+    """
+    Draws the export folder settings for an operator, similar to draw_filepath_settings but for operator properties.
+    """
+    layout.label(text="Export Path Mode")
+    row = layout.row()
+    row.prop(op, "export_folder_mode", expand=True)
+
+    if op.export_folder_mode == 'ABSOLUTE':
+        layout.prop(op, "absolute_export_path")
+
+    if op.export_folder_mode == 'RELATIVE':
+        layout.prop(op, "relative_export_path")
+
+    if op.export_folder_mode == 'MIRROR':
+        layout.prop(op, "mirror_search_path", text="Search Path")
+        layout.prop(op, "mirror_replacement_path", text="Replacement Path")
+
+        # Compute and display the preview if possible
+        try:
+            from ..preferences.preferenecs import compute_mirror_preview
+            preview_path = compute_mirror_preview(op)
+            layout.label(text="Export Folder Preview:")
+            row = layout.row(align=True)
+            row.label(text=preview_path)
+
+            import os
+            if os.path.exists(preview_path):
+                op_btn = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
+                op_btn.operation = 'FOLDER_OPEN'
+                op_btn.filepath = preview_path
+        except Exception:
+            pass
 
 
 class SIMPLE_EXPORT_menu_base:
