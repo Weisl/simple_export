@@ -1,4 +1,5 @@
 import bpy
+import os
 
 from ..core.export_formats import ExportFormats
 from ..core.export_path_func import assign_export_path_to_exporter
@@ -7,7 +8,103 @@ from ..functions.create_collection_func import generate_base_name
 from ..functions.preset_func import assign_preset
 
 
-class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
+def get_relative_path(self):
+    stored_path = self.get("relative_export_path", "")
+    if not stored_path:
+        return ""
+    # If already Blender-style relative, return as is
+    if stored_path.startswith("//"):
+        return stored_path
+    # Try to make it Blender-style relative
+    rel = bpy.path.relpath(stored_path)
+    if rel.startswith("//"):
+        return rel
+    return stored_path  # fallback to absolute
+
+def set_relative_path(self, value):
+    if not value:
+        self["relative_export_path"] = ""
+        return
+    rel = bpy.path.relpath(value)
+    if rel.startswith("//"):
+        self["relative_export_path"] = rel
+    else:
+        self["relative_export_path"] = bpy.path.abspath(value)
+
+def get_absolute_path(self):
+    stored_path = self.get("absolute_export_path", "")
+    return bpy.path.abspath(stored_path) if stored_path else ""
+
+def set_absolute_path(self, value):
+    self["absolute_export_path"] = bpy.path.abspath(value) if value else ""
+
+
+class SharedPathProperties:
+    """Shared path properties for export-related operators."""
+    
+    export_folder_mode: bpy.props.EnumProperty(
+        name="Export Path Mode",
+        description="Choose how the export folder is determined",
+        items=[
+            ('RELATIVE', "Relative", "Use a path relative to the blend file"),
+            ('ABSOLUTE', "Absolute", "Use an absolute path"),
+            ('MIRROR', "Mirror", "Mirror a source path to a target path"),
+        ],
+        default='RELATIVE',
+    )
+    absolute_export_path: bpy.props.StringProperty(
+        name="Absolute Export Path",
+        description="Absolute path for export",
+        subtype='DIR_PATH',
+        default="",
+        get=get_absolute_path,
+        set=set_absolute_path
+    )
+    relative_export_path: bpy.props.StringProperty(
+        name="Relative Export Path",
+        description="Relative path for export",
+        subtype='DIR_PATH',
+        default="//.",
+        get=get_relative_path,
+        set=set_relative_path
+    )
+    mirror_search_path: bpy.props.StringProperty(
+        name="Search Path",
+        description="Path to search for mirroring",
+        subtype='DIR_PATH',
+        default=""
+    )
+    mirror_replacement_path: bpy.props.StringProperty(
+        name="Replacement Path",
+        description="Replacement path for mirroring",
+        subtype='DIR_PATH',
+        default=""
+    )
+
+
+class SharedFilenameProperties:
+    """Shared filename properties for export-related operators."""
+    
+    filename_custom_prefix: bpy.props.StringProperty(
+        name="File  Prefix",
+        description="Custom prefix for filenames",
+        default=""
+    )
+    
+    filename_custom_suffix: bpy.props.StringProperty(
+        name="File Suffix", 
+        description="Custom suffix for filenames",
+        default=""
+    )
+    
+    filename_file_name_prefix: bpy.props.BoolProperty(
+        name="Use File Name as Prefix",
+        description="Use the blend file name as prefix for filenames",
+        default=False
+    )
+
+
+class EXPORT_OT_CreateExportCollections(SharedPathProperties, SharedFilenameProperties, bpy.types.Operator):
     """Create a new collection for each selected object and its children, preserving hierarchy."""
     bl_idname = "simple_export.create_export_collections"
     bl_label = "Create Export Collections"
@@ -20,7 +117,6 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         default=False,
         options={'HIDDEN'}
     )
-
 
     # User-facing Properties
     overwrite_naming: bpy.props.BoolProperty(
@@ -82,13 +178,13 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
     )
 
     collection_custom_prefix: bpy.props.StringProperty(
-        name="Collection Prefix",
+        name="Custom Prefix",
         description="Custom prefix for collection names",
         default=""
     )
 
     collection_custom_suffix: bpy.props.StringProperty(
-        name="Collection Suffix",
+        name="Custom Suffix",
         description="Custom suffix for collection names",
         default=""
     )
@@ -99,24 +195,7 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         default=False
     )
 
-    filename_custom_prefix: bpy.props.StringProperty(
-        name="File  Prefix",
-        description="Custom prefix for filenames",
-        default=""
-    )
-    
-    filename_custom_suffix: bpy.props.StringProperty(
-        name="File Suffix", 
-        description="Custom suffix for filenames",
-        default=""
-    )
-    
-    filename_file_name_prefix: bpy.props.BoolProperty(
-        name="Use File Name as Prefix",
-        description="Use the blend file name as prefix for filenames",
-        default=False
-    )
-
+    # Assignment properties
     assign_preset: bpy.props.BoolProperty(
         name="Assign Preset",
         description="Assign the preset to the exporter",
@@ -127,41 +206,6 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         name="Assign Export Folder",
         description="Assign the export folder to the exporter",
         default=True
-    )
-
-    export_folder_mode: bpy.props.EnumProperty(
-        name="Export Path Mode",
-        description="Choose how the export folder is determined",
-        items=[
-            ('RELATIVE', "Relative", "Use a path relative to the blend file"),
-            ('ABSOLUTE', "Absolute", "Use an absolute path"),
-            ('MIRROR', "Mirror", "Mirror a source path to a target path"),
-        ],
-        default='RELATIVE',
-    )
-    absolute_export_path: bpy.props.StringProperty(
-        name="Absolute Export Path",
-        description="Absolute path for export",
-        subtype='DIR_PATH',
-        default=""
-    )
-    relative_export_path: bpy.props.StringProperty(
-        name="Relative Export Path",
-        description="Relative path for export",
-        subtype='DIR_PATH',
-        default=""
-    )
-    mirror_search_path: bpy.props.StringProperty(
-        name="Search Path",
-        description="Path to search for mirroring",
-        subtype='DIR_PATH',
-        default=""
-    )
-    mirror_replacement_path: bpy.props.StringProperty(
-        name="Replacement Path",
-        description="Replacement path for mirroring",
-        subtype='DIR_PATH',
-        default=""
     )
 
 

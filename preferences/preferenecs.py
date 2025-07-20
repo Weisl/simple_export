@@ -117,7 +117,7 @@ PROPERTY_METADATA = {
     "relative_export_path": {
         "name": "Relative Folder Path",
         "description": "Folder to export files relative to the .blend file.",
-        "default": '',
+        "default": '//.',
     },
 }
 

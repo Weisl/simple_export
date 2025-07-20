@@ -110,7 +110,7 @@ def get_export_path(settings_filepath, use_defaults=False):
     elif settings_filepath.export_folder_mode == 'RELATIVE':
         if not settings_filepath.relative_export_path:
             if use_defaults:
-                export_dir = "./"
+                export_dir = "//."
                 is_relative_path = True
             else:
                 raise ValueError("ERROR: Please specify a relative Export Folder Location.")

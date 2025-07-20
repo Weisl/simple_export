@@ -8,33 +8,19 @@ from ..functions.create_collection_func import generate_base_name
 from ..functions.exporter_funcs import find_exporter
 from ..functions.outliner_func import get_outliner_collections
 from ..functions.vallidate_func import validate_collection
+from .create_exporter import SharedPathProperties, SharedFilenameProperties
 
 
-class SIMPLEEXPORT_OT_FixExportFilename(bpy.types.Operator):
-    bl_description = "The current filename does not match the collection name. Update the filename to be the collection name"
+class SIMPLEEXPORT_OT_FixExportFilename(SharedPathProperties, SharedFilenameProperties, bpy.types.Operator):
+    """Fix the export filename for a collection."""
     bl_idname = "simple_export.fix_export_filename"
     bl_label = "Fix Export Filename"
-    bl_options = {"REGISTER", "UNDO"}
+    bl_options = {'REGISTER', 'UNDO'}
 
-    collection_name: bpy.props.StringProperty(options={'HIDDEN'})
-    
-    # Filename properties
-    filename_custom_prefix: bpy.props.StringProperty(
-        name="File  Prefix",
-        description="Custom prefix for filenames",
+    collection_name: bpy.props.StringProperty(
+        name="Collection Name",
+        description="Name of the collection to fix",
         default=""
-    )
-    
-    filename_custom_suffix: bpy.props.StringProperty(
-        name="File Suffix", 
-        description="Custom suffix for filenames",
-        default=""
-    )
-    
-    filename_file_name_prefix: bpy.props.BoolProperty(
-        name="Use File Name as Prefix",
-        description="Use the blend file name as prefix for filenames",
-        default=False
     )
 
     def execute(self, context):
