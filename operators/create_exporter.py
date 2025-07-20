@@ -399,9 +399,9 @@ class EXPORT_OT_CreateExportCollections(SharedPathProperties, SharedFilenameProp
 
         # Prepare a settings-like object for filename
         class SettingsFilename:
-            filename_custom_prefix = getattr(self, 'filename_custom_prefix', '')
-            filename_custom_suffix = getattr(self, 'filename_custom_suffix', '')
-            filename_file_name_prefix = getattr(self, 'filename_file_name_prefix', False)
+            filename_custom_prefix = self.filename_custom_prefix
+            filename_custom_suffix = self.filename_custom_suffix
+            filename_file_name_prefix = self.filename_file_name_prefix
 
         from ..core.export_path_func import get_export_path, generate_export_path
         from ..functions.create_collection_func import generate_base_name
@@ -411,9 +411,9 @@ class EXPORT_OT_CreateExportCollections(SharedPathProperties, SharedFilenameProp
         # Generate base name for the file
         base_name = generate_base_name(
             collection.name,
-            getattr(self, 'filename_custom_prefix', ''),
-            getattr(self, 'filename_custom_suffix', ''),
-            getattr(self, 'filename_file_name_prefix', False)
+            self.filename_custom_prefix,
+            self.filename_custom_suffix,
+            self.filename_file_name_prefix
         )
         # Generate the final export path
         scene = context.scene
@@ -471,7 +471,7 @@ class EXPORT_OT_CreateExportCollections(SharedPathProperties, SharedFilenameProp
 
         # --- Preset Section ---
         box = layout.box()
-        box.label(text="ExportPreset")
+        box.label(text="Export Preset")
         box.prop(self, "assign_preset")
         box.prop(self, "preset_filepath")
 
