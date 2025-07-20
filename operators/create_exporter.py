@@ -67,18 +67,6 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         default=True
     )
 
-    overwrite_preset: bpy.props.BoolProperty(
-        name="Overwrite Preset",
-        description="Overwrite export preset for the collection",
-        default=False
-    )
-
-    overwrite_filepath: bpy.props.BoolProperty(
-        name="Overwrite Filepath",
-        description="Overwrite filepath for the collection export",
-        default=False
-    )
-
     preset_filepath: bpy.props.StringProperty(
         name="Preset Filepath",
         description="Path to the preset file to assign to the exporter",
@@ -277,22 +265,15 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
             return None
 
     def assign_preset_to_exporter(self, context, exporter):
-        """Assign a preset to the exporter if auto-set is enabled."""
-        if self.overwrite_preset and self.preset_filepath:
+        """Assign a preset to the exporter if a preset filepath is provided."""
+        if self.preset_filepath:
             assign_preset(exporter, self.preset_filepath)
-        elif self.overwrite_preset and not self.preset_filepath:
-            self.report({'WARNING'}, "Auto set preset is enabled but no preset filepath provided.")
 
     def assign_filepath_to_exporter(self, context, collection, exporter):
-        """Assign a file path to the exporter if auto-set is enabled."""
-        if self.overwrite_filepath and self.export_filepath:
-            # Set the filepath directly on the exporter
-            if hasattr(exporter, 'filepath'):
-                exporter.filepath = self.export_filepath
-            else:
-                self.report({'WARNING'}, "Exporter does not have a filepath property.")
-        elif self.overwrite_filepath and not self.export_filepath:
-            self.report({'WARNING'}, "Auto set filepath is enabled but no export filepath provided.")
+        """Assign a file path to the exporter if an export filepath is provided."""
+        if self.export_filepath and hasattr(exporter, 'filepath'):
+            exporter.filepath = self.export_filepath
+
 
     def determine_parent_collection(self, context, top_object):
         """Determine the parent collection based on the specified hierarchy."""
@@ -330,13 +311,8 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         # Preset and filepath settings
         box = layout.box()
         box.label(text="Preset & Filepath Settings:")
-        box.prop(self, "overwrite_preset")
-        if self.overwrite_preset:
-            box.prop(self, "preset_filepath")
-        
-        box.prop(self, "overwrite_filepath")
-        if self.overwrite_filepath:
-            box.prop(self, "export_filepath")
+        box.prop(self, "preset_filepath")
+        box.prop(self, "export_filepath")
 
 
 def add_export_collections_to_menu(self, context):
@@ -360,8 +336,6 @@ def add_export_collections_to_menu(self, context):
     op.collection_color = props['collection_color']
     op.collection_instance_offset = props['collection_instance_offset']
     op.use_root_object = props['use_root_object']
-    op.overwrite_preset = props['overwrite_preset']
-    op.overwrite_filepath = props['overwrite_filepath']
     op.preset_filepath = props['preset_filepath']
     op.export_filepath = props['export_filepath']
 

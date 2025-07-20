@@ -80,8 +80,6 @@ def get_operator_properties(context):
         'collection_color': collection_color,
         'collection_instance_offset': collection_instance_offset,
         'use_root_object': use_root_object,
-        'overwrite_preset': overwrite_preset,
-        'overwrite_filepath': overwrite_filepath,
         'preset_filepath': preset_filepath,
         'export_filepath': export_filepath,
     }
@@ -174,8 +172,6 @@ def draw_collection_creation(context, layout):
     op.collection_color = props['collection_color']
     op.collection_instance_offset = props['collection_instance_offset']
     op.use_root_object = props['use_root_object']
-    op.overwrite_preset = props['overwrite_preset']
-    op.overwrite_filepath = props['overwrite_filepath']
     op.preset_filepath = props['preset_filepath']
     op.export_filepath = props['export_filepath']
 
