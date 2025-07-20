@@ -82,13 +82,13 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
     )
 
     collection_custom_prefix: bpy.props.StringProperty(
-        name="Custom Prefix",
+        name="Collection Prefix",
         description="Custom prefix for collection names",
         default=""
     )
 
     collection_custom_suffix: bpy.props.StringProperty(
-        name="Custom Suffix",
+        name="Collection Suffix",
         description="Custom suffix for collection names",
         default=""
     )
@@ -96,6 +96,24 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
     collection_file_name_prefix: bpy.props.BoolProperty(
         name="Use File Name as Prefix",
         description="Use the blend file name as prefix for collection names",
+        default=False
+    )
+
+    filename_custom_prefix: bpy.props.StringProperty(
+        name="File  Prefix",
+        description="Custom prefix for filenames",
+        default=""
+    )
+    
+    filename_custom_suffix: bpy.props.StringProperty(
+        name="File Suffix", 
+        description="Custom suffix for filenames",
+        default=""
+    )
+    
+    filename_file_name_prefix: bpy.props.BoolProperty(
+        name="Use File Name as Prefix",
+        description="Use the blend file name as prefix for filenames",
         default=False
     )
 
@@ -377,31 +395,49 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
     def draw(self, context):
         """Draw the UI for the operator."""
         layout = self.layout
-        
-        # Naming settings
+
+        # --- Collection Name Section ---
         box = layout.box()
-        box.label(text="Naming Settings:")
+        box.label(text="Collection Name")
         box.prop(self, "overwrite_naming")
         if self.overwrite_naming:
             box.prop(self, "overwrite_collection_name")
             box.prop(self, "use_numbering")
-        
-        layout.prop(self, "use_root_object")
-        layout.prop(self, "collection_color")
-        layout.prop_search(self, "parent_collection_name", bpy.data, "collections")
-        
-        # Preset settings
+        box.prop(self, "collection_file_name_prefix")
+        box.prop(self, "collection_custom_prefix")
+        box.prop(self, "collection_custom_suffix")
+
+        # --- Collection Settings Section ---
         box = layout.box()
-        box.label(text="Preset")
+        box.label(text="Collection Settings")
+        box.prop(self, "collection_color")
+        box.prop(self, "collection_instance_offset")
+        box.prop(self, "use_root_object")
+        box.prop_search(self, "parent_collection_name", bpy.data, "collections")
+        # Optionally: add root object picker if use_root_object is True
+        # box.prop(self, "root_object")
+
+        # --- Preset Section ---
+        box = layout.box()
+        box.label(text="ExportPreset")
         box.prop(self, "assign_preset")
         box.prop(self, "preset_filepath")
 
-        # Export Folder settings (reuse UI)
-        from ..ui.export_panels import draw_operator_filepath_settings
+        # --- File Name Section ---
         box = layout.box()
-        box.label(text="Export Folder:")
+        box.label(text="File Name")
+        box.prop(self, "filename_file_name_prefix")
+        box.prop(self, "filename_custom_prefix")
+        box.prop(self, "filename_custom_suffix")
+
+        # --- File Path Section ---
+        box = layout.box()
+        box.label(text="File Path")
         box.prop(self, "assign_export_filepath")
+        from ..ui.export_panels import draw_operator_filepath_settings
         draw_operator_filepath_settings(box, self)
+
+
 
 
 def add_export_collections_to_menu(self, context):
@@ -435,6 +471,9 @@ def add_export_collections_to_menu(self, context):
     op.relative_export_path = path_props['relative_export_path']
     op.mirror_search_path = path_props['mirror_search_path']
     op.mirror_replacement_path = path_props['mirror_replacement_path']
+    op.filename_custom_prefix = path_props['filename_custom_prefix']
+    op.filename_custom_suffix = path_props['filename_custom_suffix']
+    op.filename_file_name_prefix = path_props['filename_file_name_prefix']
 
 
 classes = (

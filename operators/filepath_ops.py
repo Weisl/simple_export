@@ -20,13 +20,13 @@ class SIMPLEEXPORT_OT_FixExportFilename(bpy.types.Operator):
     
     # Filename properties
     filename_custom_prefix: bpy.props.StringProperty(
-        name="Custom Prefix",
+        name="File  Prefix",
         description="Custom prefix for filenames",
         default=""
     )
     
     filename_custom_suffix: bpy.props.StringProperty(
-        name="Custom Suffix", 
+        name="File Suffix", 
         description="Custom suffix for filenames",
         default=""
     )
@@ -68,14 +68,14 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
     bl_label = "Set Export Path"
     bl_options = {'REGISTER', 'UNDO'}
 
-    outliner: bpy.props.BoolProperty(default=False,
-                                     options={'HIDDEN'})
-    individual_collection: bpy.props.BoolProperty(default=False,
-                                                  options={'HIDDEN'})
-    collection_name: bpy.props.StringProperty(name="Collection Name", default='',
-                                              description="Name of the collection to process", options={'HIDDEN'})
-    
-    # Filepath properties
+    outliner: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
+    individual_collection: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
+    collection_name: bpy.props.StringProperty(
+        name="Collection Name", default='',
+        description="Name of the collection to process", options={'HIDDEN'}
+    )
+
+    # --- Filepath properties ---
     export_folder_mode: bpy.props.EnumProperty(
         name="Export Folder Mode",
         description="Mode for determining export folder",
@@ -86,56 +86,66 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
         ],
         default='RELATIVE'
     )
-    
     absolute_export_path: bpy.props.StringProperty(
-        name="Absolute Export Path",
+        name="Absolute Path",
         description="Absolute path for exports",
         default="",
         subtype='DIR_PATH'
     )
-    
     relative_export_path: bpy.props.StringProperty(
-        name="Relative Export Path", 
+        name="Relative Path",
         description="Relative path for exports",
         default="",
         subtype='DIR_PATH'
     )
-    
     mirror_search_path: bpy.props.StringProperty(
-        name="Mirror Search Path",
+        name="Search Path",
         description="Path to search for in mirror mode",
         default=""
     )
-    
     mirror_replacement_path: bpy.props.StringProperty(
-        name="Mirror Replacement Path",
-        description="Path to replace with in mirror mode", 
+        name="Replace Path",
+        description="Path to replace with in mirror mode",
         default=""
     )
-    
-    # Filename properties
+
+    # --- Filename properties ---
     filename_custom_prefix: bpy.props.StringProperty(
-        name="Custom Prefix",
+        name="File Prefix",
         description="Custom prefix for filenames",
         default=""
     )
-    
     filename_custom_suffix: bpy.props.StringProperty(
-        name="Custom Suffix", 
+        name="File Suffix",
         description="Custom suffix for filenames",
         default=""
     )
-    
     filename_file_name_prefix: bpy.props.BoolProperty(
         name="Use File Name as Prefix",
         description="Use the blend file name as prefix for filenames",
         default=False
     )
 
+    def draw(self, context):
+        layout = self.layout
+
+        # --- File Path UI (reuse from export_panels.py) ---
+        from ..ui.export_panels import draw_operator_filepath_settings
+        box = layout.box()
+        box.label(text="Export Folder Settings:")
+        draw_operator_filepath_settings(box, self)
+
+        # --- Filename UI ---
+        box = layout.box()
+        box.label(text="Filename Settings:")
+        box.prop(self, "filename_custom_prefix")
+        box.prop(self, "filename_custom_suffix")
+        box.prop(self, "filename_file_name_prefix")
+
     def execute(self, context):
         results = []
         scene = context.scene
-        
+
         # Create mock objects that mimic the settings objects
         class MockFilepathSettings:
             def __init__(self, props):
@@ -144,13 +154,13 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
                 self.relative_export_path = props['relative_export_path']
                 self.mirror_search_path = props['mirror_search_path']
                 self.mirror_replacement_path = props['mirror_replacement_path']
-        
+
         class MockFilenameSettings:
             def __init__(self, props):
                 self.filename_custom_prefix = props['filename_custom_prefix']
                 self.filename_custom_suffix = props['filename_custom_suffix']
                 self.filename_file_name_prefix = props['filename_file_name_prefix']
-        
+
         # Create mock settings objects from operator properties
         filepath_props = {
             'export_folder_mode': self.export_folder_mode,
@@ -159,13 +169,11 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
             'mirror_search_path': self.mirror_search_path,
             'mirror_replacement_path': self.mirror_replacement_path,
         }
-        
         filename_props = {
             'filename_custom_prefix': self.filename_custom_prefix,
             'filename_custom_suffix': self.filename_custom_suffix,
             'filename_file_name_prefix': self.filename_file_name_prefix,
         }
-        
         settings_filepath = MockFilepathSettings(filepath_props)
         settings_filename = MockFilenameSettings(filename_props)
 
@@ -188,29 +196,22 @@ class SCENE_OT_SetExporterPathSelection(bpy.types.Operator):
         # Iterate over collections
         for collection in collection_list:
             try:
-                if not collection.simple_export_selected and not self.individual_collection:  # Don't check selected for individual collection
+                if not collection.simple_export_selected and not self.individual_collection:
                     continue
-
                 if not collection.exporters:
                     continue
-
                 collection = validate_collection(collection.name)
                 if not collection:
                     continue
-
                 set_active_layer_Collection(collection.name)
-
-                # Find the appropriate exporter
                 exporter = find_exporter(collection, scene.export_format)
                 if not exporter:
                     continue
-
                 # Assign export path using the extracted function
-                success, export_path, msg = assign_export_path_to_exporter(collection, exporter, scene,
-                                                                           settings_filepath, settings_filename)
-
+                success, export_path, msg = assign_export_path_to_exporter(
+                    collection, exporter, scene, settings_filepath, settings_filename
+                )
                 results.append({'name': collection.name, 'success': success, 'filepath': export_path, 'message': msg})
-
             except Exception as e:
                 results.append({'name': collection.name, 'success': False, 'filepath': '', 'message': str(e)})
 

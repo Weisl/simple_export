@@ -192,6 +192,9 @@ def draw_collection_creation(context, layout):
     op.relative_export_path = path_props['relative_export_path']
     op.mirror_search_path = path_props['mirror_search_path']
     op.mirror_replacement_path = path_props['mirror_replacement_path']
+    op.filename_custom_prefix = path_props['filename_custom_prefix']
+    op.filename_custom_suffix = path_props['filename_custom_suffix']
+    op.filename_file_name_prefix = path_props['filename_file_name_prefix']
 
 
 def draw_scene_settings_overwrite(context, layout, scene):
