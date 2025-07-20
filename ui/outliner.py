@@ -14,8 +14,27 @@ def draw_custom_outliner_menu(self, context):
         # Show only 'Create Export Collections' for objects
         op = layout.operator('simple_export.create_export_collections', text="Create Export Collections",
                         icon='COLLECTION_COLOR_01')
+        
+        # Set default properties
+        op.only_selection = True
+        op.overwrite_naming = False
         op.overwrite_collection_name = ""
         op.use_numbering = False
+        op.parent_collection_name = context.scene.parent_collection.name if context.scene.parent_collection else ""
+        
+        # Get and set properties from preferences/scene
+        from .export_panels import get_operator_properties
+        props = get_operator_properties(context)
+        op.collection_custom_prefix = props['collection_custom_prefix']
+        op.collection_custom_suffix = props['collection_custom_suffix']
+        op.collection_file_name_prefix = props['collection_file_name_prefix']
+        op.collection_color = props['collection_color']
+        op.collection_instance_offset = props['collection_instance_offset']
+        op.use_root_object = props['use_root_object']
+        op.overwrite_preset = props['overwrite_preset']
+        op.overwrite_filepath = props['overwrite_filepath']
+        op.preset_filepath = props['preset_filepath']
+        op.export_filepath = props['export_filepath']
 
 
 class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
