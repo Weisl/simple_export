@@ -68,14 +68,14 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
     )
 
     preset_filepath: bpy.props.StringProperty(
-        name="Preset Filepath",
+        name="Preset",
         description="Path to the preset file to assign to the exporter",
         default="",
         subtype='FILE_PATH'
     )
 
     export_filepath: bpy.props.StringProperty(
-        name="Export Filepath",
+        name="Folder",
         description="Filepath for the export",
         default="",
         subtype='DIR_PATH'
@@ -310,8 +310,11 @@ class EXPORT_OT_CreateExportCollections(bpy.types.Operator):
         
         # Preset and filepath settings
         box = layout.box()
-        box.label(text="Preset & Filepath Settings:")
+        box.label(text="Preset")
         box.prop(self, "preset_filepath")
+
+        box = layout.box()
+        box.label(text="Export Folder:")
         box.prop(self, "export_filepath")
 
 
