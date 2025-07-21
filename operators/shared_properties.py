@@ -2,6 +2,7 @@ import bpy
 
 from ..preferences.preferenecs import PROPERTY_METADATA
 
+
 # --- Property Getter/Setter Functions ---
 def get_relative_path(self):
     stored_path = self.get("folder_path_relative", "")
@@ -95,20 +96,15 @@ class SharedFilenameProps:
         default=False
     )
 
-
+# Set Folder Path
 class SharedPathAssignmentProps:
-    assign_export_filepath: bpy.props.BoolProperty(
+    set_export_path: bpy.props.BoolProperty(
         name="Assign Export Folder",
         description="Assign the export folder to the exporter",
         default=True
     )
-    export_filepath: bpy.props.StringProperty(
-        name="Folder",
-        description="Filepath for the export",
-        default="",
-        subtype='DIR_PATH'
-    )
 
+# Set Presets
 
 class SharedPresetAssignmentProps:
     preset_filepath: bpy.props.StringProperty(
@@ -117,7 +113,7 @@ class SharedPresetAssignmentProps:
         default="",
         subtype='FILE_PATH'
     )
-    assign_preset: bpy.props.BoolProperty(
+    set_preset: bpy.props.BoolProperty(
         name="Assign Preset",
         description="Assign the preset to the exporter",
         default=True
@@ -125,21 +121,31 @@ class SharedPresetAssignmentProps:
 
 
 class CollectionNamingProps:
+    collection_prefix: bpy.props.StringProperty(
+        name="Prefix",
+        description="Custom prefix for collection names",
+        default=""
+    )
+
     collection_suffix: bpy.props.StringProperty(
         name="Custom Suffix",
         description="Custom suffix for collection names",
         default=""
     )
-    collection_prefix: bpy.props.StringProperty(
-        name="Custom Prefix",
-        description="Custom prefix for collection names",
-        default=""
-    )
+
     collection_name_new: bpy.props.StringProperty(
         name="Name",
         description="Overwrite the name for the collection",
         default=""
     )
+
+    collection_name_blend_prefix: bpy.props.BoolProperty(
+        name="Blend Name as Prefix",
+        description="Add the blend file name as prefix to the export collections.",
+        default=False
+    )
+
+    #
     collection_naming_overwrite: bpy.props.BoolProperty(
         name="Overwrite Naming",
         description="Overwrite the naming for the collection",

@@ -7,6 +7,8 @@ from ..core.export_formats import get_export_format_items
 from ..ui.export_panels import VIEW3D_PT_SimpleExport
 
 PROPERTY_METADATA = {
+
+    # Collection Naming Props
     "collection_prefix": {
         "name": "Prefix",
         "description": "Custom prefix added to export collections.",
@@ -17,11 +19,51 @@ PROPERTY_METADATA = {
         "description": "Custom suffix added to the export collections.",
         "default": "",
     },
-    "collection_file_name_prefix": {
+
+    "filename_blend_prefix": {
         "name": "Blend Name as Prefix",
         "description": "Add the blend file name as prefix to the export collections.",
         "default": False,
     },
+
+    # File Path Settings
+
+    "export_folder_mode": {
+        "name": "Custom Export Path Mode",
+        "description": "Choose how the export file path is determined",
+        "default": "RELATIVE",
+        "items": [
+            ("ABSOLUTE", "Absolute", "Use an absolute file path"),
+            ("RELATIVE", "Relative", "Use a file path relative to the .blend file"),
+            ("MIRROR", "Mirror", "Mirror part of the blend file path with another directory"),
+        ],
+    },
+
+    "folder_path_absolute": {
+        "name": "Export Folder",
+        "description": "Custom absolute folder to export files to.",
+        "default": '',
+    },
+
+    "folder_path_relative": {
+        "name": "Relative Folder Path",
+        "description": "Folder to export files relative to the .blend file.",
+        "default": '//.',
+    },
+
+    "folder_path_search": {
+        "name": "Search",
+        "description": "The path to be replaced.",
+        "default": "workdata",
+    },
+
+    "folder_path_replace": {
+        "name": "Replace",
+        "description": "The path to replace with.",
+        "default": "sourcedata",
+    },
+
+    # Filename Naming Props
 
     "filename_prefix": {
         "name": "Prefix",
@@ -33,22 +75,31 @@ PROPERTY_METADATA = {
         "description": "Custom suffix added when to the export filename.",
         "default": "",
     },
-    "filename_blend_prefix": {
-        "name": "Use Blend File Name as Prefix",
-        "description": "Add the blend file name as prefix to the export filename.",
+    "collection_name_blend_prefix": {
+        "name": "Blend Name Prefix",
+        "description": "Add the blend file name as prefix to the collection.",
         "default": False,
     },
 
-    "folder_path_search": {
-        "name": "Search",
-        "description": "The path to be replaced.",
-        "default": "workdata",
+    # Set Folder Path
+
+    "set_export_path": {
+        "name": "Assign Export Path",
+        "description": "##### Set filepath when creating an Exporter Collection.",
+        "default": True,
     },
-    "folder_path_replace": {
-        "name": "Replace",
-        "description": "The path to replace with.",
-        "default": "sourcedata",
+
+    # Set Preset
+
+    "set_preset": {
+        "name": "Assign Export Preset",
+        "description": "Set export preset when creating an Exporter Collection.",
+        "default": True,
     },
+
+    #collection Settings
+
+    # Collection Color
     "collection_color": {
         "name": "Color",
         "description": "Choose a color tag for collections.",
@@ -65,16 +116,7 @@ PROPERTY_METADATA = {
         ],
         "default": 'NONE',
     },
-    "collection_auto_set_filepath": {
-        "name": "Assign Export Path",
-        "description": "##### Set filepath when creating an Exporter Collection.",
-        "default": True,
-    },
-    "collection_auto_set_preset": {
-        "name": "Assign Export Preset",
-        "description": "Set export preset when creating an Exporter Collection.",
-        "default": True,
-    },
+
     "collection_set_location_offset_on_creation": {
         "name": "Set Collection Center Location",
         "description": "Set Location Offset for collections.",
@@ -97,28 +139,6 @@ PROPERTY_METADATA = {
         "default": False,
     },
 
-    "export_folder_mode": {
-        "name": "Custom Export Path Mode",
-        "description": "Choose how the export file path is determined",
-        "default": "ABSOLUTE",
-        "items": [
-            ("ABSOLUTE", "Absolute", "Use an absolute file path"),
-            ("RELATIVE", "Relative", "Use a file path relative to the .blend file"),
-            ("MIRROR", "Mirror", "Mirror part of the blend file path with another directory"),
-        ],
-    },
-
-    "folder_path_absolute": {
-        "name": "Export Folder",
-        "description": "Custom absolute folder to export files to.",
-        "default": '',
-    },
-
-    "folder_path_relative": {
-        "name": "Relative Folder Path",
-        "description": "Folder to export files relative to the .blend file.",
-        "default": '//.',
-    },
 }
 
 
@@ -418,10 +438,10 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=PROPERTY_METADATA["move_by_collection_offset"]["default"],
     )
 
-    collection_file_name_prefix: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["collection_file_name_prefix"]["name"],
-        description=PROPERTY_METADATA["collection_file_name_prefix"]["description"],
-        default=PROPERTY_METADATA["collection_file_name_prefix"]["default"],
+    filename_blend_prefix: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["filename_blend_prefix"]["name"],
+        description=PROPERTY_METADATA["filename_blend_prefix"]["description"],
+        default=PROPERTY_METADATA["filename_blend_prefix"]["default"],
     )
 
     ########################################
@@ -529,16 +549,16 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=PROPERTY_METADATA["collection_color"]["default"],
     )
 
-    collection_auto_set_filepath: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["collection_auto_set_filepath"]["name"],
-        description=PROPERTY_METADATA["collection_auto_set_filepath"]["description"],
-        default=PROPERTY_METADATA["collection_auto_set_filepath"]["default"],
+    set_export_path: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["set_export_path"]["name"],
+        description=PROPERTY_METADATA["set_export_path"]["description"],
+        default=PROPERTY_METADATA["set_export_path"]["default"],
     )
 
-    collection_auto_set_preset: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["collection_auto_set_preset"]["name"],
-        description=PROPERTY_METADATA["collection_auto_set_preset"]["description"],
-        default=PROPERTY_METADATA["collection_auto_set_preset"]["default"],
+    set_preset: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["set_preset"]["name"],
+        description=PROPERTY_METADATA["set_preset"]["description"],
+        default=PROPERTY_METADATA["set_preset"]["default"],
     )
     ###################################################################
     # KEYMAP
@@ -755,7 +775,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.label(text="Export Collection")
             # collection name
 
-            box.prop(self, "collection_file_name_prefix")
+            box.prop(self, "filename_blend_prefix")
             box.prop(self, "collection_prefix")
             box.prop(self, "collection_suffix")
 
@@ -769,8 +789,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                 box.prop(self, "collection_set_root_offset_object")
 
             # Collection offset
-            box.prop(self, "collection_auto_set_filepath")
-            box.prop(self, "collection_auto_set_preset")
+            box.prop(self, "set_export_path")
+            box.prop(self, "set_preset")
 
             box = layout.box()
             box.label(text="Pre Export Operations")
@@ -940,10 +960,10 @@ def initialize_properties_collection_generation():
         description=PROPERTY_METADATA["collection_suffix"]["description"],
         default=prefs.collection_suffix
     )
-    bpy.types.Scene.collection_file_name_prefix = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["collection_file_name_prefix"]["name"],
-        description=PROPERTY_METADATA["collection_file_name_prefix"]["description"],
-        default=prefs.collection_file_name_prefix
+    bpy.types.Scene.filename_blend_prefix = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["filename_blend_prefix"]["name"],
+        description=PROPERTY_METADATA["filename_blend_prefix"]["description"],
+        default=prefs.filename_blend_prefix
     )
 
     # filename settings
@@ -982,15 +1002,15 @@ def initialize_properties_collection_generation():
         default=prefs.collection_set_root_offset_object
     )
 
-    bpy.types.Scene.collection_auto_set_filepath = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["collection_auto_set_filepath"]["name"],
-        description=PROPERTY_METADATA["collection_auto_set_filepath"]["description"],
-        default=prefs.collection_auto_set_filepath
+    bpy.types.Scene.set_export_path = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["set_export_path"]["name"],
+        description=PROPERTY_METADATA["set_export_path"]["description"],
+        default=prefs.set_export_path
     )
-    bpy.types.Scene.collection_auto_set_preset = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["collection_auto_set_preset"]["name"],
-        description=PROPERTY_METADATA["collection_auto_set_preset"]["description"],
-        default=prefs.collection_auto_set_preset
+    bpy.types.Scene.set_preset = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["set_preset"]["name"],
+        description=PROPERTY_METADATA["set_preset"]["description"],
+        default=prefs.set_preset
     )
     bpy.types.Scene.collection_color = bpy.props.EnumProperty(
         name=PROPERTY_METADATA["collection_color"]["name"],
@@ -1164,14 +1184,14 @@ def unregister():
     # Collection creation
     del bpy.types.Scene.collection_prefix
     del bpy.types.Scene.collection_suffix
-    del bpy.types.Scene.collection_file_name_prefix
+    del bpy.types.Scene.filename_blend_prefix
     del bpy.types.Scene.filename_blend_prefix
     del bpy.types.Scene.filename_prefix
     del bpy.types.Scene.filename_suffix
     del bpy.types.Scene.collection_set_location_offset_on_creation
     del bpy.types.Scene.collection_set_root_offset_object
-    del bpy.types.Scene.collection_auto_set_filepath
-    del bpy.types.Scene.collection_auto_set_preset
+    del bpy.types.Scene.set_export_path
+    del bpy.types.Scene.set_preset
     del bpy.types.Scene.collection_color
 
     # filepath

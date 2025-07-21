@@ -5,13 +5,13 @@ from .. import __package__ as base_package
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.exporter_funcs import find_exporter
 from ..functions.outliner_func import get_outliner_collections
-from ..functions.preset_func import assign_preset
+from ..functions.preset_func import set_preset
 from ..functions.vallidate_func import validate_collection
 
 
 class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
     """Operator to apply the preset to all collections"""
-    bl_idname = "simple_export.assign_presets"
+    bl_idname = "simple_export.set_presets"
     bl_label = "Assign Presets"
 
     outliner: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
@@ -80,7 +80,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
                 results.append({'name': collection.name, 'success': False, 'message': str(e)})
 
         # Store results in Scene
-        context.window_manager.assign_preset_info_data = str(results)
+        context.window_manager.set_preset_info_data = str(results)
         bpy.ops.wm.call_panel(name="SIMPLEEXPORTER_PT_PresetResultsPanel")
 
         return {'FINISHED'}
@@ -95,7 +95,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
         preset_name = os.path.basename(preset_path)
 
         # Apply preset
-        success, msg = assign_preset(exporter, preset_path)
+        success, msg = set_preset(exporter, preset_path)
         if not success:
             raise ValueError(msg)
 

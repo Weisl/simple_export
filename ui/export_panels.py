@@ -46,7 +46,7 @@ def get_operator_properties(context):
     # Get naming properties
     prefix = getattr(settings_col, 'collection_prefix', '')
     suffix = getattr(settings_col, 'collection_suffix', '')
-    file_name_prefix = getattr(settings_col, 'collection_file_name_prefix', False)
+    file_name_prefix = getattr(settings_col, 'filename_blend_prefix', False)
 
     # Get collection properties
     collection_color = getattr(settings_col, 'collection_color', 'NONE')
@@ -54,12 +54,12 @@ def get_operator_properties(context):
     use_root_object = getattr(settings_col, 'collection_use_root_offset_object', True)
 
     # Get preset and filepath properties
-    overwrite_preset = getattr(settings_col, 'collection_auto_set_preset', False)
-    overwrite_filepath = getattr(settings_col, 'collection_auto_set_filepath', False)
+    overwrite_preset = getattr(settings_col, 'set_preset', False)
+    overwrite_filepath = getattr(settings_col, 'set_export_path', False)
 
-    # Assign_preset and assign_export_filepath follow the same logic
-    assign_preset = overwrite_preset
-    assign_export_filepath = overwrite_filepath
+    # set_preset and set_export_path follow the same logic
+    set_preset = overwrite_preset
+    set_export_path = overwrite_filepath
 
     # Get preset filepath if auto-set is enabled
     preset_filepath = ""
@@ -70,7 +70,6 @@ def get_operator_properties(context):
         preset_filepath = getattr(preset_settings, prop_name, "")
 
     # Get export filepath if auto-set is enabled
-    export_filepath = ""
     if overwrite_filepath:
         # This would need to be calculated based on the collection and export settings
         # For now, we'll leave it empty and let the operator handle it
@@ -79,14 +78,13 @@ def get_operator_properties(context):
     return {
         'collection_prefix': prefix,
         'collection_suffix': suffix,
-        'collection_file_name_prefix': file_name_prefix,
+        'filename_blend_prefix': file_name_prefix,
         'collection_color': collection_color,
         'collection_instance_offset': collection_instance_offset,
         'use_root_object': use_root_object,
         'preset_filepath': preset_filepath,
-        'export_filepath': export_filepath,
-        'assign_preset': assign_preset,
-        'assign_export_filepath': assign_export_filepath,
+        'set_preset': set_preset,
+        'set_export_path': set_export_path,
     }
 
 
@@ -178,14 +176,13 @@ def draw_collection_creation(context, layout):
     path_props = get_set_export_paths_properties(context)
     op.collection_prefix = props['collection_prefix']
     op.collection_suffix = props['collection_suffix']
-    op.collection_file_name_prefix = props['collection_file_name_prefix']
+    op.filename_blend_prefix = props['filename_blend_prefix']
     op.collection_color = props['collection_color']
     op.collection_instance_offset = props['collection_instance_offset']
     op.use_root_object = props['use_root_object']
     op.preset_filepath = props['preset_filepath']
-    op.export_filepath = props['export_filepath']
-    op.assign_preset = props['assign_preset']
-    op.assign_export_filepath = props['assign_export_filepath']
+    op.set_preset = props['set_preset']
+    op.set_export_path = props['set_export_path']
     op.export_folder_mode = path_props['export_folder_mode']
     op.folder_path_absolute = path_props['folder_path_absolute']
     op.folder_path_relative = path_props['folder_path_relative']
@@ -329,9 +326,9 @@ def draw_export_list(layout, list_id, scene):
     row.label(text="Export List")
     row = layout.row(align=True)
     op = row.operator("scene.select_all_collections", text="All", icon="CHECKBOX_HLT")
-    op.invert = False
+    op.deselect = False
     op = row.operator("scene.select_all_collections", text="None", icon="CHECKBOX_DEHLT")
-    op.invert = True
+    op.deselect = True
     # Display export list
     layout.template_list("SCENE_UL_CollectionList", list_id, bpy.data, "collections", scene, "collection_index")
 
@@ -414,11 +411,11 @@ def draw_create_export_collections(layout, context):
     # Define properties to check
     properties = [
         "collection_color",
-        "collection_file_name_prefix",
+        "filename_blend_prefix",
         "collection_prefix",
         "collection_suffix",
-        "collection_auto_set_filepath",
-        "collection_auto_set_preset",
+        "set_export_path",
+        "set_preset",
     ]
 
     # Use the helper function to draw properties
@@ -540,7 +537,7 @@ class SIMPLE_EXPORT_menu_base:
 
         col = layout.column(align=True)
         row = col.row()
-        op = row.operator("simple_export.assign_presets", text="Assign Presets", icon='PRESET_NEW')
+        op = row.operator("simple_export.set_presets", text="Assign Presets", icon='PRESET_NEW')
         op.outliner = False
         op.individual_collection = False
 
@@ -616,10 +613,10 @@ class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
         layout = self.layout
         row = layout.row()
         op = row.operator("scene.select_all_collections", text="Select All", icon="CHECKBOX_HLT")
-        op.invert = False
+        op.deselect = False
         row = layout.row()
         op = row.operator("scene.select_all_collections", text="Unselect All", icon="CHECKBOX_DEHLT")
-        op.invert = True
+        op.deselect = True
 
 
 class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
@@ -672,9 +669,9 @@ class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Pa
 
         row = layout.row(align=True)
         op = row.operator("scene.select_all_collections", text="All", icon="CHECKBOX_HLT")
-        op.invert = False
+        op.deselect = False
         op = row.operator("scene.select_all_collections", text="None", icon="CHECKBOX_DEHLT")
-        op.invert = True
+        op.deselect = True
 
         row = layout.row()
         row.template_list("SCENE_UL_CollectionList", "popup", bpy.data, "collections", scene, "collection_index")

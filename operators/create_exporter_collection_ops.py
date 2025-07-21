@@ -9,7 +9,7 @@ from .shared_draw import draw_operator_filepath_settings
 from ..core.export_formats import ExportFormats
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.create_collection_func import generate_base_name
-from ..functions.preset_func import assign_preset
+from ..functions.preset_func import set_preset
 
 
 # Context menu registration is now handled in ui/view3d_object_context_menu.py
@@ -86,7 +86,7 @@ class EXPORT_OT_CreateExportCollections(
                 top_object.name,
                 getattr(self, 'collection_prefix', ''),
                 getattr(self, 'collection_suffix', ''),
-                getattr(self, 'collection_file_name_prefix', '')
+                getattr(self, 'filename_blend_prefix', '')
             )
             # Skip creation if collection already exists
             if collection_name in bpy.data.collections:
@@ -182,7 +182,7 @@ class EXPORT_OT_CreateExportCollections(
 
         exporter = self.assign_exporter_ops(context, collection)
         if exporter:
-            self.assign_preset_to_exporter(context, exporter)
+            self.set_preset_to_exporter(context, exporter)
             self.assign_filepath_to_exporter(context, collection, exporter)
 
     def assign_exporter_ops(self, context, collection):
@@ -213,14 +213,14 @@ class EXPORT_OT_CreateExportCollections(
             self.report({'ERROR'}, "Failed to add a new exporter.")
             return None
 
-    def assign_preset_to_exporter(self, context, exporter):
-        """Assign a preset to the exporter if assign_preset is True and a preset filepath is provided."""
-        if self.assign_preset and self.preset_filepath:
-            assign_preset(exporter, self.preset_filepath)
+    def set_preset_to_exporter(self, context, exporter):
+        """Assign a preset to the exporter if set_preset is True and a preset filepath is provided."""
+        if self.set_preset and self.preset_filepath:
+            set_preset(exporter, self.preset_filepath)
 
     def assign_filepath_to_exporter(self, context, collection, exporter):
-        """Assign a file path to the exporter if assign_export_filepath is True and export folder settings are provided."""
-        if not self.assign_export_filepath or not hasattr(exporter, 'filepath'):
+        """Assign a file path to the exporter if set_export_path is True and export folder settings are provided."""
+        if not self.set_export_path or not hasattr(exporter, 'filepath'):
             return
 
         # Prepare a settings-like object for get_export_path
@@ -287,7 +287,7 @@ class EXPORT_OT_CreateExportCollections(
         if self.collection_naming_overwrite:
             box.prop(self, "collection_name_new")
             box.prop(self, "use_numbering")
-        box.prop(self, "collection_file_name_prefix")
+        box.prop(self, "filename_blend_prefix")
         box.prop(self, "collection_prefix")
         box.prop(self, "collection_suffix")
 
@@ -305,7 +305,7 @@ class EXPORT_OT_CreateExportCollections(
         # --- Preset Section ---
         box = layout.box()
         box.label(text="Export Preset")
-        box.prop(self, "assign_preset")
+        box.prop(self, "set_preset")
         box.prop(self, "preset_filepath")
 
         # --- File Name Section ---
@@ -318,7 +318,7 @@ class EXPORT_OT_CreateExportCollections(
         # --- File Path Section ---
         box = layout.box()
         box.label(text="File Path")
-        box.prop(self, "assign_export_filepath")
+        box.prop(self, "set_export_path")
         draw_operator_filepath_settings(box, self)
 
 

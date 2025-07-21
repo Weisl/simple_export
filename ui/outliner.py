@@ -28,14 +28,13 @@ def draw_custom_outliner_menu(self, context):
         path_props = get_set_export_paths_properties(context)
         op.collection_prefix = props['collection_prefix']
         op.collection_suffix = props['collection_suffix']
-        op.collection_file_name_prefix = props['collection_file_name_prefix']
+        op.filename_blend_prefix = props['filename_blend_prefix']
         op.collection_color = props['collection_color']
         op.collection_instance_offset = props['collection_instance_offset']
         op.use_root_object = props['use_root_object']
         op.preset_filepath = props['preset_filepath']
-        op.export_filepath = props['export_filepath']
-        op.assign_preset = props['assign_preset']
-        op.assign_export_filepath = props['assign_export_filepath']
+        op.set_preset = props['set_preset']
+        op.set_export_path = props['set_export_path']
         op.export_folder_mode = path_props['export_folder_mode']
         op.folder_path_absolute = path_props['folder_path_absolute']
         op.folder_path_relative = path_props['folder_path_relative']
@@ -65,14 +64,13 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         path_props = get_set_export_paths_properties(context)
         op.collection_prefix = props['collection_prefix']
         op.collection_suffix = props['collection_suffix']
-        op.collection_file_name_prefix = props['collection_file_name_prefix']
+        op.filename_blend_prefix = props['filename_blend_prefix']
         op.collection_color = props['collection_color']
         op.collection_instance_offset = props['collection_instance_offset']
         op.use_root_object = props['use_root_object']
         op.preset_filepath = props['preset_filepath']
-        op.export_filepath = props['export_filepath']
-        op.assign_preset = props['assign_preset']
-        op.assign_export_filepath = props['assign_export_filepath']
+        op.set_preset = props['set_preset']
+        op.set_export_path = props['set_export_path']
         op.export_folder_mode = path_props['export_folder_mode']
         op.folder_path_absolute = path_props['folder_path_absolute']
         op.folder_path_relative = path_props['folder_path_relative']
@@ -87,7 +85,7 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         op.outliner = True
         op.individual_collection = False
 
-        op = layout.operator("simple_export.assign_presets", icon='PRESET_NEW')
+        op = layout.operator("simple_export.set_presets", icon='PRESET_NEW')
         op.outliner = True
         op.individual_collection = False
 

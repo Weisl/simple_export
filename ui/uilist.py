@@ -135,7 +135,7 @@ class COLLECTION_MT_root_object_menu(bpy.types.Menu):
         op.filename_suffix = props['filename_suffix']
         op.filename_blend_prefix = props['filename_blend_prefix']
 
-        op = layout.operator("simple_export.assign_presets", icon='PRESET')
+        op = layout.operator("simple_export.set_presets", icon='PRESET')
         op.outliner = False
         op.individual_collection = True
         op.collection_name = collection_name
@@ -256,7 +256,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         if settings.uilist_set_preset:
             # Assign Preset
-            op = row.operator("simple_export.assign_presets", text="", icon='PRESET')
+            op = row.operator("simple_export.set_presets", text="", icon='PRESET')
             op.outliner = False
             op.individual_collection = True
             op.collection_name = collection.name
