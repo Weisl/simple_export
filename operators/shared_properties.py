@@ -40,68 +40,64 @@ def set_absolute_path(self, value):
 
 class SharedPathProps:
     export_folder_mode: bpy.props.EnumProperty(
-        name="Export Path Mode",
-        description="Choose how the export folder is determined",
-        items=[
-            ('RELATIVE', "Relative", "Use a path relative to the blend file"),
-            ('ABSOLUTE', "Absolute", "Use an absolute path"),
-            ('MIRROR', "Mirror", "Mirror a source path to a target path"),
-        ],
-        default='RELATIVE',
+        name=PROPERTY_METADATA["export_folder_mode"]["name"],
+        description=PROPERTY_METADATA["export_folder_mode"]["description"],
+        items=PROPERTY_METADATA["export_folder_mode"]["items"],
+        default=PROPERTY_METADATA["export_folder_mode"]["default"],
     )
     folder_path_absolute: bpy.props.StringProperty(
-        name="Absolute Folder Path",
-        description="Absolute folder path for export",
+        name=PROPERTY_METADATA["folder_path_absolute"]["name"],
+        description=PROPERTY_METADATA["folder_path_absolute"]["description"],
         subtype='DIR_PATH',
-        default="",
+        default=PROPERTY_METADATA["folder_path_absolute"]["default"],
         get=get_absolute_path,
         set=set_absolute_path
     )
     folder_path_relative: bpy.props.StringProperty(
-        name="Relative Folder Path",
-        description="Relative folder path for export",
+        name=PROPERTY_METADATA["folder_path_relative"]["name"],
+        description=PROPERTY_METADATA["folder_path_relative"]["description"],
         subtype='DIR_PATH',
-        default="//.",
+        default=PROPERTY_METADATA["folder_path_relative"]["default"],
         get=get_relative_path,
         set=set_relative_path
     )
     folder_path_search: bpy.props.StringProperty(
-        name="Search Path",
-        description="Path to search for mirroring",
+        name=PROPERTY_METADATA["folder_path_search"]["name"],
+        description=PROPERTY_METADATA["folder_path_search"]["description"],
         subtype='DIR_PATH',
-        default=""
+        default=PROPERTY_METADATA["folder_path_search"]["default"]
     )
     folder_path_replace: bpy.props.StringProperty(
-        name="Replacement Path",
-        description="Replacement path for mirroring",
+        name=PROPERTY_METADATA["folder_path_replace"]["name"],
+        description=PROPERTY_METADATA["folder_path_replace"]["description"],
         subtype='DIR_PATH',
-        default=""
+        default=PROPERTY_METADATA["folder_path_replace"]["default"]
     )
 
 
 class SharedFilenameProps:
     filename_prefix: bpy.props.StringProperty(
-        name="Filename  Prefix",
-        description="Custom prefix for filenames",
-        default=""
+        name=PROPERTY_METADATA["filename_prefix"]["name"],
+        description=PROPERTY_METADATA["filename_prefix"]["description"],
+        default=PROPERTY_METADATA["filename_prefix"]["default"]
     )
     filename_suffix: bpy.props.StringProperty(
-        name="Filename Suffix",
-        description="Custom suffix for filenames",
-        default=""
+        name=PROPERTY_METADATA["filename_suffix"]["name"],
+        description=PROPERTY_METADATA["filename_suffix"]["description"],
+        default=PROPERTY_METADATA["filename_suffix"]["default"]
     )
     filename_blend_prefix: bpy.props.BoolProperty(
-        name="Append Blend name to Filename",
-        description="Use the blend file name as prefix for filenames",
-        default=False
+        name=PROPERTY_METADATA["filename_blend_prefix"]["name"],
+        description=PROPERTY_METADATA["filename_blend_prefix"]["description"],
+        default=PROPERTY_METADATA["filename_blend_prefix"]["default"]
     )
 
 # Set Folder Path
 class SharedPathAssignmentProps:
     set_export_path: bpy.props.BoolProperty(
-        name="Assign Export Folder",
-        description="Assign the export folder to the exporter",
-        default=True
+        name=PROPERTY_METADATA["set_export_path"]["name"],
+        description=PROPERTY_METADATA["set_export_path"]["description"],
+        default=PROPERTY_METADATA["set_export_path"]["default"]
     )
 
 # Set Presets
@@ -114,23 +110,23 @@ class SharedPresetAssignmentProps:
         subtype='FILE_PATH'
     )
     set_preset: bpy.props.BoolProperty(
-        name="Assign Preset",
-        description="Assign the preset to the exporter",
-        default=True
+        name=PROPERTY_METADATA["set_preset"]["name"],
+        description=PROPERTY_METADATA["set_preset"]["description"],
+        default=PROPERTY_METADATA["set_preset"]["default"]
     )
 
 
 class CollectionNamingProps:
     collection_prefix: bpy.props.StringProperty(
-        name="Prefix",
-        description="Custom prefix for collection names",
-        default=""
+        name=PROPERTY_METADATA["collection_prefix"]["name"],
+        description=PROPERTY_METADATA["collection_prefix"]["description"],
+        default=PROPERTY_METADATA["collection_prefix"]["default"]
     )
 
     collection_suffix: bpy.props.StringProperty(
-        name="Custom Suffix",
-        description="Custom suffix for collection names",
-        default=""
+        name=PROPERTY_METADATA["collection_suffix"]["name"],
+        description=PROPERTY_METADATA["collection_suffix"]["description"],
+        default=PROPERTY_METADATA["collection_suffix"]["default"]
     )
 
     collection_name_new: bpy.props.StringProperty(
@@ -140,9 +136,9 @@ class CollectionNamingProps:
     )
 
     collection_name_blend_prefix: bpy.props.BoolProperty(
-        name="Blend Name as Prefix",
-        description="Add the blend file name as prefix to the export collections.",
-        default=False
+        name=PROPERTY_METADATA["filename_blend_prefix"]["name"],
+        description=PROPERTY_METADATA["filename_blend_prefix"]["description"],
+        default=PROPERTY_METADATA["filename_blend_prefix"]["default"]
     )
 
     #
@@ -155,14 +151,14 @@ class CollectionNamingProps:
 
 class CollectionOriginProps:
     use_root_object: bpy.props.BoolProperty(
-        name="Use Root Object",
-        description="Use a root object for the collection",
-        default=True
+        name=PROPERTY_METADATA["collection_use_root_offset_object"]["name"],
+        description=PROPERTY_METADATA["collection_use_root_offset_object"]["description"],
+        default=PROPERTY_METADATA["collection_use_root_offset_object"]["default"]
     )
     collection_instance_offset: bpy.props.BoolProperty(
-        name="Set Instance Offset",
-        description="Set instance offset for the collection",
-        default=False
+        name=PROPERTY_METADATA["collection_set_location_offset_on_creation"]["name"],
+        description=PROPERTY_METADATA["collection_set_location_offset_on_creation"]["description"],
+        default=PROPERTY_METADATA["collection_set_location_offset_on_creation"]["default"]
     )
 
 
