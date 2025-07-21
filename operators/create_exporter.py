@@ -7,7 +7,7 @@ from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.create_collection_func import generate_base_name
 from ..functions.preset_func import assign_preset
 from .shared_properties import SharedPathProperties, SharedFilenameProperties, draw_operator_filepath_settings
-# Context menu registration is now handled in ui/object_context_menu.py
+# Context menu registration is now handled in ui/view3d_object_context_menu.py
 
 
 class EXPORT_OT_CreateExportCollections(SharedPathProperties, SharedFilenameProperties, bpy.types.Operator):

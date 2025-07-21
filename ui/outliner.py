@@ -57,7 +57,30 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         if not isinstance(collection, bpy.types.Collection):
             return
 
-        layout.operator('simple_export.add_settings_to_collections', icon='COLLECTION_COLOR_01')
+        # Pass all grouped properties to the operator
+        op = layout.operator('simple_export.add_settings_to_collections', icon='COLLECTION_COLOR_01')
+        op.collection_name = collection.name
+        from .export_panels import get_operator_properties, get_set_export_paths_properties
+        props = get_operator_properties(context)
+        path_props = get_set_export_paths_properties(context)
+        op.collection_custom_prefix = props['collection_custom_prefix']
+        op.collection_custom_suffix = props['collection_custom_suffix']
+        op.collection_file_name_prefix = props['collection_file_name_prefix']
+        op.collection_color = props['collection_color']
+        op.collection_instance_offset = props['collection_instance_offset']
+        op.use_root_object = props['use_root_object']
+        op.preset_filepath = props['preset_filepath']
+        op.export_filepath = props['export_filepath']
+        op.assign_preset = props['assign_preset']
+        op.assign_export_filepath = props['assign_export_filepath']
+        op.export_folder_mode = path_props['export_folder_mode']
+        op.absolute_export_path = path_props['absolute_export_path']
+        op.relative_export_path = path_props['relative_export_path']
+        op.mirror_search_path = path_props['mirror_search_path']
+        op.mirror_replacement_path = path_props['mirror_replacement_path']
+        op.filename_custom_prefix = path_props['filename_custom_prefix']
+        op.filename_custom_suffix = path_props['filename_custom_suffix']
+        op.filename_file_name_prefix = path_props['filename_file_name_prefix']
 
         layout.separator()
         op = layout.operator("simple_export.export_collections", icon='EXPORT')
@@ -71,12 +94,8 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         op = layout.operator("simple_export.set_export_paths", text="Assign Filepaths", icon='FOLDER_REDIRECT')
         op.outliner = True
         op.individual_collection = False
-        
         # Get and set all properties
-        from .export_panels import get_set_export_paths_properties
         props = get_set_export_paths_properties(context)
-        
-        # Set all properties
         op.export_folder_mode = props['export_folder_mode']
         op.absolute_export_path = props['absolute_export_path']
         op.relative_export_path = props['relative_export_path']

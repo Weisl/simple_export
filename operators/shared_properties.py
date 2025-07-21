@@ -31,7 +31,6 @@ def set_absolute_path(self, value):
 
 # --- Shared Property Classes ---
 class SharedPathProperties:
-    """Shared path properties for export-related operators."""
     export_folder_mode: bpy.props.EnumProperty(
         name="Export Path Mode",
         description="Choose how the export folder is determined",
@@ -72,7 +71,6 @@ class SharedPathProperties:
     )
 
 class SharedFilenameProperties:
-    """Shared filename properties for export-related operators."""
     filename_custom_prefix: bpy.props.StringProperty(
         name="File  Prefix",
         description="Custom prefix for filenames",
@@ -89,21 +87,90 @@ class SharedFilenameProperties:
         default=False
     )
 
+# --- Grouped Property Mixins ---
+class FilepathAssignmentProperties:
+    assign_export_filepath: bpy.props.BoolProperty(
+        name="Assign Export Folder",
+        description="Assign the export folder to the exporter",
+        default=True
+    )
+    export_filepath: bpy.props.StringProperty(
+        name="Folder",
+        description="Filepath for the export",
+        default="",
+        subtype='DIR_PATH'
+    )
+
+class PresetProperties:
+    preset_filepath: bpy.props.StringProperty(
+        name="Preset",
+        description="Path to the preset file to assign to the exporter",
+        default="",
+        subtype='FILE_PATH'
+    )
+    assign_preset: bpy.props.BoolProperty(
+        name="Assign Preset",
+        description="Assign the preset to the exporter",
+        default=True
+    )
+
+class CollectionNamingProperties:
+    collection_custom_suffix: bpy.props.StringProperty(
+        name="Custom Suffix",
+        description="Custom suffix for collection names",
+        default=""
+    )
+    collection_custom_prefix: bpy.props.StringProperty(
+        name="Custom Prefix",
+        description="Custom prefix for collection names",
+        default=""
+    )
+    overwrite_collection_name: bpy.props.StringProperty(
+        name="Name",
+        description="Overwrite the name for the collection",
+        default=""
+    )
+    overwrite_naming: bpy.props.BoolProperty(
+        name="Overwrite Naming",
+        description="Overwrite the naming for the collection",
+        default=False
+    )
+
+class CollectionOriginProperties:
+    use_root_object: bpy.props.BoolProperty(
+        name="Use Root Object",
+        description="Use a root object for the collection",
+        default=True
+    )
+    collection_instance_offset: bpy.props.BoolProperty(
+        name="Set Instance Offset",
+        description="Set instance offset for the collection",
+        default=False
+    )
+
+from ..preferences.preferenecs import PROPERTY_METADATA
+class CollectionSettingsProperties:
+    collection_color: bpy.props.EnumProperty(
+        name=PROPERTY_METADATA["collection_color"]["name"],
+        description=PROPERTY_METADATA["collection_color"]["description"],
+        items=PROPERTY_METADATA["collection_color"]["items"],
+        default=PROPERTY_METADATA["collection_color"]["default"],
+    )
+    parent_collection_name: bpy.props.StringProperty(
+        name="Parent Collection",
+        description="Name of the parent collection for the collection",
+        default=""
+    )
+
 # --- Draw Helpers ---
 def draw_operator_filepath_settings(layout, op):
-    """
-    Draws the export folder settings for an operator, similar to draw_filepath_settings but for operator properties.
-    """
     layout.label(text="Export Path Mode")
     row = layout.row()
     row.prop(op, "export_folder_mode", expand=True)
-
     if op.export_folder_mode == 'ABSOLUTE':
         layout.prop(op, "absolute_export_path")
-
     if op.export_folder_mode == 'RELATIVE':
         layout.prop(op, "relative_export_path")
-
     if op.export_folder_mode == 'MIRROR':
         layout.prop(op, "mirror_search_path", text="Search Path")
         layout.prop(op, "mirror_replacement_path", text="Replacement Path")
