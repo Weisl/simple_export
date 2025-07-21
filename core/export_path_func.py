@@ -44,7 +44,7 @@ def generate_export_path(base_name, export_format_key, export_dir, is_relative_p
     return bpy.path.relpath(export_path) if is_relative_path else export_path
 
 
-def assign_exporter_path(exporter, export_path, is_relative_path):
+def assign_exporter_ops_path(exporter, export_path, is_relative_path):
     """
     Assigns the generated export path to the exporter while ensuring the folder exists.
 
@@ -183,7 +183,7 @@ def assign_export_path_to_exporter(collection, exporter, scene, settings_filepat
         collection["prev_name"] = collection.name
 
         # Assign path to exporter
-        success, msg = assign_exporter_path(exporter, export_path, settings_filepath.export_folder_mode)
+        success, msg = assign_exporter_ops_path(exporter, export_path, settings_filepath.export_folder_mode)
         return success, export_path, msg
 
     except Exception as e:

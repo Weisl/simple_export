@@ -1,6 +1,6 @@
 import bpy
 
-from ..functions.shared_draw import draw_operator_filepath_settings
+from .shared_draw import draw_operator_filepath_settings
 from .shared_properties import (
     SharedPathProps, SharedFilenameProps, SharedPathAssignmentProps, SharedPresetAssignmentProps, CollectionNamingProps,
     CollectionOriginProps, CollectionSettingsProps
@@ -70,14 +70,14 @@ class EXPORT_OT_AddSettingsToCollections(
         if collection is None:
             self.report({'ERROR'}, "Collection is None in setup_exporter_assignments.")
             return
-        exporter = self.assign_exporter(context, collection)
+        exporter = self.assign_exporter_ops(context, collection)
         if exporter:
             self.assign_preset_to_exporter(context, exporter)
             self.assign_filepath_to_exporter(context, collection, exporter)
 
-    def assign_exporter(self, context, collection):
+    def assign_exporter_ops(self, context, collection):
         if collection is None:
-            self.report({'ERROR'}, "Collection is None in assign_exporter.")
+            self.report({'ERROR'}, "Collection is None in assign_exporter_ops.")
             return None
         scene = context.scene
         set_active_layer_Collection(collection.name)

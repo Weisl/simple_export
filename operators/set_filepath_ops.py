@@ -1,50 +1,12 @@
 import bpy
-import os
 
+from .fix_filename import SIMPLEEXPORT_OT_FixExportFilename
 from .shared_properties import SharedPathProps, SharedFilenameProps
 from ..core.export_path_func import assign_export_path_to_exporter
 from ..functions.collection_layer import set_active_layer_Collection
-from ..functions.create_collection_func import generate_base_name
 from ..functions.exporter_funcs import find_exporter
 from ..functions.outliner_func import get_outliner_collections
 from ..functions.vallidate_func import validate_collection
-
-
-class SIMPLEEXPORT_OT_FixExportFilename(SharedPathProps, SharedFilenameProps, bpy.types.Operator):
-    """Fix the export filename for a collection."""
-    bl_idname = "simple_export.fix_export_filename"
-    bl_label = "Fix Export Filename"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    collection_name: bpy.props.StringProperty(
-        name="Collection Name",
-        description="Name of the collection to fix",
-        default=""
-    )
-
-    def execute(self, context):
-        collection = bpy.data.collections.get(self.collection_name)
-        if not collection or not collection.exporters:
-            return {'CANCELLED'}
-
-        scene = context.scene
-        exporter = find_exporter(collection, scene.export_format)
-        if not exporter:
-            return {'CANCELLED'}
-
-        export_path = exporter.export_properties.filepath
-        export_dir = os.path.dirname(export_path)
-        _, ext = os.path.splitext(export_path)
-
-        base_name = generate_base_name(collection.name, self.filename_prefix,
-                                       self.filename_suffix,
-                                       self.filename_blend_prefix)
-
-        new_export_path = os.path.join(export_dir, f"{base_name}{ext}")
-        exporter.export_properties.filepath = new_export_path
-        collection["prev_name"] = collection.name
-
-        return {'FINISHED'}
 
 
 class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bpy.types.Operator):

@@ -5,7 +5,7 @@ from .shared_properties import (
     SharedPathAssignmentProps, SharedPresetAssignmentProps, CollectionNamingProps,
     CollectionOriginProps, CollectionSettingsProps
 )
-from ..functions.shared_draw import draw_operator_filepath_settings
+from .shared_draw import draw_operator_filepath_settings
 from ..core.export_formats import ExportFormats
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.create_collection_func import generate_base_name
@@ -180,15 +180,15 @@ class EXPORT_OT_CreateExportCollections(
             self.report({'ERROR'}, "Collection is None in setup_exporter_assignments.")
             return
 
-        exporter = self.assign_exporter(context, collection)
+        exporter = self.assign_exporter_ops(context, collection)
         if exporter:
             self.assign_preset_to_exporter(context, exporter)
             self.assign_filepath_to_exporter(context, collection, exporter)
 
-    def assign_exporter(self, context, collection):
+    def assign_exporter_ops(self, context, collection):
         """Assign an exporter to the collection."""
         if collection is None:
-            self.report({'ERROR'}, "Collection is None in assign_exporter.")
+            self.report({'ERROR'}, "Collection is None in assign_exporter_ops.")
             return None
 
         scene = context.scene
