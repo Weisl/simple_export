@@ -6,102 +6,8 @@ from ..core.export_path_func import assign_export_path_to_exporter
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.create_collection_func import generate_base_name
 from ..functions.preset_func import assign_preset
-
-
-def get_relative_path(self):
-    stored_path = self.get("relative_export_path", "")
-    if not stored_path:
-        return ""
-    # If already Blender-style relative, return as is
-    if stored_path.startswith("//"):
-        return stored_path
-    # Try to make it Blender-style relative
-    rel = bpy.path.relpath(stored_path)
-    if rel.startswith("//"):
-        return rel
-    return stored_path  # fallback to absolute
-
-def set_relative_path(self, value):
-    if not value:
-        self["relative_export_path"] = ""
-        return
-    rel = bpy.path.relpath(value)
-    if rel.startswith("//"):
-        self["relative_export_path"] = rel
-    else:
-        self["relative_export_path"] = bpy.path.abspath(value)
-
-def get_absolute_path(self):
-    stored_path = self.get("absolute_export_path", "")
-    return bpy.path.abspath(stored_path) if stored_path else ""
-
-def set_absolute_path(self, value):
-    self["absolute_export_path"] = bpy.path.abspath(value) if value else ""
-
-
-class SharedPathProperties:
-    """Shared path properties for export-related operators."""
-    
-    export_folder_mode: bpy.props.EnumProperty(
-        name="Export Path Mode",
-        description="Choose how the export folder is determined",
-        items=[
-            ('RELATIVE', "Relative", "Use a path relative to the blend file"),
-            ('ABSOLUTE', "Absolute", "Use an absolute path"),
-            ('MIRROR', "Mirror", "Mirror a source path to a target path"),
-        ],
-        default='RELATIVE',
-    )
-    absolute_export_path: bpy.props.StringProperty(
-        name="Absolute Export Path",
-        description="Absolute path for export",
-        subtype='DIR_PATH',
-        default="",
-        get=get_absolute_path,
-        set=set_absolute_path
-    )
-    relative_export_path: bpy.props.StringProperty(
-        name="Relative Export Path",
-        description="Relative path for export",
-        subtype='DIR_PATH',
-        default="//.",
-        get=get_relative_path,
-        set=set_relative_path
-    )
-    mirror_search_path: bpy.props.StringProperty(
-        name="Search Path",
-        description="Path to search for mirroring",
-        subtype='DIR_PATH',
-        default=""
-    )
-    mirror_replacement_path: bpy.props.StringProperty(
-        name="Replacement Path",
-        description="Replacement path for mirroring",
-        subtype='DIR_PATH',
-        default=""
-    )
-
-
-class SharedFilenameProperties:
-    """Shared filename properties for export-related operators."""
-    
-    filename_custom_prefix: bpy.props.StringProperty(
-        name="File  Prefix",
-        description="Custom prefix for filenames",
-        default=""
-    )
-    
-    filename_custom_suffix: bpy.props.StringProperty(
-        name="File Suffix", 
-        description="Custom suffix for filenames",
-        default=""
-    )
-    
-    filename_file_name_prefix: bpy.props.BoolProperty(
-        name="Use File Name as Prefix",
-        description="Use the blend file name as prefix for filenames",
-        default=False
-    )
+from .shared_properties import SharedPathProperties, SharedFilenameProperties, draw_operator_filepath_settings
+# Context menu registration is now handled in ui/object_context_menu.py
 
 
 class EXPORT_OT_CreateExportCollections(SharedPathProperties, SharedFilenameProperties, bpy.types.Operator):
@@ -486,46 +392,7 @@ class EXPORT_OT_CreateExportCollections(SharedPathProperties, SharedFilenameProp
         box = layout.box()
         box.label(text="File Path")
         box.prop(self, "assign_export_filepath")
-        from ..ui.export_panels import draw_operator_filepath_settings
         draw_operator_filepath_settings(box, self)
-
-
-
-
-def add_export_collections_to_menu(self, context):
-    """Adds the Simple Export create export collections operator to the object context menu."""
-    self.layout.separator()
-    op = self.layout.operator("simple_export.create_export_collections", icon='COLLECTION_COLOR_01')
-    
-    # Set default properties
-    op.only_selection = True
-    op.overwrite_naming = False
-    op.overwrite_collection_name = ""
-    op.use_numbering = False
-    op.parent_collection_name = context.scene.parent_collection.name if context.scene.parent_collection else ""
-    
-    # Get and set properties from preferences/scene
-    from ..ui.export_panels import get_operator_properties, get_set_export_paths_properties
-    props = get_operator_properties(context)
-    path_props = get_set_export_paths_properties(context)
-    op.collection_custom_prefix = props['collection_custom_prefix']
-    op.collection_custom_suffix = props['collection_custom_suffix']
-    op.collection_file_name_prefix = props['collection_file_name_prefix']
-    op.collection_color = props['collection_color']
-    op.collection_instance_offset = props['collection_instance_offset']
-    op.use_root_object = props['use_root_object']
-    op.preset_filepath = props['preset_filepath']
-    op.export_filepath = props['export_filepath']
-    op.assign_preset = props['assign_preset']
-    op.assign_export_filepath = props['assign_export_filepath']
-    op.export_folder_mode = path_props['export_folder_mode']
-    op.absolute_export_path = path_props['absolute_export_path']
-    op.relative_export_path = path_props['relative_export_path']
-    op.mirror_search_path = path_props['mirror_search_path']
-    op.mirror_replacement_path = path_props['mirror_replacement_path']
-    op.filename_custom_prefix = path_props['filename_custom_prefix']
-    op.filename_custom_suffix = path_props['filename_custom_suffix']
-    op.filename_file_name_prefix = path_props['filename_file_name_prefix']
 
 
 classes = (
@@ -537,11 +404,9 @@ def register():
     from bpy.utils import register_class
     for cls in classes:
         register_class(cls)
-    bpy.types.VIEW3D_MT_object_context_menu.append(add_export_collections_to_menu)
 
 
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
         unregister_class(cls)
-    bpy.types.VIEW3D_MT_object_context_menu.remove(add_export_collections_to_menu)
