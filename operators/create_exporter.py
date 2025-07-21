@@ -1,10 +1,11 @@
 import bpy
 
 from .shared_properties import (
-    SharedPathProps, SharedFilenameProps, draw_operator_filepath_settings,
+    SharedPathProps, SharedFilenameProps,
     SharedPathAssignmentProps, SharedPresetAssignmentProps, CollectionNamingProps,
     CollectionOriginProps, CollectionSettingsProps
 )
+from ..functions.shared_draw import draw_operator_filepath_settings
 from ..core.export_formats import ExportFormats
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.create_collection_func import generate_base_name

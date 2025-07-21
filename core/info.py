@@ -1,6 +1,6 @@
 import os
 
-from extensions.simple_export.functions.preset_func import get_presets_folder
+from ..functions.preset_func import get_presets_folder
 
 ADDON_NAME = "Simple Export"
 

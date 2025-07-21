@@ -2,7 +2,6 @@ import bpy
 
 from ..preferences.preferenecs import PROPERTY_METADATA
 
-
 # --- Property Getter/Setter Functions ---
 def get_relative_path(self):
     stored_path = self.get("folder_path_relative", "")

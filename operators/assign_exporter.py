@@ -1,6 +1,6 @@
 import bpy
 
-from .shared_operator_draw import draw_operator_filepath_settings
+from ..functions.shared_draw import draw_operator_filepath_settings
 from .shared_properties import (
     SharedPathProps, SharedFilenameProps, SharedPathAssignmentProps, SharedPresetAssignmentProps, CollectionNamingProps,
     CollectionOriginProps, CollectionSettingsProps
