@@ -30,7 +30,7 @@ def set_absolute_path(self, value):
     self["absolute_export_path"] = bpy.path.abspath(value) if value else ""
 
 # --- Shared Property Classes ---
-class SharedPathProperties:
+class SharedPathProps:
     export_folder_mode: bpy.props.EnumProperty(
         name="Export Path Mode",
         description="Choose how the export folder is determined",
@@ -70,7 +70,7 @@ class SharedPathProperties:
         default=""
     )
 
-class SharedFilenameProperties:
+class SharedFilenameProps:
     filename_custom_prefix: bpy.props.StringProperty(
         name="File  Prefix",
         description="Custom prefix for filenames",
@@ -88,7 +88,7 @@ class SharedFilenameProperties:
     )
 
 # --- Grouped Property Mixins ---
-class FilepathAssignmentProperties:
+class FilepathAssignmentProps:
     assign_export_filepath: bpy.props.BoolProperty(
         name="Assign Export Folder",
         description="Assign the export folder to the exporter",
@@ -101,7 +101,7 @@ class FilepathAssignmentProperties:
         subtype='DIR_PATH'
     )
 
-class PresetProperties:
+class PresetProps:
     preset_filepath: bpy.props.StringProperty(
         name="Preset",
         description="Path to the preset file to assign to the exporter",
@@ -114,7 +114,7 @@ class PresetProperties:
         default=True
     )
 
-class CollectionNamingProperties:
+class CollectionNamingProps:
     collection_custom_suffix: bpy.props.StringProperty(
         name="Custom Suffix",
         description="Custom suffix for collection names",
@@ -136,7 +136,7 @@ class CollectionNamingProperties:
         default=False
     )
 
-class CollectionOriginProperties:
+class CollectionOriginProps:
     use_root_object: bpy.props.BoolProperty(
         name="Use Root Object",
         description="Use a root object for the collection",
@@ -149,7 +149,7 @@ class CollectionOriginProperties:
     )
 
 from ..preferences.preferenecs import PROPERTY_METADATA
-class CollectionSettingsProperties:
+class CollectionSettingsProps:
     collection_color: bpy.props.EnumProperty(
         name=PROPERTY_METADATA["collection_color"]["name"],
         description=PROPERTY_METADATA["collection_color"]["description"],

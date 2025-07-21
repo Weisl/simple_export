@@ -1,8 +1,8 @@
 import bpy
 from .shared_properties import (
-    SharedPathProperties, SharedFilenameProperties, draw_operator_filepath_settings,
-    FilepathAssignmentProperties, PresetProperties, CollectionNamingProperties,
-    CollectionOriginProperties, CollectionSettingsProperties
+    SharedPathProps, SharedFilenameProps, draw_operator_filepath_settings,
+    FilepathAssignmentProps, PresetProps, CollectionNamingProps,
+    CollectionOriginProps, CollectionSettingsProps
 )
 from ..core.export_formats import ExportFormats
 from ..functions.collection_layer import set_active_layer_Collection
@@ -12,13 +12,13 @@ from ..functions.preset_func import assign_preset
 from ..preferences.preferenecs import PROPERTY_METADATA
 
 class EXPORT_OT_AddSettingsToCollections(
-    FilepathAssignmentProperties,
-    PresetProperties,
-    CollectionNamingProperties,
-    CollectionOriginProperties,
-    CollectionSettingsProperties,
-    SharedPathProperties,
-    SharedFilenameProperties,
+    FilepathAssignmentProps,
+    PresetProps,
+    CollectionNamingProps,
+    CollectionOriginProps,
+    CollectionSettingsProps,
+    SharedPathProps,
+    SharedFilenameProps,
     bpy.types.Operator
 ):
     """

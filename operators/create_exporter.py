@@ -6,11 +6,24 @@ from ..core.export_path_func import assign_export_path_to_exporter
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.create_collection_func import generate_base_name
 from ..functions.preset_func import assign_preset
-from .shared_properties import SharedPathProperties, SharedFilenameProperties, draw_operator_filepath_settings
+from .shared_properties import (
+    SharedPathProps, SharedFilenameProps, draw_operator_filepath_settings,
+    FilepathAssignmentProps, PresetProps, CollectionNamingProps,
+    CollectionOriginProps, CollectionSettingsProps
+)
 # Context menu registration is now handled in ui/view3d_object_context_menu.py
 
 
-class EXPORT_OT_CreateExportCollections(SharedPathProperties, SharedFilenameProperties, bpy.types.Operator):
+class EXPORT_OT_CreateExportCollections(
+    FilepathAssignmentProps,
+    PresetProps,
+    CollectionNamingProps,
+    CollectionOriginProps,
+    CollectionSettingsProps,
+    SharedPathProps,
+    SharedFilenameProps,
+    bpy.types.Operator
+):
     """Create a new collection for each selected object and its children, preserving hierarchy."""
     bl_idname = "simple_export.create_export_collections"
     bl_label = "Create Export Collections"
@@ -23,97 +36,11 @@ class EXPORT_OT_CreateExportCollections(SharedPathProperties, SharedFilenameProp
         default=False,
         options={'HIDDEN'}
     )
-
-    # User-facing Properties
-    overwrite_naming: bpy.props.BoolProperty(
-        name="Overwrite Naming",
-        description="Overwrite the naming for the newly created export collections",
-        default=False
-    )
-
-    overwrite_collection_name: bpy.props.StringProperty(
-        name="Name",
-        description="Overwrite the name for the newly created export collection",
-        default=""
-    )
-
     use_numbering: bpy.props.BoolProperty(
         name="Use Numbering",
         description="Add numbered suffix to collection names",
         default=False
     )
-
-    parent_collection_name: bpy.props.StringProperty(
-        name="Parent Collection",
-        description="Name of the parent collection for the new collections",
-        default=""
-    )
-
-    from ..preferences.preferenecs import PROPERTY_METADATA
-    collection_color: bpy.props.EnumProperty(
-        name=PROPERTY_METADATA["collection_color"]["name"],
-        description=PROPERTY_METADATA["collection_color"]["description"],
-        items=PROPERTY_METADATA["collection_color"]["items"],
-        default=PROPERTY_METADATA["collection_color"]["default"],
-    )
-
-    collection_instance_offset: bpy.props.BoolProperty(
-        name="Set Instance Offset",
-        description="Set instance offset for the collection",
-        default=False
-    )
-
-    use_root_object: bpy.props.BoolProperty(
-        name="Use Root Object",
-        description="Use a root object for the collection",
-        default=True
-    )
-
-    preset_filepath: bpy.props.StringProperty(
-        name="Preset",
-        description="Path to the preset file to assign to the exporter",
-        default="",
-        subtype='FILE_PATH'
-    )
-
-    export_filepath: bpy.props.StringProperty(
-        name="Folder",
-        description="Filepath for the export",
-        default="",
-        subtype='DIR_PATH'
-    )
-
-    collection_custom_prefix: bpy.props.StringProperty(
-        name="Custom Prefix",
-        description="Custom prefix for collection names",
-        default=""
-    )
-
-    collection_custom_suffix: bpy.props.StringProperty(
-        name="Custom Suffix",
-        description="Custom suffix for collection names",
-        default=""
-    )
-
-    collection_file_name_prefix: bpy.props.BoolProperty(
-        name="Use File Name as Prefix",
-        description="Use the blend file name as prefix for collection names",
-        default=False
-    )
-
-    # Assignment properties
-    assign_preset: bpy.props.BoolProperty(
-        name="Assign Preset",
-        description="Assign the preset to the exporter",
-        default=True
-    )
-
-    assign_export_filepath: bpy.props.BoolProperty(
-        name="Assign Export Folder",
-        description="Assign the export folder to the exporter",
-        default=True
-    )
-
 
     def execute(self, context):
         """Execute the operator to create export collections."""
@@ -139,7 +66,7 @@ class EXPORT_OT_CreateExportCollections(SharedPathProperties, SharedFilenameProp
             else:
                 export_collection = export_data
                 top_object = None
-                
+
             if export_collection is not None:
                 export_collection = self.setup_collection_properties(export_collection, top_object)
                 self.setup_exporter_assignments(context, export_collection)

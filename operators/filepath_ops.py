@@ -8,10 +8,10 @@ from ..functions.create_collection_func import generate_base_name
 from ..functions.exporter_funcs import find_exporter
 from ..functions.outliner_func import get_outliner_collections
 from ..functions.vallidate_func import validate_collection
-from .create_exporter import SharedPathProperties, SharedFilenameProperties
+from .shared_properties import SharedPathProps, SharedFilenameProps
 
 
-class SIMPLEEXPORT_OT_FixExportFilename(SharedPathProperties, SharedFilenameProperties, bpy.types.Operator):
+class SIMPLEEXPORT_OT_FixExportFilename(SharedPathProps, SharedFilenameProps, bpy.types.Operator):
     """Fix the export filename for a collection."""
     bl_idname = "simple_export.fix_export_filename"
     bl_label = "Fix Export Filename"
@@ -48,7 +48,7 @@ class SIMPLEEXPORT_OT_FixExportFilename(SharedPathProperties, SharedFilenameProp
         return {'FINISHED'}
 
 
-class SCENE_OT_SetExporterPathSelection(SharedPathProperties, SharedFilenameProperties, bpy.types.Operator):
+class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bpy.types.Operator):
     """Set export paths for selected collections."""
     bl_idname = "simple_export.set_export_paths"
     bl_label = "Set Export Path"
