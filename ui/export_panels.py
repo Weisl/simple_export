@@ -1,6 +1,5 @@
-import os
-
 import bpy
+import os
 
 from .. import __package__ as base_package
 from ..core.info import ADDON_NAME, COLOR_TAG_ICONS
@@ -40,20 +39,20 @@ def get_operator_properties(context):
     """Gather operator properties from preferences and scene settings."""
     prefs = context.preferences.addons[base_package].preferences
     scene = context.scene
-    
+
     # Determine which settings to use (scene overwrites preferences)
     settings_col = scene if scene.overwrite_collection_settings else prefs
-    
+
     # Get naming properties
-    prefix = getattr(settings_col, 'collection_custom_prefix', '')
-    suffix = getattr(settings_col, 'collection_custom_suffix', '')
+    prefix = getattr(settings_col, 'collection_prefix', '')
+    suffix = getattr(settings_col, 'collection_suffix', '')
     file_name_prefix = getattr(settings_col, 'collection_file_name_prefix', False)
-    
+
     # Get collection properties
     collection_color = getattr(settings_col, 'collection_color', 'NONE')
     collection_instance_offset = getattr(settings_col, 'collection_set_location_offset_on_creation', False)
     use_root_object = getattr(settings_col, 'collection_use_root_offset_object', True)
-    
+
     # Get preset and filepath properties
     overwrite_preset = getattr(settings_col, 'collection_auto_set_preset', False)
     overwrite_filepath = getattr(settings_col, 'collection_auto_set_filepath', False)
@@ -61,7 +60,7 @@ def get_operator_properties(context):
     # Assign_preset and assign_export_filepath follow the same logic
     assign_preset = overwrite_preset
     assign_export_filepath = overwrite_filepath
-    
+
     # Get preset filepath if auto-set is enabled
     preset_filepath = ""
     if overwrite_preset:
@@ -69,17 +68,17 @@ def get_operator_properties(context):
         prop_name = f"simple_export_preset_file_{export_format}"
         preset_settings = scene if scene.overwrite_preset_settings else prefs
         preset_filepath = getattr(preset_settings, prop_name, "")
-    
+
     # Get export filepath if auto-set is enabled
     export_filepath = ""
     if overwrite_filepath:
         # This would need to be calculated based on the collection and export settings
         # For now, we'll leave it empty and let the operator handle it
         pass
-    
+
     return {
-        'collection_custom_prefix': prefix,
-        'collection_custom_suffix': suffix,
+        'collection_prefix': prefix,
+        'collection_suffix': suffix,
         'collection_file_name_prefix': file_name_prefix,
         'collection_color': collection_color,
         'collection_instance_offset': collection_instance_offset,
@@ -95,19 +94,19 @@ def get_filename_properties(context):
     """Gather filename properties from preferences and scene settings."""
     prefs = context.preferences.addons[base_package].preferences
     scene = context.scene
-    
+
     # Determine which settings to use (scene overwrites preferences)
     settings_filename = scene if scene.overwrite_filename_settings else prefs
-    
+
     # Get filename properties
-    filename_custom_prefix = getattr(settings_filename, 'filename_custom_prefix', '')
-    filename_custom_suffix = getattr(settings_filename, 'filename_custom_suffix', '')
-    filename_file_name_prefix = getattr(settings_filename, 'filename_file_name_prefix', False)
-    
+    filename_prefix = getattr(settings_filename, 'filename_prefix', '')
+    filename_suffix = getattr(settings_filename, 'filename_suffix', '')
+    filename_blend_prefix = getattr(settings_filename, 'filename_blend_prefix', False)
+
     return {
-        'filename_custom_prefix': filename_custom_prefix,
-        'filename_custom_suffix': filename_custom_suffix,
-        'filename_file_name_prefix': filename_file_name_prefix,
+        'filename_prefix': filename_prefix,
+        'filename_suffix': filename_suffix,
+        'filename_blend_prefix': filename_blend_prefix,
     }
 
 
@@ -115,23 +114,23 @@ def get_filepath_properties(context):
     """Gather filepath properties from preferences and scene settings."""
     prefs = context.preferences.addons[base_package].preferences
     scene = context.scene
-    
+
     # Determine which settings to use (scene overwrites preferences)
     settings_filepath = scene if scene.overwrite_filepath_settings else prefs
-    
+
     # Get filepath properties
     export_folder_mode = getattr(settings_filepath, 'export_folder_mode', 'RELATIVE')
-    absolute_export_path = getattr(settings_filepath, 'absolute_export_path', '')
-    relative_export_path = getattr(settings_filepath, 'relative_export_path', '')
-    mirror_search_path = getattr(settings_filepath, 'mirror_search_path', '')
-    mirror_replacement_path = getattr(settings_filepath, 'mirror_replacement_path', '')
-    
+    folder_path_absolute = getattr(settings_filepath, 'folder_path_absolute', '')
+    folder_path_relative = getattr(settings_filepath, 'folder_path_relative', '')
+    folder_path_search = getattr(settings_filepath, 'folder_path_search', '')
+    folder_path_replace = getattr(settings_filepath, 'folder_path_replace', '')
+
     return {
         'export_folder_mode': export_folder_mode,
-        'absolute_export_path': absolute_export_path,
-        'relative_export_path': relative_export_path,
-        'mirror_search_path': mirror_search_path,
-        'mirror_replacement_path': mirror_replacement_path,
+        'folder_path_absolute': folder_path_absolute,
+        'folder_path_relative': folder_path_relative,
+        'folder_path_search': folder_path_search,
+        'folder_path_replace': folder_path_replace,
     }
 
 
@@ -145,10 +144,10 @@ def get_set_export_paths_properties(context):
     all_props.update(filename_props)
     # Explicitly include export folder settings for clarity
     all_props['export_folder_mode'] = filepath_props['export_folder_mode']
-    all_props['absolute_export_path'] = filepath_props['absolute_export_path']
-    all_props['relative_export_path'] = filepath_props['relative_export_path']
-    all_props['mirror_search_path'] = filepath_props['mirror_search_path']
-    all_props['mirror_replacement_path'] = filepath_props['mirror_replacement_path']
+    all_props['folder_path_absolute'] = filepath_props['folder_path_absolute']
+    all_props['folder_path_relative'] = filepath_props['folder_path_relative']
+    all_props['folder_path_search'] = filepath_props['folder_path_search']
+    all_props['folder_path_replace'] = filepath_props['folder_path_replace']
     return all_props
 
 
@@ -166,19 +165,19 @@ def draw_collection_creation(context, layout):
     color_tag = prefs.collection_color
     icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
     op = row.operator("simple_export.create_export_collections", icon=icon)
-    
+
     # Set default properties
     op.only_selection = True
-    op.overwrite_naming = False
-    op.overwrite_collection_name = ""
+    op.collection_naming_overwrite = False
+    op.collection_name_new = ""
     op.use_numbering = False
     op.parent_collection_name = context.scene.parent_collection.name if context.scene.parent_collection else ""
-    
+
     # Get and set properties from preferences/scene
     props = get_operator_properties(context)
     path_props = get_set_export_paths_properties(context)
-    op.collection_custom_prefix = props['collection_custom_prefix']
-    op.collection_custom_suffix = props['collection_custom_suffix']
+    op.collection_prefix = props['collection_prefix']
+    op.collection_suffix = props['collection_suffix']
     op.collection_file_name_prefix = props['collection_file_name_prefix']
     op.collection_color = props['collection_color']
     op.collection_instance_offset = props['collection_instance_offset']
@@ -188,13 +187,13 @@ def draw_collection_creation(context, layout):
     op.assign_preset = props['assign_preset']
     op.assign_export_filepath = props['assign_export_filepath']
     op.export_folder_mode = path_props['export_folder_mode']
-    op.absolute_export_path = path_props['absolute_export_path']
-    op.relative_export_path = path_props['relative_export_path']
-    op.mirror_search_path = path_props['mirror_search_path']
-    op.mirror_replacement_path = path_props['mirror_replacement_path']
-    op.filename_custom_prefix = path_props['filename_custom_prefix']
-    op.filename_custom_suffix = path_props['filename_custom_suffix']
-    op.filename_file_name_prefix = path_props['filename_file_name_prefix']
+    op.folder_path_absolute = path_props['folder_path_absolute']
+    op.folder_path_relative = path_props['folder_path_relative']
+    op.folder_path_search = path_props['folder_path_search']
+    op.folder_path_replace = path_props['folder_path_replace']
+    op.filename_prefix = path_props['filename_prefix']
+    op.filename_suffix = path_props['filename_suffix']
+    op.filename_blend_prefix = path_props['filename_blend_prefix']
 
 
 def draw_scene_settings_overwrite(context, layout, scene):
@@ -264,19 +263,19 @@ def draw_active_list_element(layout, scene):
             op.outliner = False
             op.individual_collection = True
             op.collection_name = selected_collection.name
-            
+
             # Get and set all properties
             props = get_set_export_paths_properties(context)
-            
+
             # Set all properties
             op.export_folder_mode = props['export_folder_mode']
-            op.absolute_export_path = props['absolute_export_path']
-            op.relative_export_path = props['relative_export_path']
-            op.mirror_search_path = props['mirror_search_path']
-            op.mirror_replacement_path = props['mirror_replacement_path']
-            op.filename_custom_prefix = props['filename_custom_prefix']
-            op.filename_custom_suffix = props['filename_custom_suffix']
-            op.filename_file_name_prefix = props['filename_file_name_prefix']
+            op.folder_path_absolute = props['folder_path_absolute']
+            op.folder_path_relative = props['folder_path_relative']
+            op.folder_path_search = props['folder_path_search']
+            op.folder_path_replace = props['folder_path_replace']
+            op.filename_prefix = props['filename_prefix']
+            op.filename_suffix = props['filename_suffix']
+            op.filename_blend_prefix = props['filename_blend_prefix']
 
             # Collection Center
 
@@ -416,8 +415,8 @@ def draw_create_export_collections(layout, context):
     properties = [
         "collection_color",
         "collection_file_name_prefix",
-        "collection_custom_prefix",
-        "collection_custom_suffix",
+        "collection_prefix",
+        "collection_suffix",
         "collection_auto_set_filepath",
         "collection_auto_set_preset",
     ]
@@ -445,14 +444,14 @@ def draw_filepath_settings(layout, context):
     row.prop(prop_base, "export_folder_mode", expand=True)
 
     if prop_base.export_folder_mode == 'ABSOLUTE':
-        layout.prop(prop_base, "absolute_export_path")
+        layout.prop(prop_base, "folder_path_absolute")
 
     if prop_base.export_folder_mode == 'RELATIVE':
-        layout.prop(prop_base, "relative_export_path")
+        layout.prop(prop_base, "folder_path_relative")
 
     if prop_base.export_folder_mode == 'MIRROR':
-        layout.prop(prop_base, "mirror_search_path", text="Search Path")
-        layout.prop(prop_base, "mirror_replacement_path", text="Replacement Path")
+        layout.prop(prop_base, "folder_path_search", text="Search Path")
+        layout.prop(prop_base, "folder_path_replace", text="Replacement Path")
 
         # Compute and display the preview
         from ..preferences.preferenecs import compute_mirror_preview
@@ -479,9 +478,9 @@ def draw_name_settings(layout, context):
     layout.label(text="Export File Name")
 
     # export file name
-    layout.prop(prop_base, "filename_file_name_prefix")
-    layout.prop(prop_base, "filename_custom_prefix")
-    layout.prop(prop_base, "filename_custom_suffix")
+    layout.prop(prop_base, "filename_blend_prefix")
+    layout.prop(prop_base, "filename_prefix")
+    layout.prop(prop_base, "filename_suffix")
 
 
 def draw_custom_collection_ui(self, context):
@@ -502,14 +501,14 @@ def draw_operator_filepath_settings(layout, op):
     row.prop(op, "export_folder_mode", expand=True)
 
     if op.export_folder_mode == 'ABSOLUTE':
-        layout.prop(op, "absolute_export_path")
+        layout.prop(op, "folder_path_absolute")
 
     if op.export_folder_mode == 'RELATIVE':
-        layout.prop(op, "relative_export_path")
+        layout.prop(op, "folder_path_relative")
 
     if op.export_folder_mode == 'MIRROR':
-        layout.prop(op, "mirror_search_path", text="Search Path")
-        layout.prop(op, "mirror_replacement_path", text="Replacement Path")
+        layout.prop(op, "folder_path_search", text="Search Path")
+        layout.prop(op, "folder_path_replace", text="Replacement Path")
 
         # Compute and display the preview if possible
         try:
@@ -549,19 +548,19 @@ class SIMPLE_EXPORT_menu_base:
         op = row.operator("simple_export.set_export_paths", text="Assign Filepaths", icon='FOLDER_REDIRECT')
         op.outliner = False
         op.individual_collection = False
-        
+
         # Get and set all properties
         props = get_set_export_paths_properties(context)
-        
+
         # Set all properties
         op.export_folder_mode = props['export_folder_mode']
-        op.absolute_export_path = props['absolute_export_path']
-        op.relative_export_path = props['relative_export_path']
-        op.mirror_search_path = props['mirror_search_path']
-        op.mirror_replacement_path = props['mirror_replacement_path']
-        op.filename_custom_prefix = props['filename_custom_prefix']
-        op.filename_custom_suffix = props['filename_custom_suffix']
-        op.filename_file_name_prefix = props['filename_file_name_prefix']
+        op.folder_path_absolute = props['folder_path_absolute']
+        op.folder_path_relative = props['folder_path_relative']
+        op.folder_path_search = props['folder_path_search']
+        op.folder_path_replace = props['folder_path_replace']
+        op.filename_prefix = props['filename_prefix']
+        op.filename_suffix = props['filename_suffix']
+        op.filename_blend_prefix = props['filename_blend_prefix']
 
         col.separator()
 

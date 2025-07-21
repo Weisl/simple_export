@@ -13,8 +13,8 @@ def generate_export_path(base_name, export_format_key, export_dir, is_relative_p
         collection_name (str): The name of the collection.
         export_format_key (str): Export format key.
         export_dir (str): Path to the export folder.
-        mirror_search_path (str): The original path to be replaced.
-        mirror_replacement_path (str): The replacement path to be applied.
+        folder_path_search (str): The original path to be replaced.
+        folder_path_replace (str): The replacement path to be applied.
         is_relative_path (bool): Whether the path is set to relative.
 
     Returns:
@@ -64,8 +64,8 @@ def assign_exporter_path(exporter, export_path, is_relative_path):
         return False, "Please select a Preset"
 
     # Convert relative path to absolute only for directory creation
-    absolute_export_path = bpy.path.abspath(export_path)  # Convert to absolute
-    export_dir = os.path.dirname(absolute_export_path)  # Extract folder path
+    folder_path_absolute = bpy.path.abspath(export_path)  # Convert to absolute
+    export_dir = os.path.dirname(folder_path_absolute)  # Extract folder path
 
     # Validate that the export directory is a valid absolute path
     if not os.path.isabs(export_dir) or export_dir in ["", ".", "\\", "//"]:
@@ -75,7 +75,7 @@ def assign_exporter_path(exporter, export_path, is_relative_path):
     ensure_export_folder_exists(export_dir)
 
     # Assign a relative path if the mode is RELATIVE, otherwise use absolute
-    final_export_path = export_path if is_relative_path else absolute_export_path
+    final_export_path = export_path if is_relative_path else folder_path_absolute
 
     # Assign the correct path format to the exporter
     exporter.export_properties.filepath = final_export_path
@@ -97,25 +97,25 @@ def get_export_path(settings_filepath, use_defaults=False):
     is_relative_path = False
 
     if settings_filepath.export_folder_mode == 'ABSOLUTE':
-        if not settings_filepath.absolute_export_path:
+        if not settings_filepath.folder_path_absolute:
             if use_defaults:
                 export_dir = "./"
                 is_relative_path = True
             else:
                 raise ValueError("ERROR: Please specify a Custom Export Folder!")
         else:
-            export_dir = settings_filepath.absolute_export_path
+            export_dir = settings_filepath.folder_path_absolute
             is_relative_path = False
 
     elif settings_filepath.export_folder_mode == 'RELATIVE':
-        if not settings_filepath.relative_export_path:
+        if not settings_filepath.folder_path_relative:
             if use_defaults:
                 export_dir = "//."
                 is_relative_path = True
             else:
                 raise ValueError("ERROR: Please specify a relative Export Folder Location.")
         else:
-            export_dir = settings_filepath.relative_export_path
+            export_dir = settings_filepath.folder_path_relative
             is_relative_path = True
 
     elif settings_filepath.export_folder_mode == 'MIRROR':
@@ -130,9 +130,9 @@ def get_export_path(settings_filepath, use_defaults=False):
             is_relative_path = False
 
             # Apply mirror replacement if needed
-            if settings_filepath.mirror_search_path and settings_filepath.mirror_replacement_path and settings_filepath.mirror_search_path in export_dir:
-                export_dir = export_dir.replace(settings_filepath.mirror_search_path,
-                                                settings_filepath.mirror_replacement_path)
+            if settings_filepath.folder_path_search and settings_filepath.folder_path_replace and settings_filepath.folder_path_search in export_dir:
+                export_dir = export_dir.replace(settings_filepath.folder_path_search,
+                                                settings_filepath.folder_path_replace)
 
     else:
         if use_defaults:
@@ -169,9 +169,9 @@ def assign_export_path_to_exporter(collection, exporter, scene, settings_filepat
 
         base_name = generate_base_name(
             collection.name,
-            settings_filename.filename_custom_prefix,
-            settings_filename.filename_custom_suffix,
-            settings_filename.filename_file_name_prefix
+            settings_filename.filename_prefix,
+            settings_filename.filename_suffix,
+            settings_filename.filename_blend_prefix
         )
 
         # Generate final export path

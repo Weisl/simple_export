@@ -1,14 +1,13 @@
 import bpy
 import os
 
-from .. import __package__ as base_package
+from .shared_properties import SharedPathProps, SharedFilenameProps
 from ..core.export_path_func import assign_export_path_to_exporter
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.create_collection_func import generate_base_name
 from ..functions.exporter_funcs import find_exporter
 from ..functions.outliner_func import get_outliner_collections
 from ..functions.vallidate_func import validate_collection
-from .shared_properties import SharedPathProps, SharedFilenameProps
 
 
 class SIMPLEEXPORT_OT_FixExportFilename(SharedPathProps, SharedFilenameProps, bpy.types.Operator):
@@ -37,9 +36,9 @@ class SIMPLEEXPORT_OT_FixExportFilename(SharedPathProps, SharedFilenameProps, bp
         export_dir = os.path.dirname(export_path)
         _, ext = os.path.splitext(export_path)
 
-        base_name = generate_base_name(collection.name, self.filename_custom_prefix,
-                                       self.filename_custom_suffix,
-                                       self.filename_file_name_prefix)
+        base_name = generate_base_name(collection.name, self.filename_prefix,
+                                       self.filename_suffix,
+                                       self.filename_blend_prefix)
 
         new_export_path = os.path.join(export_dir, f"{base_name}{ext}")
         exporter.export_properties.filepath = new_export_path
@@ -63,54 +62,54 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
 
     def draw(self, context):
         layout = self.layout
-        
+
         # Filepath settings
         box = layout.box()
         box.label(text="File Path Settings")
         from ..ui.export_panels import draw_operator_filepath_settings
         draw_operator_filepath_settings(box, self)
-        
+
         # Filename settings
         box = layout.box()
         box.label(text="File Name Settings")
-        box.prop(self, "filename_custom_prefix")
-        box.prop(self, "filename_custom_suffix")
-        box.prop(self, "filename_file_name_prefix")
+        box.prop(self, "filename_prefix")
+        box.prop(self, "filename_suffix")
+        box.prop(self, "filename_blend_prefix")
 
     def execute(self, context):
         results = []
         scene = context.scene
-        
+
         # Create mock objects that mimic the settings objects
         class MockFilepathSettings:
             def __init__(self, props):
                 self.export_folder_mode = props['export_folder_mode']
-                self.absolute_export_path = props['absolute_export_path']
-                self.relative_export_path = props['relative_export_path']
-                self.mirror_search_path = props['mirror_search_path']
-                self.mirror_replacement_path = props['mirror_replacement_path']
-        
+                self.folder_path_absolute = props['folder_path_absolute']
+                self.folder_path_relative = props['folder_path_relative']
+                self.folder_path_search = props['folder_path_search']
+                self.folder_path_replace = props['folder_path_replace']
+
         class MockFilenameSettings:
             def __init__(self, props):
-                self.filename_custom_prefix = props['filename_custom_prefix']
-                self.filename_custom_suffix = props['filename_custom_suffix']
-                self.filename_file_name_prefix = props['filename_file_name_prefix']
-        
+                self.filename_prefix = props['filename_prefix']
+                self.filename_suffix = props['filename_suffix']
+                self.filename_blend_prefix = props['filename_blend_prefix']
+
         # Create mock settings objects from operator properties
         filepath_props = {
             'export_folder_mode': self.export_folder_mode,
-            'absolute_export_path': self.absolute_export_path,
-            'relative_export_path': self.relative_export_path,
-            'mirror_search_path': self.mirror_search_path,
-            'mirror_replacement_path': self.mirror_replacement_path,
+            'folder_path_absolute': self.folder_path_absolute,
+            'folder_path_relative': self.folder_path_relative,
+            'folder_path_search': self.folder_path_search,
+            'folder_path_replace': self.folder_path_replace,
         }
-        
+
         filename_props = {
-            'filename_custom_prefix': self.filename_custom_prefix,
-            'filename_custom_suffix': self.filename_custom_suffix,
-            'filename_file_name_prefix': self.filename_file_name_prefix,
+            'filename_prefix': self.filename_prefix,
+            'filename_suffix': self.filename_suffix,
+            'filename_blend_prefix': self.filename_blend_prefix,
         }
-        
+
         settings_filepath = MockFilepathSettings(filepath_props)
         settings_filename = MockFilenameSettings(filename_props)
 

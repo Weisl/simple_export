@@ -1,6 +1,5 @@
-import os
-
 import bpy
+import os
 
 from .collection_layer import set_active_layer_Collection
 from .preset_func import assign_preset

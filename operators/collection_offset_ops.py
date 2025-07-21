@@ -4,7 +4,6 @@ from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.collection_offset import set_collection_offset
 
 
-
 class OBJECT_OT_set_collection_offset_cursor(bpy.types.Operator):
     """Set the collection offset to the 3D cursor location."""
     bl_idname = "object.set_collection_offset_cursor"
@@ -29,7 +28,6 @@ class OBJECT_OT_set_collection_offset_cursor(bpy.types.Operator):
 
         self.report({'INFO'}, f"Collection offset set to cursor location: {cursor_location}")
         return {'FINISHED'}
-
 
 
 class OBJECT_OT_set_collection_offset_object(bpy.types.Operator):

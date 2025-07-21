@@ -1,19 +1,18 @@
 import bpy
+
+from .shared_operator_draw import draw_operator_filepath_settings
 from .shared_properties import (
-    SharedPathProps, SharedFilenameProps, draw_operator_filepath_settings,
-    FilepathAssignmentProps, PresetProps, CollectionNamingProps,
+    SharedPathProps, SharedFilenameProps, SharedPathAssignmentProps, SharedPresetAssignmentProps, CollectionNamingProps,
     CollectionOriginProps, CollectionSettingsProps
 )
 from ..core.export_formats import ExportFormats
 from ..functions.collection_layer import set_active_layer_Collection
-from ..functions.create_collection_func import generate_base_name
 from ..functions.preset_func import assign_preset
 
-from ..preferences.preferenecs import PROPERTY_METADATA
 
 class EXPORT_OT_AddSettingsToCollections(
-    FilepathAssignmentProps,
-    PresetProps,
+    SharedPathAssignmentProps,
+    SharedPresetAssignmentProps,
     CollectionNamingProps,
     CollectionOriginProps,
     CollectionSettingsProps,
@@ -43,8 +42,8 @@ class EXPORT_OT_AddSettingsToCollections(
             return {'CANCELLED'}
 
         # Optionally rename
-        if self.overwrite_naming and self.overwrite_collection_name:
-            collection.name = self.overwrite_collection_name
+        if self.collection_naming_overwrite and self.collection_name_new:
+            collection.name = self.collection_name_new
 
         # Set collection properties (color, offset, etc.)
         self.setup_collection_properties(collection, None)
@@ -86,8 +85,10 @@ class EXPORT_OT_AddSettingsToCollections(
         if not export_data:
             self.report({'ERROR'}, f"Invalid export format: {scene.export_format}")
             return None
+
         def get_all_exporters():
             return list(collection.exporters)
+
         exporters_before = get_all_exporters()
         operator_name = export_data.op_name
         bpy.ops.collection.exporter_add(name=operator_name)
@@ -106,24 +107,27 @@ class EXPORT_OT_AddSettingsToCollections(
     def assign_filepath_to_exporter(self, context, collection, exporter):
         if not self.assign_export_filepath or not hasattr(exporter, 'filepath'):
             return
+
         class SettingsFilepath:
             export_folder_mode = self.export_folder_mode
-            absolute_export_path = self.absolute_export_path
-            relative_export_path = self.relative_export_path
-            mirror_search_path = self.mirror_search_path
-            mirror_replacement_path = self.mirror_replacement_path
+            folder_path_absolute = self.folder_path_absolute
+            folder_path_relative = self.folder_path_relative
+            folder_path_search = self.folder_path_search
+            folder_path_replace = self.folder_path_replace
+
         class SettingsFilename:
-            filename_custom_prefix = self.filename_custom_prefix
-            filename_custom_suffix = self.filename_custom_suffix
-            filename_file_name_prefix = self.filename_file_name_prefix
+            filename_prefix = self.filename_prefix
+            filename_suffix = self.filename_suffix
+            filename_blend_prefix = self.filename_blend_prefix
+
         from ..core.export_path_func import get_export_path, generate_export_path
         from ..functions.create_collection_func import generate_base_name
         export_dir, is_relative_path = get_export_path(SettingsFilepath, use_defaults=True)
         base_name = generate_base_name(
             collection.name,
-            self.filename_custom_prefix,
-            self.filename_custom_suffix,
-            self.filename_file_name_prefix
+            self.filename_prefix,
+            self.filename_suffix,
+            self.filename_blend_prefix
         )
         scene = context.scene
         export_path = generate_export_path(
@@ -139,13 +143,13 @@ class EXPORT_OT_AddSettingsToCollections(
         # --- Collection Name Section ---
         box = layout.box()
         box.label(text="Collection Name")
-        box.prop(self, "overwrite_naming")
-        if self.overwrite_naming:
-            box.prop(self, "overwrite_collection_name")
+        box.prop(self, "collection_naming_overwrite")
+        if self.collection_naming_overwrite:
+            box.prop(self, "collection_name_new")
             box.prop(self, "use_numbering")
         box.prop(self, "collection_file_name_prefix")
-        box.prop(self, "collection_custom_prefix")
-        box.prop(self, "collection_custom_suffix")
+        box.prop(self, "collection_prefix")
+        box.prop(self, "collection_suffix")
         # --- Collection Settings Section ---
         box = layout.box()
         box.label(text="Collection Settings")
@@ -160,23 +164,26 @@ class EXPORT_OT_AddSettingsToCollections(
         # --- File Name Section ---
         box = layout.box()
         box.label(text="File Name")
-        box.prop(self, "filename_file_name_prefix")
-        box.prop(self, "filename_custom_prefix")
-        box.prop(self, "filename_custom_suffix")
+        box.prop(self, "filename_blend_prefix")
+        box.prop(self, "filename_prefix")
+        box.prop(self, "filename_suffix")
         # --- File Path Section ---
         box = layout.box()
         box.label(text="File Path")
         box.prop(self, "assign_export_filepath")
         draw_operator_filepath_settings(box, self)
 
+
 classes = (
     EXPORT_OT_AddSettingsToCollections,
 )
+
 
 def register():
     from bpy.utils import register_class
     for cls in classes:
         register_class(cls)
+
 
 def unregister():
     from bpy.utils import unregister_class

@@ -13,21 +13,21 @@ def draw_custom_outliner_menu(self, context):
     elif isinstance(selected_element, bpy.types.Object):
         # Show only 'Create Export Collections' for objects
         op = layout.operator('simple_export.create_export_collections', text="Create Export Collections",
-                        icon='COLLECTION_COLOR_01')
-        
+                             icon='COLLECTION_COLOR_01')
+
         # Set default properties
         op.only_selection = True
-        op.overwrite_naming = False
-        op.overwrite_collection_name = ""
+        op.collection_naming_overwrite = False
+        op.collection_name_new = ""
         op.use_numbering = False
         op.parent_collection_name = context.scene.parent_collection.name if context.scene.parent_collection else ""
-        
+
         # Get and set properties from preferences/scene
         from .export_panels import get_operator_properties, get_set_export_paths_properties
         props = get_operator_properties(context)
         path_props = get_set_export_paths_properties(context)
-        op.collection_custom_prefix = props['collection_custom_prefix']
-        op.collection_custom_suffix = props['collection_custom_suffix']
+        op.collection_prefix = props['collection_prefix']
+        op.collection_suffix = props['collection_suffix']
         op.collection_file_name_prefix = props['collection_file_name_prefix']
         op.collection_color = props['collection_color']
         op.collection_instance_offset = props['collection_instance_offset']
@@ -37,13 +37,13 @@ def draw_custom_outliner_menu(self, context):
         op.assign_preset = props['assign_preset']
         op.assign_export_filepath = props['assign_export_filepath']
         op.export_folder_mode = path_props['export_folder_mode']
-        op.absolute_export_path = path_props['absolute_export_path']
-        op.relative_export_path = path_props['relative_export_path']
-        op.mirror_search_path = path_props['mirror_search_path']
-        op.mirror_replacement_path = path_props['mirror_replacement_path']
-        op.filename_custom_prefix = path_props['filename_custom_prefix']
-        op.filename_custom_suffix = path_props['filename_custom_suffix']
-        op.filename_file_name_prefix = path_props['filename_file_name_prefix']
+        op.folder_path_absolute = path_props['folder_path_absolute']
+        op.folder_path_relative = path_props['folder_path_relative']
+        op.folder_path_search = path_props['folder_path_search']
+        op.folder_path_replace = path_props['folder_path_replace']
+        op.filename_prefix = path_props['filename_prefix']
+        op.filename_suffix = path_props['filename_suffix']
+        op.filename_blend_prefix = path_props['filename_blend_prefix']
 
 
 class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
@@ -63,8 +63,8 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         from .export_panels import get_operator_properties, get_set_export_paths_properties
         props = get_operator_properties(context)
         path_props = get_set_export_paths_properties(context)
-        op.collection_custom_prefix = props['collection_custom_prefix']
-        op.collection_custom_suffix = props['collection_custom_suffix']
+        op.collection_prefix = props['collection_prefix']
+        op.collection_suffix = props['collection_suffix']
         op.collection_file_name_prefix = props['collection_file_name_prefix']
         op.collection_color = props['collection_color']
         op.collection_instance_offset = props['collection_instance_offset']
@@ -74,13 +74,13 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         op.assign_preset = props['assign_preset']
         op.assign_export_filepath = props['assign_export_filepath']
         op.export_folder_mode = path_props['export_folder_mode']
-        op.absolute_export_path = path_props['absolute_export_path']
-        op.relative_export_path = path_props['relative_export_path']
-        op.mirror_search_path = path_props['mirror_search_path']
-        op.mirror_replacement_path = path_props['mirror_replacement_path']
-        op.filename_custom_prefix = path_props['filename_custom_prefix']
-        op.filename_custom_suffix = path_props['filename_custom_suffix']
-        op.filename_file_name_prefix = path_props['filename_file_name_prefix']
+        op.folder_path_absolute = path_props['folder_path_absolute']
+        op.folder_path_relative = path_props['folder_path_relative']
+        op.folder_path_search = path_props['folder_path_search']
+        op.folder_path_replace = path_props['folder_path_replace']
+        op.filename_prefix = path_props['filename_prefix']
+        op.filename_suffix = path_props['filename_suffix']
+        op.filename_blend_prefix = path_props['filename_blend_prefix']
 
         layout.separator()
         op = layout.operator("simple_export.export_collections", icon='EXPORT')
@@ -97,13 +97,13 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         # Get and set all properties
         props = get_set_export_paths_properties(context)
         op.export_folder_mode = props['export_folder_mode']
-        op.absolute_export_path = props['absolute_export_path']
-        op.relative_export_path = props['relative_export_path']
-        op.mirror_search_path = props['mirror_search_path']
-        op.mirror_replacement_path = props['mirror_replacement_path']
-        op.filename_custom_prefix = props['filename_custom_prefix']
-        op.filename_custom_suffix = props['filename_custom_suffix']
-        op.filename_file_name_prefix = props['filename_file_name_prefix']
+        op.folder_path_absolute = props['folder_path_absolute']
+        op.folder_path_relative = props['folder_path_relative']
+        op.folder_path_search = props['folder_path_search']
+        op.folder_path_replace = props['folder_path_replace']
+        op.filename_prefix = props['filename_prefix']
+        op.filename_suffix = props['filename_suffix']
+        op.filename_blend_prefix = props['filename_blend_prefix']
 
         # Open Popup window
         layout.operator("wm.call_panel", text="Open Export Popup",

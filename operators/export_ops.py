@@ -24,10 +24,10 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
     bl_label = "Export Selected"
     bl_options = {'REGISTER', 'UNDO'}
 
-    outliner: bpy.props.BoolProperty(default=False,options={'HIDDEN'})
-    individual_collection: bpy.props.BoolProperty(default=False,options={'HIDDEN'} )
+    outliner: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
+    individual_collection: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
     collection_name: bpy.props.StringProperty(name="Collection Name", default='',
-                                              description="Name of the collection to process",options={'HIDDEN'})
+                                              description="Name of the collection to process", options={'HIDDEN'})
 
     def execute(self, context):
         export_results = []

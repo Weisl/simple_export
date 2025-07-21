@@ -1,22 +1,22 @@
 import bpy
-import os
 
+from .shared_properties import (
+    SharedPathProps, SharedFilenameProps, draw_operator_filepath_settings,
+    SharedPathAssignmentProps, SharedPresetAssignmentProps, CollectionNamingProps,
+    CollectionOriginProps, CollectionSettingsProps
+)
 from ..core.export_formats import ExportFormats
-from ..core.export_path_func import assign_export_path_to_exporter
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.create_collection_func import generate_base_name
 from ..functions.preset_func import assign_preset
-from .shared_properties import (
-    SharedPathProps, SharedFilenameProps, draw_operator_filepath_settings,
-    FilepathAssignmentProps, PresetProps, CollectionNamingProps,
-    CollectionOriginProps, CollectionSettingsProps
-)
+
+
 # Context menu registration is now handled in ui/view3d_object_context_menu.py
 
 
 class EXPORT_OT_CreateExportCollections(
-    FilepathAssignmentProps,
-    PresetProps,
+    SharedPathAssignmentProps,
+    SharedPresetAssignmentProps,
     CollectionNamingProps,
     CollectionOriginProps,
     CollectionSettingsProps,
@@ -52,7 +52,7 @@ class EXPORT_OT_CreateExportCollections(
         top_objects = [top_object for top_object in selected_objects if
                        not top_object.parent or top_object.parent not in selected_objects]
 
-        if not self.overwrite_naming or not self.overwrite_collection_name:
+        if not self.collection_naming_overwrite or not self.collection_name_new:
             exporter_collections = self.create_individual_collections(context, top_objects)
         else:
             if self.use_numbering:
@@ -83,8 +83,8 @@ class EXPORT_OT_CreateExportCollections(
         for top_object in top_objects:
             collection_name = generate_base_name(
                 top_object.name,
-                getattr(self, 'collection_custom_prefix', ''),
-                getattr(self, 'collection_custom_suffix', ''),
+                getattr(self, 'collection_prefix', ''),
+                getattr(self, 'collection_suffix', ''),
                 getattr(self, 'collection_file_name_prefix', '')
             )
             # Skip creation if collection already exists
@@ -101,7 +101,7 @@ class EXPORT_OT_CreateExportCollections(
         exporter_collections = []
         for index, top_object in enumerate(top_objects):
             padded_index = f"{index:03}"
-            collection_name = f"{self.overwrite_collection_name}_{padded_index}"
+            collection_name = f"{self.collection_name_new}_{padded_index}"
             if collection_name in bpy.data.collections:
                 export_collection = bpy.data.collections[collection_name]
                 self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Using existing collection.")
@@ -113,7 +113,7 @@ class EXPORT_OT_CreateExportCollections(
     def create_single_collection(self, context, top_objects):
         """Create a single collection for all selected objects."""
         exporter_collections = []
-        collection_name = self.overwrite_collection_name
+        collection_name = self.collection_name_new
         if collection_name in bpy.data.collections:
             export_collection = bpy.data.collections[collection_name]
             self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Using existing collection.")
@@ -225,16 +225,16 @@ class EXPORT_OT_CreateExportCollections(
         # Prepare a settings-like object for get_export_path
         class SettingsFilepath:
             export_folder_mode = self.export_folder_mode
-            absolute_export_path = self.absolute_export_path
-            relative_export_path = self.relative_export_path
-            mirror_search_path = self.mirror_search_path
-            mirror_replacement_path = self.mirror_replacement_path
+            folder_path_absolute = self.folder_path_absolute
+            folder_path_relative = self.folder_path_relative
+            folder_path_search = self.folder_path_search
+            folder_path_replace = self.folder_path_replace
 
         # Prepare a settings-like object for filename
         class SettingsFilename:
-            filename_custom_prefix = self.filename_custom_prefix
-            filename_custom_suffix = self.filename_custom_suffix
-            filename_file_name_prefix = self.filename_file_name_prefix
+            filename_prefix = self.filename_prefix
+            filename_suffix = self.filename_suffix
+            filename_blend_prefix = self.filename_blend_prefix
 
         from ..core.export_path_func import get_export_path, generate_export_path
         from ..functions.create_collection_func import generate_base_name
@@ -244,9 +244,9 @@ class EXPORT_OT_CreateExportCollections(
         # Generate base name for the file
         base_name = generate_base_name(
             collection.name,
-            self.filename_custom_prefix,
-            self.filename_custom_suffix,
-            self.filename_file_name_prefix
+            self.filename_prefix,
+            self.filename_suffix,
+            self.filename_blend_prefix
         )
         # Generate the final export path
         scene = context.scene
@@ -257,7 +257,6 @@ class EXPORT_OT_CreateExportCollections(
             is_relative_path=is_relative_path
         )
         exporter.filepath = export_path
-
 
     def determine_parent_collection(self, context, top_object):
         """Determine the parent collection based on the specified hierarchy."""
@@ -283,13 +282,13 @@ class EXPORT_OT_CreateExportCollections(
         # --- Collection Name Section ---
         box = layout.box()
         box.label(text="Collection Name")
-        box.prop(self, "overwrite_naming")
-        if self.overwrite_naming:
-            box.prop(self, "overwrite_collection_name")
+        box.prop(self, "collection_naming_overwrite")
+        if self.collection_naming_overwrite:
+            box.prop(self, "collection_name_new")
             box.prop(self, "use_numbering")
         box.prop(self, "collection_file_name_prefix")
-        box.prop(self, "collection_custom_prefix")
-        box.prop(self, "collection_custom_suffix")
+        box.prop(self, "collection_prefix")
+        box.prop(self, "collection_suffix")
 
         # --- Collection Settings Section ---
         box = layout.box()
@@ -311,9 +310,9 @@ class EXPORT_OT_CreateExportCollections(
         # --- File Name Section ---
         box = layout.box()
         box.label(text="File Name")
-        box.prop(self, "filename_file_name_prefix")
-        box.prop(self, "filename_custom_prefix")
-        box.prop(self, "filename_custom_suffix")
+        box.prop(self, "filename_blend_prefix")
+        box.prop(self, "filename_prefix")
+        box.prop(self, "filename_suffix")
 
         # --- File Path Section ---
         box = layout.box()

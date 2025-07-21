@@ -1,3 +1,7 @@
+import bpy
+import os
+
+
 def is_really_absolute(path):
     return os.path.abspath(path) == path
 
@@ -18,11 +22,6 @@ def clean_relative_path(path):
     return path
 
 
-import os
-
-import bpy
-
-
 def ensure_export_folder_exists(export_path):
     """
     Ensure the directory for the export path exists, creating it if necessary.
@@ -34,10 +33,10 @@ def ensure_export_folder_exists(export_path):
         return False
 
     # Convert entire export_path to absolute first
-    absolute_export_path = bpy.path.abspath(export_path)
+    folder_path_absolute = bpy.path.abspath(export_path)
 
     # Extract the directory portion and normalize
-    export_dir = os.path.dirname(absolute_export_path)
+    export_dir = os.path.dirname(folder_path_absolute)
     export_dir = os.path.normpath(export_dir)
 
     # Ensure directory is valid

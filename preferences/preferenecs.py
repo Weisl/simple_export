@@ -7,12 +7,12 @@ from ..core.export_formats import get_export_format_items
 from ..ui.export_panels import VIEW3D_PT_SimpleExport
 
 PROPERTY_METADATA = {
-    "collection_custom_prefix": {
+    "collection_prefix": {
         "name": "Prefix",
         "description": "Custom prefix added to export collections.",
         "default": "",
     },
-    "collection_custom_suffix": {
+    "collection_suffix": {
         "name": "Suffix",
         "description": "Custom suffix added to the export collections.",
         "default": "",
@@ -23,28 +23,28 @@ PROPERTY_METADATA = {
         "default": False,
     },
 
-    "filename_custom_prefix": {
+    "filename_prefix": {
         "name": "Prefix",
         "description": "Custom prefix added when to the export filename.",
         "default": "",
     },
-    "filename_custom_suffix": {
+    "filename_suffix": {
         "name": "Suffix",
         "description": "Custom suffix added when to the export filename.",
         "default": "",
     },
-    "filename_file_name_prefix": {
+    "filename_blend_prefix": {
         "name": "Use Blend File Name as Prefix",
         "description": "Add the blend file name as prefix to the export filename.",
         "default": False,
     },
 
-    "mirror_search_path": {
+    "folder_path_search": {
         "name": "Search",
         "description": "The path to be replaced.",
         "default": "workdata",
     },
-    "mirror_replacement_path": {
+    "folder_path_replace": {
         "name": "Replace",
         "description": "The path to replace with.",
         "default": "sourcedata",
@@ -108,13 +108,13 @@ PROPERTY_METADATA = {
         ],
     },
 
-    "absolute_export_path": {
+    "folder_path_absolute": {
         "name": "Export Folder",
         "description": "Custom absolute folder to export files to.",
         "default": '',
     },
 
-    "relative_export_path": {
+    "folder_path_relative": {
         "name": "Relative Folder Path",
         "description": "Folder to export files relative to the .blend file.",
         "default": '//.',
@@ -219,12 +219,12 @@ def compute_mirror_preview(settings):
     blend_path = bpy.path.abspath("//")  # Get the blend file directory
 
     # Ensure search path is valid
-    if not settings.mirror_search_path or not settings.mirror_replacement_path:
+    if not settings.folder_path_search or not settings.folder_path_replace:
         return "Invalid search/replacement paths"
 
     # Ensure blend file path contains the search path before replacing
-    if settings.mirror_search_path in blend_path:
-        export_path = blend_path.replace(settings.mirror_search_path, settings.mirror_replacement_path)
+    if settings.folder_path_search in blend_path:
+        export_path = blend_path.replace(settings.folder_path_search, settings.folder_path_replace)
         return bpy.path.relpath(export_path) if "//" in export_path else export_path
 
     return "Search Path not found in current blend file path"
@@ -256,7 +256,7 @@ def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_
     kmi.active = simple_export_panel_active
 
 
-# Scene properties to define mirror_search_path and mirror_replacement_path
+# Scene properties to define folder_path_search and folder_path_replace
 
 
 import bpy
@@ -267,10 +267,10 @@ def get_relative_path(instance):
     """Ensure the stored path is always relative to the .blend file."""
     if isinstance(instance, bpy.types.AddonPreferences):
         # If called from AddonPreferences
-        stored_path = instance.get("relative_export_path", "")
+        stored_path = instance.get("folder_path_relative", "")
     elif isinstance(instance, bpy.types.Scene):
         # If called from Scene (fallback)
-        stored_path = instance.get("relative_export_path", "")
+        stored_path = instance.get("folder_path_relative", "")
     else:
         return ""
 
@@ -285,9 +285,9 @@ def set_relative_path(instance, value):
 
     if not blend_dir:
         if isinstance(instance, bpy.types.AddonPreferences):
-            instance["relative_export_path"] = value  # Store as-is
+            instance["folder_path_relative"] = value  # Store as-is
         elif isinstance(instance, bpy.types.Scene):
-            instance["relative_export_path"] = value  # Store in scene
+            instance["folder_path_relative"] = value  # Store in scene
         return
 
     absolute_path = bpy.path.abspath(value)  # Convert input to absolute path
@@ -298,25 +298,25 @@ def set_relative_path(instance, value):
         formatted_path = f"//{relative_path.replace(os.sep, '/')}"
 
         if isinstance(instance, bpy.types.AddonPreferences):
-            instance["relative_export_path"] = formatted_path
+            instance["folder_path_relative"] = formatted_path
         elif isinstance(instance, bpy.types.Scene):
-            instance["relative_export_path"] = formatted_path
+            instance["folder_path_relative"] = formatted_path
     except ValueError:
         # Path is outside the blend directory, reset to empty
         if isinstance(instance, bpy.types.AddonPreferences):
-            instance["relative_export_path"] = ""
+            instance["folder_path_relative"] = ""
         elif isinstance(instance, bpy.types.Scene):
-            instance["relative_export_path"] = ""
+            instance["folder_path_relative"] = ""
 
 
 def get_absolute_path(instance):
     """Ensure the stored path is always an absolute path."""
     if isinstance(instance, bpy.types.AddonPreferences):
         # If called from AddonPreferences
-        stored_path = instance.get("absolute_export_path", "")
+        stored_path = instance.get("folder_path_absolute", "")
     elif isinstance(instance, bpy.types.Scene):
         # If called from Scene (fallback)
-        stored_path = instance.get("absolute_export_path", "")
+        stored_path = instance.get("folder_path_absolute", "")
     else:
         return ""
 
@@ -330,9 +330,9 @@ def set_absolute_path(instance, value):
     absolute_path = bpy.path.abspath(value)  # Ensure absolute path format
 
     if isinstance(instance, bpy.types.AddonPreferences):
-        instance["absolute_export_path"] = absolute_path
+        instance["folder_path_absolute"] = absolute_path
     elif isinstance(instance, bpy.types.Scene):
-        instance["absolute_export_path"] = absolute_path
+        instance["folder_path_absolute"] = absolute_path
 
 
 class UIListProperties(bpy.types.PropertyGroup):
@@ -433,72 +433,72 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=PROPERTY_METADATA["export_folder_mode"]["default"],
     )
 
-    absolute_export_path: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["absolute_export_path"]["name"],
-        description=PROPERTY_METADATA["absolute_export_path"]["description"],
-        default=PROPERTY_METADATA["absolute_export_path"]["default"],
+    folder_path_absolute: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["folder_path_absolute"]["name"],
+        description=PROPERTY_METADATA["folder_path_absolute"]["description"],
+        default=PROPERTY_METADATA["folder_path_absolute"]["default"],
         subtype='DIR_PATH',
         get=get_absolute_path,  # Use shared absolute path getter
         set=set_absolute_path  # Use shared absolute path setter
     )
 
-    relative_export_path: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["relative_export_path"]["name"],
-        description=PROPERTY_METADATA["relative_export_path"]["description"],
-        default=PROPERTY_METADATA["relative_export_path"]["default"],
+    folder_path_relative: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["folder_path_relative"]["name"],
+        description=PROPERTY_METADATA["folder_path_relative"]["description"],
+        default=PROPERTY_METADATA["folder_path_relative"]["default"],
         subtype='DIR_PATH',
         get=get_relative_path,  # Use the same getter
         set=set_relative_path  # Use the same setter
     )
 
-    mirror_search_path: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["mirror_search_path"]["name"],
-        description=PROPERTY_METADATA["mirror_search_path"]["description"],
-        default=PROPERTY_METADATA["mirror_search_path"]["default"],
+    folder_path_search: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["folder_path_search"]["name"],
+        description=PROPERTY_METADATA["folder_path_search"]["description"],
+        default=PROPERTY_METADATA["folder_path_search"]["default"],
         update=update_mirror_preview,
     )
 
-    mirror_replacement_path: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["mirror_replacement_path"]["name"],
-        description=PROPERTY_METADATA["mirror_replacement_path"]["description"],
-        default=PROPERTY_METADATA["mirror_replacement_path"]["default"],
+    folder_path_replace: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["folder_path_replace"]["name"],
+        description=PROPERTY_METADATA["folder_path_replace"]["description"],
+        default=PROPERTY_METADATA["folder_path_replace"]["default"],
         update=update_mirror_preview,
     )
 
     ########################################
     # Filename
 
-    filename_custom_prefix: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["filename_custom_prefix"]["name"],
-        description=PROPERTY_METADATA["filename_custom_prefix"]["description"],
-        default=PROPERTY_METADATA["filename_custom_prefix"]["default"],
+    filename_prefix: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["filename_prefix"]["name"],
+        description=PROPERTY_METADATA["filename_prefix"]["description"],
+        default=PROPERTY_METADATA["filename_prefix"]["default"],
     )
 
-    filename_custom_suffix: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["filename_custom_suffix"]["name"],
-        description=PROPERTY_METADATA["filename_custom_suffix"]["description"],
-        default=PROPERTY_METADATA["filename_custom_suffix"]["default"],
+    filename_suffix: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["filename_suffix"]["name"],
+        description=PROPERTY_METADATA["filename_suffix"]["description"],
+        default=PROPERTY_METADATA["filename_suffix"]["default"],
     )
 
-    filename_file_name_prefix: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["filename_file_name_prefix"]["name"],
-        description=PROPERTY_METADATA["filename_file_name_prefix"]["description"],
-        default=PROPERTY_METADATA["filename_file_name_prefix"]["default"],
+    filename_blend_prefix: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["filename_blend_prefix"]["name"],
+        description=PROPERTY_METADATA["filename_blend_prefix"]["description"],
+        default=PROPERTY_METADATA["filename_blend_prefix"]["default"],
     )
 
     ########################################
     # Collection Name
 
-    collection_custom_prefix: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["collection_custom_prefix"]["name"],
-        description=PROPERTY_METADATA["collection_custom_prefix"]["description"],
-        default=PROPERTY_METADATA["collection_custom_prefix"]["default"],
+    collection_prefix: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["collection_prefix"]["name"],
+        description=PROPERTY_METADATA["collection_prefix"]["description"],
+        default=PROPERTY_METADATA["collection_prefix"]["default"],
     )
 
-    collection_custom_suffix: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["collection_custom_suffix"]["name"],
-        description=PROPERTY_METADATA["collection_custom_suffix"]["description"],
-        default=PROPERTY_METADATA["collection_custom_suffix"]["default"],
+    collection_suffix: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["collection_suffix"]["name"],
+        description=PROPERTY_METADATA["collection_suffix"]["description"],
+        default=PROPERTY_METADATA["collection_suffix"]["default"],
     )
 
     ########################################
@@ -718,14 +718,14 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             row.prop(self, "export_folder_mode", expand=True)
 
             if self.export_folder_mode == 'ABSOLUTE':
-                box.prop(self, "absolute_export_path")
+                box.prop(self, "folder_path_absolute")
 
             if self.export_folder_mode == 'RELATIVE':
-                box.prop(self, "relative_export_path")
+                box.prop(self, "folder_path_relative")
 
             if self.export_folder_mode == 'MIRROR':
-                box.prop(self, "mirror_search_path", text="Search Path")
-                box.prop(self, "mirror_replacement_path", text="Replacement Path")
+                box.prop(self, "folder_path_search", text="Search Path")
+                box.prop(self, "folder_path_replace", text="Replacement Path")
 
                 # Compute and display the preview
                 from ..preferences.preferenecs import compute_mirror_preview
@@ -746,9 +746,9 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.label(text="Export Filename")
 
             # export file name
-            box.prop(self, "filename_file_name_prefix")
-            box.prop(self, "filename_custom_prefix")
-            box.prop(self, "filename_custom_suffix")
+            box.prop(self, "filename_blend_prefix")
+            box.prop(self, "filename_prefix")
+            box.prop(self, "filename_suffix")
 
             # COLLECTION
             box = layout.box()
@@ -756,8 +756,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             # collection name
 
             box.prop(self, "collection_file_name_prefix")
-            box.prop(self, "collection_custom_prefix")
-            box.prop(self, "collection_custom_suffix")
+            box.prop(self, "collection_prefix")
+            box.prop(self, "collection_suffix")
 
             # collection color
             box.prop(self, "collection_color")
@@ -930,15 +930,15 @@ def initialize_properties_collection_generation():
     )
 
     # collection Naming
-    bpy.types.Scene.collection_custom_prefix = bpy.props.StringProperty(
-        name=PROPERTY_METADATA["collection_custom_prefix"]["name"],
-        description=PROPERTY_METADATA["collection_custom_prefix"]["description"],
-        default=prefs.collection_custom_prefix
+    bpy.types.Scene.collection_prefix = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["collection_prefix"]["name"],
+        description=PROPERTY_METADATA["collection_prefix"]["description"],
+        default=prefs.collection_prefix
     )
-    bpy.types.Scene.collection_custom_suffix = bpy.props.StringProperty(
-        name=PROPERTY_METADATA["collection_custom_suffix"]["name"],
-        description=PROPERTY_METADATA["collection_custom_suffix"]["description"],
-        default=prefs.collection_custom_suffix
+    bpy.types.Scene.collection_suffix = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["collection_suffix"]["name"],
+        description=PROPERTY_METADATA["collection_suffix"]["description"],
+        default=prefs.collection_suffix
     )
     bpy.types.Scene.collection_file_name_prefix = bpy.props.BoolProperty(
         name=PROPERTY_METADATA["collection_file_name_prefix"]["name"],
@@ -947,20 +947,20 @@ def initialize_properties_collection_generation():
     )
 
     # filename settings
-    bpy.types.Scene.filename_custom_prefix = bpy.props.StringProperty(
-        name=PROPERTY_METADATA["filename_custom_prefix"]["name"],
-        description=PROPERTY_METADATA["filename_custom_prefix"]["description"],
-        default=prefs.filename_custom_prefix
+    bpy.types.Scene.filename_prefix = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["filename_prefix"]["name"],
+        description=PROPERTY_METADATA["filename_prefix"]["description"],
+        default=prefs.filename_prefix
     )
-    bpy.types.Scene.filename_custom_suffix = bpy.props.StringProperty(
-        name=PROPERTY_METADATA["filename_custom_suffix"]["name"],
-        description=PROPERTY_METADATA["filename_custom_suffix"]["description"],
-        default=prefs.filename_custom_suffix
+    bpy.types.Scene.filename_suffix = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["filename_suffix"]["name"],
+        description=PROPERTY_METADATA["filename_suffix"]["description"],
+        default=prefs.filename_suffix
     )
-    bpy.types.Scene.filename_file_name_prefix = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["filename_file_name_prefix"]["name"],
-        description=PROPERTY_METADATA["filename_file_name_prefix"]["description"],
-        default=prefs.filename_file_name_prefix
+    bpy.types.Scene.filename_blend_prefix = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["filename_blend_prefix"]["name"],
+        description=PROPERTY_METADATA["filename_blend_prefix"]["description"],
+        default=prefs.filename_blend_prefix
     )
 
     # Collection creation settings
@@ -1010,16 +1010,16 @@ def initialize_properties_collection_generation():
 def initialize_properties_file_path():
     prefs = bpy.context.preferences.addons[base_package].preferences
 
-    bpy.types.Scene.mirror_search_path = bpy.props.StringProperty(
-        name=PROPERTY_METADATA["mirror_search_path"]["name"],
-        description=PROPERTY_METADATA["mirror_search_path"]["description"],
-        default=prefs.mirror_search_path,
+    bpy.types.Scene.folder_path_search = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["folder_path_search"]["name"],
+        description=PROPERTY_METADATA["folder_path_search"]["description"],
+        default=prefs.folder_path_search,
         update=update_mirror_preview
     )
-    bpy.types.Scene.mirror_replacement_path = bpy.props.StringProperty(
-        name=PROPERTY_METADATA["mirror_replacement_path"]["name"],
-        description=PROPERTY_METADATA["mirror_replacement_path"]["description"],
-        default=prefs.mirror_replacement_path,
+    bpy.types.Scene.folder_path_replace = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["folder_path_replace"]["name"],
+        description=PROPERTY_METADATA["folder_path_replace"]["description"],
+        default=prefs.folder_path_replace,
         update=update_mirror_preview
     )
     bpy.types.Scene.export_folder_mode = bpy.props.EnumProperty(
@@ -1029,20 +1029,20 @@ def initialize_properties_file_path():
         default=prefs.export_folder_mode
     )
 
-    bpy.types.Scene.absolute_export_path = bpy.props.StringProperty(
-        name=PROPERTY_METADATA["absolute_export_path"]["name"],
-        description=PROPERTY_METADATA["absolute_export_path"]["description"],
+    bpy.types.Scene.folder_path_absolute = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["folder_path_absolute"]["name"],
+        description=PROPERTY_METADATA["folder_path_absolute"]["description"],
         subtype='DIR_PATH',
-        default=prefs.absolute_export_path,
+        default=prefs.folder_path_absolute,
         get=get_absolute_path,  # Use shared absolute path getter
         set=set_absolute_path  # Use shared absolute path setter
     )
 
-    bpy.types.Scene.relative_export_path = bpy.props.StringProperty(
-        name=PROPERTY_METADATA["relative_export_path"]["name"],
-        description=PROPERTY_METADATA["relative_export_path"]["description"],
+    bpy.types.Scene.folder_path_relative = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["folder_path_relative"]["name"],
+        description=PROPERTY_METADATA["folder_path_relative"]["description"],
         subtype='DIR_PATH',
-        default=prefs.relative_export_path,
+        default=prefs.folder_path_relative,
         get=get_relative_path,  # Use extracted getter
         set=set_relative_path  # Use extracted setter
     )
@@ -1162,12 +1162,12 @@ def unregister():
     del bpy.types.Scene.overwrite_collection_settings
 
     # Collection creation
-    del bpy.types.Scene.collection_custom_prefix
-    del bpy.types.Scene.collection_custom_suffix
+    del bpy.types.Scene.collection_prefix
+    del bpy.types.Scene.collection_suffix
     del bpy.types.Scene.collection_file_name_prefix
-    del bpy.types.Scene.filename_file_name_prefix
-    del bpy.types.Scene.filename_custom_prefix
-    del bpy.types.Scene.filename_custom_suffix
+    del bpy.types.Scene.filename_blend_prefix
+    del bpy.types.Scene.filename_prefix
+    del bpy.types.Scene.filename_suffix
     del bpy.types.Scene.collection_set_location_offset_on_creation
     del bpy.types.Scene.collection_set_root_offset_object
     del bpy.types.Scene.collection_auto_set_filepath
@@ -1175,8 +1175,8 @@ def unregister():
     del bpy.types.Scene.collection_color
 
     # filepath
-    del bpy.types.Scene.mirror_search_path
-    del bpy.types.Scene.mirror_replacement_path
+    del bpy.types.Scene.folder_path_search
+    del bpy.types.Scene.folder_path_replace
     del bpy.types.Scene.export_folder_mode
-    del bpy.types.Scene.absolute_export_path
-    del bpy.types.Scene.relative_export_path
+    del bpy.types.Scene.folder_path_absolute
+    del bpy.types.Scene.folder_path_relative

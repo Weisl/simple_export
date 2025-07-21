@@ -12,7 +12,9 @@ files = [
 
 # Register scene properties here so they're only registered once
 import bpy
+
 Scene = bpy.types.Scene
+
 
 def register_scene_properties():
     if not hasattr(Scene, 'parent_collection'):
@@ -27,16 +29,19 @@ def register_scene_properties():
             description="Set filepath based on blend file location",
         )
 
+
 def unregister_scene_properties():
     if hasattr(Scene, 'parent_collection'):
         del Scene.parent_collection
     if hasattr(Scene, 'set_filepath_on_creation'):
         del Scene.set_filepath_on_creation
 
+
 def register():
     register_scene_properties()
     for file in files:
         file.register()
+
 
 def unregister():
     for file in reversed(files):
