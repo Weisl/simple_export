@@ -44,7 +44,7 @@ def generate_export_path(base_name, export_format_key, export_dir, is_relative_p
     return bpy.path.relpath(export_path) if is_relative_path else export_path
 
 
-def assign_exporter_ops_path(exporter, export_path, is_relative_path):
+def assign_collection_exporter_path(exporter, export_path, is_relative_path):
     """
     Assigns the generated export path to the exporter while ensuring the folder exists.
 
@@ -83,42 +83,46 @@ def assign_exporter_ops_path(exporter, export_path, is_relative_path):
     return True, None
 
 
-def get_export_path(settings_filepath, use_defaults=False):
+def get_export_path(export_folder_mode, folder_path_absolute, folder_path_relative, folder_path_search, folder_path_replace, use_defaults=False):
     """
     Determines the correct export directory based on the user's settings.
 
     If use_defaults is True, it will return sensible defaults instead of raising errors.
 
-    :param settings_filepath: The file path settings from scene or addon preferences.
+    :param export_folder_mode: The export folder mode.
+    :param folder_path_absolute: The absolute folder path.
+    :param folder_path_relative: The relative folder path.
+    :param folder_path_search: The search folder path.
+    :param folder_path_replace: The replace folder path.
     :param use_defaults: If True, uses fallback values instead of raising errors.
     :return: Tuple (export_dir: str, is_relative_path: bool)
     """
     export_dir = None
     is_relative_path = False
 
-    if settings_filepath.export_folder_mode == 'ABSOLUTE':
-        if not settings_filepath.folder_path_absolute:
+    if export_folder_mode == 'ABSOLUTE':
+        if not folder_path_absolute:
             if use_defaults:
                 export_dir = "./"
                 is_relative_path = True
             else:
                 raise ValueError("ERROR: Please specify a Custom Export Folder!")
         else:
-            export_dir = settings_filepath.folder_path_absolute
+            export_dir = folder_path_absolute
             is_relative_path = False
 
-    elif settings_filepath.export_folder_mode == 'RELATIVE':
-        if not settings_filepath.folder_path_relative:
+    elif export_folder_mode == 'RELATIVE':
+        if not folder_path_relative:
             if use_defaults:
                 export_dir = "//."
                 is_relative_path = True
             else:
                 raise ValueError("ERROR: Please specify a relative Export Folder Location.")
         else:
-            export_dir = settings_filepath.folder_path_relative
+            export_dir = folder_path_relative
             is_relative_path = True
 
-    elif settings_filepath.export_folder_mode == 'MIRROR':
+    elif export_folder_mode == 'MIRROR':
         if not bpy.data.filepath:  # is file saved
             if use_defaults:
                 export_dir = "./"
@@ -130,60 +134,41 @@ def get_export_path(settings_filepath, use_defaults=False):
             is_relative_path = False
 
             # Apply mirror replacement if needed
-            if settings_filepath.folder_path_search and settings_filepath.folder_path_replace and settings_filepath.folder_path_search in export_dir:
-                export_dir = export_dir.replace(settings_filepath.folder_path_search,
-                                                settings_filepath.folder_path_replace)
+            if folder_path_search and folder_path_replace and folder_path_search in export_dir:
+                export_dir = export_dir.replace(folder_path_search,
+                                                folder_path_replace)
 
     else:
         if use_defaults:
             export_dir = "./"
             is_relative_path = True
         else:
-            raise ValueError(f"Unknown export folder mode: {settings_filepath.export_folder_mode}")
+            raise ValueError(f"Unknown export folder mode: {export_folder_mode}")
 
     return export_dir, is_relative_path
 
 
-def assign_export_path_to_exporter(collection, exporter, scene, settings_filepath, settings_filename,
-                                   use_defaults=False):
-    """
+def assign_export_path_to_exporter(collection, exporter, scene, export_folder, filename, is_relative_path=False):
+    """     
     Assigns an export path to the given exporter based on the configured file path settings.
 
     :param collection: The collection being exported.
     :param exporter: The exporter assigned to the collection.
     :param scene: The current scene context.
-    :param settings_filepath: Filepath settings from either scene or addon preferences.
-    :param settings_filename: Object containing filename customization settings.
+    :param export_folder: Filepath settings from either scene or addon preferences.
+    :param filename: Object containing filename customization settings.
     :param use_defaults: If True, uses default settings instead of raising errors when paths are missing.
 
     :return: Tuple (success: bool, export_path: str, message: str)
     """
 
     try:
-        # Get the export directory and relative mode, handling errors based on use_defaults
-        export_dir, is_relative_path = get_export_path(settings_filepath, use_defaults)
-        # print(f'DEBUG: export_dir: {export_dir}, is_relative_path: {is_relative_path}')
-
-
-        from ..functions.create_collection_func import generate_base_name
-
-        base_name = generate_base_name(
-            collection.name,
-            settings_filename.filename_prefix,
-            settings_filename.filename_suffix,
-            settings_filename.filename_blend_prefix
-        )
-
         # Generate final export path
-        export_path = generate_export_path(
-            base_name, scene.export_format, export_dir, is_relative_path=is_relative_path)
-        # print(f'DEBUG: export_path: {export_path}')
-
-
+        export_path = generate_export_path(base_name, scene.export_format, export_dir, is_relative_path=is_relative_path)
         collection["prev_name"] = collection.name
-
+    
         # Assign path to exporter
-        success, msg = assign_exporter_ops_path(exporter, export_path, settings_filepath.export_folder_mode)
+        success, msg = assign_collection_exporter_path(exporter, export_path, settings_filepath.export_folder_mode)
         return success, export_path, msg
 
     except Exception as e:

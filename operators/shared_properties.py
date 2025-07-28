@@ -174,3 +174,4 @@ class CollectionSettingsProps:
         description="Name of the parent collection for the collection",
         default=""
     )
+
