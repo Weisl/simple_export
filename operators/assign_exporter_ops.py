@@ -7,7 +7,6 @@ from .shared_properties import (
 from ..core.export_formats import ExportFormats
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.preset_func import set_preset
-from ..ui.shared_draw import draw_export_folderpath_properties
 
 
 class EXPORT_OT_AddSettingsToCollections(
