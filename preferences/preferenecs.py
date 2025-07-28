@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 from bpy.props import BoolProperty, PointerProperty
 
 from .keymap import remove_key
@@ -22,7 +23,7 @@ PROPERTY_METADATA = {
         "default": "",
     },
 
-    "filename_blend_prefix": {
+    "collection_blend_prefix": {
         "name": "Blend Name as Prefix",
         "description": "Add the blend file name as prefix to the export collections.",
         "default": False,
@@ -77,9 +78,9 @@ PROPERTY_METADATA = {
         "description": "Custom suffix added when to the export filename.",
         "default": "",
     },
-    "collection_name_blend_prefix": {
+    "filename_blend_prefix": {
         "name": "Blend Name Prefix",
-        "description": "Add the blend file name as prefix to the collection.",
+        "description": "Add the blend file name as prefix to the export filename.",
         "default": False,
     },
 
@@ -99,7 +100,7 @@ PROPERTY_METADATA = {
         "default": True,
     },
 
-    #collection Settings
+    # collection Settings
 
     # Collection Color
     "collection_color": {
@@ -435,12 +436,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=PROPERTY_METADATA["move_by_collection_offset"]["default"],
     )
 
-    filename_blend_prefix: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["filename_blend_prefix"]["name"],
-        description=PROPERTY_METADATA["filename_blend_prefix"]["description"],
-        default=PROPERTY_METADATA["filename_blend_prefix"]["default"],
-    )
-
     ########################################
     # Filepath
     export_folder_mode: bpy.props.EnumProperty(
@@ -518,8 +513,14 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=PROPERTY_METADATA["collection_suffix"]["default"],
     )
 
+    collection_blend_prefix: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["collection_blend_prefix"]["name"],
+        description=PROPERTY_METADATA["collection_blend_prefix"]["description"],
+        default=PROPERTY_METADATA["collection_blend_prefix"]["default"],
+    )
+
     ########################################
-    # Collections
+    # Collections Settings
 
     collection_set_location_offset_on_creation: bpy.props.BoolProperty(
         name=PROPERTY_METADATA["collection_set_location_offset_on_creation"]["name"],
@@ -771,7 +772,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.label(text="Export Collection")
             # collection name
 
-            box.prop(self, "filename_blend_prefix")
+            box.prop(self, "collection_blend_prefix")
             box.prop(self, "collection_prefix")
             box.prop(self, "collection_suffix")
 
@@ -956,10 +957,10 @@ def initialize_properties_collection_generation():
         description=PROPERTY_METADATA["collection_suffix"]["description"],
         default=prefs.collection_suffix
     )
-    bpy.types.Scene.filename_blend_prefix = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["filename_blend_prefix"]["name"],
-        description=PROPERTY_METADATA["filename_blend_prefix"]["description"],
-        default=prefs.filename_blend_prefix
+    bpy.types.Scene.collection_blend_prefix = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["collection_blend_prefix"]["name"],
+        description=PROPERTY_METADATA["collection_blend_prefix"]["description"],
+        default=prefs.collection_blend_prefix
     )
 
     # filename settings

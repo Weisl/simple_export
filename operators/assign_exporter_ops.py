@@ -1,6 +1,5 @@
 import bpy
 
-from .shared_draw import draw_operator_filepath_settings
 from .shared_properties import (
     SharedPathProps, SharedFilenameProps, SharedPathAssignmentProps, SharedPresetAssignmentProps, CollectionNamingProps,
     CollectionOriginProps, CollectionSettingsProps
@@ -8,6 +7,7 @@ from .shared_properties import (
 from ..core.export_formats import ExportFormats
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.preset_func import set_preset
+from ..ui.shared_draw import draw_export_folderpath_properties
 
 
 class EXPORT_OT_AddSettingsToCollections(
@@ -141,37 +141,33 @@ class EXPORT_OT_AddSettingsToCollections(
     def draw(self, context):
         layout = self.layout
         # --- Collection Name Section ---
+
         box = layout.box()
-        box.label(text="Collection Name")
-        box.prop(self, "collection_naming_overwrite")
-        if self.collection_naming_overwrite:
-            box.prop(self, "collection_name_new")
-            box.prop(self, "use_numbering")
-        box.prop(self, "filename_blend_prefix")
-        box.prop(self, "collection_prefix")
-        box.prop(self, "collection_suffix")
+        from ..ui.shared_draw import draw_collection_name_properties
+        draw_collection_name_properties(box, self)
+
         # --- Collection Settings Section ---
         box = layout.box()
-        box.label(text="Collection Settings")
-        box.prop(self, "collection_color")
-        box.prop(self, "collection_instance_offset")
-        box.prop(self, "use_root_object")
+        from ..ui.shared_draw import draw_collection_settings_properties
+        draw_collection_settings_properties(box, self)
+
+
         # --- Preset Section ---
+        from ..ui.shared_draw import draw_export_preset_properties
         box = layout.box()
-        box.label(text="Export Preset")
-        box.prop(self, "set_preset")
-        box.prop(self, "preset_filepath")
+        draw_export_preset_properties(box,self)
+
+
         # --- File Name Section ---
+        from ..ui.shared_draw import draw_export_filename_properties
         box = layout.box()
-        box.label(text="File Name")
-        box.prop(self, "filename_blend_prefix")
-        box.prop(self, "filename_prefix")
-        box.prop(self, "filename_suffix")
+        draw_export_filename_properties(box,self)
+
         # --- File Path Section ---
         box = layout.box()
-        box.label(text="File Path")
-        box.prop(self, "set_export_path")
-        draw_operator_filepath_settings(box, self)
+        from ..ui.shared_draw import draw_export_folderpath_properties
+        draw_export_folderpath_properties(box, self)
+
 
 
 classes = (

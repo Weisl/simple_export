@@ -46,7 +46,7 @@ def get_operator_properties(context):
     # Get naming properties
     prefix = getattr(settings_col, 'collection_prefix', '')
     suffix = getattr(settings_col, 'collection_suffix', '')
-    file_name_prefix = getattr(settings_col, 'filename_blend_prefix', False)
+    file_name_prefix = getattr(settings_col, 'collection_blend_prefix', False)
 
     # Get collection properties
     collection_color = getattr(settings_col, 'collection_color', 'NONE')
@@ -78,7 +78,7 @@ def get_operator_properties(context):
     return {
         'collection_prefix': prefix,
         'collection_suffix': suffix,
-        'filename_blend_prefix': file_name_prefix,
+        'collection_blend_prefix': file_name_prefix,
         'collection_color': collection_color,
         'collection_instance_offset': collection_instance_offset,
         'use_root_object': use_root_object,
@@ -176,7 +176,7 @@ def draw_collection_creation(context, layout):
     path_props = get_set_export_paths_properties(context)
     op.collection_prefix = props['collection_prefix']
     op.collection_suffix = props['collection_suffix']
-    op.filename_blend_prefix = props['filename_blend_prefix']
+    op.filename_blend_prefix = props['collection_blend_prefix']
     op.collection_color = props['collection_color']
     op.collection_instance_offset = props['collection_instance_offset']
     op.use_root_object = props['use_root_object']
@@ -411,7 +411,7 @@ def draw_create_export_collections(layout, context):
     # Define properties to check
     properties = [
         "collection_color",
-        "filename_blend_prefix",
+        "collection_blend_prefix",
         "collection_prefix",
         "collection_suffix",
         "set_export_path",
@@ -489,7 +489,7 @@ def draw_custom_collection_ui(self, context):
     layout.prop(collection, "root_object", text="Offset Object")
 
 
-def draw_operator_filepath_settings(layout, op):
+def draw_export_folderpath_properties(layout, op):
     """
     Draws the export folder settings for an operator, similar to draw_filepath_settings but for operator properties.
     """

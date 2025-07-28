@@ -135,10 +135,10 @@ class CollectionNamingProps:
         default=""
     )
 
-    collection_name_blend_prefix: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["filename_blend_prefix"]["name"],
-        description=PROPERTY_METADATA["filename_blend_prefix"]["description"],
-        default=PROPERTY_METADATA["filename_blend_prefix"]["default"]
+    collection_blend_prefix: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["collection_blend_prefix"]["name"],
+        description=PROPERTY_METADATA["collection_blend_prefix"]["description"],
+        default=PROPERTY_METADATA["collection_blend_prefix"]["default"]
     )
 
     #

@@ -10,8 +10,9 @@ class OBJECT_OT_set_collection_offset_cursor(bpy.types.Operator):
     bl_label = "Set Collection Center (3D Cursor)"
     bl_options = {'REGISTER', 'UNDO'}
 
+    # Hidden property for the collection name
     collection_name: bpy.props.StringProperty(name="Collection Name", default='',
-                                              description="Name of the collection to process")
+                                              description="Name of the collection to process", options={'HIDDEN'}, )
 
     def execute(self, context):
         collection = bpy.data.collections.get(self.collection_name)

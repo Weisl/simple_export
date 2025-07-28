@@ -28,7 +28,7 @@ def draw_custom_outliner_menu(self, context):
         path_props = get_set_export_paths_properties(context)
         op.collection_prefix = props['collection_prefix']
         op.collection_suffix = props['collection_suffix']
-        op.filename_blend_prefix = props['filename_blend_prefix']
+        op.filename_blend_prefix = props['collection_blend_prefix']
         op.collection_color = props['collection_color']
         op.collection_instance_offset = props['collection_instance_offset']
         op.use_root_object = props['use_root_object']

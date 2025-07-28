@@ -26,17 +26,12 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
         layout = self.layout
 
         # Filepath settings
+        from ..ui.shared_draw import draw_export_folderpath_properties, draw_export_filename_properties
         box = layout.box()
         box.label(text="File Path Settings")
-        from ..ui.export_panels import draw_operator_filepath_settings
-        draw_operator_filepath_settings(box, self)
+        draw_export_folderpath_properties(box, self)
 
-        # Filename settings
-        box = layout.box()
-        box.label(text="File Name Settings")
-        box.prop(self, "filename_prefix")
-        box.prop(self, "filename_suffix")
-        box.prop(self, "filename_blend_prefix")
+        draw_export_filename_properties(layout, self)
 
     def execute(self, context):
         results = []
