@@ -1,3 +1,5 @@
+import bpy
+import os
 from bpy.props import BoolProperty, PointerProperty
 
 from .keymap import remove_key
@@ -138,7 +140,6 @@ PROPERTY_METADATA = {
         "description": "Objects are moved to the origin based on the Collection Center before exporting.",
         "default": False,
     },
-
 }
 
 
@@ -203,7 +204,7 @@ def update_preset_path_for_ply(self, context):
 
 
 def update_preset_path_for_stl(self, context):
-    context.scene.simple_export_preset_file_stl = self.simple_export_preset_file_stlF
+    context.scene.simple_export_preset_file_stl = self.simple_export_preset_file_stl
 
 
 def update_panel_category(self, context):
@@ -277,10 +278,6 @@ def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_
 
 
 # Scene properties to define folder_path_search and folder_path_replace
-
-
-import bpy
-import os
 
 
 def get_relative_path(instance):
@@ -748,7 +745,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                 box.prop(self, "folder_path_replace", text="Replacement Path")
 
                 # Compute and display the preview
-                from ..preferences.preferenecs import compute_mirror_preview
                 preview_path = compute_mirror_preview(self)  # Pass `self` as settings
 
                 preview_box = box.box()
@@ -870,7 +866,7 @@ def get_py_files(self=None, context=None, folder=None):
             preset_path = getattr(self, 'preset_path', None)
 
         if not preset_path:  # If preset_path is still None, use a fallback
-            preset_path = bpy.context.preferences.addons[__package__].preferences.preset_path
+            preset_path = bpy.context.preferences.addons[base_package].preferences.preset_path
 
         folder = preset_path
 
@@ -976,11 +972,6 @@ def initialize_properties_collection_generation():
         name=PROPERTY_METADATA["filename_suffix"]["name"],
         description=PROPERTY_METADATA["filename_suffix"]["description"],
         default=prefs.filename_suffix
-    )
-    bpy.types.Scene.filename_blend_prefix = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["filename_blend_prefix"]["name"],
-        description=PROPERTY_METADATA["filename_blend_prefix"]["description"],
-        default=prefs.filename_blend_prefix
     )
 
     # Collection creation settings
@@ -1161,6 +1152,8 @@ def register():
 
     bpy.app.timers.register(post_register, first_interval=0.5)
     initialize_format_specific_properties()
+    initialize_properties_collection_generation()
+    initialize_properties_file_path()
 
 
 def unregister():
@@ -1181,10 +1174,13 @@ def unregister():
     del bpy.types.Scene.overwrite_filepath_settings
     del bpy.types.Scene.overwrite_collection_settings
 
+    # Export format
+    del bpy.types.Scene.export_format
+    del bpy.types.Scene.override_path
+
     # Collection creation
     del bpy.types.Scene.collection_prefix
     del bpy.types.Scene.collection_suffix
-    del bpy.types.Scene.filename_blend_prefix
     del bpy.types.Scene.filename_blend_prefix
     del bpy.types.Scene.filename_prefix
     del bpy.types.Scene.filename_suffix
@@ -1200,3 +1196,10 @@ def unregister():
     del bpy.types.Scene.export_folder_mode
     del bpy.types.Scene.folder_path_absolute
     del bpy.types.Scene.folder_path_relative
+
+    # Pre export operations
+    del bpy.types.Scene.move_by_collection_offset
+
+    # Override settings
+    del bpy.types.Scene.overwrite_filename_settings
+    del bpy.types.Scene.overwrite_preset_settings
