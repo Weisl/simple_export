@@ -7,12 +7,31 @@ from .shared_properties import (
 )
 from ..core.export_formats import ExportFormats
 from ..functions.create_collection_func import generate_base_name
-from ..functions.collection_utils import setup_collection_properties, determine_parent_collection, collect_children
-from ..functions.exporter_utils import setup_exporter_assignments
+from ..functions.collections_setup import setup_collection_properties
+from ..functions.exporter_funcs import assign_collection_exporter
 from ..ui.shared_draw import draw_export_folderpath_properties
 
 
 # Context menu registration is now handled in ui/view3d_object_context_menu.py
+
+
+def determine_parent_collection(context, parent_collection_name="", top_object=None):
+    """Determine the parent collection based on the specified hierarchy."""
+    if parent_collection_name:
+        parent_collection = bpy.data.collections.get(parent_collection_name)
+        if parent_collection:
+            return parent_collection
+    if hasattr(context.scene, 'parent_collection') and context.scene.parent_collection:
+        return context.scene.parent_collection
+    if top_object and top_object.users_collection:
+        return top_object.users_collection[0]
+    return context.scene.collection
+
+
+def collect_children(obj, objects):
+    """Collect the object and its children."""
+    children = [child for child in objects if child.parent == obj]
+    return [obj] + children
 
 
 class EXPORT_OT_CreateExportCollections(
@@ -69,8 +88,8 @@ class EXPORT_OT_CreateExportCollections(
                 top_object = None
 
             if export_collection is not None:
-                export_collection = self.setup_collection_properties(export_collection, top_object)
-                self.setup_exporter_assignments(context, export_collection)
+                export_collection = setup_collection_properties(self, export_collection, top_object)
+                exporter = assign_collection_exporter(self, context, export_collection)
                 self.report({'INFO'},
                             f"Export collection '{export_collection.name}' created successfully for all objects.")
             else:
@@ -159,31 +178,7 @@ class EXPORT_OT_CreateExportCollections(
 
         return export_collection
 
-    def setup_collection_properties(self, collection, base_object):
-        """Set properties for the collection, such as color tag and offsets."""
-        return setup_collection_properties(
-            collection, base_object, 
-            self.collection_color, 
-            self.collection_instance_offset, 
-            self.use_root_object
-        )
 
-    def setup_exporter_assignments(self, context, collection):
-        """Handle all exporter-related assignments for the collection."""
-        if collection is None:
-            self.report({'ERROR'}, "Collection is None in setup_exporter_assignments.")
-            return
-
-        success = setup_exporter_assignments(
-            context, collection,
-            self.set_preset, self.preset_filepath,
-            self.set_export_path, self.export_folder_mode,
-            self.folder_path_absolute, self.folder_path_relative,
-            self.folder_path_search, self.folder_path_replace,
-            self.filename_prefix, self.filename_suffix, self.filename_blend_prefix
-        )
-        if not success:
-            self.report({'ERROR'}, "Failed to setup exporter assignments.")
 
 
 
