@@ -513,7 +513,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=PROPERTY_METADATA["collection_suffix"]["default"],
     )
 
-    collection_blend_prefix: bpy.props.StringProperty(
+    collection_blend_prefix: bpy.props.BoolProperty(
         name=PROPERTY_METADATA["collection_blend_prefix"]["name"],
         description=PROPERTY_METADATA["collection_blend_prefix"]["description"],
         default=PROPERTY_METADATA["collection_blend_prefix"]["default"],
