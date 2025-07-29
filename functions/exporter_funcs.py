@@ -43,14 +43,17 @@ def get_exporter_id(self, collection, exporter):
     raise ValueError(f"{exporter.name} not found in the exporters of collection '{self.collection_name}'.")
 
 
-def assign_collection_exporter(operator, context, collection, ):
+def assign_collection_exporter(operator, context, collection):
+
     if collection is None:
         operator.report({'ERROR'}, "Collection is None in assign_collection_exporter.")
         return None
-    scene = context.scene
 
+    scene = context.scene
     set_active_layer_Collection(collection.name)
+    
     export_data = ExportFormats.get(scene.export_format)
+
     if not export_data:
         operator.report({'ERROR'}, f"Invalid export format: {scene.export_format}")
         return None

@@ -8,27 +8,24 @@ from ..functions.exporter_funcs import assign_collection_exporter
 from ..functions.preset_func import set_preset
 
 
-
 def _generate_export_path(self, data):
     """Generate the export path from retrieved data."""
 
-
-    
     from ..core.export_path_func import get_export_path, generate_export_path
     from ..functions.create_collection_func import generate_base_name
-    
+
     export_folder_mode = self.export_folder_mode
     folder_path_absolute = self.folder_path_absolute
     folder_path_relative = self.folder_path_relative
     folder_path_search = self.folder_path_search
     folder_path_replace = self.folder_path_replace
-    
+
     # Get export directory and relative mode
     export_dir, is_relative_path = get_export_path(data['settings_filepath'], use_defaults=True)
-    
+
     # Generate base name for the file
     base_name = generate_base_name(collection.name, self.filename_prefix, self.filename_suffix, filename_blend_prefix)
-    
+
     # Generate the final export path
     export_path = generate_export_path(
         base_name,
@@ -36,11 +33,8 @@ def _generate_export_path(self, data):
         export_dir,
         is_relative_path=is_relative_path
     )
-    
+
     return export_path
-
-
-
 
 
 class EXPORT_OT_AddSettingsToCollections(
@@ -60,7 +54,7 @@ class EXPORT_OT_AddSettingsToCollections(
     bl_label = "Add Exporter to Collection"
     bl_options = {'REGISTER', 'UNDO'}
 
-    # Hidden property for the collection name
+    # Internal Poperties
     collection_name: bpy.props.StringProperty(
         name="Collection Name",
         description="Name of the collection to modify",
@@ -87,15 +81,15 @@ class EXPORT_OT_AddSettingsToCollections(
         if exporter:
             if self.set_preset and self.preset_filepath:
                 set_preset(exporter, self.preset_filepath)
-            
+
             # Assign filepath to exporter
             if self.set_export_path and hasattr(exporter, 'filepath'):
                 # 1. Retrieve data
                 data = self._retrieve_filepath_data(context, collection)
-                
+
                 # 2. Generate export path
                 export_path = self._generate_export_path(data)
-                
+
                 # 3. Assign to exporter
                 if export_path:
                     exporter.filepath = export_path
