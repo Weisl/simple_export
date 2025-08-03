@@ -29,7 +29,7 @@ def ensure_export_folder_exists(export_path):
     """
 
     if not export_path:
-        print("ERROR: Export path is empty.")
+        print("ERROR: Export path is empty. Please specify a valid export folder.")
         return False
 
     # Convert entire export_path to absolute first

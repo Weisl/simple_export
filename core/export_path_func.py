@@ -19,6 +19,8 @@ def generate_export_path(export_dir, base_name, export_format_key, is_relative_p
         str: The computed export path.
     """
 
+
+
     # Retrieve export format object
     export_format = ExportFormats.get(export_format_key)
     if not export_format:
@@ -59,7 +61,7 @@ def assign_collection_exporter_path(exporter, export_path, is_relative_path):
         return False, "No valid exporter found"
 
     if not export_path:
-        return False, "Please select a Preset"
+        return False, "Export path is empty. Please specify a valid export folder."
 
     # Convert relative path to absolute only for directory creation
     folder_path_absolute = bpy.path.abspath(export_path)  # Convert to absolute

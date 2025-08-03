@@ -79,6 +79,11 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
 
                 export_folder, is_relative_path = get_export_folder_path(self.export_folder_mode, self.folder_path_absolute, self.folder_path_relative,
                                                        self.folder_path_search, self.folder_path_replace)
+                
+                # Simple check for empty paths
+                if not export_folder:
+                    results.append({'name': collection.name, 'success': False, 'filepath': '', 'message': 'Export path is empty. Please specify a valid export folder.'})
+                    continue
 
                 # FILE: filename properties
                 filename = generate_base_name(collection_name, self.filename_prefix, self.filename_suffix,
