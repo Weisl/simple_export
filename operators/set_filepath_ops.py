@@ -85,19 +85,19 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
                                                      self.filename_blend_prefix)
 
                 # Generate final export path
-                export_path = generate_export_path(export_folder, filename, scene.export_format,
-                                                   is_relative_path=is_relative_path)
+                export_path = generate_export_path(export_folder, filename, scene.export_format, is_relative_path=is_relative_path)
 
                 try:
                     collection["prev_name"] = collection.name
 
                     # Assign path to exporter
-                    success, export_path, msg = assign_collection_exporter_path(exporter, export_path,
+                    success, msg = assign_collection_exporter_path(exporter, export_path,
                                                                                 is_relative_path=is_relative_path)
                 except Exception as e:
                     export_path = ''
                     success = False
                     msg = str(e)
+                    print(e)
 
                 finally:
                     results.append(
@@ -105,6 +105,7 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
 
             except Exception as e:
                 results.append({'name': collection.name, 'success': False, 'filepath': '', 'message': str(e)})
+                print(e)
 
         # Store results in WindowManager for UI display
         context.window_manager.assign_filepath_result_info = str(results)
