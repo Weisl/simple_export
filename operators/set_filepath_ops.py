@@ -16,12 +16,15 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
     bl_label = "Set Export Path"
     bl_options = {'REGISTER', 'UNDO'}
 
+    # Internal Properties
     outliner: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
     individual_collection: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
     collection_name: bpy.props.StringProperty(
         name="Collection Name", default='',
         description="Name of the collection to process", options={'HIDDEN'}
     )
+
+    # Operator Properties are inherited from the parent classes
 
     def draw(self, context):
         layout = self.layout
@@ -72,46 +75,33 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
                 if not exporter:
                     continue
 
-                # FOLDER: folder path properties
-                export_folder_mode = self.export_folder_mode
-                folder_path_absolute = self.folder_path_absolute
-                folder_path_relative = self.folder_path_relative
-                folder_path_search = self.folder_path_search
-                folder_path_replace = self.folder_path_replace
-
-                export_folder = get_export_folder_path(export_folder_mode, folder_path_absolute, folder_path_relative,
-                                                       folder_path_search, folder_path_replace)
+                export_folder, is_relative_path = get_export_folder_path(self.export_folder_mode, self.folder_path_absolute, self.folder_path_relative,
+                                                       self.folder_path_search, self.folder_path_replace)
 
                 # FILE: filename properties
-                filename_prefix = self.filename_prefix
-                filename_suffix = self.filename_suffix
-                filename_blend_prefix = self.filename_blend_prefix
-                is_relative_path = False
+                export_filename = generate_base_name(collection.name, self.filename_prefix, self.filename_suffix,
+                                                     self.filename_blend_prefix)
 
-                export_filename = generate_base_name(collection.name, filename_prefix, filename_suffix,
-                                                     filename_blend_prefix)
-
-                # EXTENSION
                 try:
                     # Generate final export path
                     export_path = generate_export_path(export_filename, scene.export_format, export_folder,
                                                        is_relative_path=is_relative_path)
+                    print('EXPORT PATH - ' + export_path)
+
                     collection["prev_name"] = collection.name
 
                     # Assign path to exporter
-                    success, msg = assign_collection_exporter_path(exporter, export_path, export_folder_mode)
-
+                    success, export_path, msg = assign_collection_exporter_path(exporter, export_path,
+                                                                                is_relative_path=is_relative_path)
                 except Exception as e:
                     export_path = ''
                     success = False
                     msg = str(e)
 
                 finally:
-                    # Assign export path using the extracted function
-                    success, export_path, msg = assign_collection_exporter_path(exporter, export_path,
-                                                                                is_relative_path=is_relative_path)
+                    results.append(
+                        {'name': collection.name, 'success': success, 'filepath': export_path, 'message': msg})
 
-                results.append({'name': collection.name, 'success': success, 'filepath': export_path, 'message': msg})
             except Exception as e:
                 results.append({'name': collection.name, 'success': False, 'filepath': '', 'message': str(e)})
 
