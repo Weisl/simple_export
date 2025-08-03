@@ -75,19 +75,20 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
                 if not exporter:
                     continue
 
+                collection_name = collection.name
+
                 export_folder, is_relative_path = get_export_folder_path(self.export_folder_mode, self.folder_path_absolute, self.folder_path_relative,
                                                        self.folder_path_search, self.folder_path_replace)
 
                 # FILE: filename properties
-                export_filename = generate_base_name(collection.name, self.filename_prefix, self.filename_suffix,
+                filename = generate_base_name(collection_name, self.filename_prefix, self.filename_suffix,
                                                      self.filename_blend_prefix)
 
-                try:
-                    # Generate final export path
-                    export_path = generate_export_path(export_filename, scene.export_format, export_folder,
-                                                       is_relative_path=is_relative_path)
-                    print('EXPORT PATH - ' + export_path)
+                # Generate final export path
+                export_path = generate_export_path(export_folder, filename, scene.export_format,
+                                                   is_relative_path=is_relative_path)
 
+                try:
                     collection["prev_name"] = collection.name
 
                     # Assign path to exporter

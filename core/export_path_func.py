@@ -6,7 +6,7 @@ from ..core.export_formats import ExportFormats
 from ..functions.path_utils import ensure_export_folder_exists
 
 
-def generate_export_path(base_name, export_format_key, export_dir, is_relative_path=False):
+def generate_export_path(export_dir, base_name, export_format_key, is_relative_path=False):
     """
     Generate and set the correct export path based on the selected filepath mode.
 
