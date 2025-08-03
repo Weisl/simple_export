@@ -273,7 +273,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
         arrow_op.collection_name = collection.name
 
-        from ..functions.create_collection_func import generate_base_name
+        from ..core.export_path_func import generate_base_name
         from .export_panels import get_filename_properties
 
         # Get filename properties

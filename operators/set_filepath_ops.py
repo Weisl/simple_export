@@ -2,7 +2,8 @@ import bpy
 
 from .fix_filename import SIMPLEEXPORT_OT_FixExportFilename
 from .shared_properties import SharedPathProps, SharedFilenameProps
-from ..core.export_path_func import assign_export_path_to_exporter
+from ..core.export_path_func import get_export_folder_path, generate_base_name, generate_export_path, \
+    assign_collection_exporter_path
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.exporter_funcs import find_exporter
 from ..functions.outliner_func import get_outliner_collections
@@ -37,39 +38,6 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
         results = []
         scene = context.scene
 
-        # Create mock objects that mimic the settings objects
-        class MockFilepathSettings:
-            def __init__(self, props):
-                self.export_folder_mode = props['export_folder_mode']
-                self.folder_path_absolute = props['folder_path_absolute']
-                self.folder_path_relative = props['folder_path_relative']
-                self.folder_path_search = props['folder_path_search']
-                self.folder_path_replace = props['folder_path_replace']
-
-        class MockFilenameSettings:
-            def __init__(self, props):
-                self.filename_prefix = props['filename_prefix']
-                self.filename_suffix = props['filename_suffix']
-                self.filename_blend_prefix = props['filename_blend_prefix']
-
-        # Create mock settings objects from operator properties
-        filepath_props = {
-            'export_folder_mode': self.export_folder_mode,
-            'folder_path_absolute': self.folder_path_absolute,
-            'folder_path_relative': self.folder_path_relative,
-            'folder_path_search': self.folder_path_search,
-            'folder_path_replace': self.folder_path_replace,
-        }
-
-        filename_props = {
-            'filename_prefix': self.filename_prefix,
-            'filename_suffix': self.filename_suffix,
-            'filename_blend_prefix': self.filename_blend_prefix,
-        }
-
-        settings_filepath = MockFilepathSettings(filepath_props)
-        settings_filename = MockFilenameSettings(filename_props)
-
         # Get Export Collections
         if self.outliner:
             collection_list = get_outliner_collections(context)
@@ -89,6 +57,7 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
         # Iterate over collections
         for collection in collection_list:
             try:
+                # vallidation
                 if not collection.simple_export_selected and not self.individual_collection:
                     continue
                 if not collection.exporters:
@@ -96,14 +65,52 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
                 collection = validate_collection(collection.name)
                 if not collection:
                     continue
+
+                # set exporter
                 set_active_layer_Collection(collection.name)
                 exporter = find_exporter(collection, scene.export_format)
                 if not exporter:
                     continue
-                # Assign export path using the extracted function
-                success, export_path, msg = assign_export_path_to_exporter(
-                    collection, exporter, scene, settings_filepath, settings_filename
-                )
+
+                # FOLDER: folder path properties
+                export_folder_mode = self.export_folder_mode
+                folder_path_absolute = self.folder_path_absolute
+                folder_path_relative = self.folder_path_relative
+                folder_path_search = self.folder_path_search
+                folder_path_replace = self.folder_path_replace
+
+                export_folder = get_export_folder_path(export_folder_mode, folder_path_absolute, folder_path_relative,
+                                                       folder_path_search, folder_path_replace)
+
+                # FILE: filename properties
+                filename_prefix = self.filename_prefix
+                filename_suffix = self.filename_suffix
+                filename_blend_prefix = self.filename_blend_prefix
+                is_relative_path = False
+
+                export_filename = generate_base_name(collection.name, filename_prefix, filename_suffix,
+                                                     filename_blend_prefix)
+
+                # EXTENSION
+                try:
+                    # Generate final export path
+                    export_path = generate_export_path(export_filename, scene.export_format, export_folder,
+                                                       is_relative_path=is_relative_path)
+                    collection["prev_name"] = collection.name
+
+                    # Assign path to exporter
+                    success, msg = assign_collection_exporter_path(exporter, export_path, export_folder_mode)
+
+                except Exception as e:
+                    export_path = ''
+                    success = False
+                    msg = str(e)
+
+                finally:
+                    # Assign export path using the extracted function
+                    success, export_path, msg = assign_collection_exporter_path(exporter, export_path,
+                                                                                is_relative_path=is_relative_path)
+
                 results.append({'name': collection.name, 'success': success, 'filepath': export_path, 'message': msg})
             except Exception as e:
                 results.append({'name': collection.name, 'success': False, 'filepath': '', 'message': str(e)})

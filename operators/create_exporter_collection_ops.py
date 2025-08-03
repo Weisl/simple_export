@@ -6,7 +6,7 @@ from .shared_properties import (
     CollectionOriginProps, CollectionSettingsProps
 )
 from ..core.export_formats import ExportFormats
-from ..functions.create_collection_func import generate_base_name
+from ..core.export_path_func import generate_base_name
 from ..functions.collections_setup import setup_collection_properties
 from ..functions.exporter_funcs import assign_collection_exporter
 from ..ui.shared_draw import draw_export_folderpath_properties

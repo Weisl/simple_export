@@ -1,7 +1,7 @@
 import bpy
 import os
 
-from ..functions.create_collection_func import generate_base_name
+from ..core.export_path_func import generate_base_name
 from ..functions.exporter_funcs import find_exporter
 from ..operators.shared_properties import SharedPathProps, SharedFilenameProps
 

@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from ..core.export_formats import ExportFormats
 from ..functions.path_utils import ensure_export_folder_exists
@@ -10,11 +11,8 @@ def generate_export_path(base_name, export_format_key, export_dir, is_relative_p
     Generate and set the correct export path based on the selected filepath mode.
 
     Args:
-        collection_name (str): The name of the collection.
         export_format_key (str): Export format key.
         export_dir (str): Path to the export folder.
-        folder_path_search (str): The original path to be replaced.
-        folder_path_replace (str): The replacement path to be applied.
         is_relative_path (bool): Whether the path is set to relative.
 
     Returns:
@@ -83,7 +81,8 @@ def assign_collection_exporter_path(exporter, export_path, is_relative_path):
     return True, None
 
 
-def get_export_path(export_folder_mode, folder_path_absolute, folder_path_relative, folder_path_search, folder_path_replace, use_defaults=False):
+def get_export_folder_path(export_folder_mode, folder_path_absolute, folder_path_relative, folder_path_search,
+                           folder_path_replace, use_defaults=False):
     """
     Determines the correct export directory based on the user's settings.
 
@@ -148,28 +147,18 @@ def get_export_path(export_folder_mode, folder_path_absolute, folder_path_relati
     return export_dir, is_relative_path
 
 
-def assign_export_path_to_exporter(collection, exporter, scene, export_folder, filename, is_relative_path=False):
-    """     
-    Assigns an export path to the given exporter based on the configured file path settings.
+def generate_base_name(entity_name, prefix='', suffix='', use_file_name=False):
+    collection_name = entity_name
 
-    :param collection: The collection being exported.
-    :param exporter: The exporter assigned to the collection.
-    :param scene: The current scene context.
-    :param export_folder: Filepath settings from either scene or addon preferences.
-    :param filename: Object containing filename customization settings.
-    :param use_defaults: If True, uses default settings instead of raising errors when paths are missing.
+    if prefix and not collection_name.startswith(prefix):
+        collection_name = prefix + "_" + collection_name
 
-    :return: Tuple (success: bool, export_path: str, message: str)
-    """
+    if suffix and not collection_name.endswith(suffix):
+        collection_name = collection_name + "_" + suffix
 
-    try:
-        # Generate final export path
-        export_path = generate_export_path(base_name, scene.export_format, export_dir, is_relative_path=is_relative_path)
-        collection["prev_name"] = collection.name
-    
-        # Assign path to exporter
-        success, msg = assign_collection_exporter_path(exporter, export_path, settings_filepath.export_folder_mode)
-        return success, export_path, msg
+    if use_file_name:
+        file_name_prefix = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
+        if not collection_name.startswith(file_name_prefix):
+            collection_name = file_name_prefix + "_" + collection_name
 
-    except Exception as e:
-        return False, '', str(e)
+    return collection_name

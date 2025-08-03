@@ -11,8 +11,8 @@ from ..functions.preset_func import set_preset
 def _generate_export_path(self, data):
     """Generate the export path from retrieved data."""
 
-    from ..core.export_path_func import get_export_path, generate_export_path
-    from ..functions.create_collection_func import generate_base_name
+    from ..core.export_path_func import get_export_folder_path, generate_export_path
+    from ..core.export_path_func import generate_base_name
 
     export_folder_mode = self.export_folder_mode
     folder_path_absolute = self.folder_path_absolute
@@ -21,7 +21,7 @@ def _generate_export_path(self, data):
     folder_path_replace = self.folder_path_replace
 
     # Get export directory and relative mode
-    export_dir, is_relative_path = get_export_path(data['settings_filepath'], use_defaults=True)
+    export_dir, is_relative_path = get_export_folder_path(data['settings_filepath'], use_defaults=True)
 
     # Generate base name for the file
     base_name = generate_base_name(collection.name, self.filename_prefix, self.filename_suffix, filename_blend_prefix)
