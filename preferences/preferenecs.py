@@ -983,6 +983,11 @@ def initialize_properties_collection_generation():
         description=PROPERTY_METADATA["filename_suffix"]["description"],
         default=prefs.filename_suffix
     )
+    bpy.types.Scene.filename_blend_prefix = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["filename_blend_prefix"]["name"],
+        description=PROPERTY_METADATA["filename_blend_prefix"]["description"],
+        default=prefs.filename_blend_prefix
+    )
 
     # Collection creation settings
     bpy.types.Scene.collection_set_location_offset_on_creation = bpy.props.BoolProperty(
@@ -1191,10 +1196,12 @@ def unregister():
     # Collection creation
     del bpy.types.Scene.collection_prefix
     del bpy.types.Scene.collection_suffix
+    del bpy.types.Scene.collection_blend_prefix
     del bpy.types.Scene.filename_blend_prefix
     del bpy.types.Scene.filename_prefix
     del bpy.types.Scene.filename_suffix
     del bpy.types.Scene.collection_set_location_offset_on_creation
+    del bpy.types.Scene.collection_use_root_offset_object
     del bpy.types.Scene.collection_set_root_offset_object
     del bpy.types.Scene.set_export_path
     del bpy.types.Scene.set_preset

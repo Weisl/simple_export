@@ -3,18 +3,15 @@ import textwrap
 import bpy
 from .. import __package__ as base_package
 
-def draw_export_preset_properties(layout, context,  element):
-    layout.label(text="Export Preset")
-
-    """
-    Draw the preset property dynamically based on the selected export format.
-    """
-    scene = context.scene
-    prefs = context.preferences.addons[base_package].preferences
+def draw_export_preset_properties(layout, element):
+    scene = bpy.context.scene
+    prefs = bpy.context.preferences.addons[base_package].preferences
     export_format = scene.export_format  # Get the currently selected export format
 
     # Dynamically determine the property name
     prop_name = f"simple_export_preset_file_{export_format.lower()}"
+
+    layout.label(text="Export Preset")
 
     if scene.overwrite_preset_settings:
         set = scene
@@ -48,14 +45,15 @@ def draw_collection_name_properties(layout, element):
             layout.prop(element, "collection_name_new")
             layout.prop(element, "use_numbering")
 
-    layout.prop(element, "collection_blend_prefix")
     layout.prop(element, "collection_prefix")
     layout.prop(element, "collection_suffix")
+    layout.prop(element, "collection_blend_prefix")
 
 
 def draw_export_filename_properties(layout, element):
     # Filename settings
     layout.label(text="File Name Settings")
+
     layout.prop(element, "filename_prefix")
     layout.prop(element, "filename_suffix")
     layout.prop(element, "filename_blend_prefix")

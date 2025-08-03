@@ -346,3 +346,6 @@ def unregister():
 
     for cls in reversed(classes):
         unregister_class(cls)
+    
+    # Remove Scene properties
+    del bpy.types.Scene.menu_collection_name
