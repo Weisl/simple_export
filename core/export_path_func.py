@@ -104,8 +104,8 @@ def get_export_folder_path(export_folder_mode, folder_path_absolute, folder_path
             if use_defaults:
                 export_dir = "./"
                 is_relative_path = True
-            else:
-                raise ValueError("ERROR: Please specify a Custom Export Folder!")
+            # else:
+            #     raise ValueError("ERROR: Please specify a Custom Export Folder!")
         else:
             export_dir = folder_path_absolute
             is_relative_path = False
@@ -115,8 +115,8 @@ def get_export_folder_path(export_folder_mode, folder_path_absolute, folder_path
             if use_defaults:
                 export_dir = "//."
                 is_relative_path = True
-            else:
-                raise ValueError("ERROR: Please specify a relative Export Folder Location.")
+            # else:
+            #     raise ValueError("ERROR: Please specify a relative Export Folder Location.")
         else:
             export_dir = folder_path_relative
             is_relative_path = True
@@ -126,8 +126,8 @@ def get_export_folder_path(export_folder_mode, folder_path_absolute, folder_path
             if use_defaults:
                 export_dir = "./"
                 is_relative_path = True
-            else:
-                raise ValueError("ERROR: Please save the Blend file before calling this operator.")
+            # else:
+            #     raise ValueError("ERROR: Please save the Blend file before calling this operator.")
         else:
             export_dir = os.path.dirname(bpy.data.filepath)
             is_relative_path = False
