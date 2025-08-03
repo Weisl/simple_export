@@ -5,7 +5,7 @@ from .shared_properties import (
     SharedPathAssignmentProps, SharedPresetAssignmentProps, CollectionNamingProps,
     CollectionOriginProps, CollectionSettingsProps
 )
-from ..core.export_formats import ExportFormats
+
 from ..core.export_path_func import generate_base_name
 from ..functions.collections_setup import setup_collection_properties
 from ..functions.exporter_funcs import assign_collection_exporter
@@ -177,10 +177,6 @@ class EXPORT_OT_CreateExportCollections(
                     col.objects.unlink(obj)
 
         return export_collection
-
-
-
-
 
     def draw(self, context):
         """Draw the UI for the operator."""

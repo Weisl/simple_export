@@ -71,3 +71,5 @@ def assign_collection_exporter(operator, context, collection):
     exporters_after = get_all_exporters(collection)
 
     exporter = list(set(exporters_after) - set(exporters_before))[0]
+
+    return exporter
