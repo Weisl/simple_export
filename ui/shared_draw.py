@@ -1,20 +1,34 @@
 # --- Draw Helpers ---
 import textwrap
-
 import bpy
+from .. import __package__ as base_package
 
-
-def draw_export_filename_properties(layout, element):
-    layout.label(text="File Name")
-    layout.prop(element, "filename_blend_prefix")
-    layout.prop(element, "filename_prefix")
-    layout.prop(element, "filename_suffix")
-
-
-def draw_export_preset_properties(layout, element):
+def draw_export_preset_properties(layout, context,  element):
     layout.label(text="Export Preset")
-    layout.prop(element, "set_preset")
-    layout.prop(element, "preset_filepath")
+
+    """
+    Draw the preset property dynamically based on the selected export format.
+    """
+    scene = context.scene
+    prefs = context.preferences.addons[base_package].preferences
+    export_format = scene.export_format  # Get the currently selected export format
+
+    # Dynamically determine the property name
+    prop_name = f"simple_export_preset_file_{export_format.lower()}"
+
+    if scene.overwrite_preset_settings:
+        set = scene
+        label = 'Preset'
+
+    else:  # scene.overwrite_preset_settings:
+        layout.enabled = False
+        set = prefs
+        label = 'Default Preset'
+
+    if hasattr(set, prop_name):
+        layout.prop(set, prop_name, text=label)
+    else:
+        layout.label(text=f"No presets available for {export_format}", icon="ERROR")
 
 
 def draw_collection_settings_properties(layout, element):
@@ -27,10 +41,13 @@ def draw_collection_settings_properties(layout, element):
 
 def draw_collection_name_properties(layout, element):
     layout.label(text="Collection Name")
-    layout.prop(element, "collection_naming_overwrite")
-    if element.collection_naming_overwrite:
-        layout.prop(element, "collection_name_new")
-        layout.prop(element, "use_numbering")
+
+    if getattr(element, "collection_naming_overwrite", None):
+        layout.prop(element, "collection_naming_overwrite")
+        if element.collection_naming_overwrite:
+            layout.prop(element, "collection_name_new")
+            layout.prop(element, "use_numbering")
+
     layout.prop(element, "collection_blend_prefix")
     layout.prop(element, "collection_prefix")
     layout.prop(element, "collection_suffix")
@@ -46,8 +63,18 @@ def draw_export_filename_properties(layout, element):
 
 def draw_export_folderpath_properties(layout, element):
     layout.label(text="Export Path Mode")
+
+    # Check if blend file is saved
+    is_file_saved = bool(bpy.data.filepath)
+
     row = layout.row()
     row.prop(element, "export_folder_mode", expand=True)
+
+    # Disable options that require a saved file
+    if not is_file_saved:
+        row.enabled = False
+        layout.label(text="Save the blend file to use filepath modes", icon='INFO')
+
     if element.export_folder_mode == 'ABSOLUTE':
         layout.prop(element, "folder_path_absolute")
     if element.export_folder_mode == 'RELATIVE':

@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from .. import __package__ as base_package
 from ..core.info import ADDON_NAME, COLOR_TAG_ICONS
@@ -205,26 +206,62 @@ def draw_scene_settings_overwrite(context, layout, scene):
     op.prefs_tabs = 'SETTINGS'
     # Body
     if body:
+        prefs = context.preferences.addons[base_package].preferences
+        
+        # Import shared draw functions
+        from .shared_draw import (
+            draw_export_folderpath_properties,
+            draw_export_filename_properties,
+            draw_export_preset_properties,
+            draw_collection_name_properties,
+            draw_collection_settings_properties
+        )
+
+        # Filepath Settings
         row = body.row()
         row.prop(scene, 'overwrite_filepath_settings')
         box = body.box()
-        draw_filepath_settings(box, context)
+        if scene.overwrite_filepath_settings:
+            box.enabled = True
+            draw_export_folderpath_properties(box, scene)
+        else:
+            box.enabled = False
+            draw_export_folderpath_properties(box, prefs)
 
+        # Filename Settings
         row = body.row()
         row.prop(scene, 'overwrite_filename_settings')
         box = body.box()
-        draw_name_settings(box, context)
+        if scene.overwrite_filename_settings:
+            box.enabled = True
+            draw_export_filename_properties(box, scene)
+        else:
+            box.enabled = False
+            draw_export_filename_properties(box, prefs)
 
+        # Preset Settings
         row = body.row()
         row.prop(scene, 'overwrite_preset_settings')
         box = body.box()
-        draw_preset_settings(box, context)
+        if scene.overwrite_preset_settings:
+            box.enabled = True
+            draw_export_preset_properties(box, context, scene)
+        else:
+            box.enabled = False
+            draw_export_preset_properties(box, context, prefs)
 
+        # Collection Settings
         row = body.row()
         row.prop(scene, 'overwrite_collection_settings')
-
         box = body.box()
-        draw_create_export_collections(box, context)
+        if scene.overwrite_collection_settings:
+            box.enabled = True
+            draw_collection_name_properties(box, scene)
+            draw_collection_settings_properties(box, scene)
+        else:
+            box.enabled = False
+            draw_collection_name_properties(box, prefs)
+            draw_collection_settings_properties(box, prefs)
 
 
 def draw_active_list_element(layout, scene):
@@ -372,114 +409,6 @@ def draw_properties_with_prefix(setting, layout, context, properties):
             print(f"Property {prop_name} not found in Scene or Preferences")
 
 
-def draw_preset_settings(layout, context):
-    """
-    Draw the preset property dynamically based on the selected export format.
-    """
-    scene = context.scene
-    prefs = context.preferences.addons[base_package].preferences
-    export_format = scene.export_format  # Get the currently selected export format
-
-    # Dynamically determine the property name
-    prop_name = f"simple_export_preset_file_{export_format.lower()}"
-
-    if scene.overwrite_preset_settings:
-        set = scene
-        label = 'Preset'
-
-    else:  # scene.overwrite_preset_settings:
-        layout.enabled = False
-        set = prefs
-        label = 'Default Preset'
-
-    if hasattr(set, prop_name):
-        layout.prop(set, prop_name, text=label)
-    else:
-        layout.label(text=f"No presets available for {export_format}", icon="ERROR")
-
-
-def draw_create_export_collections(layout, context):
-    scene = context.scene
-    prefs = context.preferences.addons[base_package].preferences
-
-    prop_base = context.scene
-
-    if not scene.overwrite_collection_settings:
-        layout.enabled = False
-        prop_base = prefs
-
-    # Define properties to check
-    properties = [
-        "collection_color",
-        "collection_blend_prefix",
-        "collection_prefix",
-        "collection_suffix",
-        "set_export_path",
-        "set_preset",
-    ]
-
-    # Use the helper function to draw properties
-    draw_properties_with_prefix(prop_base, layout, context, properties)
-
-    # Collection offset
-    layout.prop(prop_base, "collection_set_location_offset_on_creation")
-    layout.prop(prop_base, "collection_set_root_offset_object")
-
-
-def draw_filepath_settings(layout, context):
-    scene = context.scene
-    prefs = context.preferences.addons[base_package].preferences
-
-    prop_base = context.scene
-
-    if not scene.overwrite_filepath_settings:
-        layout.enabled = False
-        prop_base = prefs
-
-    layout.label(text="Export Path Mode")
-    row = layout.row()
-    row.prop(prop_base, "export_folder_mode", expand=True)
-
-    if prop_base.export_folder_mode == 'ABSOLUTE':
-        layout.prop(prop_base, "folder_path_absolute")
-
-    if prop_base.export_folder_mode == 'RELATIVE':
-        layout.prop(prop_base, "folder_path_relative")
-
-    if prop_base.export_folder_mode == 'MIRROR':
-        layout.prop(prop_base, "folder_path_search", text="Search Path")
-        layout.prop(prop_base, "folder_path_replace", text="Replacement Path")
-
-        # Compute and display the preview
-        from ..preferences.preferenecs import compute_mirror_preview
-        preview_path = compute_mirror_preview(prop_base)  # Pass `self` as settings
-        layout.label(text="Export Folder Preview:")
-        row = layout.row(align=True)
-        row.label(text=preview_path)
-
-        if os.path.exists(preview_path):
-            op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
-            op.operation = 'FOLDER_OPEN'
-            op.filepath = preview_path
-
-
-def draw_name_settings(layout, context):
-    scene = context.scene
-    prefs = context.preferences.addons[base_package].preferences
-
-    prop_base = context.scene
-
-    if not scene.overwrite_filename_settings:
-        layout.enabled = False
-        prop_base = prefs
-    layout.label(text="Export File Name")
-
-    # export file name
-    layout.prop(prop_base, "filename_blend_prefix")
-    layout.prop(prop_base, "filename_prefix")
-    layout.prop(prop_base, "filename_suffix")
-
-
 def draw_custom_collection_ui(self, context):
     """Draw custom UI in the COLLECTION_PT_instancing panel."""
     layout = self.layout
@@ -489,39 +418,7 @@ def draw_custom_collection_ui(self, context):
     layout.prop(collection, "root_object", text="Offset Object")
 
 
-def draw_export_folderpath_properties(layout, op):
-    """
-    Draws the export folder settings for an operator, similar to draw_filepath_settings but for operator properties.
-    """
-    layout.label(text="Export Path Mode")
-    row = layout.row()
-    row.prop(op, "export_folder_mode", expand=True)
 
-    if op.export_folder_mode == 'ABSOLUTE':
-        layout.prop(op, "folder_path_absolute")
-
-    if op.export_folder_mode == 'RELATIVE':
-        layout.prop(op, "folder_path_relative")
-
-    if op.export_folder_mode == 'MIRROR':
-        layout.prop(op, "folder_path_search", text="Search Path")
-        layout.prop(op, "folder_path_replace", text="Replacement Path")
-
-        # Compute and display the preview if possible
-        try:
-            from ..preferences.preferenecs import compute_mirror_preview
-            preview_path = compute_mirror_preview(op)
-            layout.label(text="Export Folder Preview:")
-            row = layout.row(align=True)
-            row.label(text=preview_path)
-
-            import os
-            if os.path.exists(preview_path):
-                op_btn = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
-                op_btn.operation = 'FOLDER_OPEN'
-                op_btn.filepath = preview_path
-        except Exception:
-            pass
 
 
 class SIMPLE_EXPORT_menu_base:

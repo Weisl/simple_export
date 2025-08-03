@@ -732,8 +732,17 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
             box = layout.box()
             box.label(text="Export Path")
+            
+            # Check if blend file is saved
+            is_file_saved = bool(bpy.data.filepath)
+            
             row = box.row()
             row.prop(self, "export_folder_mode", expand=True)
+            
+            # Disable options that require a saved file
+            if not is_file_saved:
+                row.enabled = False
+                box.label(text="Save the blend file to use filepath modes", icon='INFO')
 
             if self.export_folder_mode == 'ABSOLUTE':
                 box.prop(self, "folder_path_absolute")
