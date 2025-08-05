@@ -1,7 +1,10 @@
 # --- Draw Helpers ---
 import textwrap
+
 import bpy
+
 from .. import __package__ as base_package
+
 
 def draw_export_preset_properties(layout, element):
     scene = bpy.context.scene
@@ -19,11 +22,10 @@ def draw_export_preset_properties(layout, element):
         label = 'Default Preset'
 
     # Use the same approach as preferences - iterate through all formats
-    from ..core.export_formats import ExportFormats
-    
+
     # Find the property for the current export format
     prop_name = f"simple_export_preset_file_{export_format.lower()}"
-    
+
     if hasattr(set, prop_name):
         layout.prop(set, prop_name, text=label)
     else:
@@ -36,20 +38,20 @@ def draw_collection_settings_properties(layout, element):
     if hasattr(element, "parent_collection_name"):
         layout.prop_search(element, "parent_collection_name", bpy.data, "collections")
     layout.prop(element, "collection_color")
-    
+
     # Handle different property names between scene and preferences
     if hasattr(element, "collection_instance_offset"):
         layout.prop(element, "collection_instance_offset")
     if hasattr(element, "collection_set_location_offset_on_creation"):
         layout.prop(element, "collection_set_location_offset_on_creation")
-    
+
     if hasattr(element, "use_root_object"):
         layout.prop(element, "use_root_object")
     if hasattr(element, "collection_use_root_offset_object"):
         layout.prop(element, "collection_use_root_offset_object")
         if element.collection_use_root_offset_object and hasattr(element, "collection_set_root_offset_object"):
             layout.prop(element, "collection_set_root_offset_object")
-    
+
     layout.prop(element, "set_preset")
     layout.prop(element, "set_export_path")
 
@@ -77,7 +79,7 @@ def draw_export_filename_properties(layout, element):
     layout.prop(element, "filename_blend_prefix")
 
 
-def draw_export_folderpath_properties(layout, element):
+def draw_export_folderpath_properties(layout, element, is_preferences=False):
     layout.label(text="Export Path Mode")
 
     # Check if blend file is saved
@@ -88,7 +90,8 @@ def draw_export_folderpath_properties(layout, element):
 
     # Disable options that require a saved file
     if not is_file_saved:
-        row.enabled = False
+        if not is_preferences:
+            row.enabled = False
         layout.label(text="Save the blend file to use filepath modes", icon='INFO')
 
     if element.export_folder_mode == 'ABSOLUTE':

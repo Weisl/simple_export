@@ -49,53 +49,9 @@ def draw_collection_creation(context, layout):
     prefs = context.preferences.addons[base_package].preferences
     color_tag = prefs.collection_color
     icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
-    op = row.operator("simple_export.create_export_collections", icon=icon)
 
-    # Set default properties
-    op.only_selection = True
-    op.collection_naming_overwrite = False
-    op.collection_name_new = ""
-    op.use_numbering = False
-    op.parent_collection_name = context.scene.parent_collection.name if context.scene.parent_collection else ""
-
-    # Get and set properties from preferences/scene
-    prefs = context.preferences.addons[base_package].preferences
-    scene = context.scene
-
-    # Collection settings - use scene if overwrite is enabled, else prefs
-    collection_settings = scene if scene.overwrite_collection_settings else prefs
-    op.collection_prefix = collection_settings.collection_prefix
-    op.collection_suffix = collection_settings.collection_suffix
-    op.collection_blend_prefix = collection_settings.collection_blend_prefix
-    op.collection_color = collection_settings.collection_color
-    op.collection_instance_offset = collection_settings.collection_set_location_offset_on_creation
-    op.use_root_object = collection_settings.collection_use_root_offset_object
-
-    # Preset settings - use scene if overwrite is enabled, else prefs
-    preset_settings = scene if scene.overwrite_collection_settings else prefs
-    op.set_preset = preset_settings.set_preset
-    op.set_export_path = preset_settings.set_export_path
-
-    # Get preset filepath if auto-set is enabled
-    op.preset_filepath = ""
-    if scene.set_preset:
-        export_format = scene.export_format.lower()
-        prop_name = f"simple_export_preset_file_{export_format}"
-        op.preset_filepath = getattr(preset_settings, prop_name, "")
-
-    # Filepath settings - use scene if overwrite is enabled, else prefs
-    filepath_settings = scene if scene.overwrite_filepath_settings else prefs
-    op.export_folder_mode = filepath_settings.export_folder_mode
-    op.folder_path_absolute = filepath_settings.folder_path_absolute
-    op.folder_path_relative = filepath_settings.folder_path_relative
-    op.folder_path_search = filepath_settings.folder_path_search
-    op.folder_path_replace = filepath_settings.folder_path_replace
-
-    # Filename settings - use scene if overwrite is enabled, else prefs
-    filename_settings = scene if scene.overwrite_filename_settings else prefs
-    op.filename_prefix = filename_settings.filename_prefix
-    op.filename_suffix = filename_settings.filename_suffix
-    op.filename_blend_prefix = filename_settings.filename_blend_prefix
+    from .shared_operator_call import call_create_export_collection_op
+    call_create_export_collection_op(context, icon, row)
 
 
 def draw_scene_settings_overwrite(context, layout, scene):
@@ -173,7 +129,7 @@ def draw_scene_settings_overwrite(context, layout, scene):
         draw_collection_settings_properties(box, collection_settings)
 
 
-def draw_active_list_element(layout, scene):
+def draw_active_list_element(layout, context, scene):
     # Ensure valid selection before showing details
     if 0 <= scene.collection_index < len(bpy.data.collections):
         selected_collection = bpy.data.collections[scene.collection_index]
@@ -202,30 +158,10 @@ def draw_active_list_element(layout, scene):
 
             row = box.row(align=True)
             row.prop(exporter.export_properties, "filepath", text="", expand=True)
-            op = row.operator("simple_export.set_export_paths", text="", icon='FOLDER_REDIRECT')
-            op.outliner = False
-            op.individual_collection = True
-            op.collection_name = selected_collection.name
 
-            # Get and set properties from preferences/scene
-            prefs = context.preferences.addons[base_package].preferences
-            scene = context.scene
-
-            # Filepath settings - use scene if overwrite is enabled, else prefs
-            filepath_settings = scene if scene.overwrite_filepath_settings else prefs
-            op.export_folder_mode = filepath_settings.export_folder_mode
-            op.folder_path_absolute = filepath_settings.folder_path_absolute
-            op.folder_path_relative = filepath_settings.folder_path_relative
-            op.folder_path_search = filepath_settings.folder_path_search
-            op.folder_path_replace = filepath_settings.folder_path_replace
-
-            # Filename settings - use scene if overwrite is enabled, else prefs
-            filename_settings = scene if scene.overwrite_filename_settings else prefs
-            op.filename_prefix = filename_settings.filename_prefix
-            op.filename_suffix = filename_settings.filename_suffix
-            op.filename_blend_prefix = filename_settings.filename_blend_prefix
-
-            # Collection Center
+            from .shared_operator_call import call_simple_export_path_ops
+            op = call_simple_export_path_ops(context, row, selected_collection, text='', outliner=False,
+                                             individual_collection=True, collection_name=selected_collection.name)
 
             row = box.row(align=True)
             row.label(text='Root Object')
@@ -349,31 +285,12 @@ class SIMPLE_EXPORT_menu_base:
         op.outliner = False
         op.individual_collection = False
 
+        from .shared_operator_call import call_simple_export_path_ops
         row = col.row()
-        op = row.operator("simple_export.set_export_paths", text="Assign Filepaths", icon='FOLDER_REDIRECT')
-        op.outliner = False
-        op.individual_collection = False
-
-        # Get and set properties from preferences/scene
-        prefs = context.preferences.addons[base_package].preferences
-        scene = context.scene
-
-        # Filepath settings - use scene if overwrite is enabled, else prefs
-        filepath_settings = scene if scene.overwrite_filepath_settings else prefs
-        op.export_folder_mode = filepath_settings.export_folder_mode
-        op.folder_path_absolute = filepath_settings.folder_path_absolute
-        op.folder_path_relative = filepath_settings.folder_path_relative
-        op.folder_path_search = filepath_settings.folder_path_search
-        op.folder_path_replace = filepath_settings.folder_path_replace
-
-        # Filename settings - use scene if overwrite is enabled, else prefs
-        filename_settings = scene if scene.overwrite_filename_settings else prefs
-        op.filename_prefix = filename_settings.filename_prefix
-        op.filename_suffix = filename_settings.filename_suffix
-        op.filename_blend_prefix = filename_settings.filename_blend_prefix
+        op = call_simple_export_path_ops(context, row, text='', outliner=False,
+                                         individual_collection=False)
 
         col.separator()
-
         box = col.box()
         draw_pre_export_operations(box, scene)
 
@@ -412,7 +329,7 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         # Draw Operator List
         super().draw(context)
 
-        draw_active_list_element(layout, scene)
+        draw_active_list_element(layout, context, scene)
 
         draw_scene_settings_overwrite(context, layout, scene)
         draw_collection_creation(context, layout)
@@ -455,7 +372,7 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         # Draw Operator List
         super().draw(context)
 
-        draw_active_list_element(layout, scene)
+        draw_active_list_element(layout, context, scene)
 
         draw_scene_settings_overwrite(context, layout, scene)
         draw_collection_creation(context, layout)

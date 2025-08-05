@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from ..core.export_formats import ExportFormats
 from ..core.info import COLOR_TAG_ICONS
@@ -116,20 +117,9 @@ class COLLECTION_MT_root_object_menu(bpy.types.Menu):
 
         layout.separator()
 
-        op = layout.operator("simple_export.set_export_paths", icon='FOLDER_REDIRECT')
-        op.outliner = False
-        op.individual_collection = True
-        op.collection_name = collection_name
-
-        # Set all properties
-        op.export_folder_mode = props['export_folder_mode']
-        op.folder_path_absolute = props['folder_path_absolute']
-        op.folder_path_relative = props['folder_path_relative']
-        op.folder_path_search = props['folder_path_search']
-        op.folder_path_replace = props['folder_path_replace']
-        op.filename_prefix = props['filename_prefix']
-        op.filename_suffix = props['filename_suffix']
-        op.filename_blend_prefix = props['filename_blend_prefix']
+        from .shared_operator_call import call_simple_export_path_ops
+        op = call_simple_export_path_ops(context, layout, text='Assign Filepaths', outliner=False,
+                                         individual_collection=True, collection_name=collection_name)
 
         op = layout.operator("simple_export.set_presets", icon='PRESET')
         op.outliner = False
@@ -231,21 +221,10 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         if settings.uilist_set_filepath:
             # Buttons for setting the export path and opening the directory
             # Assign Path
-            op = row.operator("simple_export.set_export_paths", text="", icon='FOLDER_REDIRECT')
-            op.outliner = False
-            op.individual_collection = True
-            op.collection_name = collection.name
 
-
-            # Set all properties
-            op.export_folder_mode = props['export_folder_mode']
-            op.folder_path_absolute = props['folder_path_absolute']
-            op.folder_path_relative = props['folder_path_relative']
-            op.folder_path_search = props['folder_path_search']
-            op.folder_path_replace = props['folder_path_replace']
-            op.filename_prefix = props['filename_prefix']
-            op.filename_suffix = props['filename_suffix']
-            op.filename_blend_prefix = props['filename_blend_prefix']
+            from .shared_operator_call import call_simple_export_path_ops
+            op = call_simple_export_path_ops(context, layout, text='', outliner=False,
+                                             individual_collection=True, collection_name=collection.name)
 
         if settings.uilist_set_preset:
             # Assign Preset
@@ -267,20 +246,17 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         arrow_op.collection_name = collection.name
 
         from ..core.export_path_func import generate_base_name
-        from .export_panels import get_filename_properties
 
-        # Get filename properties
-        filename_props = get_filename_properties(context)
-        base_name = generate_base_name(collection.name, filename_props['filename_prefix'],
-                                       filename_props['filename_suffix'],
-                                       filename_props['filename_blend_prefix'])
+        filename_settings = scene if scene.overwrite_filename_settings else prefs
+        base_name = generate_base_name(collection.name, filename_settings.filename_prefix,
+                                       filename_settings.filename_suffix, filename_settings.filename_blend_prefix)
 
         if exporter.export_properties.filepath and collection_name_mismatch(base_name, export_path):
             op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
             op.collection_name = collection.name
-            op.filename_prefix = filename_props['filename_prefix']
-            op.filename_suffix = filename_props['filename_suffix']
-            op.filename_blend_prefix = filename_props['filename_blend_prefix']
+            op.filename_prefix = filename_settings.filename_prefix
+            op.filename_suffix = filename_settings.filename_suffix
+            op.filename_blend_prefix = filename_settings.filename_blend_prefix
 
         # Add the Export Collection button
         op = row.operator("simple_export.export_collections", text="", icon='EXPORT')
@@ -339,6 +315,6 @@ def unregister():
 
     for cls in reversed(classes):
         unregister_class(cls)
-    
+
     # Remove Scene properties
     del bpy.types.Scene.menu_collection_name

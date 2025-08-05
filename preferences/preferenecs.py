@@ -734,7 +734,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box = layout.box()
             box.label(text="Export Path")
             from ..ui.shared_draw import draw_export_folderpath_properties
-            draw_export_folderpath_properties(box, self)
+            draw_export_folderpath_properties(box, self, is_preferences=True)
 
             # Export Filename Section
             box = layout.box()
