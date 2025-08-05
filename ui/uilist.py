@@ -121,10 +121,6 @@ class COLLECTION_MT_root_object_menu(bpy.types.Menu):
         op.individual_collection = True
         op.collection_name = collection_name
 
-        # Get and set all properties
-        from .export_panels import get_set_export_paths_properties
-        props = get_set_export_paths_properties(context)
-
         # Set all properties
         op.export_folder_mode = props['export_folder_mode']
         op.folder_path_absolute = props['folder_path_absolute']
@@ -240,9 +236,6 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             op.individual_collection = True
             op.collection_name = collection.name
 
-            # Get and set all properties
-            from .export_panels import get_set_export_paths_properties
-            props = get_set_export_paths_properties(context)
 
             # Set all properties
             op.export_folder_mode = props['export_folder_mode']

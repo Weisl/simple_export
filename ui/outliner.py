@@ -1,5 +1,7 @@
 import bpy
 
+from .. import __package__ as base_package
+
 
 def draw_custom_outliner_menu(self, context):
     layout = self.layout
@@ -22,27 +24,41 @@ def draw_custom_outliner_menu(self, context):
         op.use_numbering = False
         op.parent_collection_name = context.scene.parent_collection.name if context.scene.parent_collection else ""
 
+
         # Get and set properties from preferences/scene
-        from .export_panels import get_operator_properties, get_set_export_paths_properties
-        props = get_operator_properties(context)
-        path_props = get_set_export_paths_properties(context)
-        op.collection_prefix = props['collection_prefix']
-        op.collection_suffix = props['collection_suffix']
-        op.collection_blend_prefix = props['collection_blend_prefix']
-        op.collection_color = props['collection_color']
-        op.collection_instance_offset = props['collection_instance_offset']
-        op.use_root_object = props['use_root_object']
-        op.preset_filepath = props['preset_filepath']
-        op.set_preset = props['set_preset']
-        op.set_export_path = props['set_export_path']
-        op.export_folder_mode = path_props['export_folder_mode']
-        op.folder_path_absolute = path_props['folder_path_absolute']
-        op.folder_path_relative = path_props['folder_path_relative']
-        op.folder_path_search = path_props['folder_path_search']
-        op.folder_path_replace = path_props['folder_path_replace']
-        op.filename_prefix = path_props['filename_prefix']
-        op.filename_suffix = path_props['filename_suffix']
-        op.filename_blend_prefix = path_props['filename_blend_prefix']
+        prefs = context.preferences.addons[base_package].preferences
+        scene = context.scene
+
+        # Collection settings - use scene if overwrite is enabled, else prefs
+        collection_settings = scene if scene.overwrite_collection_settings else prefs
+        op.collection_prefix = collection_settings.collection_prefix
+        op.collection_suffix = collection_settings.collection_suffix
+        op.collection_blend_prefix = collection_settings.collection_blend_prefix
+        op.collection_color = collection_settings.collection_color
+        op.collection_instance_offset = collection_settings.collection_instance_offset
+        op.use_root_object = collection_settings.use_root_object
+
+
+        op.preset_filepath = props.preset_filepath
+
+        # Preset settings - use scene if overwrite is enabled, else prefs
+        preset_settings = scene if scene.overwrite_collection_settings else prefs
+        op.set_preset = preset_settings.set_preset
+        op.set_export_path = preset_settings.set_export_path
+
+        # Filepath settings - use scene if overwrite is enabled, else prefs
+        filepath_settings = scene if scene.overwrite_filepath_settings else prefs
+        op.export_folder_mode = filepath_settings.export_folder_mode
+        op.folder_path_absolute = filepath_settings.folder_path_absolute
+        op.folder_path_relative = filepath_settings.folder_path_relative
+        op.folder_path_search = filepath_settings.folder_path_search
+        op.folder_path_replace = filepath_settings.folder_path_replace
+
+        # Filename settings - use scene if overwrite is enabled, else prefs
+        filename_settings = scene if scene.overwrite_filename_settings else prefs
+        op.filename_prefix = filename_settings.filename_prefix
+        op.filename_suffix = filename_settings.filename_suffix
+        op.filename_blend_prefix = filename_settings.filename_blend_prefix
 
 
 class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
@@ -59,9 +75,7 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         # Pass all grouped properties to the operator
         op = layout.operator('simple_export.add_settings_to_collections', icon='COLLECTION_COLOR_01')
         op.collection_name = collection.name
-        from .export_panels import get_operator_properties, get_set_export_paths_properties
-        props = get_operator_properties(context)
-        path_props = get_set_export_paths_properties(context)
+
         op.collection_prefix = props['collection_prefix']
         op.collection_suffix = props['collection_suffix']
         op.collection_blend_prefix = props['collection_blend_prefix']
@@ -93,7 +107,6 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         op.outliner = True
         op.individual_collection = False
         # Get and set all properties
-        props = get_set_export_paths_properties(context)
         op.export_folder_mode = props['export_folder_mode']
         op.folder_path_absolute = props['folder_path_absolute']
         op.folder_path_relative = props['folder_path_relative']

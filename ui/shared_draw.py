@@ -8,20 +8,22 @@ def draw_export_preset_properties(layout, element):
     prefs = bpy.context.preferences.addons[base_package].preferences
     export_format = scene.export_format  # Get the currently selected export format
 
-    # Dynamically determine the property name
-    prop_name = f"simple_export_preset_file_{export_format.lower()}"
-
     layout.label(text="Export Preset")
 
     if scene.overwrite_preset_settings:
         set = scene
         label = 'Preset'
-
     else:  # scene.overwrite_preset_settings:
         layout.enabled = False
         set = prefs
         label = 'Default Preset'
 
+    # Use the same approach as preferences - iterate through all formats
+    from ..core.export_formats import ExportFormats
+    
+    # Find the property for the current export format
+    prop_name = f"simple_export_preset_file_{export_format.lower()}"
+    
     if hasattr(set, prop_name):
         layout.prop(set, prop_name, text=label)
     else:
@@ -30,10 +32,26 @@ def draw_export_preset_properties(layout, element):
 
 def draw_collection_settings_properties(layout, element):
     layout.label(text="Collection Settings")
-    layout.prop_search(element, "parent_collection_name", bpy.data, "collections")
+    # Check if this is a scene object (has parent_collection_name) or preferences object
+    if hasattr(element, "parent_collection_name"):
+        layout.prop_search(element, "parent_collection_name", bpy.data, "collections")
     layout.prop(element, "collection_color")
-    layout.prop(element, "collection_instance_offset")
-    layout.prop(element, "use_root_object")
+    
+    # Handle different property names between scene and preferences
+    if hasattr(element, "collection_instance_offset"):
+        layout.prop(element, "collection_instance_offset")
+    if hasattr(element, "collection_set_location_offset_on_creation"):
+        layout.prop(element, "collection_set_location_offset_on_creation")
+    
+    if hasattr(element, "use_root_object"):
+        layout.prop(element, "use_root_object")
+    if hasattr(element, "collection_use_root_offset_object"):
+        layout.prop(element, "collection_use_root_offset_object")
+        if element.collection_use_root_offset_object and hasattr(element, "collection_set_root_offset_object"):
+            layout.prop(element, "collection_set_root_offset_object")
+    
+    layout.prop(element, "set_preset")
+    layout.prop(element, "set_export_path")
 
 
 def draw_collection_name_properties(layout, element):

@@ -706,7 +706,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         if self.prefs_tabs == 'SETTINGS':
             layout.prop(self, "default_export_format")
 
-            # Iterate through dynamically created properties
+            # Export Presets Section
             box = layout.box()
             box.label(text="Export Presets")
 
@@ -730,74 +730,31 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                         row.label(text=f"{export_format} Preset", icon='FILE_SCRIPT')
                         row.prop(self, prop_name, text="")
 
+            # Export Path Section
             box = layout.box()
             box.label(text="Export Path")
-            
-            # Check if blend file is saved
-            is_file_saved = bool(bpy.data.filepath)
-            
-            row = box.row()
-            row.prop(self, "export_folder_mode", expand=True)
-            
-            # Disable options that require a saved file
-            if not is_file_saved:
-                row.enabled = False
-                box.label(text="Save the blend file to use filepath modes", icon='INFO')
+            from ..ui.shared_draw import draw_export_folderpath_properties
+            draw_export_folderpath_properties(box, self)
 
-            if self.export_folder_mode == 'ABSOLUTE':
-                box.prop(self, "folder_path_absolute")
-
-            if self.export_folder_mode == 'RELATIVE':
-                box.prop(self, "folder_path_relative")
-
-            if self.export_folder_mode == 'MIRROR':
-                box.prop(self, "folder_path_search", text="Search Path")
-                box.prop(self, "folder_path_replace", text="Replacement Path")
-
-                # Compute and display the preview
-                preview_path = compute_mirror_preview(self)  # Pass `self` as settings
-
-                preview_box = box.box()
-                preview_box.label(text="Export Folder Preview:")
-                row = preview_box.row(align=True)
-                row.label(text=preview_path)
-
-                if os.path.exists(preview_path):
-                    op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
-                    op.operation = 'FOLDER_OPEN'
-                    op.filepath = preview_path
-
-            # Export FILENAME
+            # Export Filename Section
             box = layout.box()
             box.label(text="Export Filename")
+            from ..ui.shared_draw import draw_export_filename_properties
+            draw_export_filename_properties(box, self)
 
-            # export file name
-            box.prop(self, "filename_blend_prefix")
-            box.prop(self, "filename_prefix")
-            box.prop(self, "filename_suffix")
-
-            # COLLECTION
+            # Collection Section
             box = layout.box()
             box.label(text="Export Collection")
-            # collection name
+            from ..ui.shared_draw import draw_collection_name_properties
+            draw_collection_name_properties(box, self)
 
-            box.prop(self, "collection_blend_prefix")
-            box.prop(self, "collection_prefix")
-            box.prop(self, "collection_suffix")
+            # Collection Settings Section
+            box = layout.box()
+            box.label(text="Collection Settings")
+            from ..ui.shared_draw import draw_collection_settings_properties
+            draw_collection_settings_properties(box, self)
 
-            # collection color
-            box.prop(self, "collection_color")
-
-            # Collection offset
-            box.prop(self, "collection_set_location_offset_on_creation")
-            box.prop(self, "collection_use_root_offset_object")
-            if self.collection_use_root_offset_object:
-                box.prop(self, "collection_set_root_offset_object")
-
-            # Collection offset
-            box.prop(self, "set_export_path")
-            box.prop(self, "set_preset")
-
+            # Pre Export Operations
             box = layout.box()
             box.label(text="Pre Export Operations")
             box.prop(self, "move_by_collection_offset")
