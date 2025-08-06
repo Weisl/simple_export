@@ -3,31 +3,18 @@ import textwrap
 
 import bpy
 
-from .. import __package__ as base_package
-
 
 def draw_export_preset_properties(layout, element):
     scene = bpy.context.scene
-    prefs = bpy.context.preferences.addons[base_package].preferences
     export_format = scene.export_format  # Get the currently selected export format
 
     layout.label(text="Export Preset")
 
-    if scene.overwrite_preset_settings:
-        set = scene
-        label = 'Preset'
-    else:  # scene.overwrite_preset_settings:
-        layout.enabled = False
-        set = prefs
-        label = 'Default Preset'
-
-    # Use the same approach as preferences - iterate through all formats
-
     # Find the property for the current export format
     prop_name = f"simple_export_preset_file_{export_format.lower()}"
 
-    if hasattr(set, prop_name):
-        layout.prop(set, prop_name, text=label)
+    if hasattr(element, prop_name):
+        layout.prop(element, prop_name, text='Preset')
     else:
         layout.label(text=f"No presets available for {export_format}", icon="ERROR")
 
