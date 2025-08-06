@@ -5,7 +5,6 @@ from .shared_properties import (
     SharedPathAssignmentProps, SharedPresetAssignmentProps, CollectionNamingProps,
     CollectionOriginProps, CollectionSettingsProps
 )
-
 from ..core.export_path_func import generate_base_name
 from ..functions.collections_setup import setup_collection_properties
 from ..functions.exporter_funcs import assign_collection_exporter
@@ -181,10 +180,13 @@ class EXPORT_OT_CreateExportCollections(
     def draw(self, context):
         """Draw the UI for the operator."""
         layout = self.layout
-
         # --- Collection Name Section ---
         from ..ui.shared_draw import draw_collection_name_properties, draw_collection_settings_properties, \
             draw_export_preset_properties, draw_export_filename_properties
+
+        from ..ui.shared_draw import draw_exporter_presets
+        draw_exporter_presets(self, context)
+
         box = layout.box()
         draw_collection_name_properties(box, self)
 

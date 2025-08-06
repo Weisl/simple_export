@@ -13,7 +13,7 @@ folder_name = 'simple_export'
 class EXPORT_MT_addon_presets(Menu):
     """Collider preset dropdown"""
 
-    bl_label = "Exporter"
+    bl_label = "WIP - DONT USE"
     bl_description = "Specify exporter settings"
     preset_subdir = "simple_export"
     preset_operator = "simple_export.load_exporter_preset"

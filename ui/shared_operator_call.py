@@ -41,9 +41,12 @@ def call_simple_add_exporter_to_collection(context, collection, layout):
     return op
 
 
-def call_simple_export_path_ops(context, layout, text='Assign Filepaths', outliner=False,
+def call_simple_export_path_ops(context, layout, text=None, outliner=False,
                                 individual_collection=False, collection_name=''):
-    op = layout.operator("simple_export.set_export_paths", text=text, icon='FOLDER_REDIRECT')
+    if text is None:
+        op = layout.operator("simple_export.set_export_paths", icon='FOLDER_REDIRECT')
+    else:
+        op = layout.operator("simple_export.set_export_paths", text=text, icon='FOLDER_REDIRECT')
 
     op.outliner = outliner
     op.individual_collection = individual_collection

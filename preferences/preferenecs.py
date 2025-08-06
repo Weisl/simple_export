@@ -415,7 +415,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     # Preference UI properties
     prefs_tabs: bpy.props.EnumProperty(
         name='Export Preferences',
-        items=(('SETTINGS', "Settings", "General addon settings"),
+        items=(('SETTINGS', "Export Settings", "General addon settings"),
                ('UI', "UI", "Settings related to the UI."),
                ('KEYMAP', "Keymap", "Change the hotkeys for tools associated with this addon."),),
         default='SETTINGS',
@@ -704,6 +704,10 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         layout.separator()
 
         if self.prefs_tabs == 'SETTINGS':
+
+            from ..ui.shared_draw import draw_exporter_presets
+            draw_exporter_presets(self, context)
+
             layout.prop(self, "default_export_format")
 
             # Export Presets Section

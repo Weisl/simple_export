@@ -118,7 +118,7 @@ class COLLECTION_MT_root_object_menu(bpy.types.Menu):
         layout.separator()
 
         from .shared_operator_call import call_simple_export_path_ops
-        op = call_simple_export_path_ops(context, layout, text='Assign Filepaths', outliner=False,
+        op = call_simple_export_path_ops(context, layout, outliner=False,
                                          individual_collection=True, collection_name=collection_name)
 
         op = layout.operator("simple_export.set_presets", icon='PRESET')
@@ -223,7 +223,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             # Assign Path
 
             from .shared_operator_call import call_simple_export_path_ops
-            op = call_simple_export_path_ops(context, layout, text='', outliner=False,
+            op = call_simple_export_path_ops(context, row, text='', outliner=False,
                                              individual_collection=True, collection_name=collection.name)
 
         if settings.uilist_set_preset:

@@ -29,7 +29,7 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
             return
 
         from .shared_operator_call import call_simple_add_exporter_to_collection
-        call_simple_add_exporter_to_collection(collection, layout)
+        call_simple_add_exporter_to_collection(context, collection, layout)
 
         layout.separator()
         op = layout.operator("simple_export.export_collections", icon='EXPORT')
@@ -41,7 +41,7 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         op.individual_collection = False
 
         from .shared_operator_call import call_simple_export_path_ops
-        op = call_simple_export_path_ops(context, layout, collection, text='Assign Filepaths', outliner=True,
+        op = call_simple_export_path_ops(context, layout, collection, outliner=True,
                                          individual_collection=False)
 
         # Open Popup window

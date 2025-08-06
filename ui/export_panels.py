@@ -5,29 +5,6 @@ import bpy
 from .. import __package__ as base_package
 from ..core.info import ADDON_NAME, COLOR_TAG_ICONS
 from ..functions.exporter_funcs import find_exporter
-from ..presets_addon.exporter_preset import EXPORT_MT_addon_presets
-
-
-def draw_exporter_presets(self, context):
-    """
-    Draw the naming presets_export menu in the layout.
-
-    Args:
-        self (UILayout): The UI layout.
-        context (Context): The current context.
-    """
-    layout = self.layout
-    row = layout.row(align=True)
-
-    row.menu(EXPORT_MT_addon_presets.__name__, text=EXPORT_MT_addon_presets.bl_label)
-
-    op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
-    op.operation = 'FOLDER_OPEN'
-    # op.filepath = collider_presets_folder()
-
-    op = row.operator("simple_collider.open_preferences", text="", icon='PREFERENCES')
-    op.addon_name = ADDON_NAME
-    op.prefs_tabs = 'NAMING'
 
 
 def draw_pre_export_operations(col, scene):
@@ -314,8 +291,7 @@ class SIMPLE_EXPORT_menu_base:
 
         from .shared_operator_call import call_simple_export_path_ops
         row = col.row()
-        op = call_simple_export_path_ops(context, row, text='', outliner=False,
-                                         individual_collection=False)
+        op = call_simple_export_path_ops(context, row, outliner=False, individual_collection=False)
 
         col.separator()
         box = col.box()
@@ -347,6 +323,7 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
 
         list_id = "npanel"
 
+        from .shared_draw import draw_exporter_presets
         draw_exporter_presets(self, context)
         draw_export_list(layout, list_id, scene)
 
@@ -387,7 +364,9 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
 
         list_id = "scene"
 
+        from .shared_draw import draw_exporter_presets
         draw_exporter_presets(self, context)
+
         draw_export_list(layout, list_id, scene)
 
         # Draw Operator List

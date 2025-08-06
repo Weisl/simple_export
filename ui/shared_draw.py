@@ -3,6 +3,9 @@ import textwrap
 
 import bpy
 
+from ..core.info import ADDON_NAME
+from ..presets_addon.exporter_preset import EXPORT_MT_addon_presets
+
 
 def draw_export_preset_properties(layout, element):
     scene = bpy.context.scene
@@ -109,3 +112,25 @@ def label_multiline(context, text, parent):
     text_lines = wrapper.wrap(text=text)
     for text_line in text_lines:
         parent.label(text=text_line)
+
+
+def draw_exporter_presets(self, context):
+    """
+    Draw the naming presets_export menu in the layout.
+
+    Args:
+        self (UILayout): The UI layout.
+        context (Context): The current context.
+    """
+    layout = self.layout
+    row = layout.row(align=True)
+
+    row.menu(EXPORT_MT_addon_presets.__name__, text=EXPORT_MT_addon_presets.bl_label)
+
+    op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
+    op.operation = 'FOLDER_OPEN'
+    # op.filepath = collider_presets_folder()
+
+    op = row.operator("simple_collider.open_preferences", text="", icon='PREFERENCES')
+    op.addon_name = ADDON_NAME
+    op.prefs_tabs = 'NAMING'
