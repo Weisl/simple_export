@@ -67,8 +67,11 @@ def call_simple_export_path_ops(context, layout, text='Assign Filepaths', outlin
     return op
 
 
-def call_create_export_collection_op(context, icon, layout):
-    op = layout.operator("simple_export.create_export_collections", text='', icon=icon)
+def call_create_export_collection_op(context, icon, layout, text=None):
+    if text is None:
+        op = layout.operator("simple_export.create_export_collections", icon=icon)
+    else:
+        op = layout.operator("simple_export.create_export_collections", text=text, icon=icon)
 
     # Set default properties
     op.only_selection = True
