@@ -5,6 +5,29 @@ import bpy
 from .. import __package__ as base_package
 from ..core.info import ADDON_NAME, COLOR_TAG_ICONS
 from ..functions.exporter_funcs import find_exporter
+from ..presets_addon.exporter_preset import EXPORT_MT_addon_presets
+
+
+def draw_exporter_presets(self, context):
+    """
+    Draw the naming presets_export menu in the layout.
+
+    Args:
+        self (UILayout): The UI layout.
+        context (Context): The current context.
+    """
+    layout = self.layout
+    row = layout.row(align=True)
+
+    row.menu(EXPORT_MT_addon_presets.__name__, text=EXPORT_MT_addon_presets.bl_label)
+
+    op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
+    op.operation = 'FOLDER_OPEN'
+    # op.filepath = collider_presets_folder()
+
+    op = row.operator("simple_collider.open_preferences", text="", icon='PREFERENCES')
+    op.addon_name = ADDON_NAME
+    op.prefs_tabs = 'NAMING'
 
 
 def draw_pre_export_operations(col, scene):
@@ -67,6 +90,10 @@ def draw_scene_settings_overwrite(context, layout, scene):
     # Body
     if body:
         prefs = context.preferences.addons[base_package].preferences
+
+        # Draw File Format Selection
+        row = body.row()
+        row.prop(scene, "export_format", text="Format")
 
         # Filepath Settings
         row = body.row()
@@ -221,9 +248,9 @@ def draw_export_list(layout, list_id, scene):
 
 
 def get_presets_folder():
-    """Retrieve the base path for Blender's presets folder."""
+    """Retrieve the base path for Blender's presets_export folder."""
     # Get the user scripts folder dynamically
-    return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets", "operator")
+    return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets_export", "operator")
 
 
 def draw_properties_with_prefix(setting, layout, context, properties):
@@ -317,13 +344,10 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         scene = context.scene
 
         layout = self.layout
-        layout.label(text="Batch Export Collections")
-
-        # Draw format selection
-        layout.prop(scene, "export_format", text="Format")
 
         list_id = "npanel"
 
+        draw_exporter_presets(self, context)
         draw_export_list(layout, list_id, scene)
 
         # Draw Operator List
@@ -360,13 +384,10 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         scene = context.scene
 
         layout = self.layout
-        layout.label(text="Batch Export Collections")
-
-        # Draw format selection
-        layout.prop(scene, "export_format", text="Format")
 
         list_id = "scene"
 
+        draw_exporter_presets(self, context)
         draw_export_list(layout, list_id, scene)
 
         # Draw Operator List

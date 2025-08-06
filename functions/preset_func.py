@@ -3,9 +3,9 @@ import os
 
 
 def get_presets_folder():
-    """Retrieve the base path for Blender's presets folder."""
+    """Retrieve the base path for Blender's presets_export folder."""
     # Get the user scripts folder dynamically
-    return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets", "operator")
+    return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets_export", "operator")
 
 
 def parse_preset_file(preset_path):

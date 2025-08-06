@@ -12,7 +12,7 @@ def get_presets_folder():
         return prefs.preset_path_override
 
     # Default Blender location
-    return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets", "operator")
+    return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets_export", "operator")
 
 
 class ExportFormat:

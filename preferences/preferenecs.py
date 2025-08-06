@@ -840,7 +840,7 @@ def get_py_files(self=None, context=None, folder=None):
     if not folder or not os.path.isdir(folder):
         # print(f"[DEBUG] Invalid folder: {folder}")
         return [("NONE", "Create Presets",
-                 "Create export presets in Blender's default export window before assigning them in Simple Export.")]
+                 "Create export presets_export in Blender's default export window before assigning them in Simple Export.")]
 
     try:
         files = [
@@ -850,7 +850,7 @@ def get_py_files(self=None, context=None, folder=None):
         ]
         # print(f"[DEBUG] Files found in {folder}: {files}")
         return files if files else [
-            ("NONE", "No Files", "Create presets in the default export windows before assigning them.")]
+            ("NONE", "No Files", "Create presets_export in the default export windows before assigning them.")]
     except Exception as e:
         # print(f"[DEBUG ERROR] Error reading files in {folder}: {e}")
         return [("NONE", "Error", str(e))]
@@ -1068,7 +1068,7 @@ def register():
 
     bpy.types.Scene.overwrite_preset_settings = bpy.props.BoolProperty(
         name="Scene: Preset",
-        description="Overwrite the settings regarding the presets",
+        description="Overwrite the settings regarding the presets_export",
         default=False)
 
     ########################################
