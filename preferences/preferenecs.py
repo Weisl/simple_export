@@ -181,31 +181,71 @@ def get_py_files_for_stl(self, context):
 
 
 def update_preset_path_for_fbx(self, context):
-    context.scene.simple_export_preset_file_fbx = self.simple_export_preset_file_fbx
+    # Get the available enum items
+    enum_items = self.get('simple_export_preset_file_fbx_items', [])
+
+    # Check if there are any valid items
+    if enum_items:
+        # Set to the first valid item as a default
+        default_preset = enum_items[0][0]
+        context.scene.simple_export_preset_file_fbx = default_preset
+    else:
+        # Handle the case where no valid items are found
+        print("No valid preset items found.")
 
 
 def update_preset_path_for_obj(self, context):
-    context.scene.simple_export_preset_file_obj = self.simple_export_preset_file_obj
+    enum_items = self.get('simple_export_preset_file_obj_items', [])
+    if enum_items:
+        default_preset = enum_items[0][0]
+        context.scene.simple_export_preset_file_obj = default_preset
+    else:
+        print("No valid preset items found for OBJ.")
 
 
 def update_preset_path_for_gltf(self, context):
-    context.scene.simple_export_preset_file_gltf = self.simple_export_preset_file_gltf
+    enum_items = self.get('simple_export_preset_file_gltf_items', [])
+    if enum_items:
+        default_preset = enum_items[0][0]
+        context.scene.simple_export_preset_file_gltf = default_preset
+    else:
+        print("No valid preset items found for glTF.")
 
 
 def update_preset_path_for_usd(self, context):
-    context.scene.simple_export_preset_file_usd = self.simple_export_preset_file_usd
+    enum_items = self.get('simple_export_preset_file_usd_items', [])
+    if enum_items:
+        default_preset = enum_items[0][0]
+        context.scene.simple_export_preset_file_usd = default_preset
+    else:
+        print("No valid preset items found for USD.")
 
 
 def update_preset_path_for_abc(self, context):
-    context.scene.simple_export_preset_file_abc = self.simple_export_preset_file_abc
+    enum_items = self.get('simple_export_preset_file_abc_items', [])
+    if enum_items:
+        default_preset = enum_items[0][0]
+        context.scene.simple_export_preset_file_abc = default_preset
+    else:
+        print("No valid preset items found for Alembic.")
 
 
 def update_preset_path_for_ply(self, context):
-    context.scene.simple_export_preset_file_ply = self.simple_export_preset_file_ply
+    enum_items = self.get('simple_export_preset_file_ply_items', [])
+    if enum_items:
+        default_preset = enum_items[0][0]
+        context.scene.simple_export_preset_file_ply = default_preset
+    else:
+        print("No valid preset items found for PLY.")
 
 
 def update_preset_path_for_stl(self, context):
-    context.scene.simple_export_preset_file_stl = self.simple_export_preset_file_stl
+    enum_items = self.get('simple_export_preset_file_stl_items', [])
+    if enum_items:
+        default_preset = enum_items[0][0]
+        context.scene.simple_export_preset_file_stl = default_preset
+    else:
+        print("No valid preset items found for STL.")
 
 
 def update_panel_category(self, context):
