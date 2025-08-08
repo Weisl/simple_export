@@ -3,8 +3,26 @@ import textwrap
 
 import bpy
 
-from ..core.info import ADDON_NAME
+from ..core.info import ADDON_NAME, COLOR_TAG_ICONS
 from ..presets_addon.exporter_preset import EXPORT_MT_addon_presets
+
+
+def draw_collection_creation(context, layout):
+    # Draw Create Button
+    row = layout.row()
+    from .shared_operator_call import call_create_export_collection_op
+    call_create_export_collection_op(context, row)
+
+
+def draw_parent_collection(context, layout):
+    # Parent selection
+    row = layout.row()
+    color_tag = None
+
+    if context.scene.parent_collection:
+        color_tag = context.scene.parent_collection.color_tag
+    icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
+    row.prop(context.scene, "parent_collection", text="Parent Collection", icon=icon)
 
 
 def draw_export_preset_properties(layout, element):

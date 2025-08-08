@@ -36,24 +36,6 @@ def draw_simple_export_header(layout):
     row.label(text="Simple Export")
 
 
-def draw_collection_creation(context, layout):
-    # Parent selection
-    row = layout.row()
-    color_tag = None
-    if context.scene.parent_collection:
-        color_tag = context.scene.parent_collection.color_tag
-    icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
-    row.prop(context.scene, "parent_collection", text="Parent Collection", icon=icon)
-    # Draw Create Button
-    row = layout.row()
-    prefs = context.preferences.addons[base_package].preferences
-    color_tag = prefs.collection_color
-    icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
-
-    from .shared_operator_call import call_create_export_collection_op
-    call_create_export_collection_op(context, icon, row)
-
-
 def draw_scene_settings_overwrite(context, layout, scene):
     # Collapsible Filepath Settings Section
     header, body = layout.panel("overwrite_settings", default_closed=False)
@@ -325,6 +307,15 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
 
         from .shared_draw import draw_exporter_presets
         draw_exporter_presets(self, context)
+
+        # draw Create exporter
+        from .shared_draw import draw_parent_collection, draw_collection_creation
+        row = layout.row()
+        draw_parent_collection(context, row)
+        row = layout.row()
+        draw_collection_creation(context, row)
+
+        # draw Export List
         draw_export_list(layout, list_id, scene)
 
         # Draw Operator List
@@ -333,7 +324,6 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         draw_active_list_element(layout, context, scene)
 
         draw_scene_settings_overwrite(context, layout, scene)
-        draw_collection_creation(context, layout)
 
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
@@ -367,6 +357,13 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         from .shared_draw import draw_exporter_presets
         draw_exporter_presets(self, context)
 
+        # draw Create exporter
+        from .shared_draw import draw_parent_collection, draw_collection_creation
+        row = layout.row()
+        draw_parent_collection(context, row)
+        row = layout.row()
+        draw_collection_creation(context, row)
+
         draw_export_list(layout, list_id, scene)
 
         # Draw Operator List
@@ -375,7 +372,6 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         draw_active_list_element(layout, context, scene)
 
         draw_scene_settings_overwrite(context, layout, scene)
-        draw_collection_creation(context, layout)
 
 
 class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
@@ -392,9 +388,13 @@ class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Pa
         row = layout.row()
         row.label(text="Simple Export Popup")
 
-        # Export List
         row = layout.row()
-        row.label(text="Export List")
+        # draw Create exporter
+        from .shared_draw import draw_parent_collection, draw_collection_creation
+        draw_parent_collection(context, row)
+        draw_collection_creation(context, row)
+
+        # Export List
         row = layout.row()
 
         row = layout.row(align=True)

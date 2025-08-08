@@ -92,8 +92,7 @@ def call_set_preset_op(context, layout, text=None, icon='PRESET_NEW'):
     op.preset_filepath = getattr(preset_settings, prop_name, "")
 
 
-
-def call_create_export_collection_op(context, icon, layout, text=None):
+def call_create_export_collection_op(context, layout, icon='ADD', text=None):
     if text is None:
         op = layout.operator("simple_export.create_export_collections", icon=icon)
     else:

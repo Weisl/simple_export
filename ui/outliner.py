@@ -13,8 +13,7 @@ def draw_custom_outliner_menu(self, context):
     elif isinstance(selected_element, bpy.types.Object):
 
         from .shared_operator_call import call_create_export_collection_op
-        icon = 'COLLECTION_COLOR_01'
-        op = call_create_export_collection_op(context, icon, layout)
+        op = call_create_export_collection_op(context, layout)
 
 
 class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):

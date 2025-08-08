@@ -455,7 +455,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     # Preference UI properties
     prefs_tabs: bpy.props.EnumProperty(
         name='Export Preferences',
-        items=(('SETTINGS', "Export Settings", "General addon settings"),
+        items=(('SETTINGS', "Preset", "General addon presets"),
                ('UI', "UI", "Settings related to the UI."),
                ('KEYMAP', "Keymap", "Change the hotkeys for tools associated with this addon."),),
         default='SETTINGS',
@@ -810,8 +810,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
             box = layout.box()
             box.label(text="N Panel")
-            layout.prop(self, 'enable_n_panel')
-            layout.prop(self, 'panel_category')
+            box.prop(self, 'enable_n_panel')
+            box.prop(self, 'panel_category')
             box = box.box()
             box.prop(self.npanel_properties, "uilist_icon")
             box.prop(self.npanel_properties, "uilist_show_filepath")

@@ -5,8 +5,7 @@ def add_export_collections_to_menu(self, context):
     """Adds the Simple Export create export collections operator to the object context menu."""
     self.layout.separator()
     from .shared_operator_call import call_create_export_collection_op
-    icon = 'COLLECTION_COLOR_01'
-    op = call_create_export_collection_op(context, icon, self.layout)
+    op = call_create_export_collection_op(context, self.layout, icon)
     # Set default properties
     op.only_selection = True
     op.collection_naming_overwrite = False
