@@ -1,5 +1,5 @@
 presets_gltf = {
-    "Simple_Godot": {
+    "Godot-default": {
         "filepath": "M:\\Addon_Development\\simple_export\\files\\sourcedata\\Godot_tree_conifer_01.glb",
         "export_import_convert_lighting_mode": "SPEC",
         "gltf_export_id": "",

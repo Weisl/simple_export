@@ -1,5 +1,5 @@
 presets_fbx = {
-    "Simple_UE": {
+    "UE-default": {
         "filepath": "",
         "use_selection": False,
         "use_visible": False,
@@ -40,7 +40,7 @@ presets_fbx = {
         "axis_forward": "Y",
         "axis_up": "Z",
     },
-    "Simple_Unity": {
+    "Unity-default": {
         "filepath": "",
         "use_selection": False,
         "use_visible": False,
