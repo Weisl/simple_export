@@ -16,11 +16,11 @@ def setup_collection(context, collection, active_object, settings_col, settings_
     color_tag = getattr(settings_col, 'collection_color')
     collection.color_tag = color_tag
 
-    if getattr(settings_col, 'collection_set_location_offset_on_creation'):
+    if getattr(settings_col, 'collection_instance_offset'):
         collection.instance_offset = active_object.location
 
-    if getattr(settings_col, 'collection_use_root_offset_object'):
-        collection.use_root_object = settings_col.collection_use_root_offset_object
+    if getattr(settings_col, 'use_root_object'):
+        collection.use_root_object = settings_col.use_root_object
 
     if getattr(settings_col, 'collection_set_root_offset_object'):
         collection.root_object = active_object

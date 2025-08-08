@@ -207,14 +207,14 @@ class CollectionNamingProps:
 
 class CollectionOriginProps:
     use_root_object: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["collection_use_root_offset_object"]["name"],
-        description=PROPERTY_METADATA["collection_use_root_offset_object"]["description"],
-        default=PROPERTY_METADATA["collection_use_root_offset_object"]["default"]
+        name=PROPERTY_METADATA["use_root_object"]["name"],
+        description=PROPERTY_METADATA["use_root_object"]["description"],
+        default=PROPERTY_METADATA["use_root_object"]["default"]
     )
     collection_instance_offset: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["collection_set_location_offset_on_creation"]["name"],
-        description=PROPERTY_METADATA["collection_set_location_offset_on_creation"]["description"],
-        default=PROPERTY_METADATA["collection_set_location_offset_on_creation"]["default"]
+        name=PROPERTY_METADATA["collection_instance_offset"]["name"],
+        description=PROPERTY_METADATA["collection_instance_offset"]["description"],
+        default=PROPERTY_METADATA["collection_instance_offset"]["default"]
     )
 
 

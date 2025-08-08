@@ -120,7 +120,7 @@ PROPERTY_METADATA = {
         "default": 'NONE',
     },
 
-    "collection_set_location_offset_on_creation": {
+    "collection_instance_offset": {
         "name": "Set Collection Center Location",
         "description": "Set Location Offset for collections.",
         "default": False,
@@ -131,7 +131,7 @@ PROPERTY_METADATA = {
         "default": True,
     },
 
-    "collection_use_root_offset_object": {
+    "use_root_object": {
         "name": "Assign Root Object",
         "description": "Use root object as Collection Offset.",
         "default": True,
@@ -562,16 +562,16 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     ########################################
     # Collections Settings
 
-    collection_set_location_offset_on_creation: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["collection_set_location_offset_on_creation"]["name"],
-        description=PROPERTY_METADATA["collection_set_location_offset_on_creation"]["description"],
-        default=PROPERTY_METADATA["collection_set_location_offset_on_creation"]["default"],
+    collection_instance_offset: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["collection_instance_offset"]["name"],
+        description=PROPERTY_METADATA["collection_instance_offset"]["description"],
+        default=PROPERTY_METADATA["collection_instance_offset"]["default"],
     )
 
-    collection_use_root_offset_object: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["collection_use_root_offset_object"]["name"],
-        description=PROPERTY_METADATA["collection_use_root_offset_object"]["description"],
-        default=PROPERTY_METADATA["collection_use_root_offset_object"]["default"],
+    use_root_object: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["use_root_object"]["name"],
+        description=PROPERTY_METADATA["use_root_object"]["description"],
+        default=PROPERTY_METADATA["use_root_object"]["default"],
     )
 
     collection_set_root_offset_object: bpy.props.BoolProperty(
@@ -990,16 +990,16 @@ def initialize_properties_collection_generation():
     )
 
     # Collection creation settings
-    bpy.types.Scene.collection_set_location_offset_on_creation = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["collection_set_location_offset_on_creation"]["name"],
-        description=PROPERTY_METADATA["collection_set_location_offset_on_creation"]["description"],
-        default=prefs.collection_set_location_offset_on_creation
+    bpy.types.Scene.collection_instance_offset = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["collection_instance_offset"]["name"],
+        description=PROPERTY_METADATA["collection_instance_offset"]["description"],
+        default=prefs.collection_instance_offset
     )
 
-    bpy.types.Scene.collection_use_root_offset_object = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["collection_use_root_offset_object"]["name"],
-        description=PROPERTY_METADATA["collection_use_root_offset_object"]["description"],
-        default=prefs.collection_use_root_offset_object
+    bpy.types.Scene.use_root_object = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["use_root_object"]["name"],
+        description=PROPERTY_METADATA["use_root_object"]["description"],
+        default=prefs.use_root_object
     )
 
     bpy.types.Scene.collection_set_root_offset_object = bpy.props.BoolProperty(
@@ -1200,8 +1200,8 @@ def unregister():
     del bpy.types.Scene.filename_blend_prefix
     del bpy.types.Scene.filename_prefix
     del bpy.types.Scene.filename_suffix
-    del bpy.types.Scene.collection_set_location_offset_on_creation
-    del bpy.types.Scene.collection_use_root_offset_object
+    del bpy.types.Scene.collection_instance_offset
+    del bpy.types.Scene.use_root_object
     del bpy.types.Scene.collection_set_root_offset_object
     del bpy.types.Scene.set_export_path
     del bpy.types.Scene.set_preset

@@ -14,8 +14,8 @@ def call_simple_add_exporter_to_collection(context, collection, layout):
     op.collection_suffix = collection_settings.collection_suffix
     op.collection_blend_prefix = collection_settings.collection_blend_prefix
     op.collection_color = collection_settings.collection_color
-    op.collection_instance_offset = collection_settings.collection_set_location_offset_on_creation
-    op.use_root_object = collection_settings.collection_use_root_offset_object
+    op.collection_instance_offset = collection_settings.collection_instance_offset
+    op.use_root_object = collection_settings.use_root_object
     # Preset settings - use scene if overwrite is enabled, else prefs
     preset_settings = scene if scene.overwrite_collection_settings else prefs
     op.set_preset = preset_settings.set_preset
@@ -115,8 +115,8 @@ def call_create_export_collection_op(context, layout, icon='COLLECTION_NEW', tex
     op.collection_suffix = collection_settings.collection_suffix
     op.collection_blend_prefix = collection_settings.collection_blend_prefix
     op.collection_color = collection_settings.collection_color
-    op.collection_instance_offset = collection_settings.collection_set_location_offset_on_creation
-    op.use_root_object = collection_settings.collection_use_root_offset_object
+    op.collection_instance_offset = collection_settings.collection_instance_offset
+    op.use_root_object = collection_settings.use_root_object
     # Preset settings - use scene if overwrite is enabled, else prefs
     preset_settings = scene if scene.overwrite_collection_settings else prefs
     op.set_preset = preset_settings.set_preset

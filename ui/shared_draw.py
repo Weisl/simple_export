@@ -52,14 +52,14 @@ def draw_collection_settings_properties(layout, element):
     # Handle different property names between scene and preferences
     if hasattr(element, "collection_instance_offset"):
         layout.prop(element, "collection_instance_offset")
-    if hasattr(element, "collection_set_location_offset_on_creation"):
-        layout.prop(element, "collection_set_location_offset_on_creation")
+    if hasattr(element, "collection_instance_offset"):
+        layout.prop(element, "collection_instance_offset")
 
     if hasattr(element, "use_root_object"):
         layout.prop(element, "use_root_object")
-    if hasattr(element, "collection_use_root_offset_object"):
-        layout.prop(element, "collection_use_root_offset_object")
-        if element.collection_use_root_offset_object and hasattr(element, "collection_set_root_offset_object"):
+    if hasattr(element, "use_root_object"):
+        layout.prop(element, "use_root_object")
+        if element.use_root_object and hasattr(element, "collection_set_root_offset_object"):
             layout.prop(element, "collection_set_root_offset_object")
 
     layout.prop(element, "set_preset")
@@ -146,6 +146,10 @@ def draw_exporter_presets(self, context):
     row = layout.row(align=True)
 
     row.menu(EXPORT_MT_addon_presets.__name__, text=EXPORT_MT_addon_presets.bl_label)
+
+    from ..presets_addon.exporter_preset import SIMPLE_EXPORT_preset
+    row.operator(SIMPLE_EXPORT_preset.bl_idname, text="", icon='ADD')
+    row.operator(SIMPLE_EXPORT_preset.bl_idname, text="", icon='REMOVE').remove_active = True
 
     op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
     op.operation = 'FOLDER_OPEN'
