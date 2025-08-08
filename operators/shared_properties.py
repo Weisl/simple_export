@@ -92,6 +92,7 @@ class SharedFilenameProps:
         default=PROPERTY_METADATA["filename_blend_prefix"]["default"]
     )
 
+
 # Set Folder Path
 class SharedPathAssignmentProps:
     set_export_path: bpy.props.BoolProperty(
@@ -100,9 +101,64 @@ class SharedPathAssignmentProps:
         default=PROPERTY_METADATA["set_export_path"]["default"]
     )
 
+
 # Set Presets
+from ..preferences.preferenecs import get_py_files_for_fbx, update_preset_path_for_fbx, get_py_files_for_obj, \
+    update_preset_path_for_obj, get_py_files_for_abc, get_py_files_for_ply, get_py_files_for_stl, get_py_files_for_usd, \
+    get_py_files_for_gltf, update_preset_path_for_gltf, update_preset_path_for_abc, update_preset_path_for_ply, \
+    update_preset_path_for_stl, update_preset_path_for_usd
+
 
 class SharedPresetAssignmentProps:
+    simple_export_preset_file_fbx: bpy.props.EnumProperty(
+        name="FBX Preset File",
+        description="Select a preset file for FBX",
+        items=lambda self, context: get_py_files_for_fbx(self, context),
+        update=update_preset_path_for_fbx,
+    )
+
+    simple_export_preset_file_obj: bpy.props.EnumProperty(
+        name="OBJ Preset File",
+        description="Select a preset file for OBJ",
+        items=lambda self, context: get_py_files_for_obj(self, context),
+        update=update_preset_path_for_obj,
+    )
+
+    simple_export_preset_file_gltf: bpy.props.EnumProperty(
+        name="glTF Preset File",
+        description="Select a preset file for glTF",
+        items=lambda self, context: get_py_files_for_gltf(self, context),
+        update=update_preset_path_for_gltf,
+    )
+
+    simple_export_preset_file_usd: bpy.props.EnumProperty(
+        name="USD Preset File",
+        description="Select a preset file for USD",
+        items=lambda self, context: get_py_files_for_usd(self, context),
+        update=update_preset_path_for_usd,
+    )
+
+    simple_export_preset_file_abc: bpy.props.EnumProperty(
+        name="Alembic Preset File",
+        description="Select a preset file for Alembic",
+        items=lambda self, context: get_py_files_for_abc(self, context),
+        update=update_preset_path_for_abc,
+    )
+
+    simple_export_preset_file_ply: bpy.props.EnumProperty(
+        name="PLY Preset File",
+        description="Select a preset file for PLY",
+        items=lambda self, context: get_py_files_for_ply(self, context),
+        update=update_preset_path_for_ply,
+    )
+
+    simple_export_preset_file_stl: bpy.props.EnumProperty(
+        name="STL Preset File",
+        description="Select a preset file for STL",
+        items=lambda self, context: get_py_files_for_stl(self, context),
+        update=update_preset_path_for_stl,
+    )
+
     preset_filepath: bpy.props.StringProperty(
         name="Preset Path",
         description="Path to the preset file to assign to the exporter",
@@ -174,4 +230,3 @@ class CollectionSettingsProps:
         description="Name of the parent collection for the collection",
         default=""
     )
-
