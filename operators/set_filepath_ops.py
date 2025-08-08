@@ -29,13 +29,13 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
     def draw(self, context):
         layout = self.layout
 
+        box = layout.box()
         # Filepath settings
         from ..ui.shared_draw import draw_export_folderpath_properties, draw_export_filename_properties
-        box = layout.box()
-        box.label(text="File Path Settings")
-        draw_export_folderpath_properties(box, self)
+        draw_export_filename_properties(box, self)
 
-        draw_export_filename_properties(layout, self)
+        box = layout.box()
+        draw_export_folderpath_properties(box, self)
 
     def execute(self, context):
         results = []
@@ -77,27 +77,32 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
 
                 collection_name = collection.name
 
-                export_folder, is_relative_path = get_export_folder_path(self.export_folder_mode, self.folder_path_absolute, self.folder_path_relative,
-                                                       self.folder_path_search, self.folder_path_replace)
-                
+                export_folder, is_relative_path = get_export_folder_path(self.export_folder_mode,
+                                                                         self.folder_path_absolute,
+                                                                         self.folder_path_relative,
+                                                                         self.folder_path_search,
+                                                                         self.folder_path_replace)
+
                 # Simple check for empty paths
                 if not export_folder:
-                    results.append({'name': collection.name, 'success': False, 'filepath': '', 'message': 'Export path is empty. Please specify a valid export folder.'})
+                    results.append({'name': collection.name, 'success': False, 'filepath': '',
+                                    'message': 'Export path is empty. Please specify a valid export folder.'})
                     continue
 
                 # FILE: filename properties
                 filename = generate_base_name(collection_name, self.filename_prefix, self.filename_suffix,
-                                                     self.filename_blend_prefix)
+                                              self.filename_blend_prefix)
 
                 # Generate final export path
-                export_path = generate_export_path(export_folder, filename, scene.export_format, is_relative_path=is_relative_path)
+                export_path = generate_export_path(export_folder, filename, scene.export_format,
+                                                   is_relative_path=is_relative_path)
 
                 try:
                     collection["prev_name"] = collection.name
 
                     # Assign path to exporter
                     success, msg = assign_collection_exporter_path(exporter, export_path,
-                                                                                is_relative_path=is_relative_path)
+                                                                   is_relative_path=is_relative_path)
                 except Exception as e:
                     export_path = ''
                     success = False

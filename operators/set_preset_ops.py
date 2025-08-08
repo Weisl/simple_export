@@ -1,6 +1,8 @@
-import bpy
 import os
 
+import bpy
+
+from .shared_properties import SharedPresetAssignmentProps
 from .. import __package__ as base_package
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.exporter_funcs import find_exporter
@@ -9,15 +11,22 @@ from ..functions.preset_func import set_preset
 from ..functions.vallidate_func import validate_collection
 
 
-class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
+class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAssignmentProps):
     """Operator to apply the preset to all collections"""
     bl_idname = "simple_export.set_presets"
     bl_label = "Assign Presets"
+    bl_options = {'REGISTER', 'UNDO'}
 
     outliner: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
     individual_collection: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
     collection_name: bpy.props.StringProperty(name="Collection Name", default='',
                                               description="Name of the collection to process", options={'HIDDEN'})
+
+    def draw(self, context):
+        """Draw the UI for the operator."""
+        layout = self.layout
+        from ..ui.shared_draw import draw_export_preset_properties
+        draw_export_preset_properties(layout, self)
 
     def execute(self, context):
         results = []  # To store the renaming status of each collection

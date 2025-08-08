@@ -285,9 +285,9 @@ class SIMPLE_EXPORT_menu_base:
 
         col = layout.column(align=True)
         row = col.row()
-        op = row.operator("simple_export.set_presets", text="Assign Presets", icon='PRESET_NEW')
-        op.outliner = False
-        op.individual_collection = False
+
+        from .shared_operator_call import call_set_preset_op
+        call_set_preset_op(context, row)
 
         from .shared_operator_call import call_simple_export_path_ops
         row = col.row()
