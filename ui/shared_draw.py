@@ -4,7 +4,6 @@ import textwrap
 import bpy
 
 from ..core.info import ADDON_NAME, COLOR_TAG_ICONS
-from ..presets_addon.exporter_preset import EXPORT_MT_addon_presets
 
 
 def draw_collection_creation(context, layout):
@@ -138,26 +137,41 @@ def draw_export_fomrat(layout, elment):
     layout.prop(elment, "export_format", text="Format")
 
 
-def draw_exporter_presets(layout, context):
+def draw_exporter_presets(layout, preset_context='SCENE'):
     """
-    Draw the naming presets_export menu in the layout.
-
+    Draw the naming presets menu in the layout.
     Args:
-        self (UILayout): The UI layout.
-        context (Context): The current context.
+        layout (UILayout): The UI layout.
+        preset_context (str): The context type for the preset operations.
     """
     row = layout.row(align=True)
 
-    row.menu(EXPORT_MT_addon_presets.__name__, text=EXPORT_MT_addon_presets.bl_label)
+    from ..presets_addon.exporter_preset import EXPORT_MT_prefs_presets, EXPORT_MT_scene_presets, \
+        EXPORT_MT_operator_presets, SceneExportPreset, PrefsExportPreset, OperatorExportPreset
 
-    from ..presets_addon.exporter_preset import SIMPLE_EXPORT_preset
-    row.operator(SIMPLE_EXPORT_preset.bl_idname, text="", icon='ADD')
-    row.operator(SIMPLE_EXPORT_preset.bl_idname, text="", icon='REMOVE').remove_active = True
+    # Determine the appropriate preset menu and operators based on the context
+    if preset_context == 'SCENE':
+        row.menu(EXPORT_MT_scene_presets.__name__, text=EXPORT_MT_scene_presets.bl_label)
+        add_op = row.operator(SceneExportPreset.bl_idname, text="", icon='ADD')
+        remove_op = row.operator(SceneExportPreset.bl_idname, text="", icon='REMOVE')
+    elif preset_context == 'PREFS':
+        row.menu(EXPORT_MT_prefs_presets.__name__, text=EXPORT_MT_prefs_presets.bl_label)
+        add_op = row.operator(PrefsExportPreset.bl_idname, text="", icon='ADD')
+        remove_op = row.operator(PrefsExportPreset.bl_idname, text="", icon='REMOVE')
+    elif preset_context == 'OP':
+        row.menu(EXPORT_MT_operator_presets.__name__, text=EXPORT_MT_operator_presets.bl_label)
+        add_op = row.operator(OperatorExportPreset.bl_idname, text="", icon='ADD')
+        remove_op = row.operator(OperatorExportPreset.bl_idname, text="", icon='REMOVE')
 
-    op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
-    op.operation = 'FOLDER_OPEN'
-    # op.filepath = collider_presets_folder()
+    remove_op.remove_active = True
 
-    op = row.operator("simple_collider.open_preferences", text="", icon='PREFERENCES')
-    op.addon_name = ADDON_NAME
-    op.prefs_tabs = 'NAMING'
+    # Operator to open a folder
+    folder_op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
+    folder_op.operation = 'FOLDER_OPEN'
+    from ..presets_addon.exporter_preset import simple_export_presets_folder
+    folder_op.filepath = simple_export_presets_folder()
+
+    # Operator to open preferences
+    prefs_op = row.operator("simple_collider.open_preferences", text="", icon='PREFERENCES')
+    prefs_op.addon_name = ADDON_NAME
+    prefs_op.prefs_tabs = 'NAMING'

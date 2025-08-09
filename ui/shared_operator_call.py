@@ -9,7 +9,7 @@ def call_simple_add_exporter_to_collection(context, collection, layout):
     prefs = context.preferences.addons[base_package].preferences
     scene = context.scene
     # Collection settings - use scene if overwrite is enabled, else prefs
-    collection_settings = scene if scene.overwrite_collection_settings else prefs
+    collection_settings = scene
     op.collection_prefix = collection_settings.collection_prefix
     op.collection_suffix = collection_settings.collection_suffix
     op.collection_blend_prefix = collection_settings.collection_blend_prefix
@@ -17,7 +17,7 @@ def call_simple_add_exporter_to_collection(context, collection, layout):
     op.collection_instance_offset = collection_settings.collection_instance_offset
     op.use_root_object = collection_settings.use_root_object
     # Preset settings - use scene if overwrite is enabled, else prefs
-    preset_settings = scene if scene.overwrite_collection_settings else prefs
+    preset_settings = scene
     op.set_preset = preset_settings.set_preset
     op.set_export_path = preset_settings.set_export_path
     # Get preset filepath if auto-set is enabled
@@ -27,14 +27,14 @@ def call_simple_add_exporter_to_collection(context, collection, layout):
         prop_name = f"simple_export_preset_file_{export_format}"
         op.preset_filepath = getattr(preset_settings, prop_name, "")
     # Filepath settings - use scene if overwrite is enabled, else prefs
-    filepath_settings = scene if scene.overwrite_filepath_settings else prefs
+    filepath_settings = scene
     op.export_folder_mode = filepath_settings.export_folder_mode
     op.folder_path_absolute = filepath_settings.folder_path_absolute
     op.folder_path_relative = filepath_settings.folder_path_relative
     op.folder_path_search = filepath_settings.folder_path_search
     op.folder_path_replace = filepath_settings.folder_path_replace
     # Filename settings - use scene if overwrite is enabled, else prefs
-    filename_settings = scene if scene.overwrite_filename_settings else prefs
+    filename_settings = scene
     op.filename_prefix = filename_settings.filename_prefix
     op.filename_suffix = filename_settings.filename_suffix
     op.filename_blend_prefix = filename_settings.filename_blend_prefix
@@ -56,14 +56,14 @@ def call_simple_export_path_ops(context, layout, text=None, outliner=False,
     prefs = context.preferences.addons[base_package].preferences
     scene = context.scene
     # Filepath settings - use scene if overwrite is enabled, else prefs
-    filepath_settings = scene if scene.overwrite_filepath_settings else prefs
+    filepath_settings = scene
     op.export_folder_mode = filepath_settings.export_folder_mode
     op.folder_path_absolute = filepath_settings.folder_path_absolute
     op.folder_path_relative = filepath_settings.folder_path_relative
     op.folder_path_search = filepath_settings.folder_path_search
     op.folder_path_replace = filepath_settings.folder_path_replace
     # Filename settings - use scene if overwrite is enabled, else prefs
-    filename_settings = scene if scene.overwrite_filename_settings else prefs
+    filename_settings = scene
     op.filename_prefix = filename_settings.filename_prefix
     op.filename_suffix = filename_settings.filename_suffix
     op.filename_blend_prefix = filename_settings.filename_blend_prefix
@@ -84,7 +84,7 @@ def call_set_preset_op(context, layout, text=None, icon='PRESET_NEW'):
     scene = context.scene
 
     # Preset settings - use scene if overwrite is enabled, else prefs
-    preset_settings = scene if scene.overwrite_collection_settings else prefs
+    preset_settings = scene
     op.set_preset = preset_settings.set_preset
     # Get preset filepath if auto-set is enabled
     export_format = scene.export_format.lower()
@@ -113,7 +113,7 @@ def call_create_export_collection_op(context, layout, icon='COLLECTION_NEW', tex
     op.export_format = scene.export_format
 
     # Collection settings - use scene if overwrite is enabled, else prefs
-    collection_settings = scene if scene.overwrite_collection_settings else prefs
+    collection_settings = scene
     op.collection_prefix = collection_settings.collection_prefix
     op.collection_suffix = collection_settings.collection_suffix
     op.collection_blend_prefix = collection_settings.collection_blend_prefix
@@ -121,7 +121,7 @@ def call_create_export_collection_op(context, layout, icon='COLLECTION_NEW', tex
     op.collection_instance_offset = collection_settings.collection_instance_offset
     op.use_root_object = collection_settings.use_root_object
     # Preset settings - use scene if overwrite is enabled, else prefs
-    preset_settings = scene if scene.overwrite_collection_settings else prefs
+    preset_settings = scene
     op.set_preset = preset_settings.set_preset
     op.set_export_path = preset_settings.set_export_path
     # Get preset filepath if auto-set is enabled
@@ -131,14 +131,14 @@ def call_create_export_collection_op(context, layout, icon='COLLECTION_NEW', tex
         prop_name = f"simple_export_preset_file_{export_format}"
         op.preset_filepath = getattr(preset_settings, prop_name, "")
     # Filepath settings - use scene if overwrite is enabled, else prefs
-    filepath_settings = scene if scene.overwrite_filepath_settings else prefs
+    filepath_settings = scene
     op.export_folder_mode = filepath_settings.export_folder_mode
     op.folder_path_absolute = filepath_settings.folder_path_absolute
     op.folder_path_relative = filepath_settings.folder_path_relative
     op.folder_path_search = filepath_settings.folder_path_search
     op.folder_path_replace = filepath_settings.folder_path_replace
     # Filename settings - use scene if overwrite is enabled, else prefs
-    filename_settings = scene if scene.overwrite_filename_settings else prefs
+    filename_settings = scene
     op.filename_prefix = filename_settings.filename_prefix
     op.filename_suffix = filename_settings.filename_suffix
     op.filename_blend_prefix = filename_settings.filename_blend_prefix

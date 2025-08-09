@@ -247,7 +247,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         from ..core.export_path_func import generate_base_name
 
-        filename_settings = scene if scene.overwrite_filename_settings else prefs
+        filename_settings = scene
         base_name = generate_base_name(collection.name, filename_settings.filename_prefix,
                                        filename_settings.filename_suffix, filename_settings.filename_blend_prefix)
 

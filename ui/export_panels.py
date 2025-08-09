@@ -3,7 +3,7 @@ import os
 import bpy
 
 from .. import __package__ as base_package
-from ..core.info import ADDON_NAME, COLOR_TAG_ICONS
+from ..core.info import ADDON_NAME
 from ..functions.exporter_funcs import find_exporter
 
 
@@ -51,63 +51,38 @@ def draw_scene_settings_overwrite(context, layout, scene):
         prefs = context.preferences.addons[base_package].preferences
 
         from .shared_draw import draw_exporter_presets
-        draw_exporter_presets(body, context)
+        draw_exporter_presets(body, preset_context='SCENE')
 
         row = body.row()
         from ..ui.shared_draw import draw_export_fomrat
         draw_export_fomrat(row, scene)
 
         # Filepath Settings
-        row = body.row()
-        row.prop(scene, 'overwrite_filepath_settings')
         box = body.box()
-        filepath_settings = scene if scene.overwrite_filepath_settings else prefs
-        if scene.overwrite_filepath_settings:
-            box.enabled = True
-        else:
-            box.enabled = False
+        filepath_settings = scene
 
         # Draw filepath properties using shared function
         from ..ui.shared_draw import draw_export_folderpath_properties
         draw_export_folderpath_properties(box, filepath_settings)
 
         # Filename Settings
-        row = body.row()
-        row.prop(scene, 'overwrite_filename_settings')
         box = body.box()
-        filename_settings = scene if scene.overwrite_filename_settings else prefs
-        if scene.overwrite_filename_settings:
-            box.enabled = True
-        else:
-            box.enabled = False
-
+        filename_settings = scene
         # Draw filename properties using shared function
         from ..ui.shared_draw import draw_export_filename_properties
         draw_export_filename_properties(box, filename_settings)
 
         # Preset Settings
-        row = body.row()
-        row.prop(scene, 'overwrite_preset_settings')
         box = body.box()
-        preset_settings = scene if scene.overwrite_preset_settings else prefs
-        if scene.overwrite_preset_settings:
-            box.enabled = True
-        else:
-            box.enabled = False
+        preset_settings = scene
 
         # Draw preset properties using shared function
         from ..ui.shared_draw import draw_export_preset_properties
         draw_export_preset_properties(box, preset_settings)
 
         # Collection Settings
-        row = body.row()
-        row.prop(scene, 'overwrite_collection_settings')
         box = body.box()
-        collection_settings = scene if scene.overwrite_collection_settings else prefs
-        if scene.overwrite_collection_settings:
-            box.enabled = True
-        else:
-            box.enabled = False
+        collection_settings = scene
 
         # Draw collection name properties using shared function
         from ..ui.shared_draw import draw_collection_name_properties
@@ -307,7 +282,6 @@ class VIEW3D_PT_SimpleExportSettings(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         draw_scene_settings_overwrite(context, layout, scene)
 
 
-
 class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
     """Creates a Panel in the Object properties window"""
 
@@ -322,14 +296,12 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
 
         draw_simple_export_header(layout)
 
-
     def draw(self, context):
-
         scene = context.scene
         layout = self.layout
 
         from .shared_draw import draw_exporter_presets
-        draw_exporter_presets(layout, context)
+        draw_exporter_presets(layout, preset_context='SCENE')
 
         # draw Create exporter
         from .shared_draw import draw_parent_collection, draw_collection_creation
@@ -346,6 +318,7 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         super().draw(context)
 
         draw_active_list_element(layout, context, scene)
+
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
     bl_label = "Custom Collection Menu"
@@ -376,7 +349,7 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         list_id = "scene"
 
         from .shared_draw import draw_exporter_presets
-        draw_exporter_presets(layout, context)
+        draw_exporter_presets(layout, preset_context = 'SCENE')
 
         # draw Create exporter
         from .shared_draw import draw_parent_collection, draw_collection_creation

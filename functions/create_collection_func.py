@@ -52,7 +52,7 @@ def setup_collection(context, collection, active_object, settings_col, settings_
         prop_name = f"simple_export_preset_file_{export_format}"
 
         # Get preset path
-        preset_settings = scene if scene.overwrite_preset_settings else prefs
+        preset_settings = scene
         preset_path = getattr(preset_settings, prop_name, None)
 
         set_preset(exporter, preset_path)

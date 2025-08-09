@@ -38,7 +38,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
         prop_name = f"simple_export_preset_file_{export_format}"
 
         # Get preset path
-        preset_settings = scene if scene.overwrite_preset_settings else prefs
+        preset_settings = scene
         preset_path = getattr(preset_settings, prop_name, None)
 
         # Get Export Collections

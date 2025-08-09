@@ -747,7 +747,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         if self.prefs_tabs == 'SETTINGS':
 
             from ..ui.shared_draw import draw_exporter_presets
-            draw_exporter_presets(layout, context)
+            draw_exporter_presets(layout, preset_context='PREFS')
 
             layout.prop(self, "default_export_format")
 
@@ -1095,25 +1095,6 @@ def register():
         default=0
     )
 
-    bpy.types.Scene.overwrite_filepath_settings = bpy.props.BoolProperty(
-        name="Scene: Filepath",
-        description="Overwrite the settings regarding the generation of the export path defined in the Preferences",
-        default=True)
-
-    bpy.types.Scene.overwrite_filename_settings = bpy.props.BoolProperty(
-        name="Scene: Filename",
-        description="Overwrite the settings regarding the generation of the export file name defined in the Preferences",
-        default=False)
-
-    bpy.types.Scene.overwrite_collection_settings = bpy.props.BoolProperty(
-        name="Scene: Export Collection",
-        description="Overwrite the settings related to the creation of Export Collections defined in the Preferences",
-        default=False)
-
-    bpy.types.Scene.overwrite_preset_settings = bpy.props.BoolProperty(
-        name="Scene: Preset",
-        description="Overwrite the settings regarding the presets_export",
-        default=False)
 
     ########################################
     # Presets
@@ -1187,9 +1168,6 @@ def unregister():
     # Persistant settings
     del bpy.types.Scene.collection_index
 
-    del bpy.types.Scene.overwrite_filepath_settings
-    del bpy.types.Scene.overwrite_collection_settings
-
     # Export format
     del bpy.types.Scene.export_format
     del bpy.types.Scene.override_path
@@ -1218,6 +1196,3 @@ def unregister():
     # Pre export operations
     del bpy.types.Scene.move_by_collection_offset
 
-    # Override settings
-    del bpy.types.Scene.overwrite_filename_settings
-    del bpy.types.Scene.overwrite_preset_settings
