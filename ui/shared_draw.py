@@ -138,7 +138,7 @@ def draw_export_fomrat(layout, elment):
     layout.prop(elment, "export_format", text="Format")
 
 
-def draw_exporter_presets(layou, context):
+def draw_exporter_presets(layout, context):
     """
     Draw the naming presets_export menu in the layout.
 

@@ -50,9 +50,10 @@ def draw_scene_settings_overwrite(context, layout, scene):
     if body:
         prefs = context.preferences.addons[base_package].preferences
 
-        # Draw File Format Selection
-        row = body.row()
+        from .shared_draw import draw_exporter_presets
+        draw_exporter_presets(body, context)
 
+        row = body.row()
         from ..ui.shared_draw import draw_export_fomrat
         draw_export_fomrat(row, scene)
 
