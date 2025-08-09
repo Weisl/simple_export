@@ -109,6 +109,9 @@ def call_create_export_collection_op(context, layout, icon='COLLECTION_NEW', tex
     prefs = context.preferences.addons[base_package].preferences
     scene = context.scene
 
+    # Export Format
+    op.export_format = scene.export_format
+
     # Collection settings - use scene if overwrite is enabled, else prefs
     collection_settings = scene if scene.overwrite_collection_settings else prefs
     op.collection_prefix = collection_settings.collection_prefix
