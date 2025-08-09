@@ -134,6 +134,10 @@ def label_multiline(context, text, parent):
         parent.label(text=text_line)
 
 
+def draw_export_fomrat(layout, scene):
+    layout.prop(scene, "export_format", text="Format")
+
+
 def draw_exporter_presets(self, context):
     """
     Draw the naming presets_export menu in the layout.

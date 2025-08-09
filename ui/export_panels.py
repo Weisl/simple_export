@@ -14,7 +14,7 @@ def draw_pre_export_operations(col, scene):
     icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
 
     # Draw the panel header
-    header.label(text="Pre Export Operations (BETA)", icon=icon)
+    header.label(text="Pre Export Operations", icon=icon)
 
     # Check if the panel is expanded before drawing elements
     if body:
@@ -52,7 +52,9 @@ def draw_scene_settings_overwrite(context, layout, scene):
 
         # Draw File Format Selection
         row = body.row()
-        row.prop(scene, "export_format", text="Format")
+
+        from ..ui.shared_draw import draw_export_fomrat
+        draw_export_fomrat(row, scene)
 
         # Filepath Settings
         row = body.row()

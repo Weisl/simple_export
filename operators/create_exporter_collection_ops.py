@@ -3,7 +3,7 @@ import bpy
 from .shared_properties import (
     SharedPathProps, SharedFilenameProps,
     SharedPathAssignmentProps, SharedPresetAssignmentProps, CollectionNamingProps,
-    CollectionOriginProps, CollectionSettingsProps
+    CollectionOriginProps, CollectionSettingsProps, SharedFormatProps
 )
 from ..core.export_path_func import generate_base_name
 from ..functions.collections_setup import setup_collection_properties
@@ -34,6 +34,7 @@ def collect_children(obj, objects):
 
 
 class EXPORT_OT_CreateExportCollections(
+    SharedFormatProps,
     SharedPathAssignmentProps,
     SharedPresetAssignmentProps,
     CollectionNamingProps,
