@@ -1,8 +1,10 @@
 import os
 
 import bpy
+from bl_operators.presets import AddPresetBase
 from bpy.props import StringProperty, EnumProperty
-from bpy.types import Operator, Menu
+from bpy.types import Menu
+from bpy.types import Operator
 
 from .. import __package__ as base_package
 
@@ -81,16 +83,14 @@ class SIMPLEEXPORT_OT_load_preset(Operator):
         source = context.scene
 
         # Copy the preset values from the source to the target
-        for prop_name in SIMPLE_EXPORT_preset.preset_values:
+        for prop_name in BaseExportPreset.preset_values:
             if hasattr(source, prop_name) and hasattr(target, prop_name):
                 setattr(target, prop_name, getattr(source, prop_name))
 
 
-from bl_operators.presets import AddPresetBase
-from bpy.types import Operator
-
-
 class BaseExportPreset(AddPresetBase, Operator):
+
+
     """Base class for export presets"""
     # Common properties for all preset types
     preset_values = [
@@ -123,7 +123,7 @@ class SceneExportPreset(BaseExportPreset):
 
     # Define prop for the scene context
     preset_defines = [
-        "prop = bpy.context.scene"
+        f"prop = bpy.context.scene"
     ]
 
 
@@ -135,7 +135,7 @@ class PrefsExportPreset(BaseExportPreset):
 
     # Define prop for the preferences context
     preset_defines = [
-        "prop = bpy.context.preferences.addons[__package__.split('.')[0]].preferences"
+        f'prop = bpy.context.preferences.addons["{ADDON_NAME}"].preferences',
     ]
 
 
@@ -147,7 +147,7 @@ class OperatorExportPreset(BaseExportPreset):
 
     # Define prop for the operator context
     preset_defines = [
-        "prop = self"
+        f"prop = self"
     ]
 
 
