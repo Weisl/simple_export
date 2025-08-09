@@ -21,7 +21,7 @@ def draw_pre_export_operations(col, scene):
         body.prop(scene, 'move_by_collection_offset')
 
 
-def draw_simple_export_header(layout):
+def draw_simple_export_header(layout, text="Simple Export"):
     row = layout.row(align=True)
     # Open documentation
     row.operator("wm.url_open", text="", icon="HELP").url = "https://weisl.github.io/exporter_overview/"
@@ -33,7 +33,7 @@ def draw_simple_export_header(layout):
     # Open Export Popup
     op = row.operator("wm.call_panel", text="", icon="WINDOW")
     op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
-    row.label(text="Simple Export")
+    row.label(text=text)
 
 
 def draw_scene_settings_overwrite(context, layout, scene):
@@ -285,7 +285,7 @@ class SIMPLE_EXPORT_menu_base:
         op.individual_collection = False
 
 
-class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
+class VIEW3D_PT_SimpleExportSettings(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
     """Creates a Panel in the Object properties window"""
 
     bl_space_type = 'VIEW_3D'
@@ -295,15 +295,35 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
 
     def draw_header(self, context):
         layout = self.layout
-        draw_simple_export_header(layout)
+        draw_simple_export_header(layout, text="Simple Export Settings")
 
     def draw(self, context):
-        prefs = context.preferences.addons[base_package].preferences
+        layout = self.layout
         scene = context.scene
 
+        draw_scene_settings_overwrite(context, layout, scene)
+
+
+
+class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
+    """Creates a Panel in the Object properties window"""
+
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Simple Export"
+    bl_label = ""
+
+    def draw_header(self, context):
+        scene = context.scene
         layout = self.layout
 
-        list_id = "npanel"
+        draw_simple_export_header(layout)
+
+
+    def draw(self, context):
+
+        scene = context.scene
+        layout = self.layout
 
         from .shared_draw import draw_exporter_presets
         draw_exporter_presets(self, context)
@@ -316,15 +336,13 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         draw_collection_creation(context, row)
 
         # draw Export List
+        list_id = "npanel"
         draw_export_list(layout, list_id, scene)
 
         # Draw Operator List
         super().draw(context)
 
         draw_active_list_element(layout, context, scene)
-
-        draw_scene_settings_overwrite(context, layout, scene)
-
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
     bl_label = "Custom Collection Menu"
@@ -411,6 +429,7 @@ class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Pa
 
 classes = (
     VIEW3D_PT_SimpleExport,
+    VIEW3D_PT_SimpleExportSettings,
     SIMPLE_EXPORT_MT_context_menu,
     SIMPLE_EXPORT_PT_CollectionExportPanel,
     SIMPLE_EXPORT_PT_simple_export_popup,

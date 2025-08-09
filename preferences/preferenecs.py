@@ -7,7 +7,7 @@ from .keymap import remove_key
 from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
 from ..core.export_formats import get_export_format_items
-from ..ui.export_panels import VIEW3D_PT_SimpleExport
+from ..ui.export_panels import VIEW3D_PT_SimpleExport, VIEW3D_PT_SimpleExportSettings
 
 PROPERTY_METADATA = {
 
@@ -252,6 +252,7 @@ def update_panel_category(self, context):
     """Update panel tab for simple export"""
     panels = [
         VIEW3D_PT_SimpleExport,
+        VIEW3D_PT_SimpleExportSettings,
     ]
 
     for panel in panels:
