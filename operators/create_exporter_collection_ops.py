@@ -186,7 +186,10 @@ class EXPORT_OT_CreateExportCollections(
             draw_export_preset_properties, draw_export_filename_properties
 
         from ..ui.shared_draw import draw_exporter_presets
-        draw_exporter_presets(self, context)
+        draw_exporter_presets(layout, context)
+
+        from ..ui.shared_draw import draw_export_fomrat
+        draw_export_fomrat(layout, self)
 
         box = layout.box()
         draw_collection_name_properties(box, self)

@@ -134,11 +134,11 @@ def label_multiline(context, text, parent):
         parent.label(text=text_line)
 
 
-def draw_export_fomrat(layout, scene):
-    layout.prop(scene, "export_format", text="Format")
+def draw_export_fomrat(layout, elment):
+    layout.prop(elment, "export_format", text="Format")
 
 
-def draw_exporter_presets(self, context):
+def draw_exporter_presets(layou, context):
     """
     Draw the naming presets_export menu in the layout.
 
@@ -146,7 +146,6 @@ def draw_exporter_presets(self, context):
         self (UILayout): The UI layout.
         context (Context): The current context.
     """
-    layout = self.layout
     row = layout.row(align=True)
 
     row.menu(EXPORT_MT_addon_presets.__name__, text=EXPORT_MT_addon_presets.bl_label)

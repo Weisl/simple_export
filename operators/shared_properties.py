@@ -108,13 +108,15 @@ from ..preferences.preferenecs import get_py_files_for_fbx, update_preset_path_f
     get_py_files_for_gltf, update_preset_path_for_gltf, update_preset_path_for_abc, update_preset_path_for_ply, \
     update_preset_path_for_stl, update_preset_path_for_usd
 
+
 class SharedFormatProps:
     from ..core.export_formats import get_export_format_items
-    bpy.types.Scene.export_format = bpy.props.EnumProperty(
+    export_format: bpy.props.EnumProperty(
         name="Export Format",
         description="Select the export format",
         items=get_export_format_items(),  # Dynamically generated items from EXPORT_FORMATS
     )
+
 
 class SharedPresetAssignmentProps:
     simple_export_preset_file_fbx: bpy.props.EnumProperty(

@@ -328,7 +328,7 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         layout = self.layout
 
         from .shared_draw import draw_exporter_presets
-        draw_exporter_presets(self, context)
+        draw_exporter_presets(layout, context)
 
         # draw Create exporter
         from .shared_draw import draw_parent_collection, draw_collection_creation
@@ -375,7 +375,7 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         list_id = "scene"
 
         from .shared_draw import draw_exporter_presets
-        draw_exporter_presets(self, context)
+        draw_exporter_presets(layout, context)
 
         # draw Create exporter
         from .shared_draw import draw_parent_collection, draw_collection_creation

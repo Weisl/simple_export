@@ -747,7 +747,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         if self.prefs_tabs == 'SETTINGS':
 
             from ..ui.shared_draw import draw_exporter_presets
-            draw_exporter_presets(self, context)
+            draw_exporter_presets(layout, context)
 
             layout.prop(self, "default_export_format")
 
