@@ -3,14 +3,6 @@ import textwrap
 
 import bpy
 
-
-def draw_collection_creation(context, layout):
-    # Draw Create Button
-    row = layout.row()
-    from .shared_operator_call import call_create_export_collection_op
-    call_create_export_collection_op(context, row)
-
-
 def draw_parent_collection(context, layout):
     scene = context.scene
     layout.prop(scene, "parent_collection", text="Parent Collection")

@@ -95,7 +95,7 @@ def call_set_preset_op(context, layout, text=None, icon='PRESET_NEW'):
     op.preset_filepath = getattr(preset_settings, prop_name, "")
 
 
-def call_create_export_collection_op(context, layout, icon='COLLECTION_NEW', text=None):
+def call_create_export_collection_op(scene, layout, icon='COLLECTION_NEW', text=None):
     if text is None:
         op = layout.operator("simple_export.create_export_collections", icon=icon)
     else:
@@ -106,11 +106,10 @@ def call_create_export_collection_op(context, layout, icon='COLLECTION_NEW', tex
     op.collection_naming_overwrite = False
     op.collection_name_new = ""
     op.use_numbering = False
-    op.parent_collection = context.scene.parent_collection if context.scene.parent_collection else ""
+    op.parent_collection = scene.parent_collection if scene.parent_collection else ""
 
     # Get and set properties from preferences/scene
-    prefs = context.preferences.addons[base_package].preferences
-    scene = context.scene
+    scene = scene
 
     # Export Format
     op.export_format = scene.export_format

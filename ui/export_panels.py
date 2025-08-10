@@ -176,13 +176,18 @@ def draw_export_list(layout, list_id, scene):
     # Export List
     row = layout.row()
     row.label(text="Export List")
+
+     #UI List
     row = layout.row(align=True)
-    op = row.operator("scene.select_all_collections", text="All", icon="CHECKBOX_HLT")
-    op.deselect = False
-    op = row.operator("scene.select_all_collections", text="None", icon="CHECKBOX_DEHLT")
-    op.deselect = True
+    # Add a button with a down arrow icon to call the menu
     # Display export list
-    layout.template_list("SCENE_UL_CollectionList", list_id, bpy.data, "collections", scene, "collection_index")
+    row.template_list("SCENE_UL_CollectionList", list_id, bpy.data, "collections", scene, "collection_index")
+
+    col = row.column(align=True)
+    # draw Create exporter
+    from .shared_operator_call import call_create_export_collection_op
+    call_create_export_collection_op(scene, col, icon='ADD', text="")
+    col.menu("SIMPLE_EXPORT_MT_context_menu", text="", icon="DOWNARROW_HLT")
 
 
 def get_presets_folder():
@@ -233,6 +238,9 @@ def draw_custom_collection_ui(self, context):
     layout.prop(collection, "root_object", text="Offset Object")
 
 
+
+
+
 class SIMPLE_EXPORT_menu_base:
     bl_label = ""
 
@@ -244,20 +252,22 @@ class SIMPLE_EXPORT_menu_base:
         layout = self.layout
         scene = context.scene
 
+        # Draw Export Operators
+        layout.label(text="Collection Operators")
         col = layout.column(align=True)
-        row = col.row()
-
         from .shared_operator_call import call_set_preset_op
-        call_set_preset_op(context, row)
-
+        op= call_set_preset_op(context, col)
         from .shared_operator_call import call_simple_export_path_ops
-        row = col.row()
-        op = call_simple_export_path_ops(context, row, outliner=False, individual_collection=False)
+        op = call_simple_export_path_ops(context, col, outliner=False, individual_collection=False)
+        from .shared_operator_call import call_create_export_collection_op
+        op = call_create_export_collection_op(scene, col)
 
+        # Draw Pre Export Operators List
         col.separator()
         box = col.box()
         draw_pre_export_operations(box, scene)
 
+        # Draw Export Button
         row = col.row()
         op = row.operator("simple_export.export_collections", text="Export Selected", icon='EXPORT')
         op.outliner = False
@@ -300,11 +310,6 @@ class SimpleExportMainPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
 
         from .shared_draw import draw_exporter_presets
         draw_exporter_presets(layout)
-
-        # draw Create exporter
-        from .shared_draw import draw_collection_creation
-        row = layout.row()
-        draw_collection_creation(context, row)
 
         # draw Export List
         draw_export_list(layout, self.list_id, scene)
@@ -358,6 +363,8 @@ class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
 
     def draw(self, context):
         layout = self.layout
+        row = layout.row()
+        row.label(text="Exporter Operations")
         row = layout.row()
         op = row.operator("scene.select_all_collections", text="Select All", icon="CHECKBOX_HLT")
         op.deselect = False

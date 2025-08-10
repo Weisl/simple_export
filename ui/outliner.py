@@ -11,9 +11,9 @@ def draw_custom_outliner_menu(self, context):
         # Show full export menu for collections
         layout.menu(CUSTOM_MT_outliner_simple_export_menu.bl_idname, icon='EXPORT')
     elif isinstance(selected_element, bpy.types.Object):
-
+        scene = context.scene
         from .shared_operator_call import call_create_export_collection_op
-        op = call_create_export_collection_op(context, layout)
+        op = call_create_export_collection_op(scene, layout)
 
 
 class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):

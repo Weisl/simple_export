@@ -19,9 +19,8 @@ class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Pa
 
         row = layout.row()
         # draw Create exporter
-        from .shared_draw import draw_parent_collection, draw_collection_creation
-        draw_parent_collection(context, row)
-        draw_collection_creation(context, row)
+        from .shared_operator_call import call_create_export_collection_op
+        call_create_export_collection_op(scene, row)
 
         # Export List
         row = layout.row()

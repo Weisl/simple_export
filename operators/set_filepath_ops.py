@@ -11,10 +11,10 @@ from ..functions.vallidate_func import validate_collection
 
 
 class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bpy.types.Operator):
-    """Set export paths for selected collections."""
+    """Assign Exporter Pathss for selected collections."""
     bl_idname = "simple_export.set_export_paths"
-    bl_label = "Set Export Path"
-    bl_description = "Set export paths for selected collections based on the current naming conventions and folder settings."
+    bl_label = "Assign Exporter Paths"
+    bl_description = "Assign Exporter Pathss for selected collections based on the current naming conventions and folder settings."
     bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
     # Internal Properties
