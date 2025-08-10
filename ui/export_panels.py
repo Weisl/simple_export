@@ -1,9 +1,8 @@
+import bpy
 import os
 
-import bpy
-
 from .. import __package__ as base_package
-from ..core.info import ADDON_NAME, COLOR_TAG_ICONS
+from ..core.info import ADDON_NAME
 from ..functions.exporter_funcs import find_exporter
 
 
@@ -14,14 +13,14 @@ def draw_pre_export_operations(col, scene):
     icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
 
     # Draw the panel header
-    header.label(text="Pre Export Operations (BETA)", icon=icon)
+    header.label(text="Pre Export Operations", icon=icon)
 
     # Check if the panel is expanded before drawing elements
     if body:
         body.prop(scene, 'move_by_collection_offset')
 
 
-def draw_simple_export_header(layout):
+def draw_simple_export_header(layout, text="Simple Export"):
     row = layout.row(align=True)
     # Open documentation
     row.operator("wm.url_open", text="", icon="HELP").url = "https://weisl.github.io/exporter_overview/"
@@ -33,23 +32,7 @@ def draw_simple_export_header(layout):
     # Open Export Popup
     op = row.operator("wm.call_panel", text="", icon="WINDOW")
     op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
-    row.label(text="Simple Export")
-
-
-def draw_collection_creation(context, layout):
-    # Parent selection
-    row = layout.row()
-    color_tag = None
-    if context.scene.parent_collection:
-        color_tag = context.scene.parent_collection.color_tag
-    icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
-    row.prop(context.scene, "parent_collection", text="Parent Collection", icon=icon)
-    # Draw Create Button
-    row = layout.row()
-    prefs = context.preferences.addons[base_package].preferences
-    color_tag = prefs.collection_color
-    icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
-    row.operator("simple_export.create_export_collections", icon=icon)
+    row.label(text=text)
 
 
 def draw_scene_settings_overwrite(context, layout, scene):
@@ -64,29 +47,53 @@ def draw_scene_settings_overwrite(context, layout, scene):
     op.prefs_tabs = 'SETTINGS'
     # Body
     if body:
-        row = body.row()
-        row.prop(scene, 'overwrite_filepath_settings')
-        box = body.box()
-        draw_filepath_settings(box, context)
+        prefs = context.preferences.addons[base_package].preferences
+
+        from .shared_draw import draw_exporter_presets
+        draw_exporter_presets(body, buttons=True)
 
         row = body.row()
-        row.prop(scene, 'overwrite_filename_settings')
+        from ..ui.shared_draw import draw_export_fomrat
+        draw_export_fomrat(row, scene)
+
+        # Filepath Settings
         box = body.box()
-        draw_name_settings(box, context)
+        filepath_settings = scene
 
-        row = body.row()
-        row.prop(scene, 'overwrite_preset_settings')
+        # Draw filepath properties using shared function
+        from ..ui.shared_draw import draw_export_folderpath_properties
+        draw_export_folderpath_properties(box, filepath_settings)
+
+        # Filename Settings
         box = body.box()
-        draw_preset_settings(box, context)
+        filename_settings = scene
+        # Draw filename properties using shared function
+        from ..ui.shared_draw import draw_export_filename_properties
+        draw_export_filename_properties(box, filename_settings)
 
-        row = body.row()
-        row.prop(scene, 'overwrite_collection_settings')
+        # Preset Settings
+        box = body.box()
+        preset_settings = scene
+
+        # Draw preset properties using shared function
+        from ..ui.shared_draw import draw_export_preset_properties
+        draw_export_preset_properties(box, preset_settings)
+
+        # Collection Settings
+        box = body.box()
+        collection_settings = scene
+
+        # Draw collection name properties using shared function
+        from ..ui.shared_draw import draw_collection_name_properties
+        draw_collection_name_properties(box, collection_settings)
 
         box = body.box()
-        draw_create_export_collections(box, context)
+        # Draw collection settings properties using shared function
+        from ..ui.shared_draw import draw_collection_settings_properties
+        draw_collection_settings_properties(box, collection_settings)
 
 
-def draw_active_list_element(layout, scene):
+def draw_active_list_element(layout, context, scene):
     # Ensure valid selection before showing details
     if 0 <= scene.collection_index < len(bpy.data.collections):
         selected_collection = bpy.data.collections[scene.collection_index]
@@ -97,7 +104,7 @@ def draw_active_list_element(layout, scene):
 
         if body:
             # Export Path
-            exporter = find_exporter(selected_collection, scene.export_format)
+            exporter = find_exporter(selected_collection, format_filter=scene.export_format)
 
             # Return early
             if not exporter:
@@ -115,12 +122,10 @@ def draw_active_list_element(layout, scene):
 
             row = box.row(align=True)
             row.prop(exporter.export_properties, "filepath", text="", expand=True)
-            op = row.operator("simple_export.set_export_paths", text="", icon='FOLDER_REDIRECT')
-            op.outliner = False
-            op.individual_collection = True
-            op.collection_name = selected_collection.name
 
-            # Collection Center
+            from .shared_operator_call import call_simple_export_path_ops
+            op = call_simple_export_path_ops(context, row, selected_collection, text='', outliner=False,
+                                             individual_collection=True, collection_name=selected_collection.name)
 
             row = box.row(align=True)
             row.label(text='Root Object')
@@ -169,20 +174,34 @@ def draw_active_list_element(layout, scene):
 def draw_export_list(layout, list_id, scene):
     # Export List
     row = layout.row()
-    row.label(text="Export List")
-    row = layout.row(align=True)
-    op = row.operator("scene.select_all_collections", text="All", icon="CHECKBOX_HLT")
-    op.invert = False
-    op = row.operator("scene.select_all_collections", text="None", icon="CHECKBOX_DEHLT")
-    op.invert = True
-    # Display export list
-    layout.template_list("SCENE_UL_CollectionList", list_id, bpy.data, "collections", scene, "collection_index")
+    row.label(text="Collection Export List")
 
+    # Split the layout into two columns
+    split = layout.split(factor=0.9, align=True)  # Adjust the factor to control the width of the first column
+    main_column = split
+
+    # Main column for the UI List
+    row = main_column.row(align=True)
+    row.template_list("SCENE_UL_CollectionList", list_id, bpy.data, "collections", scene, "collection_index")
+
+    narrow_column = split.column(align=True)
+    col = narrow_column
+    # Draw Create exporter
+    from .shared_operator_call import call_create_export_collection_op
+    call_create_export_collection_op(scene, col, icon='ADD', text="")
+
+    # Menu with a down arrow icon
+    col.menu("SIMPLE_EXPORT_MT_context_menu", text="")
+
+    col = narrow_column
+    # Draw View Settings
+    exportlist_properties = scene.exportlist_properties
+    col.prop(exportlist_properties, "my_enum_property")
 
 def get_presets_folder():
-    """Retrieve the base path for Blender's presets folder."""
+    """Retrieve the base path for Blender's presets_export folder."""
     # Get the user scripts folder dynamically
-    return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets", "operator")
+    return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets_export", "operator")
 
 
 def draw_properties_with_prefix(setting, layout, context, properties):
@@ -218,114 +237,6 @@ def draw_properties_with_prefix(setting, layout, context, properties):
             print(f"Property {prop_name} not found in Scene or Preferences")
 
 
-def draw_preset_settings(layout, context):
-    """
-    Draw the preset property dynamically based on the selected export format.
-    """
-    scene = context.scene
-    prefs = context.preferences.addons[base_package].preferences
-    export_format = scene.export_format  # Get the currently selected export format
-
-    # Dynamically determine the property name
-    prop_name = f"simple_export_preset_file_{export_format.lower()}"
-
-    if scene.overwrite_preset_settings:
-        set = scene
-        label = 'Preset'
-
-    else:  # scene.overwrite_preset_settings:
-        layout.enabled = False
-        set = prefs
-        label = 'Default Preset'
-
-    if hasattr(set, prop_name):
-        layout.prop(set, prop_name, text=label)
-    else:
-        layout.label(text=f"No presets available for {export_format}", icon="ERROR")
-
-
-def draw_create_export_collections(layout, context):
-    scene = context.scene
-    prefs = context.preferences.addons[base_package].preferences
-
-    prop_base = context.scene
-
-    if not scene.overwrite_collection_settings:
-        layout.enabled = False
-        prop_base = prefs
-
-    # Define properties to check
-    properties = [
-        "collection_color",
-        "collection_file_name_prefix",
-        "collection_custom_prefix",
-        "collection_custom_suffix",
-        "collection_auto_set_filepath",
-        "collection_auto_set_preset",
-    ]
-
-    # Use the helper function to draw properties
-    draw_properties_with_prefix(prop_base, layout, context, properties)
-
-    # Collection offset
-    layout.prop(prop_base, "collection_set_location_offset_on_creation")
-    layout.prop(prop_base, "collection_set_root_offset_object")
-
-
-def draw_filepath_settings(layout, context):
-    scene = context.scene
-    prefs = context.preferences.addons[base_package].preferences
-
-    prop_base = context.scene
-
-    if not scene.overwrite_filepath_settings:
-        layout.enabled = False
-        prop_base = prefs
-
-    layout.label(text="Export Path Mode")
-    row = layout.row()
-    row.prop(prop_base, "export_folder_mode", expand=True)
-
-    if prop_base.export_folder_mode == 'ABSOLUTE':
-        layout.prop(prop_base, "absolute_export_path")
-
-    if prop_base.export_folder_mode == 'RELATIVE':
-        layout.prop(prop_base, "relative_export_path")
-
-    if prop_base.export_folder_mode == 'MIRROR':
-        layout.prop(prop_base, "mirror_search_path", text="Search Path")
-        layout.prop(prop_base, "mirror_replacement_path", text="Replacement Path")
-
-        # Compute and display the preview
-        from ..preferences.preferenecs import compute_mirror_preview
-        preview_path = compute_mirror_preview(prop_base)  # Pass `self` as settings
-        layout.label(text="Export Folder Preview:")
-        row = layout.row(align=True)
-        row.label(text=preview_path)
-
-        if os.path.exists(preview_path):
-            op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
-            op.operation = 'FOLDER_OPEN'
-            op.filepath = preview_path
-
-
-def draw_name_settings(layout, context):
-    scene = context.scene
-    prefs = context.preferences.addons[base_package].preferences
-
-    prop_base = context.scene
-
-    if not scene.overwrite_filename_settings:
-        layout.enabled = False
-        prop_base = prefs
-    layout.label(text="Export File Name")
-
-    # export file name
-    layout.prop(prop_base, "filename_file_name_prefix")
-    layout.prop(prop_base, "filename_custom_prefix")
-    layout.prop(prop_base, "filename_custom_suffix")
-
-
 def draw_custom_collection_ui(self, context):
     """Draw custom UI in the COLLECTION_PT_instancing panel."""
     layout = self.layout
@@ -333,6 +244,24 @@ def draw_custom_collection_ui(self, context):
 
     # Add the Object Picker
     layout.prop(collection, "root_object", text="Offset Object")
+
+
+class ExportlistProperties(bpy.types.PropertyGroup):
+    my_enum_property: bpy.props.EnumProperty(
+        name="View Mode",
+        description="Select multiple options",
+        items=[
+            ('FILEPATH', "", "Filepath", 'FILE_FOLDER', 1),
+            ('FILENAME', "", "Filename", 'FILE', 2),
+            ('LOCKED', "", "Status", 'LOCKED', 4),
+            ('COLLECTION', "", "Settings", 'OPTIONS', 8),
+            ('ROOT', "", "Root", 'EMPTY_ARROWS', 16),
+            ('ORIGIN', "", "Origin option", 'OBJECT_ORIGIN', 32),
+            ('FORMAT', "", "Format", 'FILE_LARGE', 64),
+        ],
+        options={'ENUM_FLAG'},  # This allows multi-select
+        default={'FORMAT', 'LOCKED'},
+    )
 
 
 class SIMPLE_EXPORT_menu_base:
@@ -346,29 +275,42 @@ class SIMPLE_EXPORT_menu_base:
         layout = self.layout
         scene = context.scene
 
+        # Draw Export Operators
+        layout.label(text="Collection Operators")
         col = layout.column(align=True)
-        row = col.row()
-        op = row.operator("simple_export.assign_presets", text="Assign Presets", icon='PRESET_NEW')
-        op.outliner = False
-        op.individual_collection = False
+        from .shared_operator_call import call_set_preset_op
+        op = call_set_preset_op(context, col)
+        from .shared_operator_call import call_simple_export_path_ops
+        op = call_simple_export_path_ops(context, col, outliner=False, individual_collection=False)
+        from .shared_operator_call import call_create_export_collection_op
+        op = call_create_export_collection_op(scene, col)
 
-        row = col.row()
-        op = row.operator("simple_export.set_export_paths", text="Assign Filepaths", icon='FOLDER_REDIRECT')
-        op.outliner = False
-        op.individual_collection = False
-
+        # Draw Pre Export Operators List
         col.separator()
-
         box = col.box()
         draw_pre_export_operations(box, scene)
 
+        # Draw Export Button
         row = col.row()
+        row.scale_y = 2.0  # Adjust this value to change the height
         op = row.operator("simple_export.export_collections", text="Export Selected", icon='EXPORT')
         op.outliner = False
         op.individual_collection = False
 
 
-class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
+class SimpleExportSettingsPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
+    def draw_header(self, context):
+        layout = self.layout
+        draw_simple_export_header(layout, text="Simple Export Settings")
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+
+        draw_scene_settings_overwrite(context, layout, scene)
+
+
+class VIEW3D_PT_SimpleExportMain(SimpleExportSettingsPanel):
     """Creates a Panel in the Object properties window"""
 
     bl_space_type = 'VIEW_3D'
@@ -376,31 +318,67 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
     bl_category = "Simple Export"
     bl_label = ""
 
+
+class SimpleExportMainPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
+    list_id = ''
+
     def draw_header(self, context):
+        scene = context.scene
         layout = self.layout
+
         draw_simple_export_header(layout)
 
     def draw(self, context):
-        prefs = context.preferences.addons[base_package].preferences
         scene = context.scene
-
         layout = self.layout
-        layout.label(text="Batch Export Collections")
 
-        # Draw format selection
-        layout.prop(scene, "export_format", text="Format")
+        from .shared_draw import draw_exporter_presets
+        draw_exporter_presets(layout)
 
-        list_id = "npanel"
-
-        draw_export_list(layout, list_id, scene)
+        # draw Export List
+        draw_export_list(layout, self.list_id, scene)
 
         # Draw Operator List
         super().draw(context)
 
-        draw_active_list_element(layout, scene)
+        # draw_active_list_element(layout, context, scene)
 
-        draw_scene_settings_overwrite(context, layout, scene)
-        draw_collection_creation(context, layout)
+
+class VIEW3D_PT_SimpleExportMain(SimpleExportMainPanel):
+    """Creates a Panel in the Object properties window"""
+
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Simple Export"
+    bl_label = ""
+
+    list_id = "npanel"
+
+
+class VIEW3D_PT_SimpleExportSettings(SimpleExportSettingsPanel):
+    """Creates a Panel in the Object properties window"""
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Simple Export"
+    bl_label = ""
+
+
+class PROPERTIES_PT_SimpleExportMain(SimpleExportMainPanel):
+    bl_idname = "PROPERTIES_PT_SimpleExportMain"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "output"
+
+    list_id = "scene"
+
+
+class PROPERTIES_PT_SimpleExportSettings(SimpleExportSettingsPanel):
+    bl_idname = "PROPERTIES_PT_SimpleExportSettings"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "output"
+
+    list_id = "scene"
 
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
@@ -410,78 +388,22 @@ class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
+        row.label(text="Exporter Operations")
+        row = layout.row()
         op = row.operator("scene.select_all_collections", text="Select All", icon="CHECKBOX_HLT")
-        op.invert = False
+        op.deselect = False
         row = layout.row()
         op = row.operator("scene.select_all_collections", text="Unselect All", icon="CHECKBOX_DEHLT")
-        op.invert = True
-
-
-class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
-    bl_idname = "SCENE_PT_simple_export"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "output"
-
-    def draw(self, context):
-        prefs = context.preferences.addons[base_package].preferences
-        scene = context.scene
-
-        layout = self.layout
-        layout.label(text="Batch Export Collections")
-
-        # Draw format selection
-        layout.prop(scene, "export_format", text="Format")
-
-        list_id = "scene"
-
-        draw_export_list(layout, list_id, scene)
-
-        # Draw Operator List
-        super().draw(context)
-
-        draw_active_list_element(layout, scene)
-
-        draw_scene_settings_overwrite(context, layout, scene)
-        draw_collection_creation(context, layout)
-
-
-class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
-    bl_idname = "SIMPLE_EXPORT_PT_simple_export_popup"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "WINDOW"
-    bl_context = "empty"
-    bl_ui_units_x = 45
-
-    def draw(self, context):
-        scene = context.scene
-        layout = self.layout
-
-        row = layout.row()
-        row.label(text="Simple Export Popup")
-
-        # Export List
-        row = layout.row()
-        row.label(text="Export List")
-        row = layout.row()
-
-        row = layout.row(align=True)
-        op = row.operator("scene.select_all_collections", text="All", icon="CHECKBOX_HLT")
-        op.invert = False
-        op = row.operator("scene.select_all_collections", text="None", icon="CHECKBOX_DEHLT")
-        op.invert = True
-
-        row = layout.row()
-        row.template_list("SCENE_UL_CollectionList", "popup", bpy.data, "collections", scene, "collection_index")
-
-        super().draw(context)
+        op.deselect = True
 
 
 classes = (
-    VIEW3D_PT_SimpleExport,
+    VIEW3D_PT_SimpleExportMain,
+    VIEW3D_PT_SimpleExportSettings,
+    PROPERTIES_PT_SimpleExportMain,
+    PROPERTIES_PT_SimpleExportSettings,
     SIMPLE_EXPORT_MT_context_menu,
-    SIMPLE_EXPORT_PT_CollectionExportPanel,
-    SIMPLE_EXPORT_PT_simple_export_popup,
+    ExportlistProperties,
 )
 
 
@@ -492,9 +414,13 @@ def register():
     for cls in classes:
         register_class(cls)
 
+    bpy.types.Scene.exportlist_properties = bpy.props.PointerProperty(type=ExportlistProperties)
+
 
 def unregister():
     from bpy.utils import unregister_class
 
     for cls in reversed(classes):
         unregister_class(cls)
+
+    del bpy.types.Scene.exportlist_properties

@@ -6,14 +6,16 @@ if "bpy" in locals():
     importlib.reload(preferences)
     importlib.reload(ui)
     importlib.reload(core)
-    importlib.reload(presets)
+    importlib.reload(presets_export)
+    importlib.reload(presets_addon)
 
 else:
     from . import operators
     from . import preferences
     from . import ui
     from . import core
-    from . import presets
+    from . import presets_export
+    from . import presets_addon
 
 
 def register():
@@ -22,12 +24,14 @@ def register():
     ui.register()
     preferences.register()
     core.register()
-    presets.register()
+    presets_export.register()
+    presets_addon.register()
 
 
 def unregister():
     # call unregister function of the submodules.
-    presets.unregister()
+    presets_addon.unregister()
+    presets_export.unregister()
     core.unregister()
     ui.unregister()
     preferences.unregister()

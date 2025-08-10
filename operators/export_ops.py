@@ -22,12 +22,15 @@ def call_export_popup(export_results, context):
 class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
     bl_idname = "simple_export.export_collections"
     bl_label = "Export Selected"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Export selected collections with their exporters and settings."
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
-    outliner: bpy.props.BoolProperty(default=False)
-    individual_collection: bpy.props.BoolProperty(default=False)
+    # Internal Properties   
+    outliner: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
+    individual_collection: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
     collection_name: bpy.props.StringProperty(name="Collection Name", default='',
-                                              description="Name of the collection to process")
+                                              description="Name of the collection to process", options={'HIDDEN'})
+    # Todo: Overwrite pre export settings like move_by_collection_offset
 
     def execute(self, context):
         export_results = []

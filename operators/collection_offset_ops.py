@@ -4,15 +4,17 @@ from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.collection_offset import set_collection_offset
 
 
-
 class OBJECT_OT_set_collection_offset_cursor(bpy.types.Operator):
     """Set the collection offset to the 3D cursor location."""
     bl_idname = "object.set_collection_offset_cursor"
     bl_label = "Set Collection Center (3D Cursor)"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Set Collection Center (3D Cursor)"
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
+
+    # Hidden property for the collection name
     collection_name: bpy.props.StringProperty(name="Collection Name", default='',
-                                              description="Name of the collection to process")
+                                              description="Name of the collection to process", options={'HIDDEN'}, )
 
     def execute(self, context):
         collection = bpy.data.collections.get(self.collection_name)
@@ -31,12 +33,12 @@ class OBJECT_OT_set_collection_offset_cursor(bpy.types.Operator):
         return {'FINISHED'}
 
 
-
 class OBJECT_OT_set_collection_offset_object(bpy.types.Operator):
     """Set the collection offset to the selected object's location."""
     bl_idname = "object.set_collection_offset_object"
     bl_label = "Set Collection Center"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Set Collection Center to the active object's location"
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
     collection_name: bpy.props.StringProperty(name="Collection Name", default='',
                                               description="Name of the collection to process")

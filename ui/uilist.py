@@ -1,7 +1,7 @@
-import bpy
 import os
 
-from .. import __package__ as base_package
+import bpy
+
 from ..core.export_formats import ExportFormats
 from ..core.info import COLOR_TAG_ICONS
 from ..functions.exporter_funcs import find_exporter
@@ -76,13 +76,13 @@ class OBJECT_OT_set_menu_collection(bpy.types.Operator):
 
     def execute(self, context):
         context.scene.menu_collection_name = self.collection_name
-        bpy.ops.wm.call_menu(name="COLLECTION_MT_root_object_menu")
+        bpy.ops.wm.call_menu(name="EXPORT_MT_root_object_menu")
         return {'FINISHED'}
 
 
-class COLLECTION_MT_root_object_menu(bpy.types.Menu):
+class EXPORT_MT_root_object_menu(bpy.types.Menu):
     """Root Object Action Menu"""
-    bl_idname = "COLLECTION_MT_root_object_menu"
+    bl_idname = "EXPORT_MT_root_object_menu"
     bl_label = "Collection Actions"
 
     def draw(self, context):
@@ -115,15 +115,13 @@ class COLLECTION_MT_root_object_menu(bpy.types.Menu):
         op.action = "unhide_content"
         op.collection_name = collection_name
 
-
         layout.separator()
 
-        op = layout.operator("simple_export.set_export_paths", icon='FOLDER_REDIRECT')
-        op.outliner = False
-        op.individual_collection = True
-        op.collection_name = collection_name
+        from .shared_operator_call import call_simple_export_path_ops
+        op = call_simple_export_path_ops(context, layout, outliner=False,
+                                         individual_collection=True, collection_name=collection_name)
 
-        op = layout.operator("simple_export.assign_presets", icon='PRESET')
+        op = layout.operator("simple_export.set_presets", icon='PRESET')
         op.outliner = False
         op.individual_collection = True
         op.collection_name = collection_name
@@ -156,26 +154,37 @@ class OBJECT_OT_select_root(bpy.types.Operator):
         return {'FINISHED'}
 
 
+from ..core.export_formats import get_export_format_items
+
+
 class SCENE_UL_CollectionList(bpy.types.UIList):
     """
     UIList displaying all collections with an exporter matching the selected export type.
     """
+    use_filter: bpy.props.BoolProperty(
+        name="Use Filter",
+        description="Use filter for the export list",
+        default=False
+    )
+
+    export_format: bpy.props.EnumProperty(
+        name="Export Format",
+        description="Select the export format",
+        items=get_export_format_items(),  # Dynamically generated items from EXPORT_FORMATS
+        default='FBX',
+    )
 
     def draw_filter(self, context, layout):
-        layout.prop(context.window_manager, "export_format", text="Filter Format")
+        # Nothing much to say here, it's usual UI code...
+        row = layout.row()
+        row.prop(self, "use_filter")
+        row.prop(self, 'export_format')
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        from .. import __package__ as base_package
         prefs = context.preferences.addons[base_package].preferences
-        scene = context.scene
-        settings_filename = scene if scene.overwrite_filename_settings else prefs
 
         # Determine settings based on the list_id
-        if self.list_id == "scene":
-            settings = prefs.scene_properties
-        elif self.list_id == "npanel":
-            settings = prefs.npanel_properties
-        else:  # popup":
-            settings = prefs.popup_properties
 
         collection = item
         if not collection:
@@ -192,14 +201,16 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         # Get exporter details
         scene = context.scene
+        format_filter = self.export_format if self.use_filter else None
+        exporter = find_exporter(collection, format_filter=format_filter)
 
-        exporter = find_exporter(collection, scene.export_format)
         export_path = exporter.export_properties.filepath
         export_path = clean_relative_path(export_path)
         file_exists = os.path.exists(export_path)
-        is_locked = file_exists and not os.access(export_path, os.W_OK)
 
-        if settings.uilist_icon:
+
+        if 'LOCKED' in scene.exportlist_properties.my_enum_property:
+            is_locked = file_exists and not os.access(export_path, os.W_OK)
             # Show lock icon based on file permissions
             if is_locked:
                 icon = 'LOCKED'
@@ -207,8 +218,8 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 icon = 'CURRENT_FILE'
             else:
                 icon = 'FILE_NEW'
-
             row.label(icon=icon)
+
 
         # Determine the icon based on the collection's color_tag
         color_tag = collection.color_tag
@@ -217,46 +228,67 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         # Display the collection name with the color icon
         row.label(text=collection.name, icon=icon)
 
-        if settings.uilist_show_filepath:
+        if 'FILEPATH' in scene.exportlist_properties.my_enum_property:
             # Display the export file path as an editable property
             row.prop(exporter.export_properties, "filepath", text="", expand=True)
 
-        if settings.uilist_set_filepath:
+
             # Buttons for setting the export path and opening the directory
             # Assign Path
-            op = row.operator("simple_export.set_export_paths", text="", icon='FOLDER_REDIRECT')
-            op.outliner = False
-            op.individual_collection = True
-            op.collection_name = collection.name
 
-        if settings.uilist_set_preset:
-            # Assign Preset
-            op = row.operator("simple_export.assign_presets", text="", icon='PRESET')
-            op.outliner = False
-            op.individual_collection = True
-            op.collection_name = collection.name
+            from .shared_operator_call import call_simple_export_path_ops
+            op = call_simple_export_path_ops(context, row, text='', outliner=False,
+                                             individual_collection=True, collection_name=collection.name)
 
-        if collection.use_root_object:
-            # Display Empty or Eyedropper button depending on the root_object state
-            if collection.use_root_object and collection.root_object:
+        if 'FILENAME' in scene.exportlist_properties.my_enum_property:
+            filename = os.path.basename(exporter.export_properties.filepath)
+            row.label(text = filename)
+
+        # Display Empty or Eyedropper button depending on the root_object state
+
+        if 'ROOT' in scene.exportlist_properties.my_enum_property:
+            # if collection.use_root_object:
+
+            icon = "LINKED" if collection.use_root_object else "UNLINKED"
+            row.prop(collection, "use_root_object", text='', icon=icon)
+
+
+            if collection.use_root_object:
+                row.prop(collection, "root_object", text="")
                 op = row.operator("object.select_root", text="", icon='EMPTY_AXIS')
                 op.collection_name = collection.name
-            else:
-                row.prop(collection, "root_object", text="")
+
+        if 'ORIGIN' in scene.exportlist_properties.my_enum_property:
+            icon = "LINKED" if collection.use_root_object else "UNLINKED"
+            row.prop(collection, "use_root_object", text='', icon=icon)
+            row.prop(collection, "instance_offset", text="")
+
+        if 'COLLECTION' in scene.exportlist_properties.my_enum_property:
+            pass
+        if 'FILENAME' in scene.exportlist_properties.my_enum_property:
+            pass
+
+        if 'FORMAT' in scene.exportlist_properties.my_enum_property:
+             # Display the export format
+            exporter_type = str(type(exporter.export_properties))
+            row.label(text=exporter_type)
 
         # Add arrow button that sets the collection name and opens the menu
         arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
         arrow_op.collection_name = collection.name
 
-        from ..functions.create_collection_func import generate_base_name
+        from ..core.export_path_func import generate_base_name
 
-        base_name = generate_base_name(collection.name, settings_filename.filename_custom_prefix,
-                                       settings_filename.filename_custom_suffix,
-                                       settings_filename.filename_file_name_prefix)
+        filename_settings = scene
+        base_name = generate_base_name(collection.name, filename_settings.filename_prefix,
+                                       filename_settings.filename_suffix, filename_settings.filename_blend_prefix)
 
         if exporter.export_properties.filepath and collection_name_mismatch(base_name, export_path):
             op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
             op.collection_name = collection.name
+            op.filename_prefix = filename_settings.filename_prefix
+            op.filename_suffix = filename_settings.filename_suffix
+            op.filename_blend_prefix = filename_settings.filename_blend_prefix
 
         # Add the Export Collection button
         op = row.operator("simple_export.export_collections", text="", icon='EXPORT')
@@ -266,32 +298,30 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
     def filter_items(self, context, data, propname):
         flt_flags = []
-        flt_neworder = []
-
-        scene = context.scene
-
-        export_format = scene.export_format
+        export_format = self.export_format
         export_format_obj = ExportFormats.get(export_format)
 
         for collection in bpy.data.collections:
-            # Filter collections based on whether they have an exporter with the matching format
-            has_matching_exporter = any(
-                str(type(exporter.export_properties)) == export_format_obj.op_type for exporter in
-                collection.exporters
-            )
+            filter = 0
+            has_exporters = len(collection.exporters) > 0
 
-            if has_matching_exporter:
-                flt_flags.append(self.bitflag_filter_item)
-            else:
-                flt_flags.append(0)
+            if not self.use_filter and has_exporters:
+                filter = self.bitflag_filter_item
+            elif self.use_filter:
+                exporter_types = [str(type(exporter.export_properties)) for exporter in collection.exporters]
+                if any(exporter_type == export_format_obj.op_type for exporter_type in exporter_types):
+                    filter = self.bitflag_filter_item
 
+            flt_flags.append(filter)
+
+        flt_neworder = []
         return flt_flags, flt_neworder
 
 
 classes = (
     SCENE_UL_CollectionList,
     OBJECT_OT_select_root,
-    COLLECTION_MT_root_object_menu,
+    EXPORT_MT_root_object_menu,
     OBJECT_OT_set_menu_collection,
     OBJECT_OT_root_object_actions,
 )
@@ -315,3 +345,6 @@ def unregister():
 
     for cls in reversed(classes):
         unregister_class(cls)
+
+    # Remove Scene properties
+    del bpy.types.Scene.menu_collection_name
