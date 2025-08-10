@@ -80,12 +80,15 @@ def call_set_preset_op(context, layout, text=None, icon='PRESET_NEW'):
     op.individual_collection = False
 
     # Get and set properties from preferences/scene
-    prefs = context.preferences.addons[base_package].preferences
     scene = context.scene
 
-    # Preset settings - use scene if overwrite is enabled, else prefs
+    # Set file format
+    op.export_format = scene.export_format
+
+    # Set Preset settings
     preset_settings = scene
     op.set_preset = preset_settings.set_preset
+
     # Get preset filepath if auto-set is enabled
     export_format = scene.export_format.lower()
     prop_name = f"simple_export_preset_file_{export_format}"

@@ -2,8 +2,7 @@ import os
 
 import bpy
 
-from .shared_properties import SharedPresetAssignmentProps
-from .. import __package__ as base_package
+from .shared_properties import SharedPresetAssignmentProps, SharedFormatProps
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.exporter_funcs import find_exporter
 from ..functions.outliner_func import get_outliner_collections
@@ -11,7 +10,7 @@ from ..functions.preset_func import set_preset
 from ..functions.vallidate_func import validate_collection
 
 
-class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAssignmentProps):
+class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAssignmentProps, SharedFormatProps):
     """Operator to apply the preset to all collections"""
     bl_idname = "simple_export.set_presets"
     bl_label = "Assign Presets"
@@ -30,15 +29,13 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
 
     def execute(self, context):
         results = []  # To store the renaming status of each collection
-        prefs = context.preferences.addons[base_package].preferences
-        scene = context.scene
 
         # Construct the property name dynamically
-        export_format = scene.export_format.lower()
-        prop_name = f"simple_export_preset_file_{export_format}"
+        export_format = self.export_format
+        prop_name = f"simple_export_preset_file_{export_format.lower()}"
 
+        preset_settings = self
         # Get preset path
-        preset_settings = scene
         preset_path = getattr(preset_settings, prop_name, None)
 
         # Get Export Collections
@@ -77,7 +74,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
                 set_active_layer_Collection(collection.name)
 
                 # Find the appropriate exporter
-                exporter = find_exporter(collection, scene.export_format)
+                exporter = find_exporter(collection, export_format)
                 if not exporter:
                     continue
 

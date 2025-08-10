@@ -26,8 +26,6 @@ def draw_export_preset_properties(layout, element):
 
     if hasattr(element, prop_name):
         layout.prop(element, prop_name, text='Preset')
-
-
     else:
         layout.label(text=f"No presets available for {export_format}", icon="ERROR")
 

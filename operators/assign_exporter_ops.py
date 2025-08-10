@@ -24,7 +24,7 @@ class EXPORT_OT_AddSettingsToCollections(
     """
     bl_idname = "simple_export.add_settings_to_collections"
     bl_label = "Add Exporter to Collection"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
     # Internal Poperties
     collection_name: bpy.props.StringProperty(
