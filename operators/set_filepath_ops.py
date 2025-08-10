@@ -71,7 +71,7 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
 
                 # set exporter
                 set_active_layer_Collection(collection.name)
-                exporter = find_exporter(collection, scene.export_format)
+                exporter = find_exporter(collection, format_filter= scene.export_format)
                 if not exporter:
                     continue
 

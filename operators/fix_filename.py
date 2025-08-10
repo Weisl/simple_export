@@ -26,7 +26,7 @@ class SIMPLEEXPORT_OT_FixExportFilename(SharedPathProps, SharedFilenameProps, bp
             return {'CANCELLED'}
 
         scene = context.scene
-        exporter = find_exporter(collection, scene.export_format)
+        exporter = find_exporter(collection, format_filter= scene.export_format)
         if not exporter:
             return {'CANCELLED'}
 

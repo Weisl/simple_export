@@ -105,7 +105,7 @@ def draw_active_list_element(layout, context, scene):
 
         if body:
             # Export Path
-            exporter = find_exporter(selected_collection, scene.export_format)
+            exporter = find_exporter(selected_collection,format_filter= scene.export_format)
 
             # Return early
             if not exporter:

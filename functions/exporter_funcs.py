@@ -19,17 +19,24 @@ def add_extension(path, export_format_key):
     return path
 
 
-def find_exporter(collection, export_format_key):
+def find_exporter(collection, format_filter=None):
     """
     Find the appropriate exporter for the given collection and format.
     """
+
+    if len(collection.exporters) == 0:
+        return None
+
+    # If no export format is specified, return the first exporter
+    if format_filter is None:
+        return collection.exporters[0]
+
     # Retrieve export format object
-    export_format = ExportFormats.get(export_format_key)
-
+    export_format = ExportFormats.get(format_filter)
     if not export_format:
-        raise ValueError(f"Invalid export format: {export_format_key}")
+        raise ValueError(f"Invalid export format: {export_format}")
 
-    # Check collection exporters
+    # Check collection exporters, return the first matching exporter
     for exporter in collection.exporters:
         if str(type(exporter.export_properties)) == export_format.op_type:
             return exporter

@@ -68,7 +68,7 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
             return {'CANCELLED'}
 
         scene = context.scene
-        exporter = find_exporter(collection, scene.export_format)
+        exporter = find_exporter(collection,format_filter= scene.export_format)
         export_path = exporter.export_properties.filepath
         export_dir = os.path.dirname(export_path)
         export_dir = clean_relative_path(os.path.dirname(export_dir))

@@ -74,7 +74,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
                 set_active_layer_Collection(collection.name)
 
                 # Find the appropriate exporter
-                exporter = find_exporter(collection, export_format)
+                exporter = find_exporter(collection, format_filter= export_format)
                 if not exporter:
                     continue
 

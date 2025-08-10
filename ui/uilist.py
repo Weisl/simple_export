@@ -207,8 +207,10 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         # Get exporter details
         scene = context.scene
+        format_filter = self.export_format if self.use_filter else None
+        exporter = find_exporter(collection, format_filter=format_filter)
 
-        exporter = find_exporter(collection, scene.export_format)
+
         export_path = exporter.export_properties.filepath
         export_path = clean_relative_path(export_path)
         file_exists = os.path.exists(export_path)
@@ -284,7 +286,6 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
     def filter_items(self, context, data, propname):
         flt_flags = []
-        scene = context.scene
         export_format = self.export_format
         export_format_obj = ExportFormats.get(export_format)
 
