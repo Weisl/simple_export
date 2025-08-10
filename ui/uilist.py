@@ -284,27 +284,24 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
     def filter_items(self, context, data, propname):
         flt_flags = []
-        flt_neworder = []
-
         scene = context.scene
-
         export_format = self.export_format
         export_format_obj = ExportFormats.get(export_format)
 
-        exporter_collections = []
         for collection in bpy.data.collections:
             filter = 0
-            if not self.use_filter:
-                if len(collection.exporters) > 0:
-                    filter = self.bitflag_filter_item
+            has_exporters = len(collection.exporters) > 0
 
-            else:  # self.use filter
-                if any(str(type(exporter.export_properties)) == export_format_obj.op_type for exporter in
-                       collection.exporters):
+            if not self.use_filter and has_exporters:
+                filter = self.bitflag_filter_item
+            elif self.use_filter:
+                exporter_types = [str(type(exporter.export_properties)) for exporter in collection.exporters]
+                if any(exporter_type == export_format_obj.op_type for exporter_type in exporter_types):
                     filter = self.bitflag_filter_item
 
             flt_flags.append(filter)
 
+        flt_neworder = []
         return flt_flags, flt_neworder
 
 
