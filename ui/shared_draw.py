@@ -66,8 +66,8 @@ def draw_export_folderpath_properties(layout, element, is_preferences=False):
 
     # Disable options that require a saved file
     if not is_file_saved:
-        if not is_preferences:
-            row.enabled = False
+        # if not is_preferences:
+        #     row.enabled = False
         layout.label(text="Save the blend file to use filepath modes", icon='INFO')
 
     if element.export_folder_mode == 'ABSOLUTE':

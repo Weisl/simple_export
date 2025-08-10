@@ -176,22 +176,27 @@ def draw_export_list(layout, list_id, scene):
     row = layout.row()
     row.label(text="Export List")
 
-    # UI List
-    row = layout.row(align=True)
-    # Add a button with a down arrow icon to call the menu
-    # Display export list
+    # Split the layout into two columns
+    split = layout.split(factor=0.9, align=True)  # Adjust the factor to control the width of the first column
+    main_column = split
+
+    # Main column for the UI List
+    row = main_column.row(align=True)
     row.template_list("SCENE_UL_CollectionList", list_id, bpy.data, "collections", scene, "collection_index")
 
-    col = row.column(align=True)
-    # draw Create exporter
+    narrow_column = split.column(align=True)
+    col = narrow_column
+    # Draw Create exporter
     from .shared_operator_call import call_create_export_collection_op
     call_create_export_collection_op(scene, col, icon='ADD', text="")
-    col.menu("SIMPLE_EXPORT_MT_context_menu", text="", icon="DOWNARROW_HLT")
 
+    # Menu with a down arrow icon
+    col.menu("SIMPLE_EXPORT_MT_context_menu", text="")
+
+    col = narrow_column
     # Draw View Settings
-    my_custom_properties = scene.my_custom_properties
-    col.prop(my_custom_properties, "my_enum_property")
-
+    exportlist_properties = scene.exportlist_properties
+    col.prop(exportlist_properties, "my_enum_property")
 
 def get_presets_folder():
     """Retrieve the base path for Blender's presets_export folder."""
@@ -241,20 +246,21 @@ def draw_custom_collection_ui(self, context):
     layout.prop(collection, "root_object", text="Offset Object")
 
 
-class MyCustomProperties(bpy.types.PropertyGroup):
+class ExportlistProperties(bpy.types.PropertyGroup):
     my_enum_property: bpy.props.EnumProperty(
-        name="Multi-Select Enum",
+        name="View Mode",
         description="Select multiple options",
         items=[
-            ('FILEPATH', "", "File path option", 'FILE', 0),
-            ('LOCKED', "", "File edit status", 'LOCKED', 1),
-            ('FILENAME', "", "File name option", 'FILE_TEXT', 2),
-            ('COLLECTION', "", "Collection option", 'OUTLINER_COLLECTION', 3),
-            ('OBJECT', "", "Object option", 'OBJECT_DATA', 4),
-            ('ORIGIN', "", "Origin option", 'ORIGIN', 5),
+            ('FILEPATH', "", "Filepath", 'FILE_FOLDER', 1),
+            ('FILENAME', "", "Filename", 'FILE', 2),
+            ('LOCKED', "", "Status", 'LOCKED', 4),
+            ('COLLECTION', "", "Settings", 'OPTIONS', 8),
+            ('ROOT', "", "Root", 'EMPTY_ARROWS', 16),
+            ('ORIGIN', "", "Origin option", 'OBJECT_ORIGIN', 32),
+            ('FORMAT', "", "Format", 'FILE_LARGE', 64),
         ],
         options={'ENUM_FLAG'},  # This allows multi-select
-        default={'FILEPATH', 'FILENAME'},
+        default={'FORMAT', 'LOCKED'},
     )
 
 
@@ -396,7 +402,7 @@ classes = (
     PROPERTIES_PT_SimpleExportMain,
     PROPERTIES_PT_SimpleExportSettings,
     SIMPLE_EXPORT_MT_context_menu,
-    MyCustomProperties,
+    ExportlistProperties,
 )
 
 
@@ -407,7 +413,8 @@ def register():
     for cls in classes:
         register_class(cls)
 
-    bpy.types.Scene.my_custom_properties = bpy.props.PointerProperty(type=MyCustomProperties)
+    bpy.types.Scene.exportlist_properties = bpy.props.PointerProperty(type=ExportlistProperties)
+
 
 def unregister():
     from bpy.utils import unregister_class
@@ -415,4 +422,4 @@ def unregister():
     for cls in reversed(classes):
         unregister_class(cls)
 
-    del bpy.types.Scene.my_custom_properties
+    del bpy.types.Scene.exportlist_properties

@@ -185,12 +185,6 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         prefs = context.preferences.addons[base_package].preferences
 
         # Determine settings based on the list_id
-        if self.list_id == "scene":
-            settings = prefs.scene_properties
-        elif self.list_id == "npanel":
-            settings = prefs.npanel_properties
-        else:  # popup":
-            settings = prefs.popup_properties
 
         collection = item
         if not collection:
@@ -210,13 +204,13 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         format_filter = self.export_format if self.use_filter else None
         exporter = find_exporter(collection, format_filter=format_filter)
 
-
         export_path = exporter.export_properties.filepath
         export_path = clean_relative_path(export_path)
         file_exists = os.path.exists(export_path)
-        is_locked = file_exists and not os.access(export_path, os.W_OK)
 
-        if settings.uilist_icon:
+
+        if 'LOCKED' in scene.exportlist_properties.my_enum_property:
+            is_locked = file_exists and not os.access(export_path, os.W_OK)
             # Show lock icon based on file permissions
             if is_locked:
                 icon = 'LOCKED'
@@ -224,8 +218,8 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 icon = 'CURRENT_FILE'
             else:
                 icon = 'FILE_NEW'
-
             row.label(icon=icon)
+
 
         # Determine the icon based on the collection's color_tag
         color_tag = collection.color_tag
@@ -234,11 +228,11 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         # Display the collection name with the color icon
         row.label(text=collection.name, icon=icon)
 
-        if settings.uilist_show_filepath:
+        if 'FILEPATH' in scene.exportlist_properties.my_enum_property:
             # Display the export file path as an editable property
             row.prop(exporter.export_properties, "filepath", text="", expand=True)
 
-        if settings.uilist_set_filepath:
+
             # Buttons for setting the export path and opening the directory
             # Assign Path
 
@@ -246,20 +240,33 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             op = call_simple_export_path_ops(context, row, text='', outliner=False,
                                              individual_collection=True, collection_name=collection.name)
 
-        if settings.uilist_set_preset:
-            # Assign Preset
-            op = row.operator("simple_export.set_presets", text="", icon='PRESET')
-            op.outliner = False
-            op.individual_collection = True
-            op.collection_name = collection.name
+        if 'FILENAME' in scene.exportlist_properties.my_enum_property:
+            filename = os.path.basename(exporter.export_properties.filepath)
+            row.label(text = filename)
 
-        if collection.use_root_object:
-            # Display Empty or Eyedropper button depending on the root_object state
-            if collection.use_root_object and collection.root_object:
+        # Display Empty or Eyedropper button depending on the root_object state
+
+        if 'ROOT' in scene.exportlist_properties.my_enum_property:
+            # if collection.use_root_object:
+            row.prop(collection, "use_root_object", text='')
+
+            if collection.use_root_object:
+                row.prop(collection, "root_object", text="")
                 op = row.operator("object.select_root", text="", icon='EMPTY_AXIS')
                 op.collection_name = collection.name
-            else:
-                row.prop(collection, "root_object", text="")
+
+        if 'ORIGIN' in scene.exportlist_properties.my_enum_property:
+            row.prop(collection, "instance_offset", text="")
+
+        if 'COLLECTION' in scene.exportlist_properties.my_enum_property:
+            pass
+        if 'FILENAME' in scene.exportlist_properties.my_enum_property:
+            pass
+
+        if 'FORMAT' in scene.exportlist_properties.my_enum_property:
+             # Display the export format
+            exporter_type = str(type(exporter.export_properties))
+            row.label(text=exporter_type)
 
         # Add arrow button that sets the collection name and opens the menu
         arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')

@@ -1,7 +1,5 @@
-import os
-
 import bpy
-from bpy.props import BoolProperty, PointerProperty
+import os
 
 from .keymap import remove_key
 from .. import __package__ as base_package
@@ -399,35 +397,6 @@ def set_absolute_path(instance, value):
         instance["folder_path_absolute"] = absolute_path
 
 
-class UIListProperties(bpy.types.PropertyGroup):
-    uilist_icon: BoolProperty(
-        name="Show Icon",
-        description="Toggle visibility of the icon in the UI list",
-        default=True
-    )
-    uilist_show_filepath: BoolProperty(
-        name="Show Filepath",
-        description="Toggle visibility of the filepath in the UI list",
-        default=True
-    )
-    uilist_set_filepath: BoolProperty(
-        name="Show Set Filepath",
-        description="Toggle visibility of the filepath in the UI list",
-        default=True
-    )
-    uilist_set_preset: BoolProperty(
-        name="Show Preset",
-        description="Toggle visibility of the preset in the UI list",
-        default=True
-    )
-
-    uilist_set_root: BoolProperty(
-        name="Show Root Object",
-        description="Toggle visibility of the preset in the UI list",
-        default=True
-    )
-
-
 class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     bl_idname = base_package
     bl_options = {'REGISTER'}
@@ -641,10 +610,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                                                description="Show the result panel only when errors occur.",
                                                default=False)
 
-    scene_properties: PointerProperty(type=UIListProperties)
-    popup_properties: PointerProperty(type=UIListProperties)
-    npanel_properties: PointerProperty(type=UIListProperties)
-
     panel_category: bpy.props.StringProperty(name="Category Tab",
                                              description="The category name used to organize the addon in the properties panel for all the addons",
                                              default='Simple Export',
@@ -821,25 +786,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.label(text="N Panel")
             box.prop(self, 'enable_n_panel')
             box.prop(self, 'panel_category')
-            box = box.box()
-            box.prop(self.npanel_properties, "uilist_icon")
-            box.prop(self.npanel_properties, "uilist_show_filepath")
-            box.prop(self.npanel_properties, "uilist_set_filepath")
-            box.prop(self.npanel_properties, "uilist_set_preset")
-
-            box = layout.box()
-            box.label(text="Scene List")
-            box.prop(self.scene_properties, "uilist_icon")
-            box.prop(self.scene_properties, "uilist_show_filepath")
-            box.prop(self.scene_properties, "uilist_set_filepath")
-            box.prop(self.scene_properties, "uilist_set_preset")
-
-            box = layout.box()
-            box.label(text="Popup List")
-            box.prop(self.popup_properties, "uilist_icon")
-            box.prop(self.popup_properties, "uilist_show_filepath")
-            box.prop(self.popup_properties, "uilist_set_filepath")
-            box.prop(self.popup_properties, "uilist_set_preset")
 
             box = layout.box()
             box.label(text="Warnings")
@@ -854,7 +800,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 # Initialize Window Manager Properties with Add-on Preferences Defaults
 
 classes = (
-    UIListProperties,
     SIMPLE_EXPORT_preferences,
 )
 
