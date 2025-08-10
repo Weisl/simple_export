@@ -27,9 +27,9 @@ class SIMPLE_OT_OpenCollectionExporterProperties(bpy.types.Operator):
                 for space in area.spaces:
                     if space.type == 'PROPERTIES':
                         space.context = 'COLLECTION'
+                        print(collection.name)
                         context.view_layer.active_layer_collection = context.view_layer.layer_collection.children.get(
-                            collection.name
-                        )
+                            collection.name)
                         break
                 break
         else:
@@ -46,7 +46,7 @@ class SCENE_OT_SelectAllCollections(bpy.types.Operator):
     bl_description = "Select or deselect all collections for export."
     bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
-    deselect: bpy.props.BoolProperty(name="Invert", default=False,)
+    deselect: bpy.props.BoolProperty(name="Invert", default=False, )
 
     def execute(self, context):
         for collection in bpy.data.collections:
@@ -72,7 +72,7 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
             return {'CANCELLED'}
 
         scene = context.scene
-        exporter = find_exporter(collection,format_filter= scene.export_format)
+        exporter = find_exporter(collection, format_filter=scene.export_format)
         export_path = exporter.export_properties.filepath
         export_dir = os.path.dirname(export_path)
         export_dir = clean_relative_path(os.path.dirname(export_dir))

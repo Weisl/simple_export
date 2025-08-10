@@ -174,7 +174,7 @@ def draw_active_list_element(layout, context, scene):
 def draw_export_list(layout, list_id, scene):
     # Export List
     row = layout.row()
-    row.label(text="Export List")
+    row.label(text="Collection Export List")
 
     # Split the layout into two columns
     split = layout.split(factor=0.9, align=True)  # Adjust the factor to control the width of the first column
@@ -292,6 +292,7 @@ class SIMPLE_EXPORT_menu_base:
 
         # Draw Export Button
         row = col.row()
+        row.scale_y = 2.0  # Adjust this value to change the height
         op = row.operator("simple_export.export_collections", text="Export Selected", icon='EXPORT')
         op.outliner = False
         op.individual_collection = False

@@ -248,7 +248,10 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         if 'ROOT' in scene.exportlist_properties.my_enum_property:
             # if collection.use_root_object:
-            row.prop(collection, "use_root_object", text='')
+
+            icon = "LINKED" if collection.use_root_object else "UNLINKED"
+            row.prop(collection, "use_root_object", text='', icon=icon)
+
 
             if collection.use_root_object:
                 row.prop(collection, "root_object", text="")
@@ -256,6 +259,8 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 op.collection_name = collection.name
 
         if 'ORIGIN' in scene.exportlist_properties.my_enum_property:
+            icon = "LINKED" if collection.use_root_object else "UNLINKED"
+            row.prop(collection, "use_root_object", text='', icon=icon)
             row.prop(collection, "instance_offset", text="")
 
         if 'COLLECTION' in scene.exportlist_properties.my_enum_property:
