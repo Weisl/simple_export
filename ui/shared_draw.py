@@ -137,7 +137,7 @@ def draw_export_fomrat(layout, elment):
     layout.prop(elment, "export_format", text="Format")
 
 
-def draw_exporter_presets(layout, preset_context='SCENE'):
+def draw_exporter_presets(layout, buttons=False):
     """
     Draw the naming presets menu in the layout.
     Args:
@@ -150,20 +150,14 @@ def draw_exporter_presets(layout, preset_context='SCENE'):
         SceneExportPreset
 
     # Determine the appropriate preset menu and operators based on the context
-    if preset_context == 'SCENE':
-        row.menu(EXPORT_MT_scene_presets.__name__, text=EXPORT_MT_scene_presets.bl_label)
+    row.menu(EXPORT_MT_scene_presets.__name__, text=EXPORT_MT_scene_presets.bl_label)
+    if buttons:
         add_op = row.operator(SceneExportPreset.bl_idname, text="", icon='ADD')
         remove_op = row.operator(SceneExportPreset.bl_idname, text="", icon='REMOVE')
-
-    remove_op.remove_active = True
+        remove_op.remove_active = True
 
     # Operator to open a folder
     folder_op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
     folder_op.operation = 'FOLDER_OPEN'
     from ..presets_addon.exporter_preset import simple_export_presets_folder
     folder_op.filepath = simple_export_presets_folder()
-
-    # Operator to open preferences
-    prefs_op = row.operator("simple_collider.open_preferences", text="", icon='PREFERENCES')
-    prefs_op.addon_name = ADDON_NAME
-    prefs_op.prefs_tabs = 'NAMING'

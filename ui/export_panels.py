@@ -51,7 +51,7 @@ def draw_scene_settings_overwrite(context, layout, scene):
         prefs = context.preferences.addons[base_package].preferences
 
         from .shared_draw import draw_exporter_presets
-        draw_exporter_presets(body, preset_context='SCENE')
+        draw_exporter_presets(body, buttons=True)
 
         row = body.row()
         from ..ui.shared_draw import draw_export_fomrat
@@ -301,7 +301,7 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         layout = self.layout
 
         from .shared_draw import draw_exporter_presets
-        draw_exporter_presets(layout, preset_context='SCENE')
+        draw_exporter_presets(layout)
 
         # draw Create exporter
         from .shared_draw import draw_parent_collection, draw_collection_creation
@@ -349,7 +349,7 @@ class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.
         list_id = "scene"
 
         from .shared_draw import draw_exporter_presets
-        draw_exporter_presets(layout, preset_context = 'SCENE')
+        draw_exporter_presets(layout)
 
         # draw Create exporter
         from .shared_draw import draw_parent_collection, draw_collection_creation

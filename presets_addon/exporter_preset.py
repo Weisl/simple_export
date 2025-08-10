@@ -65,7 +65,7 @@ class BaseExportPreset(AddPresetBase, Operator):
 class SceneExportPreset(BaseExportPreset):
     """Presets for scene export settings"""
     bl_idname = "simple_export.scene_preset"
-    bl_label = "Scene Export Presets"
+    bl_label = "Export Presets"
     preset_menu = "EXPORT_MT_scene_presets"
 
 
@@ -73,7 +73,7 @@ class SceneExportPreset(BaseExportPreset):
 
 
 class EXPORT_MT_scene_presets(Menu):
-    bl_label = "Scene Export Presets"
+    bl_label = "Export Presets"
     preset_subdir = BaseExportPreset.preset_subdir
     preset_operator = "script.execute_preset"
     draw = Menu.draw_preset
