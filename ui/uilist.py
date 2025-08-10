@@ -154,13 +154,31 @@ class OBJECT_OT_select_root(bpy.types.Operator):
         return {'FINISHED'}
 
 
+from ..core.export_formats import get_export_format_items
+
+
 class SCENE_UL_CollectionList(bpy.types.UIList):
     """
     UIList displaying all collections with an exporter matching the selected export type.
     """
+    use_filter: bpy.props.BoolProperty(
+        name="Use Filter",
+        description="Use filter for the export list",
+        default=False
+    )
+
+    export_format: bpy.props.EnumProperty(
+        name="Export Format",
+        description="Select the export format",
+        items=get_export_format_items(),  # Dynamically generated items from EXPORT_FORMATS
+        default='FBX',
+    )
 
     def draw_filter(self, context, layout):
-        layout.prop(context.window_manager, "export_format", text="Filter Format")
+        # Nothing much to say here, it's usual UI code...
+        row = layout.row()
+        row.prop(self, "use_filter")
+        row.prop(self, 'export_format')
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         from .. import __package__ as base_package
@@ -270,20 +288,22 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         scene = context.scene
 
-        export_format = scene.export_format
+        export_format = self.export_format
         export_format_obj = ExportFormats.get(export_format)
 
+        exporter_collections = []
         for collection in bpy.data.collections:
-            # Filter collections based on whether they have an exporter with the matching format
-            has_matching_exporter = any(
-                str(type(exporter.export_properties)) == export_format_obj.op_type for exporter in
-                collection.exporters
-            )
+            filter = 0
+            if not self.use_filter:
+                if len(collection.exporters) > 0:
+                    filter = self.bitflag_filter_item
 
-            if has_matching_exporter:
-                flt_flags.append(self.bitflag_filter_item)
-            else:
-                flt_flags.append(0)
+            else:  # self.use filter
+                if any(str(type(exporter.export_properties)) == export_format_obj.op_type for exporter in
+                       collection.exporters):
+                    filter = self.bitflag_filter_item
+
+            flt_flags.append(filter)
 
         return flt_flags, flt_neworder
 
