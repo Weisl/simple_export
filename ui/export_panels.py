@@ -1,6 +1,5 @@
-import os
-
 import bpy
+import os
 
 from .. import __package__ as base_package
 from ..core.info import ADDON_NAME
@@ -105,7 +104,7 @@ def draw_active_list_element(layout, context, scene):
 
         if body:
             # Export Path
-            exporter = find_exporter(selected_collection,format_filter= scene.export_format)
+            exporter = find_exporter(selected_collection, format_filter=scene.export_format)
 
             # Return early
             if not exporter:
@@ -177,7 +176,7 @@ def draw_export_list(layout, list_id, scene):
     row = layout.row()
     row.label(text="Export List")
 
-     #UI List
+    # UI List
     row = layout.row(align=True)
     # Add a button with a down arrow icon to call the menu
     # Display export list
@@ -188,6 +187,10 @@ def draw_export_list(layout, list_id, scene):
     from .shared_operator_call import call_create_export_collection_op
     call_create_export_collection_op(scene, col, icon='ADD', text="")
     col.menu("SIMPLE_EXPORT_MT_context_menu", text="", icon="DOWNARROW_HLT")
+
+    # Draw View Settings
+    my_custom_properties = scene.my_custom_properties
+    col.prop(my_custom_properties, "my_enum_property")
 
 
 def get_presets_folder():
@@ -238,7 +241,21 @@ def draw_custom_collection_ui(self, context):
     layout.prop(collection, "root_object", text="Offset Object")
 
 
-
+class MyCustomProperties(bpy.types.PropertyGroup):
+    my_enum_property: bpy.props.EnumProperty(
+        name="Multi-Select Enum",
+        description="Select multiple options",
+        items=[
+            ('FILEPATH', "", "File path option", 'FILE', 0),
+            ('LOCKED', "", "File edit status", 'LOCKED', 1),
+            ('FILENAME', "", "File name option", 'FILE_TEXT', 2),
+            ('COLLECTION', "", "Collection option", 'OUTLINER_COLLECTION', 3),
+            ('OBJECT', "", "Object option", 'OBJECT_DATA', 4),
+            ('ORIGIN', "", "Origin option", 'ORIGIN', 5),
+        ],
+        options={'ENUM_FLAG'},  # This allows multi-select
+        default={'FILEPATH', 'FILENAME'},
+    )
 
 
 class SIMPLE_EXPORT_menu_base:
@@ -256,7 +273,7 @@ class SIMPLE_EXPORT_menu_base:
         layout.label(text="Collection Operators")
         col = layout.column(align=True)
         from .shared_operator_call import call_set_preset_op
-        op= call_set_preset_op(context, col)
+        op = call_set_preset_op(context, col)
         from .shared_operator_call import call_simple_export_path_ops
         op = call_simple_export_path_ops(context, col, outliner=False, individual_collection=False)
         from .shared_operator_call import call_create_export_collection_op
@@ -379,6 +396,7 @@ classes = (
     PROPERTIES_PT_SimpleExportMain,
     PROPERTIES_PT_SimpleExportSettings,
     SIMPLE_EXPORT_MT_context_menu,
+    MyCustomProperties,
 )
 
 
@@ -389,9 +407,12 @@ def register():
     for cls in classes:
         register_class(cls)
 
+    bpy.types.Scene.my_custom_properties = bpy.props.PointerProperty(type=MyCustomProperties)
 
 def unregister():
     from bpy.utils import unregister_class
 
     for cls in reversed(classes):
         unregister_class(cls)
+
+    del bpy.types.Scene.my_custom_properties
