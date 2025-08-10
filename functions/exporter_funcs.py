@@ -1,4 +1,5 @@
 import bpy
+
 from .collection_layer import set_active_layer_Collection
 from ..core.export_formats import ExportFormats
 
@@ -52,19 +53,20 @@ def assign_collection_exporter(operator, context, collection):
     if collection is None:
         operator.report({'ERROR'}, "Collection is None in assign_collection_exporter.")
         return None
+    export_format = operator.export_format
 
     scene = context.scene
     set_active_layer_Collection(collection.name)
 
-    export_data = ExportFormats.get(scene.export_format)
+    export_data = ExportFormats.get(export_format)
 
     if not export_data:
-        operator.report({'ERROR'}, f"Invalid export format: {scene.export_format}")
+        operator.report({'ERROR'}, f"Invalid export format: {export_format}")
         return None
 
     exporters_before = get_all_exporters(collection)
 
-    export_data = ExportFormats.get(scene.export_format)
+    export_data = ExportFormats.get(export_format)
     operator_name = export_data.op_name
 
     bpy.ops.collection.exporter_add(name=operator_name)
