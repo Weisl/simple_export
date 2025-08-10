@@ -88,6 +88,7 @@ def draw_scene_settings_overwrite(context, layout, scene):
         from ..ui.shared_draw import draw_collection_name_properties
         draw_collection_name_properties(box, collection_settings)
 
+        box = body.box()
         # Draw collection settings properties using shared function
         from ..ui.shared_draw import draw_collection_settings_properties
         draw_collection_settings_properties(box, collection_settings)
@@ -301,9 +302,7 @@ class SimpleExportMainPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         draw_exporter_presets(layout)
 
         # draw Create exporter
-        from .shared_draw import draw_parent_collection, draw_collection_creation
-        row = layout.row()
-        draw_parent_collection(context, row)
+        from .shared_draw import draw_collection_creation
         row = layout.row()
         draw_collection_creation(context, row)
 

@@ -18,15 +18,16 @@ Scene = bpy.types.Scene
 
 def register_scene_properties():
     if not hasattr(Scene, 'parent_collection'):
-        Scene.parent_collection = bpy.props.PointerProperty(
+        Scene.parent_collection = bpy.props.StringProperty(
             name="Parent Collection",
             description="Choose the parent collection to link the new collection to",
-            type=bpy.types.Collection
+            default=''
         )
     if not hasattr(Scene, 'set_filepath_on_creation'):
         Scene.set_filepath_on_creation = bpy.props.BoolProperty(
             name="Set Filepath",
             description="Set filepath based on blend file location",
+            default=True
         )
 
 

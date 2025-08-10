@@ -76,13 +76,13 @@ class OBJECT_OT_set_menu_collection(bpy.types.Operator):
 
     def execute(self, context):
         context.scene.menu_collection_name = self.collection_name
-        bpy.ops.wm.call_menu(name="COLLECTION_MT_root_object_menu")
+        bpy.ops.wm.call_menu(name="EXPORT_MT_root_object_menu")
         return {'FINISHED'}
 
 
-class COLLECTION_MT_root_object_menu(bpy.types.Menu):
+class EXPORT_MT_root_object_menu(bpy.types.Menu):
     """Root Object Action Menu"""
-    bl_idname = "COLLECTION_MT_root_object_menu"
+    bl_idname = "EXPORT_MT_root_object_menu"
     bl_label = "Collection Actions"
 
     def draw(self, context):
@@ -291,7 +291,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 classes = (
     SCENE_UL_CollectionList,
     OBJECT_OT_select_root,
-    COLLECTION_MT_root_object_menu,
+    EXPORT_MT_root_object_menu,
     OBJECT_OT_set_menu_collection,
     OBJECT_OT_root_object_actions,
 )

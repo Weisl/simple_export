@@ -3,8 +3,6 @@ import textwrap
 
 import bpy
 
-from ..core.info import ADDON_NAME, COLOR_TAG_ICONS
-
 
 def draw_collection_creation(context, layout):
     # Draw Create Button
@@ -37,37 +35,23 @@ def draw_export_preset_properties(layout, element):
 
 def draw_collection_settings_properties(layout, element):
     layout.label(text="Collection Settings")
-    # Check if this is a scene object (has parent_collection) or preferences object
-    if hasattr(element, "parent_collection"):
-        layout.prop_search(element, "parent_collection", bpy.data, "collections")
+
+    layout.prop(element, "parent_collection")
     layout.prop(element, "collection_color")
 
     # Handle different property names between scene and preferences
-    if hasattr(element, "collection_instance_offset"):
-        layout.prop(element, "collection_instance_offset")
-    if hasattr(element, "collection_instance_offset"):
-        layout.prop(element, "collection_instance_offset")
+    layout.prop(element, "collection_instance_offset")
+    layout.prop(element, "use_root_object")
 
-    if hasattr(element, "use_root_object"):
-        layout.prop(element, "use_root_object")
-    if hasattr(element, "use_root_object"):
-        layout.prop(element, "use_root_object")
-        if element.use_root_object and hasattr(element, "collection_set_root_offset_object"):
-            layout.prop(element, "collection_set_root_offset_object")
+    if element.use_root_object and hasattr(element, "collection_set_root_offset_object"):
+        layout.prop(element, "collection_set_root_offset_object")
 
     layout.prop(element, "set_preset")
     layout.prop(element, "set_export_path")
 
 
 def draw_collection_name_properties(layout, element):
-    layout.label(text="Collection Name")
-
-    if getattr(element, "collection_naming_overwrite", None):
-        layout.prop(element, "collection_naming_overwrite")
-        if element.collection_naming_overwrite:
-            layout.prop(element, "collection_name_new")
-            layout.prop(element, "use_numbering")
-
+    layout.label(text="Collection Settings")
     layout.prop(element, "collection_prefix")
     layout.prop(element, "collection_suffix")
     layout.prop(element, "collection_blend_prefix")
