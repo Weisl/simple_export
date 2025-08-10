@@ -227,9 +227,6 @@ class EXPORT_OT_CreateExportCollections(
         from ..ui.shared_draw import draw_collection_name_properties, draw_collection_settings_properties, \
             draw_export_preset_properties, draw_export_filename_properties
 
-        from ..ui.shared_draw import draw_exporter_presets
-        draw_exporter_presets(layout, preset_context='OP')
-
         from ..ui.shared_draw import draw_export_fomrat
         draw_export_fomrat(layout, self)
 

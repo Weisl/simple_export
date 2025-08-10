@@ -146,22 +146,14 @@ def draw_exporter_presets(layout, preset_context='SCENE'):
     """
     row = layout.row(align=True)
 
-    from ..presets_addon.exporter_preset import EXPORT_MT_prefs_presets, EXPORT_MT_scene_presets, \
-        EXPORT_MT_operator_presets, SceneExportPreset, PrefsExportPreset, OperatorExportPreset
+    from ..presets_addon.exporter_preset import EXPORT_MT_scene_presets, \
+        SceneExportPreset
 
     # Determine the appropriate preset menu and operators based on the context
     if preset_context == 'SCENE':
         row.menu(EXPORT_MT_scene_presets.__name__, text=EXPORT_MT_scene_presets.bl_label)
         add_op = row.operator(SceneExportPreset.bl_idname, text="", icon='ADD')
         remove_op = row.operator(SceneExportPreset.bl_idname, text="", icon='REMOVE')
-    elif preset_context == 'PREFS':
-        row.menu(EXPORT_MT_prefs_presets.__name__, text=EXPORT_MT_prefs_presets.bl_label)
-        add_op = row.operator(PrefsExportPreset.bl_idname, text="", icon='ADD')
-        remove_op = row.operator(PrefsExportPreset.bl_idname, text="", icon='REMOVE')
-    elif preset_context == 'OP':
-        row.menu(EXPORT_MT_operator_presets.__name__, text=EXPORT_MT_operator_presets.bl_label)
-        add_op = row.operator(OperatorExportPreset.bl_idname, text="", icon='ADD')
-        remove_op = row.operator(OperatorExportPreset.bl_idname, text="", icon='REMOVE')
 
     remove_op.remove_active = True
 
