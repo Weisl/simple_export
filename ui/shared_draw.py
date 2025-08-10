@@ -14,14 +14,8 @@ def draw_collection_creation(context, layout):
 
 
 def draw_parent_collection(context, layout):
-    # Parent selection
-    row = layout.row()
-    color_tag = None
-
-    if context.scene.parent_collection:
-        color_tag = context.scene.parent_collection.color_tag
-    icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
-    row.prop(context.scene, "parent_collection", text="Parent Collection", icon=icon)
+    scene = context.scene
+    layout.prop(scene, "parent_collection", text="Parent Collection")
 
 
 def draw_export_preset_properties(layout, element):
@@ -43,9 +37,9 @@ def draw_export_preset_properties(layout, element):
 
 def draw_collection_settings_properties(layout, element):
     layout.label(text="Collection Settings")
-    # Check if this is a scene object (has parent_collection_name) or preferences object
-    if hasattr(element, "parent_collection_name"):
-        layout.prop_search(element, "parent_collection_name", bpy.data, "collections")
+    # Check if this is a scene object (has parent_collection) or preferences object
+    if hasattr(element, "parent_collection"):
+        layout.prop_search(element, "parent_collection", bpy.data, "collections")
     layout.prop(element, "collection_color")
 
     # Handle different property names between scene and preferences

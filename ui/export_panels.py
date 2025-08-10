@@ -263,14 +263,7 @@ class SIMPLE_EXPORT_menu_base:
         op.individual_collection = False
 
 
-class VIEW3D_PT_SimpleExportSettings(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
-    """Creates a Panel in the Object properties window"""
-
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "Simple Export"
-    bl_label = ""
-
+class SimpleExportSettingsPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
     def draw_header(self, context):
         layout = self.layout
         draw_simple_export_header(layout, text="Simple Export Settings")
@@ -282,13 +275,17 @@ class VIEW3D_PT_SimpleExportSettings(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         draw_scene_settings_overwrite(context, layout, scene)
 
 
-class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
+class VIEW3D_PT_SimpleExportMain(SimpleExportSettingsPanel):
     """Creates a Panel in the Object properties window"""
 
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Simple Export"
     bl_label = ""
+
+
+class SimpleExportMainPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
+    list_id = ''
 
     def draw_header(self, context):
         scene = context.scene
@@ -311,13 +308,49 @@ class VIEW3D_PT_SimpleExport(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         draw_collection_creation(context, row)
 
         # draw Export List
-        list_id = "npanel"
-        draw_export_list(layout, list_id, scene)
+        draw_export_list(layout, self.list_id, scene)
 
         # Draw Operator List
         super().draw(context)
 
         draw_active_list_element(layout, context, scene)
+
+
+class VIEW3D_PT_SimpleExportMain(SimpleExportMainPanel):
+    """Creates a Panel in the Object properties window"""
+
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Simple Export"
+    bl_label = ""
+
+    list_id = "npanel"
+
+
+class VIEW3D_PT_SimpleExportSettings(SimpleExportSettingsPanel):
+    """Creates a Panel in the Object properties window"""
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Simple Export"
+    bl_label = ""
+
+
+class PROPERTIES_PT_SimpleExportMain(SimpleExportMainPanel):
+    bl_idname = "PROPERTIES_PT_SimpleExportMain"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "output"
+
+    list_id = "scene"
+
+
+class PROPERTIES_PT_SimpleExportSettings(SimpleExportSettingsPanel):
+    bl_idname = "PROPERTIES_PT_SimpleExportSettings"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "output"
+
+    list_id = "scene"
 
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
@@ -334,81 +367,12 @@ class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
         op.deselect = True
 
 
-class SIMPLE_EXPORT_PT_CollectionExportPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
-    bl_idname = "SCENE_PT_simple_export"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "output"
-
-    def draw(self, context):
-        prefs = context.preferences.addons[base_package].preferences
-        scene = context.scene
-
-        layout = self.layout
-
-        list_id = "scene"
-
-        from .shared_draw import draw_exporter_presets
-        draw_exporter_presets(layout)
-
-        # draw Create exporter
-        from .shared_draw import draw_parent_collection, draw_collection_creation
-        row = layout.row()
-        draw_parent_collection(context, row)
-        row = layout.row()
-        draw_collection_creation(context, row)
-
-        draw_export_list(layout, list_id, scene)
-
-        # Draw Operator List
-        super().draw(context)
-
-        draw_active_list_element(layout, context, scene)
-
-        draw_scene_settings_overwrite(context, layout, scene)
-
-
-class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
-    bl_idname = "SIMPLE_EXPORT_PT_simple_export_popup"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "WINDOW"
-    bl_context = "empty"
-    bl_ui_units_x = 45
-
-    def draw(self, context):
-        scene = context.scene
-        layout = self.layout
-
-        row = layout.row()
-        row.label(text="Simple Export Popup")
-
-        row = layout.row()
-        # draw Create exporter
-        from .shared_draw import draw_parent_collection, draw_collection_creation
-        draw_parent_collection(context, row)
-        draw_collection_creation(context, row)
-
-        # Export List
-        row = layout.row()
-
-        row = layout.row(align=True)
-        op = row.operator("scene.select_all_collections", text="All", icon="CHECKBOX_HLT")
-        op.deselect = False
-        op = row.operator("scene.select_all_collections", text="None", icon="CHECKBOX_DEHLT")
-        op.deselect = True
-
-        row = layout.row()
-        row.template_list("SCENE_UL_CollectionList", "popup", bpy.data, "collections", scene, "collection_index")
-
-        super().draw(context)
-
-
 classes = (
-    VIEW3D_PT_SimpleExport,
+    VIEW3D_PT_SimpleExportMain,
     VIEW3D_PT_SimpleExportSettings,
+    PROPERTIES_PT_SimpleExportMain,
+    PROPERTIES_PT_SimpleExportSettings,
     SIMPLE_EXPORT_MT_context_menu,
-    SIMPLE_EXPORT_PT_CollectionExportPanel,
-    SIMPLE_EXPORT_PT_simple_export_popup,
 )
 
 

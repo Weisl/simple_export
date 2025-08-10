@@ -194,19 +194,19 @@ class CollectionNamingProps:
         default=PROPERTY_METADATA["collection_suffix"]["default"]
     )
 
-    collection_name_new: bpy.props.StringProperty(
-        name="Name",
-        description="Overwrite the name for the collection",
-        default=""
-    )
-
     collection_blend_prefix: bpy.props.BoolProperty(
         name=PROPERTY_METADATA["collection_blend_prefix"]["name"],
         description=PROPERTY_METADATA["collection_blend_prefix"]["description"],
         default=PROPERTY_METADATA["collection_blend_prefix"]["default"]
     )
 
-    #
+    # Should they even be here?
+    collection_name_new: bpy.props.StringProperty(
+        name="Name",
+        description="Overwrite the name for the collection",
+        default=""
+    )
+
     collection_naming_overwrite: bpy.props.BoolProperty(
         name="Overwrite Naming",
         description="Overwrite the naming for the collection",
@@ -234,7 +234,7 @@ class CollectionSettingsProps:
         items=PROPERTY_METADATA["collection_color"]["items"],
         default=PROPERTY_METADATA["collection_color"]["default"],
     )
-    parent_collection_name: bpy.props.StringProperty(
+    parent_collection: bpy.props.StringProperty(
         name="Parent Collection",
         description="Name of the parent collection for the collection",
         default=""

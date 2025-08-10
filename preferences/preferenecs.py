@@ -7,7 +7,7 @@ from .keymap import remove_key
 from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
 from ..core.export_formats import get_export_format_items
-from ..ui.export_panels import VIEW3D_PT_SimpleExport, VIEW3D_PT_SimpleExportSettings
+from ..ui.export_panels import VIEW3D_PT_SimpleExportMain, VIEW3D_PT_SimpleExportSettings
 
 PROPERTY_METADATA = {
 
@@ -99,6 +99,11 @@ PROPERTY_METADATA = {
         "description": "Set export preset when creating an Exporter Collection.",
         "default": True,
     },
+
+    "parent_collection": {
+        "name": "Parent Collection",
+        "description": "Specify the Name of the Parent Collection. Ignored if empty",
+        "default": ''},
 
     # collection Settings
 
@@ -251,7 +256,7 @@ def update_preset_path_for_stl(self, context):
 def update_panel_category(self, context):
     """Update panel tab for simple export"""
     panels = [
-        VIEW3D_PT_SimpleExport,
+        VIEW3D_PT_SimpleExportMain,
         VIEW3D_PT_SimpleExportSettings,
     ]
 
@@ -598,6 +603,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         name=PROPERTY_METADATA["set_preset"]["name"],
         description=PROPERTY_METADATA["set_preset"]["description"],
         default=PROPERTY_METADATA["set_preset"]["default"],
+    )
+
+    parent_collection: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["parent_collection"]["name"],
+        description=PROPERTY_METADATA["parent_collection"]["description"],
+        default=PROPERTY_METADATA["parent_collection"]["default"],
     )
     ###################################################################
     # KEYMAP
@@ -1016,6 +1027,13 @@ def initialize_properties_collection_generation():
         description=PROPERTY_METADATA["set_preset"]["description"],
         default=prefs.set_preset
     )
+
+    bpy.types.Scene.parent_collection = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["parent_collection"]["name"],
+        description=PROPERTY_METADATA["parent_collection"]["description"],
+        default=PROPERTY_METADATA["parent_collection"]["default"],
+    )
+
     bpy.types.Scene.collection_color = bpy.props.EnumProperty(
         name=PROPERTY_METADATA["collection_color"]["name"],
         description=PROPERTY_METADATA["collection_color"]["description"],
@@ -1091,7 +1109,6 @@ def register():
         description="Index of the active collection in the list",
         default=0
     )
-
 
     ########################################
     # Presets
@@ -1181,6 +1198,7 @@ def unregister():
     del bpy.types.Scene.collection_set_root_offset_object
     del bpy.types.Scene.set_export_path
     del bpy.types.Scene.set_preset
+    del bpy.types.Scene.parent_collection
     del bpy.types.Scene.collection_color
 
     # filepath
@@ -1192,4 +1210,3 @@ def unregister():
 
     # Pre export operations
     del bpy.types.Scene.move_by_collection_offset
-

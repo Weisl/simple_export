@@ -35,13 +35,21 @@ class BaseExportPreset(AddPresetBase, Operator):
     # Define prop for the scene context
     preset_defines = [
         f"scene = bpy.context.scene"
-
     ]
 
     """Base class for export presets"""
     # Common properties for all preset types
     preset_values = [
         "scene.export_format",
+        "scene.export_folder_mode",
+        "scene.folder_path_absolute",
+        "scene.folder_path_relative",
+        "scene.folder_path_search",
+        "scene.folder_path_replace",
+        "scene.filename_prefix",
+        "scene.filename_suffix",
+        "scene.filename_blend_prefix",
+        "scene.set_export_path",
         "scene.simple_export_preset_file_fbx",
         "scene.simple_export_preset_file_obj",
         "scene.simple_export_preset_file_gltf",
@@ -56,10 +64,14 @@ class BaseExportPreset(AddPresetBase, Operator):
         "scene.use_root_object",
         "scene.collection_instance_offset",
         "scene.collection_color",
+        "scene.use_root_object",
+        "scene.collection_instance_offset",
+        "scene.collection_color",
+        "scene.parent_collection",
     ]
 
     # Directory to store the presets
-    preset_subdir = "export_presets"
+    preset_subdir = f"{folder_name}"
 
 
 class SceneExportPreset(BaseExportPreset):

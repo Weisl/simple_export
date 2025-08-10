@@ -56,10 +56,10 @@ def apply_preset_to_operator(operator, preset_filepath):
     return True
 
 
-def determine_parent_collection(context, parent_collection_name="", top_object=None):
+def determine_parent_collection(context, parent_collection="", top_object=None):
     """Determine the parent collection based on the specified hierarchy."""
-    if parent_collection_name:
-        parent_collection = bpy.data.collections.get(parent_collection_name)
+    if parent_collection:
+        parent_collection = bpy.data.collections.get(parent_collection)
         if parent_collection:
             return parent_collection
     if hasattr(context.scene, 'parent_collection') and context.scene.parent_collection:
@@ -181,7 +181,7 @@ class EXPORT_OT_CreateExportCollections(
             self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Using existing collection.")
         else:
             export_collection = bpy.data.collections.new(collection_name)
-            parent_collection = determine_parent_collection(context, self.parent_collection_name, None)
+            parent_collection = determine_parent_collection(context, self.parent_collection, None)
             parent_collection.children.link(export_collection)
 
         for top_object in top_objects:
@@ -201,7 +201,7 @@ class EXPORT_OT_CreateExportCollections(
     def create_and_setup_collection(self, context, collection_name, top_object):
         """Create a new collection and set it up with the given name and objects."""
         export_collection = bpy.data.collections.new(collection_name)
-        parent_collection = determine_parent_collection(context, self.parent_collection_name, top_object)
+        parent_collection = determine_parent_collection(context, self.parent_collection, top_object)
         if parent_collection:
             parent_collection.children.link(export_collection)
         else:

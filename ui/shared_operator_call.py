@@ -103,7 +103,7 @@ def call_create_export_collection_op(context, layout, icon='COLLECTION_NEW', tex
     op.collection_naming_overwrite = False
     op.collection_name_new = ""
     op.use_numbering = False
-    op.parent_collection_name = context.scene.parent_collection.name if context.scene.parent_collection else ""
+    op.parent_collection = context.scene.parent_collection.name if context.scene.parent_collection else ""
 
     # Get and set properties from preferences/scene
     prefs = context.preferences.addons[base_package].preferences
