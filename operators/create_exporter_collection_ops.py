@@ -11,51 +11,6 @@ from ..functions.exporter_funcs import assign_collection_exporter
 from ..ui.shared_draw import draw_export_folderpath_properties
 
 
-# Context menu registration is now handled in ui/view3d_object_context_menu.py
-
-class APPLY_OT_PresetToOperator(bpy.types.Operator):
-    """Apply a preset to the operator"""
-    bl_idname = "simple_export.apply_preset_to_operator"
-    bl_label = "Apply Preset to Operator"
-
-    filepath: bpy.props.StringProperty(subtype="FILE_PATH")
-
-    def execute(self, context):
-        operator = context.active_operator
-        if operator and operator.bl_idname == "SIMPLE_EXPORT_OT_create_export_collections":
-            apply_preset_to_operator(operator, self.filepath)
-        else:
-            self.report({'ERROR'}, "No active operator to apply the preset to.")
-            return {'CANCELLED'}
-
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        context.window_manager.fileselect_add(self)
-        return {'RUNNING_MODAL'}
-
-
-def apply_preset_to_operator(operator, preset_filepath):
-    try:
-        # Load the preset using Blender's built-in functionality
-        bpy.ops.script.execute_preset(filepath=preset_filepath, menu_idname="EXPORT_MT_operator_presets")
-        print("Preset loaded successfully.")
-    except Exception as e:
-        print(f"Error loading preset: {e}")
-        return False
-
-    # Assuming the preset values are loaded into a temporary scene or similar context
-    source = bpy.context.scene  # Or another context where preset values are loaded
-
-    from..presets_addon.exporter_preset import OperatorExportPreset
-    # Copy the preset values from the source to the operator
-    for prop_name in OperatorExportPreset.preset_values:
-        if hasattr(source, prop_name) and hasattr(operator, prop_name):
-            setattr(operator, prop_name, getattr(source, prop_name))
-
-    return True
-
-
 def determine_parent_collection(context, parent_collection="", top_object=None):
     """Determine the parent collection based on the specified hierarchy."""
     if parent_collection:
@@ -257,7 +212,6 @@ class EXPORT_OT_CreateExportCollections(
 
 classes = (
     EXPORT_OT_CreateExportCollections,
-    APPLY_OT_PresetToOperator,
 )
 
 
