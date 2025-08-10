@@ -312,7 +312,7 @@ class SimpleExportMainPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         # Draw Operator List
         super().draw(context)
 
-        draw_active_list_element(layout, context, scene)
+        # draw_active_list_element(layout, context, scene)
 
 
 class VIEW3D_PT_SimpleExportMain(SimpleExportMainPanel):

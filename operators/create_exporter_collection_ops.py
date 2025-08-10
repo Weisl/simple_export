@@ -44,7 +44,9 @@ class EXPORT_OT_CreateExportCollections(
     """Create a new collection for each selected object and its children, preserving hierarchy."""
     bl_idname = "simple_export.create_export_collections"
     bl_label = "Create Export Collections"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Create Export Collections for selected objects and their children, preserving hierarchy."
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
+    # TODO: Add support for adding exporters without selected objects
 
     # Internal Properties
     only_selection: bpy.props.BoolProperty(

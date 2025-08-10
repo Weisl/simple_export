@@ -14,7 +14,8 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
     """Operator to apply the preset to all collections"""
     bl_idname = "simple_export.set_presets"
     bl_label = "Assign Presets"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Assign presets to selected collections based on the current export format."
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
     outliner: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
     individual_collection: bpy.props.BoolProperty(default=False, options={'HIDDEN'})

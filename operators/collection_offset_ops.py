@@ -8,7 +8,9 @@ class OBJECT_OT_set_collection_offset_cursor(bpy.types.Operator):
     """Set the collection offset to the 3D cursor location."""
     bl_idname = "object.set_collection_offset_cursor"
     bl_label = "Set Collection Center (3D Cursor)"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Set Collection Center (3D Cursor)"
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
+
 
     # Hidden property for the collection name
     collection_name: bpy.props.StringProperty(name="Collection Name", default='',
@@ -35,7 +37,8 @@ class OBJECT_OT_set_collection_offset_object(bpy.types.Operator):
     """Set the collection offset to the selected object's location."""
     bl_idname = "object.set_collection_offset_object"
     bl_label = "Set Collection Center"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Set Collection Center to the active object's location"
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
     collection_name: bpy.props.StringProperty(name="Collection Name", default='',
                                               description="Name of the collection to process")

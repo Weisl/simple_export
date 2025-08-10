@@ -14,7 +14,8 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
     """Set export paths for selected collections."""
     bl_idname = "simple_export.set_export_paths"
     bl_label = "Set Export Path"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Set export paths for selected collections based on the current naming conventions and folder settings."
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
     # Internal Properties
     outliner: bpy.props.BoolProperty(default=False, options={'HIDDEN'})

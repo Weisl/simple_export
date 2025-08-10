@@ -9,6 +9,8 @@ class SIMPLE_OT_OpenCollectionExporterProperties(bpy.types.Operator):
     """Go to the selected collection's properties and focus on the exporter"""
     bl_idname = "simple_export.open_exporter_in_properties"
     bl_label = "Open Exporter Properties"
+    bl_description = "Open the properties of the selected collection and focus on the exporter settings."
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
     collection_name: bpy.props.StringProperty(options={'HIDDEN'})
 
@@ -41,9 +43,10 @@ class SIMPLE_OT_OpenCollectionExporterProperties(bpy.types.Operator):
 class SCENE_OT_SelectAllCollections(bpy.types.Operator):
     bl_idname = "scene.select_all_collections"
     bl_label = "Select All Collections"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Select or deselect all collections for export."
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
-    deselect: bpy.props.BoolProperty(options={'HIDDEN'})
+    deselect: bpy.props.BoolProperty(name="Invert", default=False,)
 
     def execute(self, context):
         for collection in bpy.data.collections:
@@ -57,7 +60,8 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
     """
     bl_idname = "scene.open_export_directory"
     bl_label = "Open Export Directory"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Open the export directory of the currently selected collection in the file explorer."
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
     collection_name: bpy.props.StringProperty(options={'HIDDEN'})
 

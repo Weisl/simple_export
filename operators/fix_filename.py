@@ -10,7 +10,8 @@ class SIMPLEEXPORT_OT_FixExportFilename(SharedPathProps, SharedFilenameProps, bp
     """Fix the export filename for a collection."""
     bl_idname = "simple_export.fix_export_filename"
     bl_label = "Fix Export Filename"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Fix the export filename for a collection by applying the current naming conventions."
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
     # Internal Properties
     collection_name: bpy.props.StringProperty(

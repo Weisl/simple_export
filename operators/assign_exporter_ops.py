@@ -24,6 +24,7 @@ class EXPORT_OT_AddSettingsToCollections(
     """
     bl_idname = "simple_export.add_settings_to_collections"
     bl_label = "Add Exporter to Collection"
+    bl_description = "Adds an Exporter to a Collection together with all exporter settings."
     bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
     # Internal Poperties
