@@ -17,8 +17,7 @@ def draw_parent_collection(context, layout):
 
 
 def draw_export_preset_properties(layout, element):
-    scene = bpy.context.scene
-    export_format = scene.export_format  # Get the currently selected export format
+    export_format = element.export_format  # Get the currently selected export format
 
     layout.label(text="Export Preset")
 
