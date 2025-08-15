@@ -8,7 +8,7 @@ from .shared_properties import (
 from ..core.export_path_func import assign_exporter_path
 from ..core.export_path_func import generate_base_name
 from ..functions.collections_setup import setup_collection_properties
-from ..functions.exporter_funcs import assign_collection_exporter
+from ..functions.exporter_funcs import create_collection_exporter
 from ..functions.exporter_funcs import get_all_children_and_descendants
 from ..functions.preset_func import assign_preset
 from ..ui.shared_draw import draw_export_folderpath_properties
@@ -88,7 +88,12 @@ class EXPORT_OT_CreateExportCollections(
 
             if export_collection is not None:
                 export_collection = setup_collection_properties(self, export_collection, top_object)
-                exporter = assign_collection_exporter(self, context, export_collection)
+
+                # replace existing exporter
+                from ..functions.exporter_funcs import create_collection_exporter, remove_all_collection_exporters
+                remove_all_collection_exporters(export_collection)
+                exporter = create_collection_exporter(self, context, export_collection)
+
                 self.report({'INFO'},
                             f"Export collection '{export_collection.name}' created successfully for all objects.")
             else:

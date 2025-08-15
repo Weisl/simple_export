@@ -21,13 +21,13 @@ def simple_export_presets_folder():
     """
     # Make sure there is a directory for presets
     simple_export_presets = folder_name
-    collider_preset_directory = os.path.join(bpy.utils.user_resource('SCRIPTS'), "presets", simple_export_presets)
-    collider_preset_paths = bpy.utils.preset_paths(simple_export_presets)
+    simple_export_preset_directory = os.path.join(bpy.utils.user_resource('SCRIPTS'), "presets", simple_export_presets)
+    simple_export_preset_paths = bpy.utils.preset_paths(simple_export_presets)
 
-    if (collider_preset_directory not in collider_preset_paths) and (not os.path.exists(collider_preset_directory)):
-        os.makedirs(collider_preset_directory)
+    if (simple_export_preset_directory not in simple_export_preset_paths) and (not os.path.exists(simple_export_preset_directory)):
+        os.makedirs(simple_export_preset_directory)
 
-    return collider_preset_directory
+    return simple_export_preset_directory
 
 
 class BaseExportPreset(AddPresetBase, Operator):

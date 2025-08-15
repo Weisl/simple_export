@@ -5,7 +5,6 @@ from .shared_properties import (
     CollectionOriginProps, CollectionSettingsProps, SharedFormatProps
 )
 from ..core.export_path_func import assign_exporter_path
-from ..functions.exporter_funcs import assign_collection_exporter
 from ..functions.preset_func import assign_preset
 
 
@@ -50,7 +49,10 @@ class EXPORT_OT_AddSettingsToCollections(
         from ..functions.collections_setup import setup_collection_properties
         setup_collection_properties(self, collection, base_object=None)
 
-        exporter = assign_collection_exporter(self, context, collection)
+        # replace existing exporter
+        from ..functions.exporter_funcs import create_collection_exporter,remove_all_collection_exporters
+        remove_all_collection_exporters(collection)
+        exporter = create_collection_exporter(self, context, collection)
 
         if not exporter:
             self.report({'INFO'}, f"Exporter was not added to '{collection.name}'.")
@@ -66,20 +68,6 @@ class EXPORT_OT_AddSettingsToCollections(
 
         self.report({'INFO'}, f"Settings applied to collection '{collection.name}'.")
         return {'FINISHED'}
-
-        def get_all_exporters():
-            return list(collection.exporters)
-
-        exporters_before = get_all_exporters()
-        operator_name = export_data.op_name
-        bpy.ops.collection.exporter_add(name=operator_name)
-        exporters_after = get_all_exporters()
-        new_exporters = set(exporters_after) - set(exporters_before)
-        if new_exporters:
-            return new_exporters.pop()
-        else:
-            self.report({'ERROR'}, "Failed to add a new exporter.")
-            return None
 
     def draw(self, context):
         layout = self.layout

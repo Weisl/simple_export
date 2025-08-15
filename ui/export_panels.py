@@ -172,9 +172,9 @@ def draw_active_list_element(layout, context, scene):
 
 
 def get_presets_folder():
-    """Retrieve the base path for Blender's presets_export folder."""
+    """Retrieve the base path for Blender's presets export folder."""
     # Get the user scripts folder dynamically
-    return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets_export", "operator")
+    return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets", "operator")
 
 
 def draw_properties_with_prefix(setting, layout, context, properties):

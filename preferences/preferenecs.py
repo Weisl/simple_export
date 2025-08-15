@@ -837,7 +837,7 @@ def get_py_files(self=None, context=None, folder=None):
     if not folder or not os.path.isdir(folder):
         # print(f"[DEBUG] Invalid folder: {folder}")
         return [("NONE", "Create Presets",
-                 "Create export presets_export in Blender's default export window before assigning them in Simple Export.")]
+                 "Create export presets export in Blender's default export window before assigning them in Simple Export.")]
 
     try:
         files = [
@@ -847,7 +847,7 @@ def get_py_files(self=None, context=None, folder=None):
         ]
         # print(f"[DEBUG] Files found in {folder}: {files}")
         return files if files else [
-            ("NONE", "No Files", "Create presets_export in the default export windows before assigning them.")]
+            ("NONE", "No Files", "Create presets export in the default export windows before assigning them.")]
     except Exception as e:
         # print(f"[DEBUG ERROR] Error reading files in {folder}: {e}")
         return [("NONE", "Error", str(e))]

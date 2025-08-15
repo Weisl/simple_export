@@ -56,10 +56,11 @@ def get_all_exporters(collection):
     return list(collection.exporters)
 
 
-def assign_collection_exporter(operator, context, collection):
+def create_collection_exporter(operator, context, collection):
     if collection is None:
-        operator.report({'ERROR'}, "Collection is None in assign_collection_exporter.")
+        operator.report({'ERROR'}, "Collection is None in create_collection_exporter.")
         return None
+
     export_format = operator.export_format
 
     scene = context.scene
@@ -84,6 +85,22 @@ def assign_collection_exporter(operator, context, collection):
     return exporter
 
 
+def remove_all_collection_exporters(collection):
+    # Set the given collection as active
+    set_active_layer_Collection(collection.name)
+
+    exporters = get_all_exporters(collection)
+    if not exporters:
+        return True
+
+    count = len(exporters)
+    for _ in range(count):
+        try:
+            bpy.ops.collection.exporter_remove(index=0)
+        except Exception as e:
+            continue
+    return True
+
 def get_all_children_and_descendants(obj, include_top=False):
     """
     Returns a list of all children and descendants of the given object.
@@ -100,3 +117,4 @@ def get_all_children_and_descendants(obj, include_top=False):
 
     recursive_collect(obj)
     return children
+

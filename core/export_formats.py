@@ -19,7 +19,7 @@ def get_presets_folder():
         pass
 
     # Default Blender location
-    return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets_export", "operator")
+    return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets", "operator")
 
 
 class ExportFormat:
