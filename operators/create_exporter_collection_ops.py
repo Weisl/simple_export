@@ -7,7 +7,7 @@ from .shared_properties import (
 )
 from ..core.export_path_func import generate_base_name
 from ..functions.collections_setup import setup_collection_properties
-from ..functions.exporter_funcs import assign_collection_exporter
+from ..functions.exporter_funcs import assign_collection_exporter, get_all_children_and_descendants
 from ..ui.shared_draw import draw_export_folderpath_properties
 
 
@@ -22,12 +22,6 @@ def determine_parent_collection(context, parent_collection="", top_object=None):
     if top_object and top_object.users_collection:
         return top_object.users_collection[0]
     return context.scene.collection
-
-
-def collect_children(obj, objects):
-    """Collect the object and its children."""
-    children = [child for child in objects if child.parent == obj]
-    return [obj] + children
 
 
 class EXPORT_OT_CreateExportCollections(
@@ -49,17 +43,20 @@ class EXPORT_OT_CreateExportCollections(
     # TODO: Add support for adding exporters without selected objects
 
     # Internal Properties
-    only_selection: bpy.props.BoolProperty(
-        name="Only affect selection",
-        description="Only affect selected objects",
-        default=False,
-        options={'HIDDEN'}
-    )
+    # only_selection: bpy.props.BoolProperty(
+    #     name="Only affect selection",
+    #     description="Only affect selected objects",
+    #     default=False,
+    #     options={'HIDDEN'}
+    # )
+
     use_numbering: bpy.props.BoolProperty(
         name="Use Numbering",
         description="Add numbered suffix to collection names",
         default=False
     )
+
+    #
 
     def execute(self, context):
         """Execute the operator to create export collections."""
@@ -142,8 +139,10 @@ class EXPORT_OT_CreateExportCollections(
             parent_collection.children.link(export_collection)
 
         for top_object in top_objects:
-            objects = context.selected_objects if self.only_selection else bpy.data.objects
-            hierarchy_objects = collect_children(top_object, objects)
+            # objects = context.selected_objects if self.only_selection else bpy.data.objects
+            objects = bpy.data.objects
+
+            hierarchy_objects = get_all_children_and_descendants(top_object)
             for obj in hierarchy_objects:
                 if export_collection not in obj.users_collection:
                     export_collection.objects.link(obj)
@@ -165,8 +164,10 @@ class EXPORT_OT_CreateExportCollections(
             self.report({'ERROR'}, "Failed to determine parent collection.")
             return None
 
-        objects = context.selected_objects if self.only_selection else bpy.data.objects
-        hierarchy_objects = collect_children(top_object, objects)
+        # objects = context.selected_objects if self.only_selection else bpy.data.objects
+        # hierarchy_objects = get_all_children_and_descendants(top_object, objects)
+        hierarchy_objects = get_all_children_and_descendants(top_object, include_top=True)
+        # Link all hierarchy objects to the new collection
 
         for obj in hierarchy_objects:
             if export_collection not in obj.users_collection:
@@ -186,6 +187,14 @@ class EXPORT_OT_CreateExportCollections(
 
         from ..ui.shared_draw import draw_export_fomrat
         draw_export_fomrat(layout, self)
+
+
+        box = layout.box()
+        box.label(text="Creation")
+        # box.prop(self, "only_selection", text="Only Affect Selection")
+        # box.prop(self, "use_numbering", text="Use Numbering")
+        # box.prop(self, "collection_naming_overwrite", text="Overwrite Collection Naming")
+
 
         box = layout.box()
         draw_collection_name_properties(box, self)

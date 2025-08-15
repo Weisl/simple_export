@@ -10,7 +10,7 @@ def add_export_collections_to_menu(self, context):
     op = call_create_export_collection_op(scene, self.layout)
 
     # Set default properties
-    op.only_selection = True
+    # op.only_selection = True
     op.collection_naming_overwrite = False
     op.collection_name_new = ""
     op.use_numbering = False

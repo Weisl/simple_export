@@ -102,7 +102,7 @@ def call_create_export_collection_op(scene, layout, icon='COLLECTION_NEW', text=
         op = layout.operator("simple_export.create_export_collections", text=text, icon=icon)
 
     # Set default properties
-    op.only_selection = True
+    # op.only_selection = True
     op.collection_naming_overwrite = False
     op.collection_name_new = ""
     op.use_numbering = False

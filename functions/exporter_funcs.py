@@ -82,3 +82,21 @@ def assign_collection_exporter(operator, context, collection):
     exporter = list(set(exporters_after) - set(exporters_before))[0]
 
     return exporter
+
+
+def get_all_children_and_descendants(obj, include_top=False):
+    """
+    Returns a list of all children and descendants of the given object.
+    """
+    children = []
+
+    if include_top:
+        children.append(obj)
+
+    def recursive_collect(o):
+        for child in o.children:
+            children.append(child)
+            recursive_collect(child)
+
+    recursive_collect(obj)
+    return children
