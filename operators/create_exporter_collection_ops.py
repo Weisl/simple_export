@@ -5,9 +5,12 @@ from .shared_properties import (
     SharedPathAssignmentProps, SharedPresetAssignmentProps, CollectionNamingProps,
     CollectionOriginProps, CollectionSettingsProps, SharedFormatProps
 )
+from ..core.export_path_func import assign_exporter_path
 from ..core.export_path_func import generate_base_name
 from ..functions.collections_setup import setup_collection_properties
-from ..functions.exporter_funcs import assign_collection_exporter, get_all_children_and_descendants
+from ..functions.exporter_funcs import assign_collection_exporter
+from ..functions.exporter_funcs import get_all_children_and_descendants
+from ..functions.preset_func import assign_preset
 from ..ui.shared_draw import draw_export_folderpath_properties
 
 
@@ -50,13 +53,13 @@ class EXPORT_OT_CreateExportCollections(
     #     options={'HIDDEN'}
     # )
 
+
+
     use_numbering: bpy.props.BoolProperty(
         name="Use Numbering",
         description="Add numbered suffix to collection names",
         default=False
     )
-
-    #
 
     def execute(self, context):
         """Execute the operator to create export collections."""
@@ -90,6 +93,14 @@ class EXPORT_OT_CreateExportCollections(
                             f"Export collection '{export_collection.name}' created successfully for all objects.")
             else:
                 self.report({'ERROR'}, "Failed to create export collection.")
+
+            # Set preset
+            if self.assign_preset and self.preset_filepath:
+                assign_preset(exporter, self.preset_filepath)
+
+            if self.set_export_path and hasattr(exporter, 'filepath'):
+                print(f"COLLECTION NAME = {export_collection.name}")
+                assign_exporter_path(self, export_collection.name, exporter)
 
         return {'FINISHED'}
 
@@ -188,13 +199,11 @@ class EXPORT_OT_CreateExportCollections(
         from ..ui.shared_draw import draw_export_fomrat
         draw_export_fomrat(layout, self)
 
-
         box = layout.box()
         box.label(text="Creation")
         # box.prop(self, "only_selection", text="Only Affect Selection")
         # box.prop(self, "use_numbering", text="Use Numbering")
         # box.prop(self, "collection_naming_overwrite", text="Overwrite Collection Naming")
-
 
         box = layout.box()
         draw_collection_name_properties(box, self)

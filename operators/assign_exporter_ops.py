@@ -2,14 +2,15 @@ import bpy
 
 from .shared_properties import (
     SharedPathProps, SharedFilenameProps, SharedPathAssignmentProps, SharedPresetAssignmentProps, CollectionNamingProps,
-    CollectionOriginProps, CollectionSettingsProps
+    CollectionOriginProps, CollectionSettingsProps, SharedFormatProps
 )
-from ..core.export_path_func import get_export_folder_path, generate_base_name, generate_export_path
+from ..core.export_path_func import assign_exporter_path
 from ..functions.exporter_funcs import assign_collection_exporter
-from ..functions.preset_func import set_preset
+from ..functions.preset_func import assign_preset
 
 
 class EXPORT_OT_AddSettingsToCollections(
+    SharedFormatProps,
     SharedPathAssignmentProps,
     SharedPresetAssignmentProps,
     CollectionNamingProps,
@@ -56,27 +57,12 @@ class EXPORT_OT_AddSettingsToCollections(
             return {'FINISHED'}
 
         # Set preset
-        if self.set_preset and self.preset_filepath:
-            set_preset(exporter, self.preset_filepath)
+        if self.assign_preset and self.preset_filepath:
+            assign_preset(exporter, self.preset_filepath)
 
         # Assign filepath to exporter
         if self.set_export_path and hasattr(exporter, 'filepath'):
-
-            export_folder, is_relative_path = get_export_folder_path(self.export_folder_mode, self.folder_path_absolute,
-                                                                     self.folder_path_relative,
-                                                                     self.folder_path_search, self.folder_path_replace)
-
-            # FILE: filename properties
-            filename = generate_base_name(self.collection_name, self.filename_prefix, self.filename_suffix,
-                                          self.filename_blend_prefix)
-
-            # Generate final export path
-            export_path = generate_export_path(export_folder, filename, context.scene.export_format,
-                                               is_relative_path=is_relative_path)
-
-            # 3. Assign to exporter
-            if export_path:
-                exporter.filepath = export_path
+            assign_exporter_path(self, collection.name, exporter)
 
         self.report({'INFO'}, f"Settings applied to collection '{collection.name}'.")
         return {'FINISHED'}

@@ -35,7 +35,7 @@ def draw_collection_settings_properties(layout, element):
     if element.use_root_object and hasattr(element, "collection_set_root_offset_object"):
         layout.prop(element, "collection_set_root_offset_object")
 
-    layout.prop(element, "set_preset")
+    layout.prop(element, "assign_preset")
     layout.prop(element, "set_export_path")
 
 

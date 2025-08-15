@@ -17,7 +17,7 @@ class SIMPLEEXPORTER_PT_PresetResultsPanel(bpy.types.Panel):
         layout.label(text="Assign Preset:")
 
         # Get results from Scene
-        results_str = context.window_manager.set_preset_info_data
+        results_str = context.window_manager.assign_preset_info_data
         results = eval(results_str) if results_str else []  # Parse results string into a list
 
         # Header row with column titles
@@ -184,7 +184,7 @@ classes = (
 def register():
     bpy.types.WindowManager.export_data_info = bpy.props.StringProperty(default="[]")
     bpy.types.WindowManager.assign_filepath_result_info = bpy.props.StringProperty(default="[]")
-    bpy.types.WindowManager.set_preset_info_data = bpy.props.StringProperty(default="[]")
+    bpy.types.WindowManager.assign_preset_info_data = bpy.props.StringProperty(default="[]")
 
     from bpy.utils import register_class
     for cls in classes:
@@ -198,4 +198,4 @@ def unregister():
 
     del bpy.types.WindowManager.export_data_info
     del bpy.types.WindowManager.assign_filepath_result_info
-    del bpy.types.WindowManager.set_preset_info_data
+    del bpy.types.WindowManager.assign_preset_info_data

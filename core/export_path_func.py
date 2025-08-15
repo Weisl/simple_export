@@ -6,6 +6,23 @@ from ..core.export_formats import ExportFormats
 from ..functions.path_utils import ensure_export_folder_exists
 
 
+def assign_exporter_path(properties, collection_name, exporter):
+    export_folder, is_relative_path = get_export_folder_path(properties.export_folder_mode,
+                                                             properties.folder_path_absolute,
+                                                             properties.folder_path_relative,
+                                                             properties.folder_path_search,
+                                                             properties.folder_path_replace)
+    # FILE: filename properties
+    filename = generate_base_name(collection_name, properties.filename_prefix, properties.filename_suffix,
+                                  properties.filename_blend_prefix)
+    # Generate final export path
+    export_path = generate_export_path(export_folder, filename, properties.export_format,
+                                       is_relative_path=is_relative_path)
+    # 3. Assign to exporter
+    if export_path:
+        exporter.filepath = export_path
+
+
 def generate_export_path(export_dir, base_name, export_format_key, is_relative_path=False):
     """
     Generate and set the correct export path based on the selected filepath mode.
@@ -19,12 +36,13 @@ def generate_export_path(export_dir, base_name, export_format_key, is_relative_p
         str: The computed export path.
     """
 
-
-
     # Retrieve export format object
     export_format = ExportFormats.get(export_format_key)
     if not export_format:
         raise ValueError(f"Invalid export format: {export_format_key}")
+
+    if export_dir == None:
+        export_dir = ""
 
     # Construct export filename
     export_extension = export_format.file_extension
@@ -37,6 +55,9 @@ def generate_export_path(export_dir, base_name, export_format_key, is_relative_p
 
     # Ensure directory exists
     ensure_export_folder_exists(export_dir)
+
+    # print(f"EXPORT NAME = {export_name}")
+    # print(f"DIRECTORY = {export_dir}")
 
     # Final export path
     export_path = os.path.join(export_dir, export_name)

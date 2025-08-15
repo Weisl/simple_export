@@ -57,7 +57,7 @@ class BaseExportPreset(AddPresetBase, Operator):
         "scene.simple_export_preset_file_abc",
         "scene.simple_export_preset_file_ply",
         "scene.simple_export_preset_file_stl",
-        "scene.set_preset",
+        "scene.assign_preset",
         "scene.collection_prefix",
         "scene.collection_suffix",
         "scene.collection_blend_prefix",

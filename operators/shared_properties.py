@@ -174,10 +174,10 @@ class SharedPresetAssignmentProps:
         default="",
         subtype='FILE_PATH'
     )
-    set_preset: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["set_preset"]["name"],
-        description=PROPERTY_METADATA["set_preset"]["description"],
-        default=PROPERTY_METADATA["set_preset"]["default"]
+    assign_preset: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["assign_preset"]["name"],
+        description=PROPERTY_METADATA["assign_preset"]["description"],
+        default=PROPERTY_METADATA["assign_preset"]["default"]
     )
 
 

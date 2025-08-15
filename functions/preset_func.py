@@ -33,7 +33,7 @@ def parse_preset_file(preset_path):
     return properties
 
 
-def set_preset_to_exporter(properties, exporter):
+def assign_preset_to_exporter(properties, exporter):
     """Apply parsed properties to the exporter."""
     for prop_name, prop_value in properties.items():
         # ignore filepath
@@ -50,7 +50,7 @@ def set_preset_to_exporter(properties, exporter):
             print(f"Error setting property '{prop_name}': {e}")
 
 
-def set_preset(exporter, preset_path):
+def assign_preset(exporter, preset_path):
     # Ensure the collection has exporters
     if not exporter:
         msg = "No valid exporter found"
@@ -67,6 +67,6 @@ def set_preset(exporter, preset_path):
         del preset_properties['filepath']
 
     # Apply the properties to the exporter
-    set_preset_to_exporter(preset_properties, exporter)
+    assign_preset_to_exporter(preset_properties, exporter)
 
     return True, None

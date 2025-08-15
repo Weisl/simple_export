@@ -1,7 +1,7 @@
 import bpy
 
 from .collection_layer import set_active_layer_Collection
-from .preset_func import set_preset
+from .preset_func import assign_preset
 from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
 from ..core.export_path_func import assign_export_path_to_exporter
@@ -46,7 +46,7 @@ def setup_collection(context, collection, active_object, settings_col, settings_
 
     exporter = list(set(exporters_after) - set(exporters_before))[0]
 
-    if getattr(settings_col, 'set_preset'):
+    if getattr(settings_col, 'assign_preset'):
         # Construct the property name dynamically
         export_format = scene.export_format.lower()
         prop_name = f"simple_export_preset_file_{export_format}"
@@ -55,7 +55,7 @@ def setup_collection(context, collection, active_object, settings_col, settings_
         preset_settings = scene
         preset_path = getattr(preset_settings, prop_name, None)
 
-        set_preset(exporter, preset_path)
+        assign_preset(exporter, preset_path)
 
     if getattr(settings_col, 'set_export_path'):
         success, export_path, msg = assign_export_path_to_exporter(collection, exporter, scene, settings_filepath,

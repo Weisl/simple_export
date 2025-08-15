@@ -35,7 +35,7 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         op.outliner = True
         op.individual_collection = False
 
-        op = layout.operator("simple_export.set_presets", icon='PRESET_NEW')
+        op = layout.operator("simple_export.assign_presets", icon='PRESET_NEW')
         op.outliner = True
         op.individual_collection = False
 

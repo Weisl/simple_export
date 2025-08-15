@@ -251,8 +251,8 @@ class SIMPLE_EXPORT_menu_base:
         # Draw Export Operators
         layout.label(text="Collection Operators")
         col = layout.column(align=True)
-        from .shared_operator_call import call_set_preset_op
-        op = call_set_preset_op(context, col)
+        from .shared_operator_call import call_assign_preset_op
+        op = call_assign_preset_op(context, col)
         from .shared_operator_call import call_simple_export_path_ops
         op = call_simple_export_path_ops(context, col, outliner=False, individual_collection=False)
         from .shared_operator_call import call_create_export_collection_op

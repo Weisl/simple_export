@@ -1,10 +1,10 @@
-from . import assign_exporter_ops, export_ops, set_filepath_ops, set_preset_ops, ui_ops, create_exporter_collection_ops, collection_offset_ops
+from . import assign_exporter_ops, export_ops, set_filepath_ops, assign_preset_ops, ui_ops, create_exporter_collection_ops, collection_offset_ops
 
 files = [
     assign_exporter_ops,
     export_ops,
     set_filepath_ops,
-    set_preset_ops,
+    assign_preset_ops,
     ui_ops,
     create_exporter_collection_ops,
     collection_offset_ops,

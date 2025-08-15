@@ -18,11 +18,11 @@ def call_simple_add_exporter_to_collection(context, collection, layout):
     op.use_root_object = collection_settings.use_root_object
     # Preset settings - use scene if overwrite is enabled, else prefs
     preset_settings = scene
-    op.set_preset = preset_settings.set_preset
+    op.assign_preset = preset_settings.assign_preset
     op.set_export_path = preset_settings.set_export_path
     # Get preset filepath if auto-set is enabled
     op.preset_filepath = ""
-    if scene.set_preset:
+    if scene.assign_preset:
         export_format = scene.export_format.lower()
         prop_name = f"simple_export_preset_file_{export_format}"
         op.preset_filepath = getattr(preset_settings, prop_name, "")
@@ -70,11 +70,11 @@ def call_simple_export_path_ops(context, layout, text=None, outliner=False,
     return op
 
 
-def call_set_preset_op(context, layout, text=None, icon='PRESET_NEW'):
+def call_assign_preset_op(context, layout, text=None, icon='PRESET_NEW'):
     if text is None:
-        op = layout.operator("simple_export.set_presets", icon=icon)
+        op = layout.operator("simple_export.assign_presets", icon=icon)
     else:
-        op = layout.operator("simple_export.set_presets", text=text, icon=icon)
+        op = layout.operator("simple_export.assign_presets", text=text, icon=icon)
 
     op.outliner = False
     op.individual_collection = False
@@ -87,7 +87,7 @@ def call_set_preset_op(context, layout, text=None, icon='PRESET_NEW'):
 
     # Set Preset settings
     preset_settings = scene
-    op.set_preset = preset_settings.set_preset
+    op.assign_preset = preset_settings.assign_preset
 
     # Get preset filepath if auto-set is enabled
     export_format = scene.export_format.lower()
@@ -124,11 +124,11 @@ def call_create_export_collection_op(scene, layout, icon='COLLECTION_NEW', text=
     op.use_root_object = collection_settings.use_root_object
     # Preset settings - use scene if overwrite is enabled, else prefs
     preset_settings = scene
-    op.set_preset = preset_settings.set_preset
+    op.assign_preset = preset_settings.assign_preset
     op.set_export_path = preset_settings.set_export_path
     # Get preset filepath if auto-set is enabled
     op.preset_filepath = ""
-    if scene.set_preset:
+    if scene.assign_preset:
         export_format = scene.export_format.lower()
         prop_name = f"simple_export_preset_file_{export_format}"
         op.preset_filepath = getattr(preset_settings, prop_name, "")

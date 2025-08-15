@@ -92,7 +92,7 @@ PROPERTY_METADATA = {
 
     # Set Preset
 
-    "set_preset": {
+    "assign_preset": {
         "name": "Assign Export Preset",
         "description": "Set export preset when creating an Exporter Collection.",
         "default": True,
@@ -568,10 +568,10 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=PROPERTY_METADATA["set_export_path"]["default"],
     )
 
-    set_preset: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["set_preset"]["name"],
-        description=PROPERTY_METADATA["set_preset"]["description"],
-        default=PROPERTY_METADATA["set_preset"]["default"],
+    assign_preset: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["assign_preset"]["name"],
+        description=PROPERTY_METADATA["assign_preset"]["description"],
+        default=PROPERTY_METADATA["assign_preset"]["default"],
     )
 
     parent_collection: bpy.props.StringProperty(
@@ -967,10 +967,10 @@ def initialize_properties_collection_generation():
         description=PROPERTY_METADATA["set_export_path"]["description"],
         default=prefs.set_export_path
     )
-    bpy.types.Scene.set_preset = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["set_preset"]["name"],
-        description=PROPERTY_METADATA["set_preset"]["description"],
-        default=prefs.set_preset
+    bpy.types.Scene.assign_preset = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["assign_preset"]["name"],
+        description=PROPERTY_METADATA["assign_preset"]["description"],
+        default=prefs.assign_preset
     )
 
     bpy.types.Scene.parent_collection = bpy.props.StringProperty(
@@ -1142,7 +1142,7 @@ def unregister():
     del bpy.types.Scene.use_root_object
     del bpy.types.Scene.collection_set_root_offset_object
     del bpy.types.Scene.set_export_path
-    del bpy.types.Scene.set_preset
+    del bpy.types.Scene.assign_preset
     del bpy.types.Scene.parent_collection
     del bpy.types.Scene.collection_color
 
