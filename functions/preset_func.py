@@ -1,10 +1,24 @@
-import bpy
 import os
+
+import bpy
+
+from .. import __package__ as base_package
 
 
 def get_presets_folder():
-    """Retrieve the base path for Blender's presets_export folder."""
-    # Get the user scripts folder dynamically
+    """Retrieve the preset folder, using override if set, else default to Blender's location."""
+    try:
+        # Attempt to get the preferences and custom preset path
+        prefs = bpy.context.preferences.addons.get(base_package)
+        if prefs and hasattr(prefs, 'preferences') and hasattr(prefs.preferences, 'preset_path_override'):
+            preset_path_override = prefs.preferences.preset_path_override
+            if preset_path_override and os.path.isdir(preset_path_override):
+                return preset_path_override
+    except Exception:
+        # Avoid printing to prevent potential recursion issues
+        pass
+
+    # Default Blender location
     return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets", "operator")
 
 
