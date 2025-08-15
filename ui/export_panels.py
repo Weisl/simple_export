@@ -171,33 +171,6 @@ def draw_active_list_element(layout, context, scene):
                     op.collection_name = selected_collection.name
 
 
-def draw_export_list(layout, list_id, scene):
-    # Export List
-    row = layout.row()
-    row.label(text="Collection Export List")
-
-    # Split the layout into two columns
-    split = layout.split(factor=0.9, align=True)  # Adjust the factor to control the width of the first column
-    main_column = split
-
-    # Main column for the UI List
-    row = main_column.row(align=True)
-    row.template_list("SCENE_UL_CollectionList", list_id, bpy.data, "collections", scene, "collection_index")
-
-    narrow_column = split.column(align=True)
-    col = narrow_column
-    # Draw Create exporter
-    from .shared_operator_call import call_create_export_collection_op
-    call_create_export_collection_op(scene, col, icon='ADD', text="")
-
-    # Menu with a down arrow icon
-    col.menu("SIMPLE_EXPORT_MT_context_menu", text="")
-
-    col = narrow_column
-    # Draw View Settings
-    exportlist_properties = scene.exportlist_properties
-    col.prop(exportlist_properties, "my_enum_property")
-
 def get_presets_folder():
     """Retrieve the base path for Blender's presets_export folder."""
     # Get the user scripts folder dynamically
@@ -320,7 +293,7 @@ class VIEW3D_PT_SimpleExportMain(SimpleExportSettingsPanel):
 
 
 class SimpleExportMainPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
-    list_id = ''
+
 
     def draw_header(self, context):
         scene = context.scene
@@ -336,6 +309,7 @@ class SimpleExportMainPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         draw_exporter_presets(layout)
 
         # draw Export List
+        from .shared_draw import draw_export_list
         draw_export_list(layout, self.list_id, scene)
 
         # Draw Operator List

@@ -10,6 +10,8 @@ class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Pa
     bl_context = "empty"
     bl_ui_units_x = 45
 
+    list_id = "popup"
+
     def draw(self, context):
         scene = context.scene
         layout = self.layout
@@ -31,8 +33,9 @@ class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Pa
         op = row.operator("scene.select_all_collections", text="None", icon="CHECKBOX_DEHLT")
         op.deselect = True
 
-        row = layout.row()
-        row.template_list("SCENE_UL_CollectionList", "popup", bpy.data, "collections", scene, "collection_index")
+        # draw Export List
+        from .shared_draw import draw_export_list
+        draw_export_list(layout, self.list_id, scene)
 
         super().draw(context)
 

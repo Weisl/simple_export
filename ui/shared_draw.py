@@ -128,3 +128,35 @@ def draw_exporter_presets(layout, buttons=False):
     folder_op.operation = 'FOLDER_OPEN'
     from ..presets_addon.exporter_preset import simple_export_presets_folder
     folder_op.filepath = simple_export_presets_folder()
+
+
+def draw_export_list(layout, list_id, scene):
+    # Export List
+    row = layout.row()
+    row.label(text="Collection Export List")
+
+    # Split the layout into two columns
+    if list_id == "popup":
+        split = layout.split(factor=0.975, align=True)  # Adjust the factor to control the width of the first column
+    else:
+        split = layout.split(factor=0.9, align=True)
+
+    main_column = split
+
+    # Main column for the UI List
+    row = main_column.row(align=True)
+    row.template_list("SCENE_UL_CollectionList", list_id, bpy.data, "collections", scene, "collection_index")
+
+    narrow_column = split.column(align=True)
+    col = narrow_column
+    # Draw Create exporter
+    from .shared_operator_call import call_create_export_collection_op
+    call_create_export_collection_op(scene, col, icon='ADD', text="")
+
+    # Menu with a down arrow icon
+    col.menu("SIMPLE_EXPORT_MT_context_menu", text="")
+
+    col = narrow_column
+    # Draw View Settings
+    exportlist_properties = scene.exportlist_properties
+    col.prop(exportlist_properties, "my_enum_property")
