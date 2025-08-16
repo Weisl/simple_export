@@ -1,6 +1,5 @@
-import os
-
 import bpy
+import os
 
 from ..core.export_formats import ExportFormats
 from ..core.info import COLOR_TAG_ICONS
@@ -208,8 +207,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         export_path = clean_relative_path(export_path)
         file_exists = os.path.exists(export_path)
 
-
-        if 'LOCKED' in scene.exportlist_properties.my_enum_property:
+        if 'DEFAULT' in scene.exportlist_properties.my_enum_property:
             is_locked = file_exists and not os.access(export_path, os.W_OK)
             # Show lock icon based on file permissions
             if is_locked:
@@ -220,18 +218,16 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 icon = 'FILE_NEW'
             row.label(icon=icon)
 
+            # Determine the icon based on the collection's color_tag
+            color_tag = collection.color_tag
+            icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
 
-        # Determine the icon based on the collection's color_tag
-        color_tag = collection.color_tag
-        icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
-
-        # Display the collection name with the color icon
-        row.label(text=collection.name, icon=icon)
+            # Display the collection name with the color icon
+            row.label(text=collection.name, icon=icon)
 
         if 'FILEPATH' in scene.exportlist_properties.my_enum_property:
             # Display the export file path as an editable property
             row.prop(exporter.export_properties, "filepath", text="", expand=True)
-
 
             # Buttons for setting the export path and opening the directory
             # Assign Path
@@ -242,7 +238,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         if 'FILENAME' in scene.exportlist_properties.my_enum_property:
             filename = os.path.basename(exporter.export_properties.filepath)
-            row.label(text = filename)
+            row.label(text=filename)
 
         # Display Empty or Eyedropper button depending on the root_object state
 
@@ -251,7 +247,6 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
             icon = "LINKED" if collection.use_root_object else "UNLINKED"
             row.prop(collection, "use_root_object", text='', icon=icon)
-
 
             if collection.use_root_object:
                 row.prop(collection, "root_object", text="")
@@ -269,7 +264,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             pass
 
         if 'FORMAT' in scene.exportlist_properties.my_enum_property:
-             # Display the export format
+            # Display the export format
             exporter_type = str(type(exporter.export_properties))
             row.label(text=exporter_type)
 

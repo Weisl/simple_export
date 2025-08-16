@@ -224,16 +224,16 @@ class ExportlistProperties(bpy.types.PropertyGroup):
         name="View Mode",
         description="Select multiple options",
         items=[
-            ('FILEPATH', "", "Filepath", 'FILE_FOLDER', 1),
-            ('FILENAME', "", "Filename", 'FILE', 2),
-            ('LOCKED', "", "Status", 'LOCKED', 4),
+            ('DEFAULT', "", "Status", 'OUTLINER_COLLECTION', 1),
+            ('FILEPATH', "", "Filepath", 'FILE_FOLDER', 2),
+            ('FILENAME', "", "Filename", 'FILE', 4),
             ('COLLECTION', "", "Settings", 'OPTIONS', 8),
             ('ROOT', "", "Root", 'EMPTY_ARROWS', 16),
             ('ORIGIN', "", "Origin option", 'OBJECT_ORIGIN', 32),
             ('FORMAT', "", "Format", 'FILE_LARGE', 64),
         ],
         options={'ENUM_FLAG'},  # This allows multi-select
-        default={'FORMAT', 'LOCKED'},
+        default={'DEFAULT'},
     )
 
 
@@ -293,7 +293,6 @@ class VIEW3D_PT_SimpleExportMain(SimpleExportSettingsPanel):
 
 
 class SimpleExportMainPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
-
 
     def draw_header(self, context):
         scene = context.scene
