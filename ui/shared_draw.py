@@ -19,10 +19,10 @@ def draw_export_preset_properties(layout, element):
     if hasattr(element, prop_name):
         layout.prop(element, prop_name, text='Preset')
 
-    from ..presets_export.preset_format_functions import get_format_preset_filepath
-    preset_file = get_format_preset_filepath(element, export_format)
-
-    layout.label(text=f"{preset_file}")
+    ## Show the preset file path
+    # from ..presets_export.preset_format_functions import get_format_preset_filepath
+    # preset_file = get_format_preset_filepath(element, export_format)
+    # layout.label(text=f"{preset_file}")
 
     return
 

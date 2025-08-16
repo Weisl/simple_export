@@ -21,15 +21,28 @@ class SIMPLE_OT_OpenCollectionExporterProperties(bpy.types.Operator):
             self.report({'WARNING'}, f"Collection '{self.collection_name}' not found.")
             return {'CANCELLED'}
 
+        # Find the corresponding LayerCollection
+        def find_layer_collection(layer_collection, collection):
+            if layer_collection.collection == collection:
+                return layer_collection
+            for child in layer_collection.children:
+                found = find_layer_collection(child, collection)
+                if found:
+                    return found
+            return None
+
+        layer_collection = find_layer_collection(context.view_layer.layer_collection, collection)
+        if not layer_collection:
+            self.report({'ERROR'}, f"LayerCollection for '{collection.name}' not found.")
+            return {'CANCELLED'}
+
         # Ensure a properties editor is open and set the correct context
         for area in context.screen.areas:
             if area.type == 'PROPERTIES':
                 for space in area.spaces:
                     if space.type == 'PROPERTIES':
                         space.context = 'COLLECTION'
-                        print(collection.name)
-                        context.view_layer.active_layer_collection = context.view_layer.layer_collection.children.get(
-                            collection.name)
+                        context.view_layer.active_layer_collection = layer_collection
                         break
                 break
         else:
