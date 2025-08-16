@@ -1,4 +1,5 @@
-from . import assign_exporter_ops, export_ops, set_filepath_ops, assign_preset_ops, ui_ops, create_exporter_collection_ops, collection_offset_ops
+from . import assign_exporter_ops, export_ops, set_filepath_ops, assign_preset_ops, ui_ops, \
+    create_exporter_collection_ops, collection_offset_ops, remove_exporters_ops, fix_filename
 
 files = [
     assign_exporter_ops,
@@ -8,6 +9,8 @@ files = [
     ui_ops,
     create_exporter_collection_ops,
     collection_offset_ops,
+    remove_exporters_ops,
+    fix_filename,
 ]
 
 # Register scene properties here so they're only registered once

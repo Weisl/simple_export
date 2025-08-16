@@ -1,6 +1,5 @@
 import bpy
 
-from .fix_filename import SIMPLEEXPORT_OT_FixExportFilename
 from .shared_properties import SharedPathProps, SharedFilenameProps
 from ..core.export_path_func import get_export_folder_path, generate_base_name, generate_export_path, \
     assign_collection_exporter_path
@@ -126,7 +125,6 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
 
 
 classes = (
-    SIMPLEEXPORT_OT_FixExportFilename,
     SCENE_OT_SetExporterPathSelection,
 )
 

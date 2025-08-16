@@ -88,6 +88,21 @@ class EXPORT_MT_root_object_menu(bpy.types.Menu):
         layout = self.layout
         collection_name = context.scene.menu_collection_name
 
+        # Exporter actions
+        from .shared_operator_call import call_simple_export_path_ops
+        op = call_simple_export_path_ops(context, layout, outliner=False,
+                                         individual_collection=True, collection_name=collection_name)
+
+        op = layout.operator("simple_export.assign_presets", icon='PRESET')
+        op.outliner = False
+        op.individual_collection = True
+        op.collection_name = collection_name
+
+        op = layout.operator("simple_export.remove_exporters", icon='X')
+        op.collection_name = collection_name
+        layout.separator()
+
+        # Root Object Actions
         op = layout.operator("object.root_object_actions", text="Remove Root Object", icon='X')
         op.action = "remove"
         op.collection_name = collection_name
@@ -97,6 +112,7 @@ class EXPORT_MT_root_object_menu(bpy.types.Menu):
         op.action = "select_root"
         op.collection_name = collection_name
 
+        # Selection and visibility actions
         layout.separator()
 
         op = layout.operator("object.root_object_actions", text="Select Collection Content",
@@ -114,17 +130,8 @@ class EXPORT_MT_root_object_menu(bpy.types.Menu):
         op.action = "unhide_content"
         op.collection_name = collection_name
 
+        # Open Exporter in Properties
         layout.separator()
-
-        from .shared_operator_call import call_simple_export_path_ops
-        op = call_simple_export_path_ops(context, layout, outliner=False,
-                                         individual_collection=True, collection_name=collection_name)
-
-        op = layout.operator("simple_export.assign_presets", icon='PRESET')
-        op.outliner = False
-        op.individual_collection = True
-        op.collection_name = collection_name
-
         op = layout.operator("simple_export.open_exporter_in_properties", icon='PROPERTIES')
         op.collection_name = collection_name
 

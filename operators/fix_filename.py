@@ -44,3 +44,20 @@ class SIMPLEEXPORT_OT_FixExportFilename(SharedPathProps, SharedFilenameProps, bp
         collection["prev_name"] = collection.name
 
         return {'FINISHED'}
+
+classes = (
+    SIMPLEEXPORT_OT_FixExportFilename,
+)
+
+
+# Register the scene property
+def register():
+    from bpy.utils import register_class
+    for cls in classes:
+        register_class(cls)
+
+
+def unregister():
+    from bpy.utils import unregister_class
+    for cls in reversed(classes):
+        unregister_class(cls)
