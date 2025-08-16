@@ -1,8 +1,6 @@
-import os
-
 import bpy
+import os
 from bl_operators.presets import AddPresetBase
-from bpy.props import StringProperty, EnumProperty
 from bpy.types import Menu
 from bpy.types import Operator
 
@@ -24,14 +22,14 @@ def simple_export_presets_folder():
     simple_export_preset_directory = os.path.join(bpy.utils.user_resource('SCRIPTS'), "presets", simple_export_presets)
     simple_export_preset_paths = bpy.utils.preset_paths(simple_export_presets)
 
-    if (simple_export_preset_directory not in simple_export_preset_paths) and (not os.path.exists(simple_export_preset_directory)):
+    if (simple_export_preset_directory not in simple_export_preset_paths) and (
+    not os.path.exists(simple_export_preset_directory)):
         os.makedirs(simple_export_preset_directory)
 
     return simple_export_preset_directory
 
 
 class BaseExportPreset(AddPresetBase, Operator):
-
     # Define prop for the scene context
     preset_defines = [
         f"scene = bpy.context.scene"
@@ -81,15 +79,11 @@ class SceneExportPreset(BaseExportPreset):
     preset_menu = "EXPORT_MT_scene_presets"
 
 
-
-
-
 class EXPORT_MT_scene_presets(Menu):
     bl_label = "Export Presets"
     preset_subdir = BaseExportPreset.preset_subdir
     preset_operator = "script.execute_preset"
     draw = Menu.draw_preset
-
 
 
 classes = (
