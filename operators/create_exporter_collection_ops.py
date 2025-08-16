@@ -204,8 +204,9 @@ class EXPORT_OT_CreateExportCollections(
         from ..ui.shared_draw import draw_export_fomrat
         draw_export_fomrat(layout, self)
 
-        box = layout.box()
-        box.label(text="Creation")
+        # Future update for creation options
+        # box = layout.box()
+        # box.label(text="Creation")
         # box.prop(self, "only_selection", text="Only Affect Selection")
         # box.prop(self, "use_numbering", text="Use Numbering")
         # box.prop(self, "collection_naming_overwrite", text="Overwrite Collection Naming")
