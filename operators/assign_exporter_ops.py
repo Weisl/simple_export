@@ -60,7 +60,9 @@ class EXPORT_OT_AddSettingsToCollections(
 
         # Set preset
         if self.assign_preset:
-            assign_preset(exporter, self.preset_filepath)
+            from ..presets_export.preset_format_functions import get_format_preset_filepath
+            preset_file = get_format_preset_filepath(self, self.export_format)
+            assign_preset(exporter, preset_file)
 
         # Assign filepath to exporter
         if self.set_export_path and hasattr(exporter, 'filepath'):

@@ -729,8 +729,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.label(text="Export Presets")
 
             # Display the actual preset folder being used
-            from ..core.export_formats import get_presets_folder
-            box.label(text=f"Default Preset Folder: {get_presets_folder()}")
+            from ..presets_export.preset_format_functions import get_preset_format_folder
+            box.label(text=f"Default Preset Folder: {get_preset_format_folder()}")
             # Add custom preset folder setting
             box.prop(self, "preset_path_override")
 

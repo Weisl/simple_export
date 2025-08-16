@@ -171,7 +171,7 @@ def draw_active_list_element(layout, context, scene):
                     op.collection_name = selected_collection.name
 
 
-def get_presets_folder():
+def get_preset_format_folder():
     """Retrieve the base path for Blender's presets export folder."""
     # Get the user scripts folder dynamically
     return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets", "operator")
@@ -221,7 +221,7 @@ def draw_custom_collection_ui(self, context):
 
 class ExportlistProperties(bpy.types.PropertyGroup):
     my_enum_property: bpy.props.EnumProperty(
-        name="View Mode",
+        name="List Entry",
         description="Select multiple options",
         items=[
             ('DEFAULT', "", "Status", 'OUTLINER_COLLECTION', 1),

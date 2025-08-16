@@ -266,8 +266,12 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         if 'FORMAT' in scene.exportlist_properties.my_enum_property:
             # Display the export format
             exporter_type = str(type(exporter.export_properties))
-            row.label(text=exporter_type)
-
+            key = ExportFormats.get_key_from_op_type(exporter_type)
+            if key:
+                fmt = ExportFormats.get(key)
+                row.label(text=fmt.label)  # Display the user-friendly label
+            else:
+                row.label(text=exporter_type)  # Fallback
         # Add arrow button that sets the collection name and opens the menu
         arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
         arrow_op.collection_name = collection.name

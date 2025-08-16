@@ -98,7 +98,10 @@ class EXPORT_OT_CreateExportCollections(
 
             # Set preset
             if self.assign_preset:
-                assign_preset(exporter, )
+                if self.assign_preset:
+                    from ..presets_export.preset_format_functions import get_format_preset_filepath
+                    preset_file = get_format_preset_filepath(self, self.export_format)
+                    assign_preset(exporter, preset_file)
 
             if self.set_export_path and hasattr(exporter, 'filepath'):
                 print(f"COLLECTION NAME = {export_collection.name}")

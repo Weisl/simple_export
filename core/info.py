@@ -1,6 +1,6 @@
 import os
 
-from ..functions.preset_func import get_presets_folder
+from ..presets_export.preset_format_functions import get_preset_format_folder
 
 ADDON_NAME = "Simple Export"
 
@@ -22,7 +22,7 @@ EXPORT_FORMATS = {
         "op_name": "IO_FH_fbx",
         "label": "FBX",
         "description": "FBX Export",
-        "preset_folder": os.path.join(get_presets_folder(), "export_scene.fbx"),
+        "preset_folder": os.path.join(get_preset_format_folder(), "export_scene.fbx"),
         "op_type": "<class 'bpy.types.EXPORT_SCENE_OT_fbx'>",
         "file_extension": "fbx",
     },
@@ -30,7 +30,7 @@ EXPORT_FORMATS = {
         "op_name": "IO_FH_obj",
         "label": "OBJ",
         "description": "Wavefront OBJ Export",
-        "preset_folder": os.path.join(get_presets_folder(), "wm.obj_export"),
+        "preset_folder": os.path.join(get_preset_format_folder(), "wm.obj_export"),
         "op_type": "<class 'bpy.types.WM_OT_obj_export'>",
         "file_extension": "obj",
     },
@@ -38,7 +38,7 @@ EXPORT_FORMATS = {
         "op_name": "IO_FH_gltf2",
         "label": "glTF",
         "description": "glTF 2.0 Export",
-        "preset_folder": os.path.join(get_presets_folder(), "export_scene.gltf"),
+        "preset_folder": os.path.join(get_preset_format_folder(), "export_scene.gltf"),
         "op_type": "<class 'bpy.types.EXPORT_SCENE_OT_gltf'>",
         "file_extension": "glb",
     },
@@ -46,7 +46,7 @@ EXPORT_FORMATS = {
         "op_name": "IO_FH_usd",
         "label": "USD",
         "description": "Universal Scene Description Export",
-        "preset_folder": os.path.join(get_presets_folder(), "wm.usd_export"),
+        "preset_folder": os.path.join(get_preset_format_folder(), "wm.usd_export"),
         "op_type": "<class 'bpy.types.WM_OT_usd_export'>",
         "file_extension": "usd",
     },
@@ -54,7 +54,7 @@ EXPORT_FORMATS = {
         "op_name": "IO_FH_alembic",
         "label": "Alembic",
         "description": "Alembic Export",
-        "preset_folder": os.path.join(get_presets_folder(), "wm.alembic_export"),
+        "preset_folder": os.path.join(get_preset_format_folder(), "wm.alembic_export"),
         "op_type": "<class 'bpy.types.WM_OT_alembic_export'>",
         "file_extension": "abc",
     },
@@ -62,7 +62,7 @@ EXPORT_FORMATS = {
         "op_name": "IO_FH_ply",
         "label": "PLY",
         "description": "Stanford PLY Export",
-        "preset_folder": os.path.join(get_presets_folder(), "wm.ply_export"),
+        "preset_folder": os.path.join(get_preset_format_folder(), "wm.ply_export"),
         "op_type": "<class 'bpy.types.WM_OT_ply_export'>",
         "file_extension": "ply",
     },
@@ -70,7 +70,7 @@ EXPORT_FORMATS = {
         "op_name": "IO_FH_stl",
         "label": "STL",
         "description": "STL Export",
-        "preset_folder": os.path.join(get_presets_folder(), "wm.stl_export"),
+        "preset_folder": os.path.join(get_preset_format_folder(), "wm.stl_export"),
         "op_type": "<class 'bpy.types.WM_OT_stl_export'>",
         "file_extension": "stl",
     },

@@ -1,8 +1,6 @@
 # --- Draw Helpers ---
-import os
-import textwrap
-
 import bpy
+import textwrap
 
 
 def draw_parent_collection(context, layout):
@@ -21,13 +19,8 @@ def draw_export_preset_properties(layout, element):
     if hasattr(element, prop_name):
         layout.prop(element, prop_name, text='Preset')
 
-    from ..core.export_formats import ExportFormats
-    export_format_class = ExportFormats.get(export_format)
-    from ..functions.preset_func import get_presets_folder
-
-    subfolder = export_format_class.preset_subfolder
-    preset_path = os.path.join(get_presets_folder(), f"{subfolder}")
-    preset_file = os.path.join(preset_path, str(getattr(element, prop_name)))
+    from ..presets_export.preset_format_functions import get_format_preset_filepath
+    preset_file = get_format_preset_filepath(element, export_format)
 
     layout.label(text=f"{preset_file}")
 
@@ -164,10 +157,11 @@ def draw_export_list(layout, list_id, scene):
     from .shared_operator_call import call_create_export_collection_op
     call_create_export_collection_op(scene, col, icon='ADD', text="")
 
+    col.separator()
     # Menu with a down arrow icon
-    col.menu("SIMPLE_EXPORT_MT_context_menu", text="")
+    col.menu("SIMPLE_EXPORT_MT_context_menu", icon='DOWNARROW_HLT', text="")
 
-    col = narrow_column
+    col.separator()
     # Draw View Settings
     exportlist_properties = scene.exportlist_properties
     col.prop(exportlist_properties, "my_enum_property")
