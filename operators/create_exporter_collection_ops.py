@@ -8,7 +8,6 @@ from .shared_properties import (
 from ..core.export_path_func import assign_exporter_path
 from ..core.export_path_func import generate_base_name
 from ..functions.collections_setup import setup_collection_properties
-from ..functions.exporter_funcs import create_collection_exporter
 from ..functions.exporter_funcs import get_all_children_and_descendants
 from ..functions.preset_func import assign_preset
 from ..ui.shared_draw import draw_export_folderpath_properties
@@ -52,8 +51,6 @@ class EXPORT_OT_CreateExportCollections(
     #     default=False,
     #     options={'HIDDEN'}
     # )
-
-
 
     use_numbering: bpy.props.BoolProperty(
         name="Use Numbering",
@@ -100,8 +97,8 @@ class EXPORT_OT_CreateExportCollections(
                 self.report({'ERROR'}, "Failed to create export collection.")
 
             # Set preset
-            if self.assign_preset and self.preset_filepath:
-                assign_preset(exporter, self.preset_filepath)
+            if self.assign_preset:
+                assign_preset(exporter, )
 
             if self.set_export_path and hasattr(exporter, 'filepath'):
                 print(f"COLLECTION NAME = {export_collection.name}")

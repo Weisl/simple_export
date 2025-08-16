@@ -59,7 +59,7 @@ class EXPORT_OT_AddSettingsToCollections(
             return {'FINISHED'}
 
         # Set preset
-        if self.assign_preset and self.preset_filepath:
+        if self.assign_preset:
             assign_preset(exporter, self.preset_filepath)
 
         # Assign filepath to exporter

@@ -1,7 +1,9 @@
 # --- Draw Helpers ---
+import os
 import textwrap
 
 import bpy
+
 
 def draw_parent_collection(context, layout):
     scene = context.scene
@@ -18,8 +20,18 @@ def draw_export_preset_properties(layout, element):
 
     if hasattr(element, prop_name):
         layout.prop(element, prop_name, text='Preset')
-    else:
-        layout.label(text=f"No presets available for {export_format}", icon="ERROR")
+
+    from ..core.export_formats import ExportFormats
+    export_format_class = ExportFormats.get(export_format)
+    from ..functions.preset_func import get_presets_folder
+
+    subfolder = export_format_class.preset_subfolder
+    preset_path = os.path.join(get_presets_folder(), f"{subfolder}")
+    preset_file = os.path.join(preset_path, str(getattr(element, prop_name)))
+
+    layout.label(text=f"{preset_file}")
+
+    return
 
 
 def draw_collection_settings_properties(layout, element):
@@ -35,7 +47,6 @@ def draw_collection_settings_properties(layout, element):
     if element.use_root_object and hasattr(element, "collection_set_root_offset_object"):
         layout.prop(element, "collection_set_root_offset_object")
 
-    layout.prop(element, "assign_preset")
     layout.prop(element, "set_export_path")
 
 

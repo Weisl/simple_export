@@ -168,12 +168,6 @@ class SharedPresetAssignmentProps:
         update=update_preset_path_for_stl,
     )
 
-    preset_filepath: bpy.props.StringProperty(
-        name="Preset Path",
-        description="Path to the preset file to assign to the exporter",
-        default="",
-        subtype='FILE_PATH'
-    )
     assign_preset: bpy.props.BoolProperty(
         name=PROPERTY_METADATA["assign_preset"]["name"],
         description=PROPERTY_METADATA["assign_preset"]["description"],
