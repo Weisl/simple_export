@@ -9,7 +9,7 @@ files = [
 ]
 
 
-def save_preset(preset_name, preset_folder, preset_data):
+def save_export_presets(preset_name, preset_folder, preset_data):
     """
     Save the given preset as a Blender preset.
 
@@ -56,13 +56,13 @@ def get_gltf_presets_folder():
     return export_format.preset_folder
 
 
-def create_preset_files(preset_data, preset_folder, saved_preset_files):
+def create_export_preset_files(preset_data, preset_folder, saved_preset_files):
     if not preset_folder or not os.path.isdir(preset_folder):
         return
 
     for preset_name, preset in preset_data.items():
         if preset_name not in saved_preset_files:
-            save_preset(preset_name, preset_folder, preset)
+            save_export_presets(preset_name, preset_folder, preset)
 
 
 def initialize_presets():
@@ -72,7 +72,7 @@ def initialize_presets():
 
     os.makedirs(fbx_preset_folder, exist_ok=True)
     fbx_saved_preset_files = os.listdir(fbx_preset_folder) if os.path.isdir(fbx_preset_folder) else []
-    create_preset_files(presets_fbx, fbx_preset_folder, fbx_saved_preset_files)
+    create_export_preset_files(presets_fbx, fbx_preset_folder, fbx_saved_preset_files)
 
     gltf_preset_folder = get_gltf_presets_folder()
     if not gltf_preset_folder or not isinstance(gltf_preset_folder, str):
@@ -80,7 +80,7 @@ def initialize_presets():
 
     os.makedirs(gltf_preset_folder, exist_ok=True)
     gltf_saved_preset_files = os.listdir(gltf_preset_folder) if os.path.isdir(gltf_preset_folder) else []
-    create_preset_files(presets_gltf, gltf_preset_folder, gltf_saved_preset_files)
+    create_export_preset_files(presets_gltf, gltf_preset_folder, gltf_saved_preset_files)
 
 
 def register():
