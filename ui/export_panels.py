@@ -37,60 +37,49 @@ def draw_simple_export_header(layout, text="Simple Export"):
 
 def draw_scene_settings_overwrite(context, layout, scene):
     # Collapsible Filepath Settings Section
-    header, body = layout.panel("overwrite_settings", default_closed=False)
-    # Header
-    addon_name = ADDON_NAME
-    row = header.row(align=True)
-    row.label(text='Exporter Settings (Scene)')
-    op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
-    op.addon_name = addon_name
-    op.prefs_tabs = 'SETTINGS'
-    # Body
-    if body:
-        prefs = context.preferences.addons[base_package].preferences
 
-        from .shared_draw import draw_exporter_presets
-        draw_exporter_presets(body, buttons=True)
+    from .shared_draw import draw_exporter_presets
+    draw_exporter_presets(layout, buttons=True)
 
-        row = body.row()
-        from ..ui.shared_draw import draw_export_fomrat
-        draw_export_fomrat(row, scene)
+    row = layout.row()
+    from ..ui.shared_draw import draw_export_fomrat
+    draw_export_fomrat(row, scene)
 
-        # Filepath Settings
-        box = body.box()
-        filepath_settings = scene
+    # Filepath Settings
+    box = layout.box()
+    filepath_settings = scene
 
-        # Draw filepath properties using shared function
-        from ..ui.shared_draw import draw_export_folderpath_properties
-        draw_export_folderpath_properties(box, filepath_settings)
+    # Draw filepath properties using shared function
+    from ..ui.shared_draw import draw_export_folderpath_properties
+    draw_export_folderpath_properties(box, filepath_settings)
 
-        # Filename Settings
-        box = body.box()
-        filename_settings = scene
-        # Draw filename properties using shared function
-        from ..ui.shared_draw import draw_export_filename_properties
-        draw_export_filename_properties(box, filename_settings)
+    # Filename Settings
+    box = layout.box()
+    filename_settings = scene
+    # Draw filename properties using shared function
+    from ..ui.shared_draw import draw_export_filename_properties
+    draw_export_filename_properties(box, filename_settings)
 
-        # Preset Settings
-        box = body.box()
-        preset_settings = scene
+    # Preset Settings
+    box = layout.box()
+    preset_settings = scene
 
-        # Draw preset properties using shared function
-        from ..ui.shared_draw import draw_export_preset_properties
-        draw_export_preset_properties(box, preset_settings)
+    # Draw preset properties using shared function
+    from ..ui.shared_draw import draw_export_preset_properties
+    draw_export_preset_properties(box, preset_settings)
 
-        # Collection Settings
-        box = body.box()
-        collection_settings = scene
+    # Collection Settings
+    box = layout.box()
+    collection_settings = scene
 
-        # Draw collection name properties using shared function
-        from ..ui.shared_draw import draw_collection_name_properties
-        draw_collection_name_properties(box, collection_settings)
+    # Draw collection name properties using shared function
+    from ..ui.shared_draw import draw_collection_name_properties
+    draw_collection_name_properties(box, collection_settings)
 
-        box = body.box()
-        # Draw collection settings properties using shared function
-        from ..ui.shared_draw import draw_collection_settings_properties
-        draw_collection_settings_properties(box, collection_settings)
+    box = layout.box()
+    # Draw collection settings properties using shared function
+    from ..ui.shared_draw import draw_collection_settings_properties
+    draw_collection_settings_properties(box, collection_settings)
 
 
 def draw_active_list_element(layout, context, scene):
@@ -272,9 +261,10 @@ class SIMPLE_EXPORT_menu_base:
 
 
 class SimpleExportSettingsPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
+    bl_options = {'DEFAULT_CLOSED'}
     def draw_header(self, context):
         layout = self.layout
-        draw_simple_export_header(layout, text="Simple Export Settings")
+        draw_simple_export_header(layout, text="Simple Export Defaults")
 
     def draw(self, context):
         layout = self.layout
