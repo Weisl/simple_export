@@ -89,7 +89,7 @@ presets_simple_exporter = {
         "collection_color": 'COLOR_05',
         "parent_collection": 'export',
     },
-    "Highpoly-default": {
+    "Lowpoly-default": {
         "export_format": 'FBX',
         "export_folder_mode": 'RELATIVE',
         "folder_path_absolute": 'C:\\tmp\\',
@@ -113,11 +113,11 @@ presets_simple_exporter = {
         "collection_blend_prefix": False,
         "use_root_object": True,
         "collection_instance_offset": False,
-        "collection_color": 'COLOR_05',
+        "collection_color": 'COLOR_04',
         "use_root_object": True,
         "collection_instance_offset": False,
         "collection_color": 'COLOR_05',
-        "parent_collection": '',
+        "parent_collection": 'low',
     },
     "Highpoly-default": {
         "export_format": 'FBX',
@@ -143,10 +143,10 @@ presets_simple_exporter = {
         "collection_blend_prefix": False,
         "use_root_object": True,
         "collection_instance_offset": False,
-        "collection_color": 'COLOR_05',
+        "collection_color": 'COLOR_01',
         "use_root_object": True,
         "collection_instance_offset": False,
         "collection_color": 'COLOR_05',
-        "parent_collection": '',
+        "parent_collection": 'high',
     },
 }
