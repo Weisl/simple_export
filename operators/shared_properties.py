@@ -45,32 +45,28 @@ class SharedPathProps:
         items=PROPERTY_METADATA["export_folder_mode"]["items"],
         default=PROPERTY_METADATA["export_folder_mode"]["default"],
     )
+
     folder_path_absolute: bpy.props.StringProperty(
         name=PROPERTY_METADATA["folder_path_absolute"]["name"],
         description=PROPERTY_METADATA["folder_path_absolute"]["description"],
         subtype='DIR_PATH',
         default=PROPERTY_METADATA["folder_path_absolute"]["default"],
-        get=get_absolute_path,
-        set=set_absolute_path
     )
+
     folder_path_relative: bpy.props.StringProperty(
         name=PROPERTY_METADATA["folder_path_relative"]["name"],
         description=PROPERTY_METADATA["folder_path_relative"]["description"],
-        subtype='DIR_PATH',
         default=PROPERTY_METADATA["folder_path_relative"]["default"],
-        get=get_relative_path,
-        set=set_relative_path
     )
+
     folder_path_search: bpy.props.StringProperty(
         name=PROPERTY_METADATA["folder_path_search"]["name"],
         description=PROPERTY_METADATA["folder_path_search"]["description"],
-        subtype='DIR_PATH',
         default=PROPERTY_METADATA["folder_path_search"]["default"]
     )
     folder_path_replace: bpy.props.StringProperty(
         name=PROPERTY_METADATA["folder_path_replace"]["name"],
         description=PROPERTY_METADATA["folder_path_replace"]["description"],
-        subtype='DIR_PATH',
         default=PROPERTY_METADATA["folder_path_replace"]["default"]
     )
 
