@@ -86,9 +86,11 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
                 # Handle per-collection errors
                 results.append({'name': collection.name, 'success': False, 'message': str(e)})
 
-        # Store results in Scene
-        context.window_manager.assign_preset_info_data = str(results)
-        bpy.ops.wm.call_panel(name="SIMPLEEXPORTER_PT_PresetResultsPanel")
+        # Show result popup when started from Outliner
+        if self.outliner:
+            # Store results in Scene
+            context.window_manager.assign_preset_info_data = str(results)
+            bpy.ops.wm.call_panel(name="SIMPLEEXPORTER_PT_PresetResultsPanel")
 
         return {'FINISHED'}
 

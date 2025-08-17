@@ -117,9 +117,10 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
                 results.append({'name': collection.name, 'success': False, 'filepath': '', 'message': str(e)})
                 print(e)
 
-        # Store results in WindowManager for UI display
-        context.window_manager.assign_filepath_result_info = str(results)
-        bpy.ops.wm.call_panel(name="SIMPLEEXPORTER_PT_FilePathResultsPanel")
+        # Show result popup when started from Outliner
+        if self.outliner:
+            context.window_manager.assign_filepath_result_info = str(results)
+            bpy.ops.wm.call_panel(name="SIMPLEEXPORTER_PT_FilePathResultsPanel")
 
         return {'FINISHED'}
 
