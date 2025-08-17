@@ -165,4 +165,4 @@ def draw_export_list(layout, list_id, scene):
     # Draw View Settings
 
     visibility_properties = scene.exportlist_nPanel_properties if list_id == 'npanel' else scene.exportlist_popup_properties
-    col.prop(visibility_properties, "my_enum_property")
+    col.prop(visibility_properties, "list_visibility_settings")

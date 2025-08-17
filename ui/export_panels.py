@@ -220,7 +220,7 @@ def draw_custom_collection_ui(self, context):
 
 
 class ExportlistProperties(bpy.types.PropertyGroup):
-    my_enum_property: bpy.props.EnumProperty(
+    list_visibility_settings: bpy.props.EnumProperty(
         name="List Entry",
         description="Select multiple options",
         items=[
@@ -379,6 +379,15 @@ classes = (
     ExportlistProperties,
 )
 
+def set_default_exportlist_properties(dummy):
+    scene = bpy.context.scene
+    # Set defaults for each PointerProperty
+    if not hasattr(scene, 'exportlist_nPanel_properties'):
+        return
+    if not hasattr(scene, 'exportlist_popup_properties'):
+        return
+    scene.exportlist_nPanel_properties.list_visibility_settings = {'DEFAULT'}
+    scene.exportlist_popup_properties.list_visibility_settings = {'DEFAULT', 'FILEPATH', 'ROOT', 'FORMAT'}
 
 # Register and Unregister
 def register():
@@ -390,6 +399,8 @@ def register():
     bpy.types.Scene.exportlist_nPanel_properties = bpy.props.PointerProperty(type=ExportlistProperties)
     bpy.types.Scene.exportlist_popup_properties = bpy.props.PointerProperty(type=ExportlistProperties)
 
+    # Register the handler
+    bpy.app.handlers.load_post.append(set_default_exportlist_properties)
 
 
 def unregister():
@@ -400,3 +411,7 @@ def unregister():
 
     del bpy.types.Scene.exportlist_nPanel_properties
     del bpy.types.Scene.exportlist_popup_properties
+
+    # Remove the handler
+    if set_default_exportlist_properties in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(set_default_exportlist_properties)
