@@ -2,6 +2,8 @@
 import bpy
 import textwrap
 
+from .. import __package__ as base_package
+
 
 def draw_parent_collection(context, layout):
     scene = context.scene
@@ -79,7 +81,9 @@ def draw_export_folderpath_properties(layout, element, is_preferences=False):
     if element.export_folder_mode == 'RELATIVE':
         row = layout.row(align=True)
         row.prop(element, "folder_path_relative")
-        row.operator("simple_export.folder_path_relative_picker", text="", icon='FILE_FOLDER')
+        op = row.operator("simple_export.folder_path_relative_picker", text="", icon='FILE_FOLDER')
+        op.context = 'PREFS' if element == bpy.context.preferences.addons[base_package].preferences else 'SCENE'
+
     if element.export_folder_mode == 'MIRROR':
         layout.prop(element, "folder_path_search", text="Search Path")
         layout.prop(element, "folder_path_replace", text="Replacement Path")

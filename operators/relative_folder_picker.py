@@ -3,6 +3,8 @@ import os
 from bpy.props import StringProperty, CollectionProperty
 from bpy_extras.io_utils import ImportHelper
 
+from .. import __package__ as base_package
+
 
 class SIMPLEEXPORT_OT_RelativeFolderPicker(bpy.types.Operator, ImportHelper):
     """Select a folder and print its relative path (must be inside the blend file's directory)"""
@@ -17,6 +19,7 @@ class SIMPLEEXPORT_OT_RelativeFolderPicker(bpy.types.Operator, ImportHelper):
         type=bpy.types.OperatorFileListElement,
         options={'HIDDEN', 'SKIP_SAVE'},
     )
+    context: bpy.props.StringProperty(default="", options={'HIDDEN'})
 
     def execute(self, context):
         if not bpy.data.filepath:
@@ -35,8 +38,11 @@ class SIMPLEEXPORT_OT_RelativeFolderPicker(bpy.types.Operator, ImportHelper):
             rel_path = os.path.relpath(directory, blend_dir)
             # Normalize to remove any ./ or ../ (though there shouldn't be any now)
             rel_path = os.path.normpath(rel_path)
-            # Store as //test
-            context.scene.folder_path_relative = "//" + rel_path
+
+            props = context.scene if self.context == 'SCENE' else context.preferences.addons[base_package].preferences
+            # Store the relative path in the scene property
+            props.folder_path_relative = "//" + rel_path
+
             print("Selected folder (relative path):", context.scene.folder_path_relative)
             self.report({'INFO'}, f"Relative path: {context.scene.folder_path_relative}")
         except ValueError as e:
