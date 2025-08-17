@@ -387,7 +387,9 @@ def register():
     for cls in classes:
         register_class(cls)
 
-    bpy.types.Scene.exportlist_properties = bpy.props.PointerProperty(type=ExportlistProperties)
+    bpy.types.Scene.exportlist_nPanel_properties = bpy.props.PointerProperty(type=ExportlistProperties)
+    bpy.types.Scene.exportlist_popup_properties = bpy.props.PointerProperty(type=ExportlistProperties)
+
 
 
 def unregister():
@@ -396,4 +398,5 @@ def unregister():
     for cls in reversed(classes):
         unregister_class(cls)
 
-    del bpy.types.Scene.exportlist_properties
+    del bpy.types.Scene.exportlist_nPanel_properties
+    del bpy.types.Scene.exportlist_popup_properties

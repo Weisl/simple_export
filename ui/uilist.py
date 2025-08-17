@@ -214,7 +214,9 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         export_path = clean_relative_path(export_path)
         file_exists = os.path.exists(export_path)
 
-        if 'DEFAULT' in scene.exportlist_properties.my_enum_property:
+        visibility_properties = scene.exportlist_nPanel_properties if self.list_id == 'npanel' else scene.exportlist_popup_properties
+
+        if 'DEFAULT' in visibility_properties.my_enum_property:
             is_locked = file_exists and not os.access(export_path, os.W_OK)
             # Show lock icon based on file permissions
             if is_locked:
@@ -232,7 +234,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             # Display the collection name with the color icon
             row.label(text=collection.name, icon=icon)
 
-        if 'FILEPATH' in scene.exportlist_properties.my_enum_property:
+        if 'FILEPATH' in visibility_properties.my_enum_property:
             # Display the export file path as an editable property
             row.prop(exporter.export_properties, "filepath", text="", expand=True)
 
@@ -243,13 +245,13 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             op = call_simple_export_path_ops(context, row, text='', outliner=False,
                                              individual_collection=True, collection_name=collection.name)
 
-        if 'FILENAME' in scene.exportlist_properties.my_enum_property:
+        if 'FILENAME' in visibility_properties.my_enum_property:
             filename = os.path.basename(exporter.export_properties.filepath)
             row.label(text=filename)
 
         # Display Empty or Eyedropper button depending on the root_object state
 
-        if 'ROOT' in scene.exportlist_properties.my_enum_property:
+        if 'ROOT' in visibility_properties.my_enum_property:
             # if collection.use_root_object:
 
             icon = "LINKED" if collection.use_root_object else "UNLINKED"
@@ -260,17 +262,17 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 op = row.operator("object.select_root", text="", icon='EMPTY_AXIS')
                 op.collection_name = collection.name
 
-        if 'ORIGIN' in scene.exportlist_properties.my_enum_property:
+        if 'ORIGIN' in visibility_properties.my_enum_property:
             icon = "LINKED" if collection.use_root_object else "UNLINKED"
             row.prop(collection, "use_root_object", text='', icon=icon)
             row.prop(collection, "instance_offset", text="")
 
-        if 'COLLECTION' in scene.exportlist_properties.my_enum_property:
+        if 'COLLECTION' in visibility_properties.my_enum_property:
             pass
-        if 'FILENAME' in scene.exportlist_properties.my_enum_property:
+        if 'FILENAME' in visibility_properties.my_enum_property:
             pass
 
-        if 'FORMAT' in scene.exportlist_properties.my_enum_property:
+        if 'FORMAT' in visibility_properties.my_enum_property:
             # Display the export format
             exporter_type = str(type(exporter.export_properties))
             key = ExportFormats.get_key_from_op_type(exporter_type)
