@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from ..core.export_formats import ExportFormats
 from ..core.info import COLOR_TAG_ICONS
@@ -181,10 +182,10 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
     )
 
     def draw_filter(self, context, layout):
-        # Nothing much to say here, it's usual UI code...
         row = layout.row()
         row.prop(self, "use_filter")
         row.prop(self, 'export_format')
+        pass
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         from .. import __package__ as base_package
@@ -207,7 +208,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         # Get exporter details
         scene = context.scene
-        format_filter = self.export_format if self.use_filter else None
+        format_filter = scene.export_format if scene.use_filter else None
         exporter = find_exporter(collection, format_filter=format_filter)
 
         export_path = exporter.export_properties.filepath
@@ -306,16 +307,20 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
     def filter_items(self, context, data, propname):
         flt_flags = []
-        export_format = self.export_format
+        scene = context.scene
+
+        export_format = scene.export_format
         export_format_obj = ExportFormats.get(export_format)
+
+
 
         for collection in bpy.data.collections:
             filter = 0
             has_exporters = len(collection.exporters) > 0
 
-            if not self.use_filter and has_exporters:
+            if not scene.use_filter and has_exporters:
                 filter = self.bitflag_filter_item
-            elif self.use_filter:
+            elif scene.use_filter:
                 exporter_types = [str(type(exporter.export_properties)) for exporter in collection.exporters]
                 if any(exporter_type == export_format_obj.op_type for exporter_type in exporter_types):
                     filter = self.bitflag_filter_item
@@ -338,6 +343,7 @@ classes = (
 def register():
     from bpy.utils import register_class
 
+    # UIList Properties
     bpy.types.Scene.collection_index = bpy.props.IntProperty()
     bpy.types.Scene.menu_collection_name = bpy.props.StringProperty(
         name="Menu Collection Name",

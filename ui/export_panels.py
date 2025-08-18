@@ -1,7 +1,9 @@
-import bpy
 import os
 
+import bpy
+
 from .. import __package__ as base_package
+from ..core.export_formats import get_export_format_items
 from ..core.info import ADDON_NAME
 from ..functions.exporter_funcs import find_exporter
 
@@ -262,6 +264,7 @@ class SIMPLE_EXPORT_menu_base:
 
 class SimpleExportSettingsPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
+
     def draw_header(self, context):
         layout = self.layout
         draw_simple_export_header(layout, text="Simple Export Defaults")
@@ -369,6 +372,7 @@ classes = (
     ExportlistProperties,
 )
 
+
 def set_default_exportlist_properties(dummy):
     scene = bpy.context.scene
     # Set defaults for each PointerProperty
@@ -379,6 +383,7 @@ def set_default_exportlist_properties(dummy):
     scene.exportlist_nPanel_properties.list_visibility_settings = {'DEFAULT'}
     scene.exportlist_popup_properties.list_visibility_settings = {'DEFAULT', 'FILEPATH', 'ROOT', 'FORMAT'}
 
+
 # Register and Unregister
 def register():
     from bpy.utils import register_class
@@ -388,6 +393,20 @@ def register():
 
     bpy.types.Scene.exportlist_nPanel_properties = bpy.props.PointerProperty(type=ExportlistProperties)
     bpy.types.Scene.exportlist_popup_properties = bpy.props.PointerProperty(type=ExportlistProperties)
+
+    # Filter Properties
+    bpy.types.Scene.use_filter = bpy.props.BoolProperty(
+        name="Use Filter",
+        description="Use filter for the export list",
+        default=False
+    )
+
+    bpy.types.Scene.export_format = bpy.props.EnumProperty(
+        name="Export Format",
+        description="Select the export format",
+        items=get_export_format_items(),  # Dynamically generated items from EXPORT_FORMATS
+        default='FBX',
+    )
 
     # Register the handler
     bpy.app.handlers.load_post.append(set_default_exportlist_properties)

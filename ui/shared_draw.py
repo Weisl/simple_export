@@ -1,6 +1,7 @@
 # --- Draw Helpers ---
-import bpy
 import textwrap
+
+import bpy
 
 from .. import __package__ as base_package
 
@@ -180,3 +181,9 @@ def draw_export_list(layout, list_id, scene):
 
     visibility_properties = scene.exportlist_nPanel_properties if list_id == 'npanel' else scene.exportlist_popup_properties
     col.prop(visibility_properties, "list_visibility_settings")
+
+    # Always visible filter controls
+    box = layout.box()
+    row = box.row(align=True)
+    row.prop(scene, "use_filter")
+    row.prop(scene, 'export_format', text='')
