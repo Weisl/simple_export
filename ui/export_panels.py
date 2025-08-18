@@ -401,7 +401,7 @@ def register():
         default=False
     )
 
-    bpy.types.Scene.export_format = bpy.props.EnumProperty(
+    bpy.types.Scene.export_format_filter = bpy.props.EnumProperty(
         name="Export Format",
         description="Select the export format",
         items=get_export_format_items(),  # Dynamically generated items from EXPORT_FORMATS

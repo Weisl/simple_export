@@ -186,4 +186,4 @@ def draw_export_list(layout, list_id, scene):
     box = layout.box()
     row = box.row(align=True)
     row.prop(scene, "use_filter")
-    row.prop(scene, 'export_format', text='')
+    row.prop(scene, 'export_format_filter', text='')
