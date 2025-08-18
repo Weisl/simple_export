@@ -168,23 +168,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
     """
     UIList displaying all collections with an exporter matching the selected export type.
     """
-    use_filter: bpy.props.BoolProperty(
-        name="Use Filter",
-        description="Use filter for the export list",
-        default=False
-    )
-
-    export_format: bpy.props.EnumProperty(
-        name="Export Format",
-        description="Select the export format",
-        items=get_export_format_items(),  # Dynamically generated items from EXPORT_FORMATS
-        default='FBX',
-    )
-
     def draw_filter(self, context, layout):
-        row = layout.row()
-        row.prop(self, "use_filter")
-        row.prop(self, 'export_format')
         pass
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
