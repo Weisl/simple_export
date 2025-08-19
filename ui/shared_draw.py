@@ -1,6 +1,7 @@
 # --- Draw Helpers ---
-import bpy
 import textwrap
+
+import bpy
 
 from .. import __package__ as base_package
 
@@ -81,8 +82,16 @@ def draw_export_folderpath_properties(layout, element, is_preferences=False):
     if element.export_folder_mode == 'RELATIVE':
         row = layout.row(align=True)
         row.prop(element, "folder_path_relative")
+
+    context = None
+    if element == bpy.context.preferences.addons[base_package].preferences:
+        context = 'PREFS'
+    elif element == bpy.context.scene:
+        context = 'SCENE'
+
+    if context:
         op = row.operator("simple_export.folder_path_relative_picker", text="", icon='FILE_FOLDER')
-        op.context = 'PREFS' if element == bpy.context.preferences.addons[base_package].preferences else 'SCENE'
+        op.context = context
 
     if element.export_folder_mode == 'MIRROR':
         layout.prop(element, "folder_path_search", text="Search Path")
@@ -172,3 +181,9 @@ def draw_export_list(layout, list_id, scene):
 
     visibility_properties = scene.exportlist_nPanel_properties if list_id == 'npanel' else scene.exportlist_popup_properties
     col.prop(visibility_properties, "list_visibility_settings")
+
+    # Always visible filter controls
+    box = layout.box()
+    row = box.row(align=True)
+    row.prop(scene, "use_filter")
+    row.prop(scene, 'export_format_filter', text='')
