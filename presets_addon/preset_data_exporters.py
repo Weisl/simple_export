@@ -133,7 +133,7 @@ presets_simple_exporter = {
         "collection_color": "COLOR_01",
         "use_root_object": True,
         "parent_collection": "high",
-    }
+    },
     "Northlight-default": {
         "export_format": "FBX",
         "export_folder_mode": "MIRROR",
@@ -160,5 +160,5 @@ presets_simple_exporter = {
         "collection_instance_offset": False,
         "collection_color": "COLOR_04",
         "parent_collection": "export",
-    }
+    },
 }
