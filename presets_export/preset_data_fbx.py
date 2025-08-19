@@ -90,7 +90,7 @@ presets_fbx = {
         "global_scale": 1.0,
         "apply_unit_scale": True,
         "apply_scale_options": "FBX_SCALE_ALL",
-        "use_space_transform": False,
+        "use_space_transform": True,
         "bake_space_transform": False,
         "object_types": {"MESH", "EMPTY", "OTHER"},
         "use_mesh_modifiers": True,
