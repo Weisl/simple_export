@@ -119,7 +119,7 @@ presets_fbx = {
         "embed_textures": False,
         "batch_mode": "OFF",
         "use_batch_own_dir": True,
-        "axis_forward": "-Y",
-        "axis_up": "Z",
+        "axis_forward": "-Z",
+        "axis_up": "Y",
     }
 }
