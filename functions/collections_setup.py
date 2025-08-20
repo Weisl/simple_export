@@ -9,3 +9,22 @@ def setup_collection_properties(prop, collection, base_object=None):
     if prop.use_root_object and base_object:
         collection.root_object = base_object
     return collection
+
+def create_collection(collection_name):
+    """Create a collection if it doesn't exist and link it to the current scene if not already linked."""
+    import bpy
+
+    # Create the collection if it doesn't exist
+    if collection_name not in bpy.data.collections:
+        collection = bpy.data.collections.new(collection_name)
+    else:
+        collection = bpy.data.collections[collection_name]
+
+    # Get the current scene
+    current_scene = bpy.context.scene
+
+    # Link to current scene if not already linked
+    if collection.name not in current_scene.collection.children:
+        current_scene.collection.children.link(collection)
+
+    return collection

@@ -78,7 +78,7 @@ presets_simple_exporter = {
         "use_root_object": True,
         "collection_instance_offset": False,
         "collection_color": "COLOR_05",
-        "parent_collection": "export",
+        "parent_collection": "Export",
     },
     "Lowpoly-default": {
         "export_format": "FBX",
@@ -105,7 +105,7 @@ presets_simple_exporter = {
         "collection_instance_offset": False,
         "collection_color": "COLOR_04",
         "use_root_object": True,
-        "parent_collection": "low",
+        "parent_collection": "Low",
     },
     "Highpoly-default": {
         "export_format": "FBX",
@@ -132,7 +132,7 @@ presets_simple_exporter = {
         "collection_instance_offset": False,
         "collection_color": "COLOR_01",
         "use_root_object": True,
-        "parent_collection": "high",
+        "parent_collection": "High",
     },
     "Northlight-default": {
         "export_format": "FBX",
@@ -159,6 +159,6 @@ presets_simple_exporter = {
         "use_root_object": True,
         "collection_instance_offset": False,
         "collection_color": "COLOR_04",
-        "parent_collection": "export",
+        "parent_collection": "Export",
     },
 }
