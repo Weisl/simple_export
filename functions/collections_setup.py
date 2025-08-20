@@ -10,6 +10,7 @@ def setup_collection_properties(prop, collection, base_object=None):
         collection.root_object = base_object
     return collection
 
+
 def create_collection(collection_name):
     """Create a collection if it doesn't exist and link it to the current scene if not already linked."""
     import bpy
@@ -26,5 +27,7 @@ def create_collection(collection_name):
     # Link to current scene if not already linked
     if collection.name not in current_scene.collection.children:
         current_scene.collection.children.link(collection)
+
+    # collection.color_tag = color_tag
 
     return collection
