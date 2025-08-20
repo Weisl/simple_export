@@ -16,11 +16,9 @@ from ..ui.shared_draw import draw_export_folderpath_properties
 def determine_parent_collection(context, parent_collection="", top_object=None):
     """Determine the parent collection based on the specified hierarchy."""
     if parent_collection:
-        parent_collection = bpy.data.collections.get(parent_collection)
+        parent_collection = bpy.data.collections.get(parent_collection, None)
         if parent_collection:
             return parent_collection
-    if hasattr(context.scene, 'parent_collection') and context.scene.parent_collection:
-        return context.scene.parent_collection
     if top_object and top_object.users_collection:
         return top_object.users_collection[0]
     return context.scene.collection
