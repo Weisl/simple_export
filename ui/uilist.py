@@ -94,10 +94,8 @@ class EXPORT_MT_root_object_menu(bpy.types.Menu):
         op = call_simple_export_path_ops(context, layout, outliner=False,
                                          individual_collection=True, collection_name=collection_name)
 
-        op = layout.operator("simple_export.assign_presets", icon='PRESET')
-        op.outliner = False
-        op.individual_collection = True
-        op.collection_name = collection_name
+        from .shared_operator_call import call_assign_preset_op
+        call_assign_preset_op(context, layout, individual_collection=True, collection_name=collection_name)
 
         op = layout.operator("simple_export.remove_exporters", icon='X')
         op.collection_name = collection_name

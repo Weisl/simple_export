@@ -21,8 +21,6 @@ def call_simple_add_exporter_to_collection(context, collection, layout):
     op.set_export_path = preset_settings.set_export_path
     # Get preset filepath if auto-set is enabled
 
-
-
     # Filepath settings - use scene if overwrite is enabled, else prefs
     filepath_settings = scene
     op.export_folder_mode = filepath_settings.export_folder_mode
@@ -67,14 +65,16 @@ def call_simple_export_path_ops(context, layout, text=None, outliner=False,
     return op
 
 
-def call_assign_preset_op(context, layout, text=None, icon='PRESET_NEW'):
+def call_assign_preset_op(context, layout, text=None, icon='PRESET_NEW', outliner=False, individual_collection=False,
+                          collection_name=''):
     if text is None:
         op = layout.operator("simple_export.assign_presets", icon=icon)
     else:
         op = layout.operator("simple_export.assign_presets", text=text, icon=icon)
 
-    op.outliner = False
-    op.individual_collection = False
+    op.outliner = outliner
+    op.individual_collection = individual_collection
+    op.collection_name = collection_name
 
     # Get and set properties from preferences/scene
     scene = context.scene
@@ -82,12 +82,12 @@ def call_assign_preset_op(context, layout, text=None, icon='PRESET_NEW'):
     # Set file format
     op.export_format = scene.export_format
 
-    # Set Preset settings
-    preset_settings = scene
-
     # Get preset filepath if auto-set is enabled
     export_format = scene.export_format.lower()
     prop_name = f"simple_export_preset_file_{export_format}"
+    preset_path = getattr(scene, prop_name)
+    print(f"PRESET PATH = {preset_path}")
+    setattr(op, prop_name, preset_path)
 
 
 def call_create_export_collection_op(scene, layout, icon='COLLECTION_NEW', text=None):
@@ -121,7 +121,6 @@ def call_create_export_collection_op(scene, layout, icon='COLLECTION_NEW', text=
     preset_settings = scene
     op.set_export_path = preset_settings.set_export_path
     # Get preset filepath if auto-set is enabled
-
 
     # Filepath settings - use scene if overwrite is enabled, else prefs
     filepath_settings = scene
