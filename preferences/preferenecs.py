@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from .keymap import remove_key
 from .. import __package__ as base_package
@@ -181,74 +182,6 @@ def get_py_files_for_ply(self, context):
 def get_py_files_for_stl(self, context):
     export_format = ExportFormats.get("STL")
     return get_py_files(self, context, export_format.preset_folder if export_format else None)
-
-
-def update_preset_path_for_fbx(self, context):
-    # Get the available enum items
-    enum_items = self.get('simple_export_preset_file_fbx_items', [])
-
-    # Check if there are any valid items
-    if enum_items:
-        # Set to the first valid item as a default
-        default_preset = enum_items[0][0]
-        context.scene.simple_export_preset_file_fbx = default_preset
-    else:
-        # Handle the case where no valid items are found
-        print("No valid preset items found.")
-
-
-def update_preset_path_for_obj(self, context):
-    enum_items = self.get('simple_export_preset_file_obj_items', [])
-    if enum_items:
-        default_preset = enum_items[0][0]
-        context.scene.simple_export_preset_file_obj = default_preset
-    else:
-        print("No valid preset items found for OBJ.")
-
-
-def update_preset_path_for_gltf(self, context):
-    enum_items = self.get('simple_export_preset_file_gltf_items', [])
-    if enum_items:
-        default_preset = enum_items[0][0]
-        context.scene.simple_export_preset_file_gltf = default_preset
-    else:
-        print("No valid preset items found for glTF.")
-
-
-def update_preset_path_for_usd(self, context):
-    enum_items = self.get('simple_export_preset_file_usd_items', [])
-    if enum_items:
-        default_preset = enum_items[0][0]
-        context.scene.simple_export_preset_file_usd = default_preset
-    else:
-        print("No valid preset items found for USD.")
-
-
-def update_preset_path_for_abc(self, context):
-    enum_items = self.get('simple_export_preset_file_abc_items', [])
-    if enum_items:
-        default_preset = enum_items[0][0]
-        context.scene.simple_export_preset_file_abc = default_preset
-    else:
-        print("No valid preset items found for Alembic.")
-
-
-def update_preset_path_for_ply(self, context):
-    enum_items = self.get('simple_export_preset_file_ply_items', [])
-    if enum_items:
-        default_preset = enum_items[0][0]
-        context.scene.simple_export_preset_file_ply = default_preset
-    else:
-        print("No valid preset items found for PLY.")
-
-
-def update_preset_path_for_stl(self, context):
-    enum_items = self.get('simple_export_preset_file_stl_items', [])
-    if enum_items:
-        default_preset = enum_items[0][0]
-        context.scene.simple_export_preset_file_stl = default_preset
-    else:
-        print("No valid preset items found for STL.")
 
 
 def update_panel_category(self, context):
@@ -632,49 +565,42 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         name="FBX Preset File",
         description="Select a preset file for FBX",
         items=lambda self, context: get_py_files_for_fbx(self, context),
-        update=update_preset_path_for_fbx,
     )
 
     simple_export_preset_file_obj: bpy.props.EnumProperty(
         name="OBJ Preset File",
         description="Select a preset file for OBJ",
         items=lambda self, context: get_py_files_for_obj(self, context),
-        update=update_preset_path_for_obj,
     )
 
     simple_export_preset_file_gltf: bpy.props.EnumProperty(
         name="glTF Preset File",
         description="Select a preset file for glTF",
         items=lambda self, context: get_py_files_for_gltf(self, context),
-        update=update_preset_path_for_gltf,
     )
 
     simple_export_preset_file_usd: bpy.props.EnumProperty(
         name="USD Preset File",
         description="Select a preset file for USD",
         items=lambda self, context: get_py_files_for_usd(self, context),
-        update=update_preset_path_for_usd,
     )
 
     simple_export_preset_file_abc: bpy.props.EnumProperty(
         name="Alembic Preset File",
         description="Select a preset file for Alembic",
         items=lambda self, context: get_py_files_for_abc(self, context),
-        update=update_preset_path_for_abc,
     )
 
     simple_export_preset_file_ply: bpy.props.EnumProperty(
         name="PLY Preset File",
         description="Select a preset file for PLY",
         items=lambda self, context: get_py_files_for_ply(self, context),
-        update=update_preset_path_for_ply,
     )
 
     simple_export_preset_file_stl: bpy.props.EnumProperty(
         name="STL Preset File",
         description="Select a preset file for STL",
         items=lambda self, context: get_py_files_for_stl(self, context),
-        update=update_preset_path_for_stl,
     )
 
     def keymap_ui(self, layout, title, property_prefix, id_name, properties_name):
@@ -1059,49 +985,42 @@ def register():
         name="FBX Preset File",
         description="Select a preset file for FBX",
         items=lambda self, context: get_py_files_for_fbx(self, context),
-        update=update_preset_path_for_fbx,
     )
 
     bpy.types.Scene.simple_export_preset_file_obj = bpy.props.EnumProperty(
         name="OBJ Preset File",
         description="Select a preset file for OBJ",
         items=lambda self, context: get_py_files_for_obj(self, context),
-        update=update_preset_path_for_obj,
     )
 
     bpy.types.Scene.simple_export_preset_file_gltf = bpy.props.EnumProperty(
         name="glTF Preset File",
         description="Select a preset file for glTF",
         items=lambda self, context: get_py_files_for_gltf(self, context),
-        update=update_preset_path_for_gltf,
     )
 
     bpy.types.Scene.simple_export_preset_file_usd = bpy.props.EnumProperty(
         name="USD Preset File",
         description="Select a preset file for USD",
         items=lambda self, context: get_py_files_for_usd(self, context),
-        update=update_preset_path_for_usd,
     )
 
     bpy.types.Scene.simple_export_preset_file_abc = bpy.props.EnumProperty(
         name="Alembic Preset File",
         description="Select a preset file for Alembic",
         items=lambda self, context: get_py_files_for_abc(self, context),
-        update=update_preset_path_for_abc,
     )
 
     bpy.types.Scene.simple_export_preset_file_ply = bpy.props.EnumProperty(
         name="PLY Preset File",
         description="Select a preset file for PLY",
         items=lambda self, context: get_py_files_for_ply(self, context),
-        update=update_preset_path_for_ply,
     )
 
     bpy.types.Scene.simple_export_preset_file_stl = bpy.props.EnumProperty(
         name="STL Preset File",
         description="Select a preset file for STL",
         items=lambda self, context: get_py_files_for_stl(self, context),
-        update=update_preset_path_for_stl,
     )
 
     bpy.app.timers.register(post_register, first_interval=0.5)
