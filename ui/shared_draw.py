@@ -37,9 +37,10 @@ def draw_collection_settings_properties(layout, element):
     layout.prop(element, "collection_color")
 
     # Handle different property names between scene and preferences
-    layout.prop(element, "collection_instance_offset")
+    # layout.prop(element, "collection_instance_offset") # Not used at the moment.
     layout.prop(element, "use_root_object")
     layout.prop(element, "set_export_path")
+    layout.prop(element, "assign_preset")
 
 
 def draw_collection_name_properties(layout, element):

@@ -87,7 +87,7 @@ PROPERTY_METADATA = {
 
     "set_export_path": {
         "name": "Assign Export Path",
-        "description": "##### Set filepath when creating an Exporter Collection.",
+        "description": "Set filepath when creating an Exporter Collection.",
         "default": True,
     },
 
@@ -126,13 +126,13 @@ PROPERTY_METADATA = {
 
     "collection_instance_offset": {
         "name": "Set Collection Center Location",
-        "description": "Set Location Offset for collections.",
+        "description": "Use active object as Collection Instance Offset.",
         "default": False,
     },
 
     "use_root_object": {
         "name": "Assign Root Object",
-        "description": "Use root object as Collection Offset.",
+        "description": "Use active object as Collection Instance Offset and link it.",
         "default": True,
     },
     "move_by_collection_offset": {
