@@ -39,10 +39,6 @@ def draw_collection_settings_properties(layout, element):
     # Handle different property names between scene and preferences
     layout.prop(element, "collection_instance_offset")
     layout.prop(element, "use_root_object")
-
-    if element.use_root_object and hasattr(element, "collection_set_root_offset_object"):
-        layout.prop(element, "collection_set_root_offset_object")
-
     layout.prop(element, "set_export_path")
 
 

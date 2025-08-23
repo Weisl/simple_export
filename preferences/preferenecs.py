@@ -129,11 +129,6 @@ PROPERTY_METADATA = {
         "description": "Set Location Offset for collections.",
         "default": False,
     },
-    "collection_set_root_offset_object": {
-        "name": "Set Collection Center Object",
-        "description": "Assign Collection Offset Object.",
-        "default": True,
-    },
 
     "use_root_object": {
         "name": "Assign Root Object",
@@ -479,12 +474,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         name=PROPERTY_METADATA["use_root_object"]["name"],
         description=PROPERTY_METADATA["use_root_object"]["description"],
         default=PROPERTY_METADATA["use_root_object"]["default"],
-    )
-
-    collection_set_root_offset_object: bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["collection_set_root_offset_object"]["name"],
-        description=PROPERTY_METADATA["collection_set_root_offset_object"]["description"],
-        default=PROPERTY_METADATA["collection_set_root_offset_object"]["default"],
     )
 
     collection_color: bpy.props.EnumProperty(
@@ -881,12 +870,6 @@ def initialize_properties_collection_generation():
         default=prefs.use_root_object
     )
 
-    bpy.types.Scene.collection_set_root_offset_object = bpy.props.BoolProperty(
-        name=PROPERTY_METADATA["collection_set_root_offset_object"]["name"],
-        description=PROPERTY_METADATA["collection_set_root_offset_object"]["description"],
-        default=prefs.collection_set_root_offset_object
-    )
-
     bpy.types.Scene.set_export_path = bpy.props.BoolProperty(
         name=PROPERTY_METADATA["set_export_path"]["name"],
         description=PROPERTY_METADATA["set_export_path"]["description"],
@@ -1057,7 +1040,6 @@ def unregister():
     del bpy.types.Scene.filename_suffix
     del bpy.types.Scene.collection_instance_offset
     del bpy.types.Scene.use_root_object
-    del bpy.types.Scene.collection_set_root_offset_object
     del bpy.types.Scene.set_export_path
     del bpy.types.Scene.assign_preset
     del bpy.types.Scene.parent_collection
