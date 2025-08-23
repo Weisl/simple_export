@@ -43,45 +43,8 @@ def draw_scene_settings_overwrite(context, layout, scene):
     from .shared_draw import draw_exporter_presets
     draw_exporter_presets(layout, buttons=True)
 
-    row = layout.row()
-    from ..ui.shared_draw import draw_export_fomrat
-    draw_export_fomrat(row, scene)
-
-    # Filepath Settings
-    box = layout.box()
-    filepath_settings = scene
-
-    # Draw filepath properties using shared function
-    from ..ui.shared_draw import draw_export_folderpath_properties
-    draw_export_folderpath_properties(box, filepath_settings)
-
-    # Filename Settings
-    box = layout.box()
-    filename_settings = scene
-    # Draw filename properties using shared function
-    from ..ui.shared_draw import draw_export_filename_properties
-    draw_export_filename_properties(box, filename_settings)
-
-    # Preset Settings
-    box = layout.box()
-    preset_settings = scene
-
-    # Draw preset properties using shared function
-    from ..ui.shared_draw import draw_export_preset_properties
-    draw_export_preset_properties(box, preset_settings)
-
-    # Collection Settings
-    box = layout.box()
-    collection_settings = scene
-
-    # Draw collection name properties using shared function
-    from ..ui.shared_draw import draw_collection_name_properties
-    draw_collection_name_properties(box, collection_settings)
-
-    box = layout.box()
-    # Draw collection settings properties using shared function
-    from ..ui.shared_draw import draw_collection_settings_properties
-    draw_collection_settings_properties(box, collection_settings)
+    from .shared_draw import draw_full_exporer_settings
+    draw_full_exporer_settings(layout, scene)
 
 
 def draw_active_list_element(layout, context, scene):

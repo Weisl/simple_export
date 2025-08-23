@@ -50,7 +50,7 @@ class EXPORT_OT_AddSettingsToCollections(
         setup_collection_properties(self, collection, base_object=None)
 
         # replace existing exporter
-        from ..functions.exporter_funcs import create_collection_exporter,remove_all_collection_exporters
+        from ..functions.exporter_funcs import create_collection_exporter, remove_all_collection_exporters
         remove_all_collection_exporters(collection)
         exporter = create_collection_exporter(self, context, collection)
 
@@ -73,31 +73,8 @@ class EXPORT_OT_AddSettingsToCollections(
 
     def draw(self, context):
         layout = self.layout
-        # --- Collection Name Section ---
-
-        box = layout.box()
-        from ..ui.shared_draw import draw_collection_name_properties
-        draw_collection_name_properties(box, self)
-
-        # --- Collection Settings Section ---
-        box = layout.box()
-        from ..ui.shared_draw import draw_collection_settings_properties
-        draw_collection_settings_properties(box, self)
-
-        # --- Preset Section ---
-        from ..ui.shared_draw import draw_export_preset_properties
-        box = layout.box()
-        draw_export_preset_properties(box, self)
-
-        # --- File Name Section ---
-        from ..ui.shared_draw import draw_export_filename_properties
-        box = layout.box()
-        draw_export_filename_properties(box, self)
-
-        # --- File Path Section ---
-        box = layout.box()
-        from ..ui.shared_draw import draw_export_folderpath_properties
-        draw_export_folderpath_properties(box, self)
+        from ..ui.shared_draw import draw_full_exporer_settings
+        draw_full_exporer_settings(layout, self)
 
 
 classes = (

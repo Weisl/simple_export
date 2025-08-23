@@ -198,43 +198,9 @@ class EXPORT_OT_CreateExportCollections(
     def draw(self, context):
         """Draw the UI for the operator."""
         layout = self.layout
-        # --- Collection Name Section ---
-        from ..ui.shared_draw import draw_collection_name_properties, draw_collection_settings_properties, \
-            draw_export_preset_properties, draw_export_filename_properties
+        from ..ui.shared_draw import draw_full_exporer_settings
+        draw_full_exporer_settings(layout, self)
 
-        from ..ui.shared_draw import draw_export_fomrat
-        draw_export_fomrat(layout, self)
-
-        # Future update for creation options
-        # box = layout.box()
-        # box.label(text="Creation")
-        # box.prop(self, "only_selection", text="Only Affect Selection")
-        # box.prop(self, "use_numbering", text="Use Numbering")
-        # box.prop(self, "collection_naming_overwrite", text="Overwrite Collection Naming")
-
-        box = layout.box()
-        draw_collection_name_properties(box, self)
-
-        # --- Collection Settings Section ---
-        box = layout.box()
-        draw_collection_settings_properties(box, self)
-
-        # Optionally: add root object picker if use_root_object is True
-        # box.prop(self, "root_object")
-
-        # --- Preset Section ---
-        box = layout.box()
-        draw_export_preset_properties(box, self)
-
-        # --- File Name Section ---
-        box = layout.box()
-        draw_export_filename_properties(box, self)
-
-        # --- File Path Section ---
-        box = layout.box()
-        box.label(text="File Path")
-        box.prop(self, "set_export_path")
-        draw_export_folderpath_properties(box, self)
 
 
 classes = (

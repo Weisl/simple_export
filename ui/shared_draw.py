@@ -47,7 +47,7 @@ def draw_collection_settings_properties(layout, element):
 
 
 def draw_collection_name_properties(layout, element):
-    layout.label(text="Collection Settings")
+    layout.label(text="Collection Name")
     layout.prop(element, "collection_prefix")
     layout.prop(element, "collection_suffix")
     layout.prop(element, "collection_blend_prefix")
@@ -55,7 +55,7 @@ def draw_collection_name_properties(layout, element):
 
 def draw_export_filename_properties(layout, element):
     # Filename settings
-    layout.label(text="File Name Settings")
+    layout.label(text="File Name")
 
     layout.prop(element, "filename_prefix")
     layout.prop(element, "filename_suffix")
@@ -63,7 +63,7 @@ def draw_export_filename_properties(layout, element):
 
 
 def draw_export_folderpath_properties(layout, element, is_preferences=False):
-    layout.label(text="Export Path Mode")
+    layout.label(text="Export Folder")
 
     # Check if blend file is saved
     is_file_saved = bool(bpy.data.filepath)
@@ -147,6 +147,34 @@ def draw_exporter_presets(layout, buttons=False):
     folder_op.operation = 'FOLDER_OPEN'
     from ..presets_addon.exporter_preset import simple_export_presets_folder
     folder_op.filepath = simple_export_presets_folder()
+
+
+def draw_full_exporer_settings(layout, props):
+    from ..ui.shared_draw import draw_export_fomrat
+
+    # --- Export Format ---
+    draw_export_fomrat(layout, props)
+
+    # --- Collection Name ---
+    box = layout.box()
+
+    draw_collection_name_properties(box, props)
+
+    # --- File Path ---
+    box = layout.box()
+    draw_export_folderpath_properties(box, props)
+
+    # --- File Name ---
+    box = layout.box()
+    draw_export_filename_properties(box, props)
+
+    # --- Preset Section ---
+    box = layout.box()
+    draw_export_preset_properties(box, props)
+
+    # --- Collection Section ---
+    box = layout.box()
+    draw_collection_settings_properties(box, props)
 
 
 def draw_export_list(layout, list_id, scene):
