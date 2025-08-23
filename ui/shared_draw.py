@@ -177,7 +177,7 @@ def draw_full_exporer_settings(layout, props):
 def draw_export_list(layout, list_id, scene):
     # Export List
     row = layout.row()
-    row.label(text="Collection Export List")
+    row.label(text="Simple Export Collection List")
 
     # Split the layout into two columns
     if list_id == "popup":

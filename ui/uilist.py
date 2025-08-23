@@ -264,9 +264,6 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 row.label(text=fmt.label)  # Display the user-friendly label
             else:
                 row.label(text=exporter_type)  # Fallback
-        # Add arrow button that sets the collection name and opens the menu
-        arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
-        arrow_op.collection_name = collection.name
 
         from ..core.export_path_func import generate_base_name
 
@@ -280,6 +277,12 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             op.filename_prefix = filename_settings.filename_prefix
             op.filename_suffix = filename_settings.filename_suffix
             op.filename_blend_prefix = filename_settings.filename_blend_prefix
+
+
+        # Add arrow button that sets the collection name and opens the menu
+        arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
+        arrow_op.collection_name = collection.name
+
 
         # Add the Export Collection button
         op = row.operator("simple_export.export_collections", text="", icon='EXPORT')
