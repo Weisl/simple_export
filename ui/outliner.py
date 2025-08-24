@@ -11,9 +11,9 @@ def draw_custom_outliner_menu(self, context):
         # Show full export menu for collections
         layout.menu(CUSTOM_MT_outliner_simple_export_menu.bl_idname, icon='EXPORT')
     elif isinstance(selected_element, bpy.types.Object):
-        # Show only 'Create Export Collections' for objects
-        layout.operator('simple_export.create_export_collections', text="Create Export Collections",
-                        icon='COLLECTION_COLOR_01')
+        scene = context.scene
+        from .shared_operator_call import call_create_export_collection_op
+        op = call_create_export_collection_op(scene, layout)
 
 
 class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
@@ -27,20 +27,20 @@ class CUSTOM_MT_outliner_simple_export_menu(bpy.types.Menu):
         if not isinstance(collection, bpy.types.Collection):
             return
 
-        layout.operator('simple_export.add_settings_to_collections', icon='COLLECTION_COLOR_01')
+        from .shared_operator_call import call_simple_add_exporter_to_collection
+        call_simple_add_exporter_to_collection(context, collection, layout)
 
         layout.separator()
         op = layout.operator("simple_export.export_collections", icon='EXPORT')
         op.outliner = True
         op.individual_collection = False
 
-        op = layout.operator("simple_export.assign_presets", icon='PRESET_NEW')
-        op.outliner = True
-        op.individual_collection = False
+        from .shared_operator_call import call_assign_preset_op
+        call_assign_preset_op(context, layout, outliner=True)
 
-        op = layout.operator("simple_export.set_export_paths", text="Assign Filepaths", icon='FOLDER_REDIRECT')
-        op.outliner = True
-        op.individual_collection = False
+        from .shared_operator_call import call_simple_export_path_ops
+        op = call_simple_export_path_ops(context, layout, collection, outliner=True,
+                                         individual_collection=False)
 
         # Open Popup window
         layout.operator("wm.call_panel", text="Open Export Popup",

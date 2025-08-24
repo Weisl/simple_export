@@ -1,18 +1,6 @@
-import bpy
 import os
 
-from .. import __package__ as base_package
 
-
-def get_presets_folder():
-    """Retrieve the preset folder, using override if set, else default to Blender's location."""
-    prefs = bpy.context.preferences.addons[base_package].preferences
-
-    if prefs.preset_path_override and os.path.isdir(prefs.preset_path_override):
-        return prefs.preset_path_override
-
-    # Default Blender location
-    return os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets", "operator")
 
 
 class ExportFormat:
@@ -30,7 +18,8 @@ class ExportFormat:
     @property
     def preset_folder(self):
         """Dynamically retrieve the preset folder when accessed."""
-        return os.path.join(get_presets_folder(), self.preset_subfolder)
+        from ..presets_export.preset_format_functions import get_preset_format_folder
+        return os.path.join(get_preset_format_folder(), self.preset_subfolder)
 
     def __repr__(self):
         return f"<ExportFormat {self.label} ({self.file_extension})>"
@@ -64,6 +53,14 @@ class ExportFormats:
     def all(cls):
         """Return all export formats as a list."""
         return list(cls.FORMATS.values())
+
+    @classmethod
+    def get_key_from_op_type(cls, op_type):
+        """Retrieve the key (e.g., 'FBX') from an op_type string."""
+        for key, fmt in cls.FORMATS.items():
+            if fmt.op_type == op_type:
+                return key
+        return None
 
 
 def get_export_format_items():

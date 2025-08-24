@@ -1,7 +1,8 @@
-import bpy
 import os
 
-from .. import __package__ as base_package
+import bpy
+
+from .shared_properties import SharedPresetAssignmentProps, SharedFormatProps
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.exporter_funcs import find_exporter
 from ..functions.outliner_func import get_outliner_collections
@@ -9,27 +10,33 @@ from ..functions.preset_func import assign_preset
 from ..functions.vallidate_func import validate_collection
 
 
-class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
+class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAssignmentProps, SharedFormatProps):
     """Operator to apply the preset to all collections"""
     bl_idname = "simple_export.assign_presets"
     bl_label = "Assign Presets"
+    bl_description = "Assign presets to selected collections based on the current export format."
+    bl_options = {'REGISTER', 'UNDO'}
 
-    outliner: bpy.props.BoolProperty(default=False)
-    individual_collection: bpy.props.BoolProperty(default=False)
+    outliner: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
+    individual_collection: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
     collection_name: bpy.props.StringProperty(name="Collection Name", default='',
-                                              description="Name of the collection to process")
+                                              description="Name of the collection to process", options={'HIDDEN'})
+
+    def draw(self, context):
+        """Draw the UI for the operator."""
+        layout = self.layout
+        from ..ui.shared_draw import draw_export_preset_properties
+        draw_export_preset_properties(layout, self)
 
     def execute(self, context):
         results = []  # To store the renaming status of each collection
-        prefs = context.preferences.addons[base_package].preferences
-        scene = context.scene
 
         # Construct the property name dynamically
-        export_format = scene.export_format.lower()
-        prop_name = f"simple_export_preset_file_{export_format}"
+        export_format = self.export_format
+        prop_name = f"simple_export_preset_file_{export_format.lower()}"
 
+        preset_settings = self
         # Get preset path
-        preset_settings = scene if scene.overwrite_preset_settings else prefs
         preset_path = getattr(preset_settings, prop_name, None)
 
         # Get Export Collections
@@ -68,7 +75,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
                 set_active_layer_Collection(collection.name)
 
                 # Find the appropriate exporter
-                exporter = find_exporter(collection, scene.export_format)
+                exporter = find_exporter(collection, format_filter= export_format)
                 if not exporter:
                     continue
 
@@ -79,9 +86,11 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator):
                 # Handle per-collection errors
                 results.append({'name': collection.name, 'success': False, 'message': str(e)})
 
-        # Store results in Scene
-        context.window_manager.assign_preset_info_data = str(results)
-        bpy.ops.wm.call_panel(name="SIMPLEEXPORTER_PT_PresetResultsPanel")
+        # Show result popup when started from Outliner
+        if self.outliner:
+            # Store results in Scene
+            context.window_manager.assign_preset_info_data = str(results)
+            bpy.ops.wm.call_panel(name="SIMPLEEXPORTER_PT_PresetResultsPanel")
 
         return {'FINISHED'}
 
