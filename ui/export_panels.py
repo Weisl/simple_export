@@ -8,18 +8,19 @@ from ..core.info import ADDON_NAME
 from ..functions.exporter_funcs import find_exporter
 
 
-def draw_pre_export_operations(col, scene):
+def draw_pre_export_operations(layout, scene):
     # Ensure the panel is collapsed by default
-    header, body = col.panel(idname="PRE_EXPORT_OPERATIONS_PANEL", default_closed=False)
+    # header, body = col.panel(idname="PRE_EXPORT_OPERATIONS_PANEL", default_closed=False)
 
+    # Use a warning icon for Blender 4.3 and above, else use error icon
     icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
 
     # Draw the panel header
-    header.label(text="Pre Export Operations", icon=icon)
+    layout.label(text="Pre Export Operations", icon=icon)
 
     # Check if the panel is expanded before drawing elements
-    if body:
-        body.prop(scene, 'move_by_collection_offset')
+    # if body:
+    layout.prop(scene, 'move_by_collection_offset')
 
 
 def draw_simple_export_header(layout, text="Simple Export"):
@@ -214,8 +215,8 @@ class SIMPLE_EXPORT_menu_base:
 
         # Draw Pre Export Operators List
         col.separator()
-        box = col.box()
-        draw_pre_export_operations(box, scene)
+
+        draw_pre_export_operations(col, scene)
 
         # Draw Export Button
         row = col.row()

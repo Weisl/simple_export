@@ -208,7 +208,9 @@ def draw_export_list(layout, list_id, scene):
 
     # Always visible filter controls
     box = layout.box()
-    box.prop(scene, "use_filter", text="Filter List")
+    box.prop(scene, "use_filter", text="Use Filter")
 
     if scene.use_filter:
-        box.prop(scene, 'export_format_filter', text='Format')
+        row = box.row(align=True)
+        row.label(text="Filter by Format")
+        row.prop(scene, 'export_format_filter', text='')
