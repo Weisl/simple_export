@@ -227,7 +227,7 @@ class SIMPLE_EXPORT_menu_base:
 
 
 class SimpleExportSettingsPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
-    bl_options = {'DEFAULT_CLOSED'}
+    # bl_options = {'DEFAULT_CLOSED'}
 
     def draw_header(self, context):
         layout = self.layout
