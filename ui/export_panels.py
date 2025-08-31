@@ -10,7 +10,7 @@ from ..functions.exporter_funcs import find_exporter
 
 def draw_pre_export_operations(col, scene):
     # Ensure the panel is collapsed by default
-    header, body = col.panel(idname="PRE_EXPORT_OPERATIONS_PANEL", default_closed=True)
+    header, body = col.panel(idname="PRE_EXPORT_OPERATIONS_PANEL", default_closed=False)
 
     icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
 

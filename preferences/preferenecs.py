@@ -136,8 +136,8 @@ PROPERTY_METADATA = {
         "default": True,
     },
     "move_by_collection_offset": {
-        "name": "Move by Collection Center",
-        "description": "Objects are moved to the origin based on the Collection Center before exporting.",
+        "name": "Move Collection to Origin",
+        "description": "Objects are moved to the origin based on the Collection Center or root object before exporting.",
         "default": False,
     },
 }
