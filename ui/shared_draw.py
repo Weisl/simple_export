@@ -18,8 +18,14 @@ def draw_export_preset_properties(layout, element):
     # Find the property for the current export format
     prop_name = f"simple_export_preset_file_{export_format.lower()}"
 
+    row = layout.row(align=True)
     if hasattr(element, prop_name):
-        layout.prop(element, prop_name, text='Preset')
+        row.prop(element, prop_name, text='Preset')
+
+    folder_op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
+    folder_op.operation = 'FOLDER_OPEN'
+    from ..presets_export.preset_format_functions import get_preset_format_folder
+    folder_op.filepath = get_preset_format_folder()
 
     ## Show the preset file path
     # from ..presets_export.preset_format_functions import get_format_preset_filepath
