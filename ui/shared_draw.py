@@ -1,7 +1,6 @@
 # --- Draw Helpers ---
-import textwrap
-
 import bpy
+import textwrap
 
 from .. import __package__ as base_package
 
@@ -209,6 +208,7 @@ def draw_export_list(layout, list_id, scene):
 
     # Always visible filter controls
     box = layout.box()
-    row = box.row(align=True)
-    row.prop(scene, "use_filter")
-    row.prop(scene, 'export_format_filter', text='')
+    box.prop(scene, "use_filter", text="Filter List")
+
+    if scene.use_filter:
+        box.prop(scene, 'export_format_filter', text='Format')
