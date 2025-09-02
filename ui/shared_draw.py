@@ -7,16 +7,19 @@ from .. import __package__ as base_package
 
 
 def get_table_columns(layout):
-    split = layout.split(factor=0.25)
-    split_left = split.column().split(factor=0.2)
+    split = layout.split(factor=0.25, align=True)
+    split_left = split.column(align=True).split(factor=0.33, align=True)
     # Status
-    col_01 = split_left.column()
+    col_01 = split_left.column(align=True)
     # Name
-    col_02 = split_left.column()
-    split_right = split.column().split(factor=0.6)
-    col_03 = split_right.column()
-    col_04 = split_right.column()
-    return col_01, col_02, col_03, col_04
+    col_02 = split_left.column(align=True)
+    split_right = split.column(align=True).split(factor=0.95, align=True)  # Split the right side into 90% and 10%
+    split_right_left = split_right.column(align=True).split(factor=0.5, align=True)  # Split the 90% into two equal parts
+    col_03 = split_right_left.column(align=True)
+    col_04 = split_right_left.column(align=True)
+    col_05 = split_right.column(align=True)  # This will be the very narrow column
+
+    return col_01, col_02, col_03, col_04, col_05
 
 
 def draw_parent_collection(context, layout):
@@ -204,13 +207,14 @@ def draw_export_list(layout, list_id, scene):
     main_column = split
     if list_id == 'popup':
         row = main_column.row(align=True)
-        col_01, col_02, col_03, col_04 = get_table_columns(row)
+        col_01, col_02, col_03, col_04, col_05 = get_table_columns(row)
 
         ###### Header #####
         col_01.label(text="")
         col_02.label(text="Name")
         col_03.label(text="Filepath")
         col_04.label(text="Root")
+        col_05.label(text="")
 
     # UIList
     factor = 0.97 if list_id == 'popup' else 0.9

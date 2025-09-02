@@ -192,13 +192,15 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         if self.list_id == 'popup':
             # Status Name Filepath
             from .shared_draw import get_table_columns
-            col_01, col_02, col_03, col_04 = get_table_columns(layout)
+            col_01, col_02, col_03, col_04, col_05 = get_table_columns(layout)
 
             ########## Status
             row = col_01.row(align=False)
             # Checkbox
             row.prop(collection, "simple_export_selected", text="")
             # Status Icon
+            icon = self.get_export_status_icon(export_path, file_exists)
+            row.label(text='', icon=icon)
 
             # Format
             text = self.get_format_name(exporter)
@@ -206,7 +208,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
             ########## Name
             row = col_02.row(align=True)
-            icon = self.get_export_status_icon(collection, export_path, file_exists, row)
+            icon = self.get_collection_color_icon(collection)
             row.label(text=collection.name, icon=icon)
 
             ########## Filepath
@@ -218,20 +220,49 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
             ########## Root
             row = col_04.row(align=True)
-            split = col_04.split(factor=0.5)
-            root_col = split.column()
-            loc_col = split.column()
+            split_root = row.split(align=True)
+            col_root = split_root.column(align=True)
+            col_loc = split_root.column(align=True)
 
-            # Root
-            row = root_col.row(align=True)
+            # Root Link
+            row = col_root.row(align=True)
             icon = "LINKED" if collection.use_root_object else "UNLINKED"
             row.prop(collection, "use_root_object", text='', icon=icon)
-            if collection.use_root_object:
-                row.prop(collection, "root_object", text="")
+            if not collection.use_root_object:
+                row.enabled = False
+            row.prop(collection, "root_object", text="")
 
             # Loc
-            row = loc_col.row(align=True)
+            row = col_loc.row(align=True)
+            if collection.use_root_object:
+                row.enabled = False
             row.prop(collection, "instance_offset", text="")
+
+            # Operators
+            row = col_05.row(align=True)
+
+            from ..core.export_path_func import generate_base_name
+            filename_settings = scene
+            base_name = generate_base_name(collection.name, filename_settings.filename_prefix,
+                                           filename_settings.filename_suffix, filename_settings.filename_blend_prefix)
+
+            if exporter.export_properties.filepath and collection_name_mismatch(base_name, export_path):
+                op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
+                op.collection_name = collection.name
+                op.filename_prefix = filename_settings.filename_prefix
+                op.filename_suffix = filename_settings.filename_suffix
+                op.filename_blend_prefix = filename_settings.filename_blend_prefix
+
+            # Add arrow button that sets the collection name and opens the menu
+            arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
+            arrow_op.collection_name = collection.name
+
+            # Add the Export Collection button
+            op = row.operator("simple_export.export_collections", text="", icon='EXPORT')
+            op.outliner = False
+            op.individual_collection = True
+            op.collection_name = collection.name
+
 
 
         else:
@@ -242,8 +273,10 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             visibility_properties = scene.exportlist_nPanel_properties if self.list_id == 'npanel' else scene.exportlist_popup_properties
 
             if 'DEFAULT' in visibility_properties.list_visibility_settings:
-                icon = self.get_export_status_icon(collection, export_path, file_exists, row)
+                icon = self.get_export_status_icon(export_path, file_exists)
+                row.label(text='', icon=icon)
                 # Display the collection name with the color icon
+                icon = self.get_collection_color_icon(collection)
                 row.label(text=collection.name, icon=icon)
 
             if 'FILEPATH' in visibility_properties.list_visibility_settings:
@@ -322,7 +355,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             text = exporter_type
         return text
 
-    def get_export_status_icon(self, collection, export_path, file_exists, row):
+    def get_export_status_icon(self, export_path, file_exists):
         is_locked = file_exists and not os.access(export_path, os.W_OK)
         # Show lock icon based on file permissions
         if is_locked:
@@ -331,7 +364,9 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             icon = 'CURRENT_FILE'
         else:
             icon = 'FILE_NEW'
-        row.label(icon=icon)
+        return icon
+
+    def get_collection_color_icon(self, collection):
         # Determine the icon based on the collection's color_tag
         color_tag = collection.color_tag
         icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')

@@ -8,7 +8,7 @@ class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Pa
     bl_space_type = "VIEW_3D"
     bl_region_type = "WINDOW"
     bl_context = "empty"
-    bl_ui_units_x = 45
+    bl_ui_units_x = 50
 
     list_id = "popup"
 
