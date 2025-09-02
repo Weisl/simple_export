@@ -6,6 +6,19 @@ import bpy
 from .. import __package__ as base_package
 
 
+def get_table_columns(layout):
+    split = layout.split(factor=0.25)
+    split_left = split.column().split(factor=0.2)
+    # Status
+    col_01 = split_left.column()
+    # Name
+    col_02 = split_left.column()
+    split_right = split.column().split(factor=0.6)
+    col_03 = split_right.column()
+    col_04 = split_right.column()
+    return col_01, col_02, col_03, col_04
+
+
 def draw_parent_collection(context, layout):
     scene = context.scene
     layout.prop(scene, "parent_collection", text="Parent Collection")
@@ -185,6 +198,21 @@ def draw_export_list(layout, list_id, scene):
     row = layout.row()
     row.label(text="Simple Export Collection List")
 
+    # Headers
+    factor = 0.97 if list_id == 'popup' else 0.9
+    split = layout.split(factor=factor, align=True)
+    main_column = split
+    if list_id == 'popup':
+        row = main_column.row(align=True)
+        col_01, col_02, col_03, col_04 = get_table_columns(row)
+
+        ###### Header #####
+        col_01.label(text="")
+        col_02.label(text="Name")
+        col_03.label(text="Filepath")
+        col_04.label(text="Root")
+
+    # UIList
     factor = 0.97 if list_id == 'popup' else 0.9
     split = layout.split(factor=factor, align=True)
     main_column = split
