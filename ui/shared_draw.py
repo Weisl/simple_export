@@ -1,6 +1,7 @@
 # --- Draw Helpers ---
-import bpy
 import textwrap
+
+import bpy
 
 from .. import __package__ as base_package
 
@@ -212,11 +213,15 @@ def draw_export_list(layout, list_id, scene):
     visibility_properties = scene.exportlist_nPanel_properties if list_id == 'npanel' else scene.exportlist_popup_properties
     col.prop(visibility_properties, "list_visibility_settings")
 
+    row = layout.row(align=True)
+    row.operator("scene.select_all_collections", text='All', icon='CHECKBOX_HLT').deselect = False
+    row.operator("scene.select_all_collections", text='None', icon='CHECKBOX_DEHLT').deselect = True
+
     # Always visible filter controls
     box = layout.box()
     box.prop(scene, "use_filter", text="Use Filter")
 
     if scene.use_filter:
-        row = box.row(align=True)
+        row = layout.row(align=True)
         row.label(text="Filter by Format")
         row.prop(scene, 'export_format_filter', text='')

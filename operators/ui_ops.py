@@ -57,7 +57,7 @@ class SCENE_OT_SelectAllCollections(bpy.types.Operator):
     bl_idname = "scene.select_all_collections"
     bl_label = "Select All Collections"
     bl_description = "Select or deselect all collections for export."
-    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
+    bl_options = {'REGISTER', 'UNDO'}
 
     deselect: bpy.props.BoolProperty(name="Invert", default=False, )
 
