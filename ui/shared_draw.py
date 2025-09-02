@@ -185,12 +185,8 @@ def draw_export_list(layout, list_id, scene):
     row = layout.row()
     row.label(text="Simple Export Collection List")
 
-    # Split the layout into two columns
-    if list_id == "popup":
-        split = layout.split(factor=0.975, align=True)  # Adjust the factor to control the width of the first column
-    else:
-        split = layout.split(factor=0.9, align=True)
-
+    factor = 0.97 if list_id == 'popup' else 0.9
+    split = layout.split(factor=factor, align=True)
     main_column = split
 
     # Main column for the UI List
@@ -222,6 +218,6 @@ def draw_export_list(layout, list_id, scene):
     box.prop(scene, "use_filter", text="Use Filter")
 
     if scene.use_filter:
-        row = layout.row(align=True)
+        row = box.row(align=True)
         row.label(text="Filter by Format")
         row.prop(scene, 'export_format_filter', text='')
