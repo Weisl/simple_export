@@ -23,7 +23,7 @@ def simple_export_presets_folder():
     simple_export_preset_paths = bpy.utils.preset_paths(simple_export_presets)
 
     if (simple_export_preset_directory not in simple_export_preset_paths) and (
-    not os.path.exists(simple_export_preset_directory)):
+            not os.path.exists(simple_export_preset_directory)):
         os.makedirs(simple_export_preset_directory)
 
     return simple_export_preset_directory

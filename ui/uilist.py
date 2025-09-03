@@ -159,30 +159,20 @@ class OBJECT_OT_select_root(bpy.types.Operator):
         return {'FINISHED'}
 
 
-from ..core.export_formats import get_export_format_items
-
-
 class SCENE_UL_CollectionList(bpy.types.UIList):
     """
     UIList displaying all collections with an exporter matching the selected export type.
     """
+
     def draw_filter(self, context, layout):
         pass
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        from .. import __package__ as base_package
-        prefs = context.preferences.addons[base_package].preferences
-
         # Determine settings based on the list_id
 
         collection = item
         if not collection:
             return
-
-        row = layout.row(align=True)
-
-        # Checkbox for selecting the collection for export
-        row.prop(collection, "simple_export_selected", text="")
 
         # Ensure there's at least one exporter in the collection
         if not collection.exporters:
@@ -197,98 +187,190 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         export_path = clean_relative_path(export_path)
         file_exists = os.path.exists(export_path)
 
-        visibility_properties = scene.exportlist_nPanel_properties if self.list_id == 'npanel' else scene.exportlist_popup_properties
+        ### POPUP UI ###
 
-        if 'DEFAULT' in visibility_properties.list_visibility_settings:
-            is_locked = file_exists and not os.access(export_path, os.W_OK)
-            # Show lock icon based on file permissions
-            if is_locked:
-                icon = 'LOCKED'
-            elif file_exists:
-                icon = 'CURRENT_FILE'
-            else:
-                icon = 'FILE_NEW'
-            row.label(icon=icon)
+        if self.list_id == 'popup':
+            # Status Name Filepath
+            from .shared_draw import get_table_columns
+            col_01, col_02, col_03, col_04, col_05 = get_table_columns(layout)
 
-            # Determine the icon based on the collection's color_tag
-            color_tag = collection.color_tag
-            icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
+            ########## Status
+            row = col_01.row(align=False)
+            # Checkbox
+            row.prop(collection, "simple_export_selected", text="")
+            # Status Icon
+            icon = self.get_export_status_icon(export_path, file_exists)
+            row.label(text='', icon=icon)
 
-            # Display the collection name with the color icon
+            # Format
+            text = self.get_format_name(exporter)
+            row.label(text=text)  # Display the user-friendly label
+
+            ########## Name
+            row = col_02.row(align=True)
+            icon = self.get_collection_color_icon(collection)
             row.label(text=collection.name, icon=icon)
 
-        if 'FILEPATH' in visibility_properties.list_visibility_settings:
-            # Display the export file path as an editable property
+            ########## Filepath
+            row = col_03.row(align=True)
             row.prop(exporter.export_properties, "filepath", text="", expand=True)
-
-            # Buttons for setting the export path and opening the directory
-            # Assign Path
-
             from .shared_operator_call import call_simple_export_path_ops
-            op = call_simple_export_path_ops(context, row, text='', outliner=False,
-                                             individual_collection=True, collection_name=collection.name)
+            call_simple_export_path_ops(context, row, text='', outliner=False,
+                                        individual_collection=True, collection_name=collection.name)
 
-        if 'FILENAME' in visibility_properties.list_visibility_settings:
-            filename = os.path.basename(exporter.export_properties.filepath)
-            row.label(text=filename)
+            ########## Root
+            row = col_04.row(align=True)
+            split_root = row.split(align=True)
+            col_root = split_root.column(align=True)
+            col_loc = split_root.column(align=True)
 
-        # Display Empty or Eyedropper button depending on the root_object state
-
-        if 'ROOT' in visibility_properties.list_visibility_settings:
-            # if collection.use_root_object:
-
+            # Root Link
+            row = col_root.row(align=True)
             icon = "LINKED" if collection.use_root_object else "UNLINKED"
             row.prop(collection, "use_root_object", text='', icon=icon)
+            if not collection.use_root_object:
+                row.enabled = False
+            row.prop(collection, "root_object", text="")
 
+            # Loc
+            row = col_loc.row(align=True)
             if collection.use_root_object:
-                row.prop(collection, "root_object", text="")
-                op = row.operator("object.select_root", text="", icon='EMPTY_AXIS')
-                op.collection_name = collection.name
-
-        if 'ORIGIN' in visibility_properties.list_visibility_settings:
-            icon = "LINKED" if collection.use_root_object else "UNLINKED"
-            row.prop(collection, "use_root_object", text='', icon=icon)
+                row.enabled = False
             row.prop(collection, "instance_offset", text="")
 
-        if 'COLLECTION' in visibility_properties.list_visibility_settings:
-            pass
-        if 'FILENAME' in visibility_properties.list_visibility_settings:
-            pass
+            # Operators
+            row = col_05.row(align=True)
 
-        if 'FORMAT' in visibility_properties.list_visibility_settings:
-            # Display the export format
-            exporter_type = str(type(exporter.export_properties))
-            key = ExportFormats.get_key_from_op_type(exporter_type)
-            if key:
-                fmt = ExportFormats.get(key)
-                row.label(text=fmt.label)  # Display the user-friendly label
-            else:
-                row.label(text=exporter_type)  # Fallback
+            from ..core.export_path_func import generate_base_name
+            filename_settings = scene
+            base_name = generate_base_name(collection.name, filename_settings.filename_prefix,
+                                           filename_settings.filename_suffix, filename_settings.filename_blend_prefix)
 
-        from ..core.export_path_func import generate_base_name
+            if exporter.export_properties.filepath and collection_name_mismatch(base_name, export_path):
+                op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
+                op.collection_name = collection.name
+                op.filename_prefix = filename_settings.filename_prefix
+                op.filename_suffix = filename_settings.filename_suffix
+                op.filename_blend_prefix = filename_settings.filename_blend_prefix
 
-        filename_settings = scene
-        base_name = generate_base_name(collection.name, filename_settings.filename_prefix,
-                                       filename_settings.filename_suffix, filename_settings.filename_blend_prefix)
+            # Add arrow button that sets the collection name and opens the menu
+            arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
+            arrow_op.collection_name = collection.name
 
-        if exporter.export_properties.filepath and collection_name_mismatch(base_name, export_path):
-            op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
+            # Add the Export Collection button
+            op = row.operator("simple_export.export_collections", text="", icon='EXPORT')
+            op.outliner = False
+            op.individual_collection = True
             op.collection_name = collection.name
-            op.filename_prefix = filename_settings.filename_prefix
-            op.filename_suffix = filename_settings.filename_suffix
-            op.filename_blend_prefix = filename_settings.filename_blend_prefix
 
 
-        # Add arrow button that sets the collection name and opens the menu
-        arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
-        arrow_op.collection_name = collection.name
 
+        else:
+            row = layout.row(align=True)
 
-        # Add the Export Collection button
-        op = row.operator("simple_export.export_collections", text="", icon='EXPORT')
-        op.outliner = False
-        op.individual_collection = True
-        op.collection_name = collection.name
+            # Checkbox for selecting the collection for export
+            row.prop(collection, "simple_export_selected", text="")
+            visibility_properties = scene.exportlist_nPanel_properties if self.list_id == 'npanel' else scene.exportlist_scene_properties
+
+            if 'DEFAULT' in visibility_properties.list_visibility_settings:
+                icon = self.get_export_status_icon(export_path, file_exists)
+                row.label(text='', icon=icon)
+                # Display the collection name with the color icon
+                icon = self.get_collection_color_icon(collection)
+                row.label(text=collection.name, icon=icon)
+
+            if 'FILEPATH' in visibility_properties.list_visibility_settings:
+                # Display the export file path as an editable property
+                row.prop(exporter.export_properties, "filepath", text="", expand=True)
+
+                # Buttons for setting the export path and opening the directory
+                # Assign Path
+
+                from .shared_operator_call import call_simple_export_path_ops
+                op = call_simple_export_path_ops(context, row, text='', outliner=False,
+                                                 individual_collection=True, collection_name=collection.name)
+
+            if 'FILENAME' in visibility_properties.list_visibility_settings:
+                filename = os.path.basename(exporter.export_properties.filepath)
+                row.label(text=filename)
+
+            # Display Empty or Eyedropper button depending on the root_object state
+
+            if 'ROOT' in visibility_properties.list_visibility_settings:
+                # if collection.use_root_object:
+
+                icon = "LINKED" if collection.use_root_object else "UNLINKED"
+                row.prop(collection, "use_root_object", text='', icon=icon)
+
+                if collection.use_root_object:
+                    row.prop(collection, "root_object", text="")
+                    op = row.operator("object.select_root", text="", icon='EMPTY_AXIS')
+                    op.collection_name = collection.name
+
+            if 'ORIGIN' in visibility_properties.list_visibility_settings:
+                icon = "LINKED" if collection.use_root_object else "UNLINKED"
+                row.prop(collection, "use_root_object", text='', icon=icon)
+                row.prop(collection, "instance_offset", text="")
+
+            if 'COLLECTION' in visibility_properties.list_visibility_settings:
+                pass
+            if 'FILENAME' in visibility_properties.list_visibility_settings:
+                pass
+
+            if 'FORMAT' in visibility_properties.list_visibility_settings:
+                text = self.get_format_name(exporter)
+                row.label(text=text)  # Display the user-friendly label
+
+            from ..core.export_path_func import generate_base_name
+
+            filename_settings = scene
+            base_name = generate_base_name(collection.name, filename_settings.filename_prefix,
+                                           filename_settings.filename_suffix, filename_settings.filename_blend_prefix)
+
+            if exporter.export_properties.filepath and collection_name_mismatch(base_name, export_path):
+                op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
+                op.collection_name = collection.name
+                op.filename_prefix = filename_settings.filename_prefix
+                op.filename_suffix = filename_settings.filename_suffix
+                op.filename_blend_prefix = filename_settings.filename_blend_prefix
+
+            # Add arrow button that sets the collection name and opens the menu
+            arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
+            arrow_op.collection_name = collection.name
+
+            # Add the Export Collection button
+            op = row.operator("simple_export.export_collections", text="", icon='EXPORT')
+            op.outliner = False
+            op.individual_collection = True
+            op.collection_name = collection.name
+
+    def get_format_name(self, exporter):
+        # Display the export format
+        exporter_type = str(type(exporter.export_properties))
+        key = ExportFormats.get_key_from_op_type(exporter_type)
+        if key:
+            fmt = ExportFormats.get(key)
+            text = fmt.label
+        else:
+            text = exporter_type
+        return text
+
+    def get_export_status_icon(self, export_path, file_exists):
+        is_locked = file_exists and not os.access(export_path, os.W_OK)
+        # Show lock icon based on file permissions
+        if is_locked:
+            icon = 'LOCKED'
+        elif file_exists:
+            icon = 'CURRENT_FILE'
+        else:
+            icon = 'FILE_NEW'
+        return icon
+
+    def get_collection_color_icon(self, collection):
+        # Determine the icon based on the collection's color_tag
+        color_tag = collection.color_tag
+        icon = COLOR_TAG_ICONS.get(color_tag, 'OUTLINER_COLLECTION')
+        return icon
 
     def filter_items(self, context, data, propname):
         flt_flags = []
@@ -296,8 +378,6 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         export_format = scene.export_format_filter
         export_format_obj = ExportFormats.get(export_format)
-
-
 
         for collection in bpy.data.collections:
             filter = 0
