@@ -1,5 +1,5 @@
 presets_gltf = {
-    "Godot-default": {
+    "Godot-gltf": {
         "filepath": '',
         "export_import_convert_lighting_mode": 'SPEC',
         "gltf_export_id": '',

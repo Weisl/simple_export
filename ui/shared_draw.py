@@ -6,6 +6,22 @@ import bpy
 from .. import __package__ as base_package
 
 
+def get_table_columns(layout):
+    split = layout.split(factor=0.25, align=True)
+    split_left = split.column(align=True).split(factor=0.33, align=True)
+    # Status
+    col_01 = split_left.column(align=True)
+    # Name
+    col_02 = split_left.column(align=True)
+    split_right = split.column(align=True).split(factor=0.95, align=True)  # Split the right side into 90% and 10%
+    split_right_left = split_right.column(align=True).split(factor=0.5, align=True)  # Split the 90% into two equal parts
+    col_03 = split_right_left.column(align=True)
+    col_04 = split_right_left.column(align=True)
+    col_05 = split_right.column(align=True)  # This will be the very narrow column
+
+    return col_01, col_02, col_03, col_04, col_05
+
+
 def draw_parent_collection(context, layout):
     scene = context.scene
     layout.prop(scene, "parent_collection", text="Parent Collection")
@@ -19,8 +35,14 @@ def draw_export_preset_properties(layout, element):
     # Find the property for the current export format
     prop_name = f"simple_export_preset_file_{export_format.lower()}"
 
+    row = layout.row(align=True)
     if hasattr(element, prop_name):
-        layout.prop(element, prop_name, text='Preset')
+        row.prop(element, prop_name, text='Preset')
+
+    folder_op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
+    folder_op.operation = 'FOLDER_OPEN'
+    from ..presets_export.preset_format_functions import get_preset_format_folder
+    folder_op.filepath = get_preset_format_folder()
 
     ## Show the preset file path
     # from ..presets_export.preset_format_functions import get_format_preset_filepath
@@ -179,12 +201,24 @@ def draw_export_list(layout, list_id, scene):
     row = layout.row()
     row.label(text="Simple Export Collection List")
 
-    # Split the layout into two columns
-    if list_id == "popup":
-        split = layout.split(factor=0.975, align=True)  # Adjust the factor to control the width of the first column
-    else:
-        split = layout.split(factor=0.9, align=True)
+    # Headers
+    factor = 0.97 if list_id == 'popup' else 0.9
+    split = layout.split(factor=factor, align=True)
+    main_column = split
+    if list_id == 'popup':
+        row = main_column.row(align=True)
+        col_01, col_02, col_03, col_04, col_05 = get_table_columns(row)
 
+        ###### Header #####
+        col_01.label(text="")
+        col_02.label(text="Name")
+        col_03.label(text="Filepath")
+        col_04.label(text="Root")
+        col_05.label(text="")
+
+    # UIList
+    factor = 0.97 if list_id == 'popup' else 0.9
+    split = layout.split(factor=factor, align=True)
     main_column = split
 
     # Main column for the UI List
@@ -204,11 +238,23 @@ def draw_export_list(layout, list_id, scene):
     col.separator()
     # Draw View Settings
 
-    visibility_properties = scene.exportlist_nPanel_properties if list_id == 'npanel' else scene.exportlist_popup_properties
-    col.prop(visibility_properties, "list_visibility_settings")
+    if list_id is 'npanel':
+        visibility_properties = scene.exportlist_nPanel_properties
+        col.prop(visibility_properties, "list_visibility_settings")
+
+    if list_id is 'scene':
+        visibility_properties = scene.exportlist_scene_properties
+        col.prop(visibility_properties, "list_visibility_settings")
+
+    row = layout.row(align=True)
+    row.operator("scene.select_all_collections", text='All', icon='CHECKBOX_HLT').deselect = False
+    row.operator("scene.select_all_collections", text='None', icon='CHECKBOX_DEHLT').deselect = True
 
     # Always visible filter controls
     box = layout.box()
-    row = box.row(align=True)
-    row.prop(scene, "use_filter")
-    row.prop(scene, 'export_format_filter', text='')
+    box.prop(scene, "use_filter", text="Use Filter")
+
+    if scene.use_filter:
+        row = box.row(align=True)
+        row.label(text="Filter by Format")
+        row.prop(scene, 'export_format_filter', text='')

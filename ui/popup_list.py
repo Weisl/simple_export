@@ -8,30 +8,13 @@ class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Pa
     bl_space_type = "VIEW_3D"
     bl_region_type = "WINDOW"
     bl_context = "empty"
-    bl_ui_units_x = 45
+    bl_ui_units_x = 50
 
     list_id = "popup"
 
     def draw(self, context):
         scene = context.scene
         layout = self.layout
-
-        # row = layout.row()
-        # row.label(text="Simple Export Popup")
-        #
-        # row = layout.row()
-        # draw Create exporter
-        # from .shared_operator_call import call_create_export_collection_op
-        # call_create_export_collection_op(scene, row)
-        #
-        # # Export List
-        # row = layout.row()
-        #
-        # row = layout.row(align=True)
-        # op = row.operator("scene.select_all_collections", text="All", icon="CHECKBOX_HLT")
-        # op.deselect = False
-        # op = row.operator("scene.select_all_collections", text="None", icon="CHECKBOX_DEHLT")
-        # op.deselect = True
 
         # draw Export List
         from .shared_draw import draw_export_list

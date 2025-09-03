@@ -8,18 +8,19 @@ from ..core.info import ADDON_NAME
 from ..functions.exporter_funcs import find_exporter
 
 
-def draw_pre_export_operations(col, scene):
+def draw_pre_export_operations(layout, scene):
     # Ensure the panel is collapsed by default
-    header, body = col.panel(idname="PRE_EXPORT_OPERATIONS_PANEL", default_closed=True)
+    # header, body = col.panel(idname="PRE_EXPORT_OPERATIONS_PANEL", default_closed=False)
 
+    # Use a warning icon for Blender 4.3 and above, else use error icon
     icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
 
     # Draw the panel header
-    header.label(text="Pre Export Operations", icon=icon)
+    layout.label(text="Pre Export Operations", icon=icon)
 
     # Check if the panel is expanded before drawing elements
-    if body:
-        body.prop(scene, 'move_by_collection_offset')
+    # if body:
+    layout.prop(scene, 'move_by_collection_offset')
 
 
 def draw_simple_export_header(layout, text="Simple Export"):
@@ -214,8 +215,8 @@ class SIMPLE_EXPORT_menu_base:
 
         # Draw Pre Export Operators List
         col.separator()
-        box = col.box()
-        draw_pre_export_operations(box, scene)
+
+        draw_pre_export_operations(col, scene)
 
         # Draw Export Button
         row = col.row()
@@ -226,7 +227,7 @@ class SIMPLE_EXPORT_menu_base:
 
 
 class SimpleExportSettingsPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
-    bl_options = {'DEFAULT_CLOSED'}
+    # bl_options = {'DEFAULT_CLOSED'}
 
     def draw_header(self, context):
         layout = self.layout
@@ -339,12 +340,12 @@ classes = (
 def set_default_exportlist_properties(dummy):
     scene = bpy.context.scene
     # Set defaults for each PointerProperty
-    if not hasattr(scene, 'exportlist_nPanel_properties'):
-        return
-    if not hasattr(scene, 'exportlist_popup_properties'):
-        return
-    scene.exportlist_nPanel_properties.list_visibility_settings = {'DEFAULT'}
-    scene.exportlist_popup_properties.list_visibility_settings = {'DEFAULT', 'FILEPATH', 'ROOT', 'FORMAT'}
+    if hasattr(scene, 'exportlist_nPanel_properties'):
+        scene.exportlist_nPanel_properties.list_visibility_settings = {'DEFAULT'}
+    if hasattr(scene, 'exportlist_popup_properties'):
+        scene.exportlist_popup_properties.list_visibility_settings = {'DEFAULT', 'FILEPATH', 'ROOT', 'FORMAT'}
+    if hasattr(scene, 'exportlist_scene_properties'):
+        scene.exportlist_scene_properties.list_visibility_settings = {'DEFAULT', 'FILEPATH'}
 
 
 # Register and Unregister
@@ -355,6 +356,7 @@ def register():
         register_class(cls)
 
     bpy.types.Scene.exportlist_nPanel_properties = bpy.props.PointerProperty(type=ExportlistProperties)
+    bpy.types.Scene.exportlist_scene_properties = bpy.props.PointerProperty(type=ExportlistProperties)
     bpy.types.Scene.exportlist_popup_properties = bpy.props.PointerProperty(type=ExportlistProperties)
 
     # Filter Properties
