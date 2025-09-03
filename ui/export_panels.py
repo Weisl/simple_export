@@ -340,12 +340,12 @@ classes = (
 def set_default_exportlist_properties(dummy):
     scene = bpy.context.scene
     # Set defaults for each PointerProperty
-    if not hasattr(scene, 'exportlist_nPanel_properties'):
-        return
-    if not hasattr(scene, 'exportlist_popup_properties'):
-        return
-    scene.exportlist_nPanel_properties.list_visibility_settings = {'DEFAULT'}
-    scene.exportlist_popup_properties.list_visibility_settings = {'DEFAULT', 'FILEPATH', 'ROOT', 'FORMAT'}
+    if hasattr(scene, 'exportlist_nPanel_properties'):
+        scene.exportlist_nPanel_properties.list_visibility_settings = {'DEFAULT'}
+    if hasattr(scene, 'exportlist_popup_properties'):
+        scene.exportlist_popup_properties.list_visibility_settings = {'DEFAULT', 'FILEPATH', 'ROOT', 'FORMAT'}
+    if hasattr(scene, 'exportlist_scene_properties'):
+        scene.exportlist_scene_properties.list_visibility_settings = {'DEFAULT', 'FILEPATH'}
 
 
 # Register and Unregister
@@ -356,6 +356,7 @@ def register():
         register_class(cls)
 
     bpy.types.Scene.exportlist_nPanel_properties = bpy.props.PointerProperty(type=ExportlistProperties)
+    bpy.types.Scene.exportlist_scene_properties = bpy.props.PointerProperty(type=ExportlistProperties)
     bpy.types.Scene.exportlist_popup_properties = bpy.props.PointerProperty(type=ExportlistProperties)
 
     # Filter Properties

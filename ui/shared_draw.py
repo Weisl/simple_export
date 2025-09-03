@@ -238,8 +238,13 @@ def draw_export_list(layout, list_id, scene):
     col.separator()
     # Draw View Settings
 
-    visibility_properties = scene.exportlist_nPanel_properties if list_id == 'npanel' else scene.exportlist_popup_properties
-    col.prop(visibility_properties, "list_visibility_settings")
+    if list_id is 'npanel':
+        visibility_properties = scene.exportlist_nPanel_properties
+        col.prop(visibility_properties, "list_visibility_settings")
+
+    if list_id is 'scene':
+        visibility_properties = scene.exportlist_scene_properties
+        col.prop(visibility_properties, "list_visibility_settings")
 
     row = layout.row(align=True)
     row.operator("scene.select_all_collections", text='All', icon='CHECKBOX_HLT').deselect = False

@@ -270,7 +270,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
             # Checkbox for selecting the collection for export
             row.prop(collection, "simple_export_selected", text="")
-            visibility_properties = scene.exportlist_nPanel_properties if self.list_id == 'npanel' else scene.exportlist_popup_properties
+            visibility_properties = scene.exportlist_nPanel_properties if self.list_id == 'npanel' else scene.exportlist_scene_properties
 
             if 'DEFAULT' in visibility_properties.list_visibility_settings:
                 icon = self.get_export_status_icon(export_path, file_exists)
