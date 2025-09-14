@@ -76,7 +76,7 @@ presets_simple_exporter = {
         "filename_suffix": "",
         "filename_blend_prefix": False,
         "set_export_path": True,
-        "simple_export_preset_file_fbx": f"{get_fbx_presets_folder()}\\Unity-fbx.py",
+        "simple_export_preset_file_fbx": f"{get_fbx_presets_folder()}\\Lowpoly-fbx.py",
         "assign_preset": True,
         "collection_prefix": "",
         "collection_suffix": "low",
@@ -86,6 +86,7 @@ presets_simple_exporter = {
         "use_root_object": True,
         "parent_collection": "Low",
     },
+
     "Highpoly-default": {
         "export_format": "FBX",
         "export_folder_mode": "RELATIVE",
@@ -97,7 +98,7 @@ presets_simple_exporter = {
         "filename_suffix": "",
         "filename_blend_prefix": False,
         "set_export_path": True,
-        "simple_export_preset_file_fbx": f"{get_fbx_presets_folder()}\\Unity-fbx.py",
+        "simple_export_preset_file_fbx": f"{get_fbx_presets_folder()}\\Highpoly-fbx.py",
         "assign_preset": True,
         "collection_prefix": "",
         "collection_suffix": "high",
