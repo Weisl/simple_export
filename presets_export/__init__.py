@@ -52,8 +52,9 @@ def get_fbx_presets_folder():
 
 
 def get_gltf_presets_folder():
-    export_format = ExportFormats.get("GLTF")
+    export_format = ExportFormats.get("GLTF_SEPARATE")
     return export_format.preset_folder
+
 
 
 def create_export_preset_files(preset_data, preset_folder, saved_preset_files):

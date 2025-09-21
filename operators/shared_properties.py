@@ -100,7 +100,7 @@ class SharedPathAssignmentProps:
 
 # Set Presets
 from ..preferences.preferenecs import get_py_files_for_fbx, get_py_files_for_obj, get_py_files_for_abc, \
-    get_py_files_for_ply, get_py_files_for_stl, get_py_files_for_usd, get_py_files_for_gltf
+    get_py_files_for_ply, get_py_files_for_stl, get_py_files_for_usd, get_py_files_for_gltf_binary, get_py_files_for_gltf_separate
 
 
 class SharedFormatProps:
@@ -125,10 +125,15 @@ class SharedPresetAssignmentProps:
         items=lambda self, context: get_py_files_for_obj(self, context),
     )
 
-    simple_export_preset_file_gltf: bpy.props.EnumProperty(
+    simple_export_preset_file_gltf_separate: bpy.props.EnumProperty(
         name="glTF Preset File",
         description="Select a preset file for glTF",
-        items=lambda self, context: get_py_files_for_gltf(self, context),
+        items=lambda self, context: get_py_files_for_gltf_separate(self, context),
+    )
+    simple_export_preset_file_gltf_binary: bpy.props.EnumProperty(
+        name="glTF Preset File",
+        description="Select a preset file for glTF",
+        items=lambda self, context: get_py_files_for_gltf_binary(self, context),
     )
 
     simple_export_preset_file_usd: bpy.props.EnumProperty(
