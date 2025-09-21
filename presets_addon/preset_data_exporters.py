@@ -45,7 +45,7 @@ presets_simple_exporter = {
         "parent_collection": "Export",
     },
     "Godot-default": {
-        "export_format": "GLTF_SEPARATE",
+        "export_format": "GLTF",
         "export_folder_mode": "RELATIVE",
         "folder_path_absolute": "C:\\tmp\\",
         "folder_path_relative": "//export/",
@@ -55,7 +55,7 @@ presets_simple_exporter = {
         "filename_suffix": "",
         "filename_blend_prefix": False,
         "set_export_path": True,
-        "simple_export_preset_file_gltf_separate": f"{get_gltf_presets_folder()}\\Godot-gltf.py",
+        "simple_export_preset_file_gltf": f"{get_gltf_presets_folder()}\\Godot-gltf.py",
         "assign_preset": True,
         "collection_prefix": "",
         "collection_suffix": "",

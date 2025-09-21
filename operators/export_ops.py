@@ -75,7 +75,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 set_active_layer_Collection(collection.name)
 
                 # Find and validate exporter
-                exporter = find_exporter(collection, scene.export_format)
+                exporter = find_exporter(collection)
 
                 if not exporter:
                     continue
@@ -86,7 +86,8 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 if not exporter.export_properties.filepath:
                     raise ValueError(f"Please specify a export path for {collection.name}.")
 
-                export_path = add_extension(exporter.export_properties.filepath, scene.export_format)
+                # TODO: Reaply extension based on exporter type
+                export_path = add_extension(exporter, exporter.name)
 
                 # Apply updates to exporter  (unfortunately necessary for the add extension to work)
                 exporter.export_properties.filepath = export_path

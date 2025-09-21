@@ -16,7 +16,7 @@ presets_gltf = {
         "export_gltfpack_vpi": 'Integer',
         "export_gltfpack_noq": True,
         "export_gltfpack_kn": False,
-        "export_format": 'GLTF_SEPARATE',
+        "export_format": 'GLTF',
         "ui_tab": 'GENERAL',
         "export_copyright": '',
         "export_image_format": 'AUTO',

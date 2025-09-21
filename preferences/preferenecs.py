@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from .keymap import remove_key
 from .. import __package__ as base_package
@@ -178,13 +179,8 @@ def get_py_files_for_obj(self, context):
     return get_py_files(self, context, export_format.preset_folder if export_format else None)
 
 
-def get_py_files_for_gltf_separate(self, context):
-    export_format = ExportFormats.get("GLTF_SEPARATE")
-    return get_py_files(self, context, export_format.preset_folder if export_format else None)
-
-
-def get_py_files_for_gltf_binary(self, context):
-    export_format = ExportFormats.get("GLTF_BINARY")
+def get_py_files_for_gltf(self, context):
+    export_format = ExportFormats.get("GLTF")
     return get_py_files(self, context, export_format.preset_folder if export_format else None)
 
 
@@ -601,15 +597,10 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         items=lambda self, context: get_py_files_for_obj(self, context),
     )
 
-    simple_export_preset_file_gltf_separate: bpy.props.EnumProperty(
+    simple_export_preset_file_gltf: bpy.props.EnumProperty(
         name="glTF Preset File",
         description="Select a preset file for glTF",
-        items=lambda self, context: get_py_files_for_gltf_separate(self, context),
-    )
-    simple_export_preset_file_gltf_binary: bpy.props.EnumProperty(
-        name="glTF Preset File",
-        description="Select a preset file for glTF",
-        items=lambda self, context: get_py_files_for_gltf_binary(self, context),
+        items=lambda self, context: get_py_files_for_gltf(self, context),
     )
     simple_export_preset_file_usd: bpy.props.EnumProperty(
         name="USD Preset File",
@@ -973,15 +964,10 @@ def register():
         items=lambda self, context: get_py_files_for_obj(self, context),
     )
 
-    bpy.types.Scene.simple_export_preset_file_gltf_binary = bpy.props.EnumProperty(
+    bpy.types.Scene.simple_export_preset_file_gltf = bpy.props.EnumProperty(
         name="glTF Preset File",
         description="Select a preset file for glTF",
-        items=lambda self, context: get_py_files_for_gltf_binary(self, context),
-    )
-    bpy.types.Scene.simple_export_preset_file_gltf_separate = bpy.props.EnumProperty(
-        name="glTF Preset File",
-        description="Select a preset file for glTF",
-        items=lambda self, context: get_py_files_for_gltf_binary(self, context),
+        items=lambda self, context: get_py_files_for_gltf(self, context),
     )
 
     bpy.types.Scene.simple_export_preset_file_usd = bpy.props.EnumProperty(
