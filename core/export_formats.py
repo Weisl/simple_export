@@ -30,7 +30,7 @@ class ExportFormats:
                             "<class 'bpy.types.EXPORT_SCENE_OT_fbx'>", "fbx"),
         "OBJ": ExportFormat("OBJ", "IO_FH_obj", "OBJ", "Wavefront OBJ Export", "wm.obj_export",
                             "<class 'bpy.types.WM_OT_obj_export'>", "obj"),
-        "GLTF": ExportFormat("GLTF", "IO_FH_gltf2", "glTF 2.0", "glTF 2.0 Export", "export_scene.gltf",
+        "GLTF": ExportFormat("GLTF", "IO_FH_gltf2", "glTF", "glTF 2.0 Export", "export_scene.gltf",
                                       "<class 'bpy.types.EXPORT_SCENE_OT_gltf'>", "gltf"),
         "USD": ExportFormat("USD", "IO_FH_usd", "USD", "Universal Scene Description Export", "wm.usd_export",
                             "<class 'bpy.types.WM_OT_usd_export'>", "usd"),
