@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from .keymap import remove_key
 from .. import __package__ as base_package
@@ -145,6 +146,8 @@ PROPERTY_METADATA = {
 def setdefaultpreset():
     # Replicate the logic of get_simple_export_preset_files to get the list of files
     preset_folder = os.path.join(bpy.utils.user_resource('SCRIPTS'), "presets", "simple_export")
+    # Create the folder if it doesn't exist
+    os.makedirs(preset_folder, exist_ok=True)
     # Check if the user has specified a custom preset folder
     py_files = [f for f in os.listdir(preset_folder) if f.endswith('.py')]
     try:
@@ -599,7 +602,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         description="Select a preset file for glTF",
         items=lambda self, context: get_py_files_for_gltf(self, context),
     )
-
     simple_export_preset_file_usd: bpy.props.EnumProperty(
         name="USD Preset File",
         description="Select a preset file for USD",
@@ -674,63 +676,11 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             row.label(text="Default Export Preset")
             row.prop(self, "simple_export_default_preset", text="")
 
-
-        # layout.prop(self, "default_export_format")
-        #
-        # # Export Presets Section
-        # box = layout.box()
-        # box.label(text="Export Presets")
-        #
-        # # Display the actual preset folder being used
-        # from ..presets_export.preset_format_functions import get_preset_format_folder
-        # box.label(text=f"Default Preset Folder: {get_preset_format_folder()}")
-        # # Add custom preset folder setting
-        # box.prop(self, "preset_path_override")
-        #
-        # # Use ExportFormats to get all available formats
-        # for export_format in ExportFormats.FORMATS.keys():
-        #     prop_name = f"simple_export_preset_file_{export_format.lower()}"
-        #
-        #     if hasattr(self, prop_name):
-        #         row = box.row(align=True)
-        #         if getattr(self, prop_name) == "":
-        #             row.label(text=f"{export_format} Preset", icon='FILE_SCRIPT')
-        #             row.label(text=f"Create Export Presets to assign", icon='FILE_SCRIPT')
-        #         else:
-        #             row.label(text=f"{export_format} Preset", icon='FILE_SCRIPT')
-        #             row.prop(self, prop_name, text="")
-        #
-        # # Export Path Section
-        # box = layout.box()
-        # box.label(text="Export Path")
-        # from ..ui.shared_draw import draw_export_folderpath_properties
-        # draw_export_folderpath_properties(box, self, is_preferences=True)
-        #
-        # # Export Filename Section
-        # box = layout.box()
-        # box.label(text="Export Filename")
-        # from ..ui.shared_draw import draw_export_filename_properties
-        # draw_export_filename_properties(box, self)
-        #
-        # # Collection Section
-        # box = layout.box()
-        # box.label(text="Export Collection")
-        # from ..ui.shared_draw import draw_collection_name_properties
-        # draw_collection_name_properties(box, self)
-        #
-        # # Collection Settings Section
-        # box = layout.box()
-        # box.label(text="Collection Settings")
-        # from ..ui.shared_draw import draw_collection_settings_properties
-        # draw_collection_settings_properties(box, self)
-
-        # # Pre Export Operations
-        # box = layout.box()
-        # box.label(text="Pre Export Operations")
-        # box.prop(self, "move_by_collection_offset")
-
-        # layout.separator()
-        # layout.prop(self, "simple_export_debug")
+            # Operator to open a folder
+            folder_op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
+            folder_op.operation = 'FOLDER_OPEN'
+            from ..presets_addon.exporter_preset import simple_export_presets_folder
+            folder_op.filepath = simple_export_presets_folder()
 
         elif self.prefs_tabs == 'UI':
 

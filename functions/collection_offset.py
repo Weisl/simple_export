@@ -22,10 +22,10 @@ def apply_collection_offset(collection, offset, inverse=False):
     Applies or removes the collection's instance offset to all top-level objects in the collection.
     """
 
-    for obj in collection.all_objects:
+    for obj in collection.objects:  # Use collection.objects to include hidden objects
+        print(f"OBJECT: {obj.name}")
         if obj.parent is None:  # Only apply to top-level objects
             apply_location_offset(obj, offset, inverse)
-
 
 def set_collection_offset(collection, location):
     """Set the offset of the specified collection to the given location."""

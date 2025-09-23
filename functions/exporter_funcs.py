@@ -4,13 +4,22 @@ from .collection_layer import set_active_layer_Collection
 from ..core.export_formats import ExportFormats
 
 
-def add_extension(path, export_format_key):
+def add_extension(exporter):
+    op_type = str(type(exporter.export_properties))
+    export_format_key = ExportFormats.get_key_from_op_type(op_type)
     export_format = ExportFormats.get(export_format_key)
 
-    if not export_format:
-        raise ValueError(f"Invalid export format: {export_format_key}")
+    if export_format_key is not "GLTF":
+        file_extension = export_format.file_extension
 
-    file_extension = f".{export_format.file_extension}"
+    else:  # exporter is gltf
+        if exporter.export_properties.export_format == 'GLB':
+            file_extension = 'glb'
+        else:
+            file_extension = 'gltf'
+
+    path = exporter.export_properties.filepath
+    file_extension = f".{file_extension}"
 
     # Check if the filename already has the extension
     if not path.lower().endswith(file_extension.lower()):
@@ -101,6 +110,7 @@ def remove_all_collection_exporters(collection):
             continue
     return True
 
+
 def get_all_children_and_descendants(obj, include_top=False):
     """
     Returns a list of all children and descendants of the given object.
@@ -117,4 +127,3 @@ def get_all_children_and_descendants(obj, include_top=False):
 
     recursive_collect(obj)
     return children
-

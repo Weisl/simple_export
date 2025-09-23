@@ -56,6 +56,7 @@ def get_gltf_presets_folder():
     return export_format.preset_folder
 
 
+
 def create_export_preset_files(preset_data, preset_folder, saved_preset_files):
     if not preset_folder or not os.path.isdir(preset_folder):
         return

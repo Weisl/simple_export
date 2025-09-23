@@ -172,6 +172,8 @@ class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
                 op.operation = 'FOLDER_OPEN'
                 export_dir = os.path.dirname(result['filepath'])
                 op.filepath = export_dir
+            else:
+                print(f"Export failed for {result['name']}: {result['message']}")
 
 
 classes = (
