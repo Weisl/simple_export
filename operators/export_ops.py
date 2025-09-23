@@ -104,7 +104,6 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 # Apply instance offset if enabled
                 if scene.move_by_collection_offset:
                     offset = collection.instance_offset.copy()
-                    # print(f'Offset 1 = {offset}')
                     apply_collection_offset(collection, offset)
 
                 export_collections.append(collection)
