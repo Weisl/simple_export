@@ -87,7 +87,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                     raise ValueError(f"Please specify a export path for {collection.name}.")
 
                 # TODO: Reaply extension based on exporter type
-                export_path = add_extension(exporter, exporter.name)
+                export_path = add_extension(exporter)
 
                 # Apply updates to exporter  (unfortunately necessary for the add extension to work)
                 exporter.export_properties.filepath = export_path
@@ -96,7 +96,8 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
                 # Overwrite settings:
                 # Having use_selection causes unpredictable behavior and is not exposed to the UI.
-                exporter.export_properties.use_selection = False
+                if hasattr(exporter.export_properties, "use_selection"):
+                    exporter.export_properties.use_selection = False
 
                 file_exists_before, file_timestamp_before = pre_export_checks(export_path)
 
