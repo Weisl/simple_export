@@ -1,8 +1,6 @@
+import bpy
 import os
 
-import bpy
-
-from .keymap import remove_key
 from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
 from ..core.export_formats import get_export_format_items
@@ -355,30 +353,51 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     bl_options = {'REGISTER'}
 
     def update_simple_export_panel_key(self, context):
-        """
-        Update the hotkey assignment for the collision pie menu.
-
-        This function is called when the hotkey assignment is updated in the preferences.
-
-        Args:
-            context (bpy.types.Context): The current context.
-
-        Returns:
-            None
-        """
-        # This functions gets called when the hotkey assignment is updated in the preferences
         wm = context.window_manager
-        km = wm.keyconfigs.addon.keymaps["Window"]
+        addon_km = wm.keyconfigs.addon.keymaps.get("Window")
+        user_km = wm.keyconfigs.user.keymaps.get("Window")
+
+        if not addon_km or not user_km:
+            return
+
+        # Remove existing keymap items
+        for kmi in addon_km.keymap_items[:]:
+            if kmi.idname == 'wm.call_panel' and hasattr(kmi.properties,
+                                                         'name') and kmi.properties.name == "SIMPLE_EXPORT_PT_simple_export_popup":
+                addon_km.keymap_items.remove(kmi)
+
+        for kmi in user_km.keymap_items[:]:
+            if kmi.idname == 'wm.call_panel' and hasattr(kmi.properties,
+                                                         'name') and kmi.properties.name == "SIMPLE_EXPORT_PT_simple_export_popup":
+                user_km.keymap_items.remove(kmi)
+
+        # Add new keymap items
         simple_export_panel_type = self.simple_export_panel_type.upper()
+        if simple_export_panel_type != 'NONE':
+            # Add to addon keymap
+            kmi = addon_km.keymap_items.new(
+                idname='wm.call_panel',
+                type=simple_export_panel_type,
+                value='PRESS',
+                ctrl=self.simple_export_panel_ctrl,
+                shift=self.simple_export_panel_shift,
+                alt=self.simple_export_panel_alt,
+            )
+            kmi.properties.name = "SIMPLE_EXPORT_PT_simple_export_popup"
+            kmi.active = self.simple_export_panel_active
 
-        # Remove previous key assignment
-        remove_key(context, 'wm.call_panel', "SIMPLE_EXPORT_PT_simple_export_popup")
-        add_key(self, km, 'wm.call_panel', "SIMPLE_EXPORT_PT_simple_export_popup", simple_export_panel_type,
-                self.simple_export_panel_ctrl,
-                self.simple_export_panel_shift, self.simple_export_panel_alt, self.simple_export_panel_active)
-        self.simple_export_panel_type = simple_export_panel_type
+            # Add to user keymap for visibility
+            user_kmi = user_km.keymap_items.new(
+                idname='wm.call_panel',
+                type=simple_export_panel_type,
+                value='PRESS',
+                ctrl=self.simple_export_panel_ctrl,
+                shift=self.simple_export_panel_shift,
+                alt=self.simple_export_panel_alt,
+            )
+            user_kmi.properties.name = "SIMPLE_EXPORT_PT_simple_export_popup"
+            user_kmi.active = self.simple_export_panel_active
 
-        return
 
     # Preference UI properties
     prefs_tabs: bpy.props.EnumProperty(
