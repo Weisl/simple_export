@@ -355,26 +355,18 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     def update_simple_export_panel_key(self, context):
         wm = context.window_manager
         addon_km = wm.keyconfigs.addon.keymaps.get("Window")
-        user_km = wm.keyconfigs.user.keymaps.get("Window")
-
-        if not addon_km or not user_km:
+        if not addon_km:
             return
 
-        # Remove existing keymap items
+        # Remove existing keymap items for this addon
         for kmi in addon_km.keymap_items[:]:
             if kmi.idname == 'wm.call_panel' and hasattr(kmi.properties,
                                                          'name') and kmi.properties.name == "SIMPLE_EXPORT_PT_simple_export_popup":
                 addon_km.keymap_items.remove(kmi)
 
-        for kmi in user_km.keymap_items[:]:
-            if kmi.idname == 'wm.call_panel' and hasattr(kmi.properties,
-                                                         'name') and kmi.properties.name == "SIMPLE_EXPORT_PT_simple_export_popup":
-                user_km.keymap_items.remove(kmi)
-
         # Add new keymap items
         simple_export_panel_type = self.simple_export_panel_type.upper()
         if simple_export_panel_type != 'NONE':
-            # Add to addon keymap
             kmi = addon_km.keymap_items.new(
                 idname='wm.call_panel',
                 type=simple_export_panel_type,
@@ -385,19 +377,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             )
             kmi.properties.name = "SIMPLE_EXPORT_PT_simple_export_popup"
             kmi.active = self.simple_export_panel_active
-
-            # Add to user keymap for visibility
-            user_kmi = user_km.keymap_items.new(
-                idname='wm.call_panel',
-                type=simple_export_panel_type,
-                value='PRESS',
-                ctrl=self.simple_export_panel_ctrl,
-                shift=self.simple_export_panel_shift,
-                alt=self.simple_export_panel_alt,
-            )
-            user_kmi.properties.name = "SIMPLE_EXPORT_PT_simple_export_popup"
-            user_kmi.active = self.simple_export_panel_active
-
 
     # Preference UI properties
     prefs_tabs: bpy.props.EnumProperty(
