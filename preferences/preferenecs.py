@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
@@ -245,35 +246,6 @@ def compute_mirror_preview(settings):
         return bpy.path.relpath(export_path) if "//" in export_path else export_path
 
     return "Search Path not found in current blend file path"
-
-
-def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_export_panel_ctrl,
-            simple_export_panel_shift,
-            simple_export_panel_alt, simple_export_panel_active):
-    """
-    Add a new keymap item to the specified keymap.
-
-    Args:
-        km (bpy.types.KeyMap): The keymap to which the new keymap item will be added.
-        idname (str): The operator identifier.
-        properties_name (str): The name property for the keymap item.
-        simple_export_panel_type (str): The type of key (e.g., 'A', 'B', etc.).
-        simple_export_panel_ctrl (bool): Whether the Ctrl key is pressed.
-        simple_export_panel_shift (bool): Whether the Shift key is pressed.
-        simple_export_panel_alt (bool): Whether the Alt key is pressed.
-        simple_export_panel_active (bool): Whether the keymap item is active.
-
-    Returns:
-        None
-    """
-    kmi = km.keymap_items.new(idname=idname, type=simple_export_panel_type, value='PRESS',
-                              ctrl=simple_export_panel_ctrl, shift=simple_export_panel_shift,
-                              alt=simple_export_panel_alt)
-    kmi.properties.name = properties_name
-    kmi.active = simple_export_panel_active
-
-
-# Scene properties to define folder_path_search and folder_path_replace
 
 
 def get_relative_path(instance):

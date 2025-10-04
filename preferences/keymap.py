@@ -97,7 +97,7 @@ def remove_keymap():
         addon_km.keymap_items.remove(kmi)
 
 
-class SIMPLE_EXPORT_OT_hotkey(bpy.types.Operator):
+class SIMPLE_EXPORT_OT_remove_hotkey(bpy.types.Operator):
     """Remove a hotkey and reset its properties"""
     bl_idname = "simple_export.remove_hotkey"
     bl_label = "Remove Hotkey"
@@ -154,7 +154,7 @@ class SIMPLE_EXPORT_OT_change_key(bpy.types.Operator):
 
 classes = (
     SIMPLE_EXPORT_OT_change_key,
-    SIMPLE_EXPORT_OT_hotkey,
+    SIMPLE_EXPORT_OT_remove_hotkey,
 )
 
 
