@@ -14,7 +14,8 @@ def get_table_columns(layout):
     # Name
     col_02 = split_left.column(align=True)
     split_right = split.column(align=True).split(factor=0.95, align=True)  # Split the right side into 90% and 10%
-    split_right_left = split_right.column(align=True).split(factor=0.5, align=True)  # Split the 90% into two equal parts
+    split_right_left = split_right.column(align=True).split(factor=0.5,
+                                                            align=True)  # Split the 90% into two equal parts
     col_03 = split_right_left.column(align=True)
     col_04 = split_right_left.column(align=True)
     col_05 = split_right.column(align=True)  # This will be the very narrow column
@@ -39,9 +40,8 @@ def draw_export_preset_properties(layout, element):
     if hasattr(element, prop_name):
         row.prop(element, prop_name, text='Preset')
 
-    folder_op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
-    folder_op.operation = 'FOLDER_OPEN'
     from ..presets_export.preset_format_functions import get_preset_format_folder
+    folder_op = row.operator("wm.path_open", text='', icon='FILE_FOLDER')
     folder_op.filepath = get_preset_format_folder()
 
     ## Show the preset file path
@@ -123,9 +123,7 @@ def draw_export_folderpath_properties(layout, element, is_preferences=False):
             row.label(text=preview_path)
             import os
             if os.path.exists(preview_path):
-                op_btn = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
-                op_btn.operation = 'FOLDER_OPEN'
-                op_btn.filepath = preview_path
+                bpy.ops.wm.path_open(filepath=preview_path)
         except Exception:
             pass
 
@@ -162,10 +160,8 @@ def draw_exporter_presets(layout, buttons=False):
         remove_op.remove_active = True
 
     # Operator to open a folder
-    folder_op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
-    folder_op.operation = 'FOLDER_OPEN'
     from ..presets_addon.exporter_preset import simple_export_presets_folder
-    folder_op.filepath = simple_export_presets_folder()
+    row.operator("wm.path_open", text='', icon='FILE_FOLDER').filepath = simple_export_presets_folder()
 
 
 def draw_full_exporer_settings(layout, props):

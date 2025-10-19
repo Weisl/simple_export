@@ -647,10 +647,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             row.prop(self, "simple_export_default_preset", text="")
 
             # Operator to open a folder
-            folder_op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
-            folder_op.operation = 'FOLDER_OPEN'
             from ..presets_addon.exporter_preset import simple_export_presets_folder
-            folder_op.filepath = simple_export_presets_folder()
+            row.operator("wm.path_open", text='', icon='FILE_FOLDER').filepath = simple_export_presets_folder()
 
         elif self.prefs_tabs == 'UI':
 

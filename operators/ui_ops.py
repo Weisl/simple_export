@@ -94,7 +94,7 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
             self.report({'WARNING'}, f"Directory does not exist: {export_dir}")
             return {'CANCELLED'}
 
-        bpy.ops.file.external_operation(filepath=export_dir, operation='FOLDER_OPEN')
+        bpy.ops.wm.path_open(filepath=export_dir)
         self.report({'INFO'}, f"Opened directory: {export_dir}")
         return {'FINISHED'}
 
