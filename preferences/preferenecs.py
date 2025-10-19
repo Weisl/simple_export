@@ -326,7 +326,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
     def update_simple_export_panel_key(self, context):
         wm = context.window_manager
-        addon_km = wm.keyconfigs.addon.keymaps.get("Window")
+        addon_km = wm.keyconfigs.active.keymaps.get("Window")
         if not addon_km:
             return
 
