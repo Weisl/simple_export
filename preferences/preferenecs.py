@@ -151,6 +151,22 @@ PROPERTY_METADATA = {
 }
 
 
+def label_multiline(context, text, parent):
+    """
+    Draw a label with multiline text in the layout.
+
+    Args:
+        context (Context): The current context.
+        text (str): The text to display.
+        parent (UILayout): The parent layout to add the label to.
+    """
+    chars = int(context.region.width / 7)  # 7 pix on 1 character
+    wrapper = textwrap.TextWrapper(width=chars)
+    text_lines = wrapper.wrap(text=text)
+    for text_line in text_lines:
+        parent.label(text=text_line)
+
+
 def setdefaultpreset():
     # Replicate the logic of get_simple_export_preset_files to get the list of files
     preset_folder = os.path.join(bpy.utils.user_resource('SCRIPTS'), "presets", "simple_export")
@@ -257,35 +273,6 @@ def compute_mirror_preview(settings):
     return "Search Path not found in current blend file path"
 
 
-def add_key(self, km, idname, properties_name, simple_export_panel_type, simple_export_panel_ctrl,
-            simple_export_panel_shift,
-            simple_export_panel_alt, simple_export_panel_active):
-    """
-    Add a new keymap item to the specified keymap.
-
-    Args:
-        km (bpy.types.KeyMap): The keymap to which the new keymap item will be added.
-        idname (str): The operator identifier.
-        properties_name (str): The name property for the keymap item.
-        simple_export_panel_type (str): The type of key (e.g., 'A', 'B', etc.).
-        simple_export_panel_ctrl (bool): Whether the Ctrl key is pressed.
-        simple_export_panel_shift (bool): Whether the Shift key is pressed.
-        simple_export_panel_alt (bool): Whether the Alt key is pressed.
-        simple_export_panel_active (bool): Whether the keymap item is active.
-
-    Returns:
-        None
-    """
-    kmi = km.keymap_items.new(idname=idname, type=simple_export_panel_type, value='PRESS',
-                              ctrl=simple_export_panel_ctrl, shift=simple_export_panel_shift,
-                              alt=simple_export_panel_alt)
-    kmi.properties.name = properties_name
-    kmi.active = simple_export_panel_active
-
-
-# Scene properties to define folder_path_search and folder_path_replace
-
-
 def get_relative_path(instance):
     """Ensure the stored path is always relative to the .blend file."""
     if isinstance(instance, bpy.types.AddonPreferences):
@@ -364,7 +351,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
     def update_simple_export_panel_key(self, context):
         wm = context.window_manager
-        addon_km = wm.keyconfigs.addon.keymaps.get("Window")
+        addon_km = wm.keyconfigs.active.keymaps.get("Window")
         if not addon_km:
             return
 
@@ -394,7 +381,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         items=(('SETTINGS', "Defaults", "General addon presets"),
                ('UI', "UI", "Settings related to the UI."),
                ('KEYMAP', "Keymap", "Change the hotkeys for tools associated with this addon."),
-               ('SUPPORT', "Support", "Get support, report issues and help me improve this addon."),),
+               ('SUPPORT', "Support", "Get support and help with the addon and help improve it"),
+               ),
         default='SETTINGS',
         description='Settings category:'
     )
@@ -686,10 +674,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             row.prop(self, "simple_export_default_preset", text="")
 
             # Operator to open a folder
-            folder_op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
-            folder_op.operation = 'FOLDER_OPEN'
             from ..presets_addon.exporter_preset import simple_export_presets_folder
-            folder_op.filepath = simple_export_presets_folder()
+            row.operator("wm.path_open", text='', icon='FILE_FOLDER').filepath = simple_export_presets_folder()
 
         elif self.prefs_tabs == 'UI':
 
@@ -719,8 +705,8 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             row.label(text='Support & Feedback')
             row = col.row(align=True)
             row.label(text="Simple Export")
-            # row.operator("wm.url_open", text="Superhive",
-            #              icon="URL").url = "https://superhivemarket.com/products/simple-collider"
+            row.operator("wm.url_open", text="Superhive",
+                         icon="URL").url = "https://superhivemarket.com/products/simple-export"
             row.operator("wm.url_open", text="Gumroad",
                          icon="URL").url = "https://weisl.gumroad.com/l/simple_export"
 
@@ -745,18 +731,18 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             col = box.column(align=True)
 
             row = col.row(align=True)
-            row.label(text="Simple Collider")
-            row.operator("wm.url_open", text="Superhive",
-                         icon="URL").url = "https://superhivemarket.com/products/simple-collider"
-            row.operator("wm.url_open", text="Gumroad",
-                         icon="URL").url = "https://weisl.gumroad.com/l/simple_collider"
-            row = col.row(align=True)
             row.label(text="Simple Camera Manager")
             row.operator("wm.url_open", text="Superhive",
                          icon="URL").url = "https://superhivemarket.com/products/simple-camera-manager"
             row.operator("wm.url_open", text="Gumroad",
                          icon="URL").url = "https://weisl.gumroad.com/l/simple_camera_manager"
 
+            row = col.row(align=True)
+            row.label(text="Simple Collider")
+            row.operator("wm.url_open", text="Superhive",
+                         icon="URL").url = "https://superhivemarket.com/products/simple-collider"
+            row.operator("wm.url_open", text="Gumroad",
+                         icon="URL").url = "https://weisl.gumroad.com/l/simple_collider"
 
             box.label(text="Simple Tools (Free)")
             col = box.column(align=True)

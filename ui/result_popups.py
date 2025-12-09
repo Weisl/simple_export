@@ -168,10 +168,8 @@ class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
             row.label(text=result['message'])
 
             if result['success']:
-                op = row.operator("file.external_operation", text='', icon='FILE_FOLDER')
-                op.operation = 'FOLDER_OPEN'
                 export_dir = os.path.dirname(result['filepath'])
-                op.filepath = export_dir
+                row.operator("wm.path_open", text='', icon='FILE_FOLDER').filepath = export_dir
             else:
                 print(f"Export failed for {result['name']}: {result['message']}")
 

@@ -1,12 +1,27 @@
 import os
 
+import bpy
+
 from .preset_data_fbx import presets_fbx
 from .preset_data_gltf import presets_gltf
 from ..core.export_formats import ExportFormats
+from importlib import import_module
 
 files = [
     # Add files here
 ]
+
+
+def get_blender_version():
+    return bpy.app.version
+
+
+def get_versioned_module(version, preset_type):
+    major, minor, _ = version
+    if major == 5 and minor >= 0:
+        return f".preset_data_{preset_type}_5_0"
+    else:
+        return f".preset_data_{preset_type}"
 
 
 def save_export_presets(preset_name, preset_folder, preset_data):
@@ -56,7 +71,6 @@ def get_gltf_presets_folder():
     return export_format.preset_folder
 
 
-
 def create_export_preset_files(preset_data, preset_folder, saved_preset_files):
     if not preset_folder or not os.path.isdir(preset_folder):
         return
@@ -67,21 +81,22 @@ def create_export_preset_files(preset_data, preset_folder, saved_preset_files):
 
 
 def initialize_presets():
-    fbx_preset_folder = get_fbx_presets_folder()
-    if not fbx_preset_folder or not isinstance(fbx_preset_folder, str):
-        return
+    version = get_blender_version()
+    for preset_type in ["fbx", "gltf"]:
+        module_name = get_versioned_module(version, preset_type)
+        try:
+            presets_module = import_module(module_name, package=__package__)
+        except ImportError:
+            print(f"Warning: Could not import {module_name} for Blender {version}")
+            continue
 
-    os.makedirs(fbx_preset_folder, exist_ok=True)
-    fbx_saved_preset_files = os.listdir(fbx_preset_folder) if os.path.isdir(fbx_preset_folder) else []
-    create_export_preset_files(presets_fbx, fbx_preset_folder, fbx_saved_preset_files)
+        preset_folder = globals()[f"get_{preset_type}_presets_folder"]()
+        if not preset_folder or not isinstance(preset_folder, str):
+            continue
 
-    gltf_preset_folder = get_gltf_presets_folder()
-    if not gltf_preset_folder or not isinstance(gltf_preset_folder, str):
-        return
-
-    os.makedirs(gltf_preset_folder, exist_ok=True)
-    gltf_saved_preset_files = os.listdir(gltf_preset_folder) if os.path.isdir(gltf_preset_folder) else []
-    create_export_preset_files(presets_gltf, gltf_preset_folder, gltf_saved_preset_files)
+        os.makedirs(preset_folder, exist_ok=True)
+        saved_preset_files = os.listdir(preset_folder) if os.path.isdir(preset_folder) else []
+        create_export_preset_files(getattr(presets_module, f"presets_{preset_type}"), preset_folder, saved_preset_files)
 
 
 def register():

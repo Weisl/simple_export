@@ -19,9 +19,9 @@ keymaps_items_dict = {
 
 def add_key(context, idname, type, ctrl, shift, alt, operator, active):
     wm = context.window_manager
-    addon_km = wm.keyconfigs.addon.keymaps.get('Window')
+    addon_km = wm.keyconfigs.active.keymaps.get('Window')
     if not addon_km:
-        addon_km = wm.keyconfigs.addon.keymaps.new(name="Window")
+        addon_km = wm.keyconfigs.active.keymaps.new(name="Window")
     kmi = addon_km.keymap_items.new(idname=idname, type=type, value='PRESS', ctrl=ctrl, shift=shift, alt=alt)
     if operator != '':
         kmi.properties.name = operator
@@ -31,7 +31,7 @@ def add_key(context, idname, type, ctrl, shift, alt, operator, active):
 def remove_key(context, idname, properties_name):
     """Removes addon hotkeys from the keymap"""
     wm = context.window_manager
-    addon_km = wm.keyconfigs.addon.keymaps.get('Window')
+    addon_km = wm.keyconfigs.active.keymaps.get('Window')
     if not addon_km:
         return
     items_to_remove = []
@@ -50,9 +50,9 @@ def add_keymap():
     context = bpy.context
     prefs = context.preferences.addons[base_package].preferences
     wm = context.window_manager
-    addon_km = wm.keyconfigs.addon.keymaps.get('Window')
+    addon_km = wm.keyconfigs.active.keymaps.get('Window')
     if not addon_km:
-        addon_km = wm.keyconfigs.addon.keymaps.new(name="Window")
+        addon_km = wm.keyconfigs.active.keymaps.new(name="Window")
 
     # Remove existing keymap items for this addon
     for kmi in addon_km.keymap_items[:]:
@@ -82,7 +82,7 @@ def add_keymap():
 
 def remove_keymap():
     wm = bpy.context.window_manager
-    addon_km = wm.keyconfigs.addon.keymaps.get('Window')
+    addon_km = wm.keyconfigs.active.keymaps.get('Window')
     if not addon_km:
         return
     items_to_remove = []
@@ -97,7 +97,7 @@ def remove_keymap():
         addon_km.keymap_items.remove(kmi)
 
 
-class SIMPLE_EXPORT_OT_hotkey(bpy.types.Operator):
+class SIMPLE_EXPORT_OT_remove_hotkey(bpy.types.Operator):
     """Remove a hotkey and reset its properties"""
     bl_idname = "simple_export.remove_hotkey"
     bl_label = "Remove Hotkey"
@@ -154,7 +154,7 @@ class SIMPLE_EXPORT_OT_change_key(bpy.types.Operator):
 
 classes = (
     SIMPLE_EXPORT_OT_change_key,
-    SIMPLE_EXPORT_OT_hotkey,
+    SIMPLE_EXPORT_OT_remove_hotkey,
 )
 
 
