@@ -1,6 +1,6 @@
-import os
-
 import bpy
+import os
+import textwrap
 
 from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
@@ -140,6 +140,22 @@ PROPERTY_METADATA = {
         "default": False,
     },
 }
+
+
+def label_multiline(context, text, parent):
+    """
+    Draw a label with multiline text in the layout.
+
+    Args:
+        context (Context): The current context.
+        text (str): The text to display.
+        parent (UILayout): The parent layout to add the label to.
+    """
+    chars = int(context.region.width / 7)  # 7 pix on 1 character
+    wrapper = textwrap.TextWrapper(width=chars)
+    text_lines = wrapper.wrap(text=text)
+    for text_line in text_lines:
+        parent.label(text=text_line)
 
 
 def setdefaultpreset():
@@ -355,7 +371,9 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         name='Export Preferences',
         items=(('SETTINGS', "Defaults", "General addon presets"),
                ('UI', "UI", "Settings related to the UI."),
-               ('KEYMAP', "Keymap", "Change the hotkeys for tools associated with this addon."),),
+               ('KEYMAP', "Keymap", "Change the hotkeys for tools associated with this addon."),
+               ('SUPPORT', "Support", "Get support and help with the addon and help improve it"),
+               ),
         default='SETTINGS',
         description='Settings category:'
     )
@@ -665,6 +683,66 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         elif self.prefs_tabs == 'KEYMAP':
             self.keymap_ui(layout, 'Export Popup', 'simple_export_panel', 'wm.call_panel',
                            "SIMPLE_EXPORT_PT_simple_export_popup")
+
+        elif self.prefs_tabs == 'SUPPORT':
+            # Cross Promotion
+            box = layout.box()
+
+            ### SIMPLE Camera Manager
+            col = box.column(align=True)
+            row = col.row()
+            row.label(text="♥♥♥ Leave a Review or Rating! ♥♥♥")
+            row = col.row()
+            row.label(text='Support & Feedback')
+            row = col.row(align=True)
+            row.label(text="Simple Export")
+            row.operator("wm.url_open", text="Superhive",
+                         icon="URL").url = "https://superhivemarket.com/products/simple-export"
+            row.operator("wm.url_open", text="Gumroad",
+                         icon="URL").url = "https://weisl.gumroad.com/l/simple_export"
+
+            col = box.column(align=True)
+            row = col.row()
+            row.label(text='Join the Discussion!')
+            row = col.row()
+            row.operator("wm.url_open", text="Join Discord", icon="URL").url = "https://discord.gg/VRzdcFpczm"
+
+            ### SIMPLE TOOLS PROMOTION
+
+            box = layout.box()
+            col = box.column(align=True)
+            text = "Explore my other Blender Addons designed for more efficient game asset workflows!"
+            label_multiline(
+                context=context,
+                text=text,
+                parent=col
+            )
+
+            box.label(text="Simple Tools ($)")
+            col = box.column(align=True)
+
+            row = col.row(align=True)
+            row.label(text="Simple Camera Manager")
+            row.operator("wm.url_open", text="Superhive",
+                         icon="URL").url = "https://superhivemarket.com/products/simple-camera-manager"
+            row.operator("wm.url_open", text="Gumroad",
+                         icon="URL").url = "https://weisl.gumroad.com/l/simple_camera_manager"
+
+            row = col.row(align=True)
+            row.label(text="Simple Collider")
+            row.operator("wm.url_open", text="Superhive",
+                         icon="URL").url = "https://superhivemarket.com/products/simple-collider"
+            row.operator("wm.url_open", text="Gumroad",
+                         icon="URL").url = "https://weisl.gumroad.com/l/simple_collider"
+
+            box.label(text="Simple Tools (Free)")
+            col = box.column(align=True)
+            row = col.row(align=True)
+            row.label(text="Simple Renaming")
+            row.operator("wm.url_open", text="Blender Extensions",
+                         icon="URL").url = "https://extensions.blender.org/add-ons/simple-renaming-panel/"
+            row.operator("wm.url_open", text="Gumroad",
+                         icon="URL").url = "https://weisl.gumroad.com/l/simple_renaming"
 
 
 # Initialize Window Manager Properties with Add-on Preferences Defaults
