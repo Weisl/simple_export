@@ -273,81 +273,82 @@ def compute_mirror_preview(settings):
     return "Search Path not found in current blend file path"
 
 
-def get_relative_path(instance):
-    """Ensure the stored path is always relative to the .blend file."""
-    if isinstance(instance, bpy.types.AddonPreferences):
-        # If called from AddonPreferences
-        stored_path = instance.get("folder_path_relative", "")
-    elif isinstance(instance, bpy.types.Scene):
-        # If called from Scene (fallback)
-        stored_path = instance.get("folder_path_relative", "")
-    else:
-        return ""
-
+def get_relative_path_prefs(self):
+    """Getter for AddonPreferences: Ensure the stored path is always relative to the .blend file."""
+    stored_path = getattr(self, "_folder_path_relative", "")
     if stored_path:
-        return bpy.path.relpath(stored_path)  # Use Blender's built-in function
+        return bpy.path.relpath(stored_path)
     return ""
 
-
-def set_relative_path(instance, value):
-    """Convert any assigned path to a direct relative path."""
-    blend_dir = bpy.path.abspath("//")  # Get absolute blend directory
-
+def set_relative_path_prefs(self, value):
+    """Setter for AddonPreferences: Convert any assigned path to a direct relative path."""
+    blend_dir = bpy.path.abspath("//")
     if not blend_dir:
-        if isinstance(instance, bpy.types.AddonPreferences):
-            instance["folder_path_relative"] = value  # Store as-is
-        elif isinstance(instance, bpy.types.Scene):
-            instance["folder_path_relative"] = value  # Store in scene
+        setattr(self, "_folder_path_relative", value)
         return
-
-    absolute_path = bpy.path.abspath(value)  # Convert input to absolute path
-
+    absolute_path = bpy.path.abspath(value)
     try:
-        # Use `os.path.relpath()` to ensure a clean direct relative path
         relative_path = os.path.relpath(absolute_path, blend_dir)
         formatted_path = f"//{relative_path.replace(os.sep, '/')}"
-
-        if isinstance(instance, bpy.types.AddonPreferences):
-            instance["folder_path_relative"] = formatted_path
-        elif isinstance(instance, bpy.types.Scene):
-            instance["folder_path_relative"] = formatted_path
+        setattr(self, "_folder_path_relative", formatted_path)
     except ValueError:
-        # Path is outside the blend directory, reset to empty
-        if isinstance(instance, bpy.types.AddonPreferences):
-            instance["folder_path_relative"] = ""
-        elif isinstance(instance, bpy.types.Scene):
-            instance["folder_path_relative"] = ""
+        setattr(self, "_folder_path_relative", "")
 
 
-def get_absolute_path(instance):
-    """Ensure the stored path is always an absolute path."""
-    if isinstance(instance, bpy.types.AddonPreferences):
-        # If called from AddonPreferences
-        stored_path = instance.get("folder_path_absolute", "")
-    elif isinstance(instance, bpy.types.Scene):
-        # If called from Scene (fallback)
-        stored_path = instance.get("folder_path_absolute", "")
-    else:
-        return ""
 
+def get_relative_path_scene(self):
+    """Getter for Scene: Ensure the stored path is always relative to the .blend file."""
+    stored_path = self.get("folder_path_relative", "")
     if stored_path:
-        return bpy.path.abspath(stored_path)  # Convert to absolute path
+        return bpy.path.relpath(stored_path)
     return ""
 
+def set_relative_path_scene(self, value):
+    """Setter for Scene: Convert any assigned path to a direct relative path."""
+    blend_dir = bpy.path.abspath("//")
+    if not blend_dir:
+        self["folder_path_relative"] = value
+        return
+    absolute_path = bpy.path.abspath(value)
+    try:
+        relative_path = os.path.relpath(absolute_path, blend_dir)
+        formatted_path = f"//{relative_path.replace(os.sep, '/')}"
+        self["folder_path_relative"] = formatted_path
+    except ValueError:
+        self["folder_path_relative"] = ""
 
-def set_absolute_path(instance, value):
-    """Convert any assigned path to an absolute path."""
-    absolute_path = bpy.path.abspath(value)  # Ensure absolute path format
 
-    if isinstance(instance, bpy.types.AddonPreferences):
-        instance["folder_path_absolute"] = absolute_path
-    elif isinstance(instance, bpy.types.Scene):
-        instance["folder_path_absolute"] = absolute_path
+def get_absolute_path_prefs(self):
+    """Getter for AddonPreferences: Ensure the stored path is always an absolute path."""
+    stored_path = getattr(self, "_folder_path_absolute", "")
+    if stored_path:
+        return bpy.path.abspath(stored_path)
+    return ""
+
+def set_absolute_path_prefs(self, value):
+    """Setter for AddonPreferences: Store the path as an absolute path."""
+    absolute_path = bpy.path.abspath(value)
+    setattr(self, "_folder_path_absolute", absolute_path)
+
+
+def get_absolute_path_scene(self):
+    """Getter for Scene: Ensure the stored path is always an absolute path."""
+    stored_path = self.get("folder_path_absolute", "")
+    if stored_path:
+        return bpy.path.abspath(stored_path)
+    return ""
+
+def set_absolute_path_scene(self, value):
+    """Setter for Scene: Store the path as an absolute path."""
+    absolute_path = bpy.path.abspath(value)
+    self["folder_path_absolute"] = absolute_path
+
 
 
 class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     bl_idname = base_package
     bl_options = {'REGISTER'}
+
 
     def update_simple_export_panel_key(self, context):
         wm = context.window_manager
@@ -415,16 +416,16 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         description=PROPERTY_METADATA["folder_path_absolute"]["description"],
         default=PROPERTY_METADATA["folder_path_absolute"]["default"],
         subtype='DIR_PATH',
-        get=get_absolute_path,  # Use shared absolute path getter
-        set=set_absolute_path  # Use shared absolute path setter
+        get=get_absolute_path_prefs,  # Use shared absolute path getter
+        set=set_absolute_path_prefs  # Use shared absolute path setter
     )
 
     folder_path_relative: bpy.props.StringProperty(
         name=PROPERTY_METADATA["folder_path_relative"]["name"],
         description=PROPERTY_METADATA["folder_path_relative"]["description"],
         default=PROPERTY_METADATA["folder_path_relative"]["default"],
-        get=get_relative_path,  # Use the same getter
-        set=set_relative_path  # Use the same setter
+        get=get_relative_path_prefs,  # Use the same getter
+        set=set_relative_path_prefs  # Use the same setter
     )
 
     folder_path_search: bpy.props.StringProperty(
@@ -972,16 +973,16 @@ def initialize_properties_file_path():
         description=PROPERTY_METADATA["folder_path_absolute"]["description"],
         subtype='DIR_PATH',
         default=prefs.folder_path_absolute,
-        get=get_absolute_path,  # Use shared absolute path getter
-        set=set_absolute_path  # Use shared absolute path setter
+        get=get_absolute_path_scene,  # Use shared absolute path getter
+        set=set_absolute_path_scene  # Use shared absolute path setter
     )
 
     bpy.types.Scene.folder_path_relative = bpy.props.StringProperty(
         name=PROPERTY_METADATA["folder_path_relative"]["name"],
         description=PROPERTY_METADATA["folder_path_relative"]["description"],
         default=prefs.folder_path_relative,
-        get=get_relative_path,  # Use extracted getter
-        set=set_relative_path  # Use extracted setter
+        get=get_relative_path_scene,  # Use extracted getter
+        set=set_relative_path_scene  # Use extracted setter
     )
 
 

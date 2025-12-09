@@ -1,41 +1,6 @@
 import bpy
 
 from ..preferences.preferenecs import PROPERTY_METADATA
-
-
-# --- Property Getter/Setter Functions ---
-def get_relative_path(self):
-    stored_path = self.get("folder_path_relative", "")
-    if not stored_path:
-        return ""
-    if stored_path.startswith("//"):
-        return stored_path
-    rel = bpy.path.relpath(stored_path)
-    if rel.startswith("//"):
-        return rel
-    return stored_path
-
-
-def set_relative_path(self, value):
-    if not value:
-        self["folder_path_relative"] = ""
-        return
-    rel = bpy.path.relpath(value)
-    if rel.startswith("//"):
-        self["folder_path_relative"] = rel
-    else:
-        self["folder_path_relative"] = bpy.path.abspath(value)
-
-
-def get_absolute_path(self):
-    stored_path = self.get("folder_path_absolute", "")
-    return bpy.path.abspath(stored_path) if stored_path else ""
-
-
-def set_absolute_path(self, value):
-    self["folder_path_absolute"] = bpy.path.abspath(value) if value else ""
-
-
 # --- Shared Property Classes ---
 
 class SharedPathProps:

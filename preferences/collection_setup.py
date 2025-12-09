@@ -61,7 +61,7 @@ def register():
     """add the handler."""
     if update_collection_offset not in bpy.app.handlers.depsgraph_update_post:
         bpy.app.handlers.depsgraph_update_post.append(update_collection_offset)
-        print("Registered object location tracker")
+        # print("Registered object location tracker")
 
 
 def unregister():
@@ -72,7 +72,7 @@ def unregister():
     """remove the handler."""
     if update_collection_offset in bpy.app.handlers.depsgraph_update_post:
         bpy.app.handlers.depsgraph_update_post.remove(update_collection_offset)
-        print("Unregistered object location tracker")
+        # print("Unregistered object location tracker")
 
     # Remove the load handler
     if load_post_handler in bpy.app.handlers.load_post:

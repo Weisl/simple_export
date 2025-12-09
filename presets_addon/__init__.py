@@ -83,7 +83,7 @@ def load_preset_on_scene_open(dummy):
     # Execute the preset using script.execute_preset
     from .exporter_preset import EXPORT_MT_scene_presets
     bpy.ops.script.execute_preset(filepath=preset_file, menu_idname=EXPORT_MT_scene_presets.__name__)
-    print(f"Applied preset: {default_preset}")
+    # print(f"Applied preset: {default_preset}")
 
 
 def initialize_addon_presets():
@@ -91,7 +91,7 @@ def initialize_addon_presets():
     addon_preset_folder = simple_export_presets_folder()
     if not addon_preset_folder or not isinstance(addon_preset_folder, str):
         return
-    print(f"Addon preset folder: {addon_preset_folder}")
+    # print(f"Addon preset folder: {addon_preset_folder}")
     os.makedirs(addon_preset_folder, exist_ok=True)
     addon_preset_saved_preset_files = os.listdir(addon_preset_folder) if os.path.isdir(addon_preset_folder) else []
     create_addon_preset_files(presets_simple_exporter, addon_preset_folder, addon_preset_saved_preset_files)
