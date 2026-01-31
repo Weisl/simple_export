@@ -424,6 +424,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         name=PROPERTY_METADATA["folder_path_relative"]["name"],
         description=PROPERTY_METADATA["folder_path_relative"]["description"],
         default=PROPERTY_METADATA["folder_path_relative"]["default"],
+        subtype='DIR_PATH',
         get=get_relative_path_prefs,  # Use the same getter
         set=set_relative_path_prefs  # Use the same setter
     )
