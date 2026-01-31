@@ -1,3 +1,5 @@
+import os
+
 from ..presets_export import get_fbx_presets_folder
 from ..presets_export import get_gltf_presets_folder
 
@@ -13,7 +15,7 @@ presets_simple_exporter = {
         "filename_suffix": "",
         "filename_blend_prefix": False,
         "set_export_path": True,
-        "simple_export_preset_file_fbx": f"{get_fbx_presets_folder()}\\UE-fbx.py",
+        "simple_export_preset_file_fbx": os.path.join(get_fbx_presets_folder(), "UE-fbx.py"),
         "assign_preset": True,
         "collection_prefix": "SM",
         "collection_suffix": "",
@@ -34,7 +36,7 @@ presets_simple_exporter = {
         "filename_suffix": "",
         "filename_blend_prefix": False,
         "set_export_path": True,
-        "simple_export_preset_file_fbx": f"{get_fbx_presets_folder()}\\Unity-fbx.py",
+        "simple_export_preset_file_fbx": os.path.join(get_fbx_presets_folder(), "Unity-fbx.py"),
         "assign_preset": True,
         "collection_prefix": "",
         "collection_suffix": "",
@@ -55,7 +57,7 @@ presets_simple_exporter = {
         "filename_suffix": "",
         "filename_blend_prefix": False,
         "set_export_path": True,
-        "simple_export_preset_file_gltf": f"{get_gltf_presets_folder()}\\Godot-gltf.py",
+        "simple_export_preset_file_gltf": os.path.join(get_gltf_presets_folder(), "Godot-gltf.py"),
         "assign_preset": True,
         "collection_prefix": "",
         "collection_suffix": "",
@@ -76,7 +78,7 @@ presets_simple_exporter = {
         "filename_suffix": "",
         "filename_blend_prefix": False,
         "set_export_path": True,
-        "simple_export_preset_file_fbx": f"{get_fbx_presets_folder()}\\Lowpoly-fbx.py",
+        "simple_export_preset_file_fbx": os.path.join(get_fbx_presets_folder(), "Lowpoly-fbx.py"),
         "assign_preset": True,
         "collection_prefix": "",
         "collection_suffix": "low",
@@ -98,7 +100,7 @@ presets_simple_exporter = {
         "filename_suffix": "",
         "filename_blend_prefix": False,
         "set_export_path": True,
-        "simple_export_preset_file_fbx": f"{get_fbx_presets_folder()}\\Highpoly-fbx.py",
+        "simple_export_preset_file_fbx": os.path.join(get_fbx_presets_folder(), "Highpoly-fbx.py"),
         "assign_preset": True,
         "collection_prefix": "",
         "collection_suffix": "high",
@@ -119,7 +121,7 @@ presets_simple_exporter = {
     #     "filename_suffix": "",
     #     "filename_blend_prefix": False,
     #     "set_export_path": True,
-    #     "simple_export_preset_file_fbx": f"{get_fbx_presets_folder()}\\Northlight-fbx.py",
+    #     "simple_export_preset_file_fbx": os.path.join(get_fbx_presets_folder(), "Northlight-fbx.py"),
     #     "assign_preset": True,
     #     "collection_prefix": "",
     #     "collection_suffix": "",
