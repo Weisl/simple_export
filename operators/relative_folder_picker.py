@@ -19,7 +19,7 @@ class SIMPLEEXPORT_OT_RelativeFolderPicker(bpy.types.Operator, ImportHelper):
         type=bpy.types.OperatorFileListElement,
         options={'HIDDEN', 'SKIP_SAVE'},
     )
-    context: bpy.props.StringProperty(default="", options={'HIDDEN'})
+    context: bpy.props.StringProperty(default="SCENE", options={'HIDDEN'})
 
     def execute(self, context):
         if not bpy.data.filepath:
@@ -29,14 +29,9 @@ class SIMPLEEXPORT_OT_RelativeFolderPicker(bpy.types.Operator, ImportHelper):
         directory = os.path.dirname(self.filepath)
         blend_dir = os.path.dirname(bpy.data.filepath)
 
-        # Ensure the selected directory is inside the blend file's directory
-        if not directory.startswith(blend_dir):
-            self.report({'ERROR'}, "Please select a folder inside the blend file's directory!")
-            return {'CANCELLED'}
-
         try:
             rel_path = os.path.relpath(directory, blend_dir)
-            # Normalize to remove any ./ or ../ (though there shouldn't be any now)
+            # Normalize the path
             rel_path = os.path.normpath(rel_path)
 
             props = context.scene if self.context == 'SCENE' else context.preferences.addons[base_package].preferences
