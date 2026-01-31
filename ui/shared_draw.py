@@ -90,6 +90,13 @@ def draw_export_folderpath_properties(layout, element, is_preferences=False):
     row = layout.row()
     row.prop(element, "export_folder_mode", expand=True)
 
+    # Determine context for operator
+    context = None
+    if element == bpy.context.preferences.addons[base_package].preferences:
+        context = 'PREFS'
+    elif element == bpy.context.scene:
+        context = 'SCENE'
+
     # Disable options that require a saved file
     if not is_file_saved:
         # if not is_preferences:
@@ -101,14 +108,6 @@ def draw_export_folderpath_properties(layout, element, is_preferences=False):
     if element.export_folder_mode == 'RELATIVE':
         row = layout.row(align=True)
         row.prop(element, "folder_path_relative")
-
-    context = None
-    if element == bpy.context.preferences.addons[base_package].preferences:
-        context = 'PREFS'
-    elif element == bpy.context.scene:
-        context = 'SCENE'
-
-    if context:
         op = row.operator("simple_export.folder_path_relative_picker", text="", icon='FILE_FOLDER')
         op.context = context
 
