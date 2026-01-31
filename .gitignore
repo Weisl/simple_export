@@ -4,5 +4,3 @@
 *.json
 
 __pycache__/
-venv/
-.venv/
