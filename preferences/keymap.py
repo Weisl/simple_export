@@ -54,17 +54,8 @@ def add_keymap():
     if not addon_km:
         addon_km = wm.keyconfigs.active.keymaps.new(name="Window")
 
-    # Remove existing keymap items for this addon
-    for kmi in addon_km.keymap_items[:]:
-        for key, valueDic in keymaps_items_dict.items():
-            idname = valueDic["idname"]
-            operator = valueDic["operator"]
-            if kmi.idname == idname and (
-                    not operator or (hasattr(kmi.properties, 'name') and kmi.properties.name == operator)):
-                addon_km.keymap_items.remove(kmi)
-
-    # Add new keymap items
-    for key, valueDic in keymaps_items_dict.items():
+    # Add new keymap items (without removing existing ones)
+    for _, valueDic in keymaps_items_dict.items():
         idname = valueDic["idname"]
         type = getattr(prefs, f'{valueDic["name"]}_type')
         ctrl = getattr(prefs, f'{valueDic["name"]}_ctrl')
@@ -78,6 +69,7 @@ def add_keymap():
             continue
 
         add_key(context, idname, type, ctrl, shift, alt, operator, active)
+
 
 
 def remove_keymap():
