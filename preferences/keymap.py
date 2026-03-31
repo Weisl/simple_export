@@ -19,6 +19,8 @@ keymaps_items_dict = {
 
 def add_key(context, idname, type, ctrl, shift, alt, operator, active):
     wm = context.window_manager
+    if not wm.keyconfigs.active:
+        return
     addon_km = wm.keyconfigs.active.keymaps.get('Window')
     if not addon_km:
         addon_km = wm.keyconfigs.active.keymaps.new(name="Window")
@@ -50,6 +52,8 @@ def add_keymap():
     context = bpy.context
     prefs = context.preferences.addons[base_package].preferences
     wm = context.window_manager
+    if not wm.keyconfigs.active:
+        return
     addon_km = wm.keyconfigs.active.keymaps.get('Window')
     if not addon_km:
         addon_km = wm.keyconfigs.active.keymaps.new(name="Window")
@@ -74,6 +78,8 @@ def add_keymap():
 
 def remove_keymap():
     wm = bpy.context.window_manager
+    if not wm.keyconfigs.active:
+        return
     addon_km = wm.keyconfigs.active.keymaps.get('Window')
     if not addon_km:
         return
