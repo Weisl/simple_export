@@ -159,6 +159,17 @@ def draw_exporter_presets(layout, buttons=False):
         remove_op = row.operator(SceneExportPreset.bl_idname, text="", icon='REMOVE')
         remove_op.remove_active = True
 
+    # Pin button: shows PINNED when the current preset is the default, UNPINNED otherwise
+    try:
+        prefs = bpy.context.preferences.addons[base_package].preferences
+        selected = bpy.context.scene.simple_export_selected_preset
+        if selected and prefs.simple_export_default_preset == selected:
+            row.label(text="", icon='PINNED')
+        else:
+            row.operator("simple_export.set_default_preset", text="", icon='UNPINNED')
+    except Exception:
+        pass
+
     # Operator to open a folder
     from ..presets_addon.exporter_preset import simple_export_presets_folder
     row.operator("wm.path_open", text='', icon='FILE_FOLDER').filepath = simple_export_presets_folder()

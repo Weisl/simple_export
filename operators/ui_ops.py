@@ -5,6 +5,55 @@ from ..functions.exporter_funcs import find_exporter
 from ..functions.path_utils import clean_relative_path
 
 
+class SIMPLE_EXPORT_OT_ReloadAddon(bpy.types.Operator):
+    """Reload all Simple Export scripts"""
+    bl_idname = "simple_export.reload_addon"
+    bl_label = "Reload Addon"
+    bl_description = "Reload all Simple Export scripts"
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    def execute(self, context):
+        import importlib
+        import sys
+
+        root_pkg = __package__.rsplit(".", 1)[0]
+
+        mod_names = sorted(
+            [name for name in sys.modules
+             if name == root_pkg or name.startswith(root_pkg + ".")],
+            key=lambda n: (-n.count("."), n),
+        )
+
+        def _do_reload():
+            root_mod = sys.modules.get(root_pkg)
+            if root_mod and hasattr(root_mod, "unregister"):
+                try:
+                    root_mod.unregister()
+                except Exception as exc:
+                    print(f"[Simple Export] unregister error: {exc}")
+
+            for name in mod_names:
+                mod = sys.modules.get(name)
+                if mod is not None:
+                    try:
+                        importlib.reload(mod)
+                    except Exception as exc:
+                        print(f"[Simple Export] reload error for '{name}': {exc}")
+
+            root_mod = sys.modules.get(root_pkg)
+            if root_mod and hasattr(root_mod, "register"):
+                try:
+                    root_mod.register()
+                except Exception as exc:
+                    print(f"[Simple Export] register error: {exc}")
+
+            print(f"[Simple Export] Reloaded {len(mod_names)} modules from '{root_pkg}'")
+
+        bpy.app.timers.register(_do_reload, first_interval=0.0)
+        self.report({'INFO'}, f"Queued reload of {len(mod_names)} modules…")
+        return {'FINISHED'}
+
+
 class SIMPLE_OT_OpenCollectionExporterProperties(bpy.types.Operator):
     """Go to the selected collection's properties and focus on the exporter"""
     bl_idname = "simple_export.open_exporter_in_properties"
@@ -103,6 +152,7 @@ classes = (
     SCENE_OT_SelectAllCollections,
     SCENE_OT_OpenExportDirectory,
     SIMPLE_OT_OpenCollectionExporterProperties,
+    SIMPLE_EXPORT_OT_ReloadAddon,
 )
 
 

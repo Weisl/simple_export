@@ -78,16 +78,64 @@ class SceneExportPreset(BaseExportPreset):
     bl_label = "Export Presets"
     preset_menu = "EXPORT_MT_scene_presets"
 
+    def execute(self, context):
+        result = super().execute(context)
+        if not self.remove_active:
+            preset_path = os.path.join(simple_export_presets_folder(), self.as_filename() + ".py")
+            context.scene.simple_export_selected_preset = preset_path
+        else:
+            if context.scene.simple_export_selected_preset:
+                context.scene.simple_export_selected_preset = ""
+        return result
+
+
+class SIMPLE_EXPORT_OT_set_default_preset(bpy.types.Operator):
+    """Pin this preset as the default applied when opening a new blend file"""
+    bl_idname = "simple_export.set_default_preset"
+    bl_label = "Set as Default Export Preset"
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    def execute(self, context):
+        prefs = context.preferences.addons[base_package].preferences
+        selected_preset = context.scene.simple_export_selected_preset
+        if selected_preset:
+            prefs.simple_export_default_preset = selected_preset
+            bpy.ops.wm.save_userpref()
+            self.report({'INFO'}, f"Default preset set to: {os.path.basename(selected_preset)}")
+        else:
+            self.report({'WARNING'}, "No preset selected. Apply a preset first.")
+        return {'FINISHED'}
+
+
+class SIMPLE_EXPORT_OT_ApplyPreset(bpy.types.Operator):
+    """Apply an export preset and track it as the currently selected preset"""
+    bl_idname = "simple_export.apply_preset"
+    bl_label = "Apply Export Preset"
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    filepath: bpy.props.StringProperty()
+    menu_idname: bpy.props.StringProperty()
+
+    def execute(self, context):
+        bpy.ops.script.execute_preset(
+            filepath=self.filepath,
+            menu_idname=EXPORT_MT_scene_presets.__name__,
+        )
+        context.scene.simple_export_selected_preset = self.filepath
+        return {'FINISHED'}
+
 
 class EXPORT_MT_scene_presets(Menu):
     bl_label = "Export Presets"
     preset_subdir = BaseExportPreset.preset_subdir
-    preset_operator = "script.execute_preset"
+    preset_operator = "simple_export.apply_preset"
     draw = Menu.draw_preset
 
 
 classes = (
     SceneExportPreset,
+    SIMPLE_EXPORT_OT_ApplyPreset,
+    SIMPLE_EXPORT_OT_set_default_preset,
     EXPORT_MT_scene_presets,
 )
 

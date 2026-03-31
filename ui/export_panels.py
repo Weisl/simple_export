@@ -226,6 +226,7 @@ class SIMPLE_EXPORT_menu_base:
         op.individual_collection = False
 
 
+
 class SimpleExportSettingsPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
     # bl_options = {'DEFAULT_CLOSED'}
 
@@ -283,6 +284,11 @@ class VIEW3D_PT_SimpleExportMain(SimpleExportMainPanel):
     bl_label = ""
 
     list_id = "npanel"
+
+    def draw(self, context):
+        super().draw(context)
+        self.layout.separator()
+        self.layout.operator("simple_export.reload_addon", text="Reload Addon", icon='FILE_REFRESH')
 
 
 class VIEW3D_PT_SimpleExportSettings(SimpleExportSettingsPanel):

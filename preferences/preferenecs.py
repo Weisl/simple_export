@@ -1053,6 +1053,13 @@ def register():
         items=lambda self, context: get_py_files_for_stl(self, context),
     )
 
+    bpy.types.Scene.simple_export_selected_preset = bpy.props.StringProperty(
+        name="Selected Export Preset",
+        description="Path of the currently applied export preset",
+        default="",
+        options={'HIDDEN'},
+    )
+
     bpy.app.timers.register(post_register, first_interval=0.5)
     initialize_format_specific_properties()
     initialize_properties_collection_generation()
@@ -1101,3 +1108,7 @@ def unregister():
 
     # Pre export operations
     del bpy.types.Scene.move_by_collection_offset
+
+    if hasattr(bpy.types.Scene, 'simple_export_selected_preset'):
+        del bpy.types.Scene.simple_export_selected_preset
+
