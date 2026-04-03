@@ -262,6 +262,14 @@ class SimpleExportMainPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         scene = context.scene
         layout = self.layout
 
+        from ..operators.version_check import update_available, latest_version_str
+
+        if update_available:
+            row = layout.row(align=True)
+            row.alert = True
+            row.label(text=f"Update available: v{latest_version_str}", icon='ERROR')
+
+
         from .shared_draw import draw_exporter_presets
         draw_exporter_presets(layout)
 
