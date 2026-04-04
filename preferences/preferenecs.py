@@ -148,6 +148,36 @@ PROPERTY_METADATA = {
         "description": "Objects are moved to the origin based on the Collection Center or root object before exporting.",
         "default": False,
     },
+    "triangulate_before_export": {
+        "name": "Triangulate Meshes",
+        "description": "Add a Triangulate modifier before export and remove it afterwards (non-destructive).",
+        "default": False,
+    },
+    "triangulate_keep_normals": {
+        "name": "Keep Custom Normals",
+        "description": "Preserve custom split normals when triangulating.",
+        "default": True,
+    },
+    "apply_scale_before_export": {
+        "name": "Apply Scale",
+        "description": "Bake object scale into mesh data before export and restore afterwards.",
+        "default": False,
+    },
+    "apply_rotation_before_export": {
+        "name": "Apply Rotation",
+        "description": "Bake object rotation into mesh data before export and restore afterwards.",
+        "default": False,
+    },
+    "apply_transform_before_export": {
+        "name": "Apply Transformation",
+        "description": "Bake location, rotation and scale into mesh data before export and restore afterwards.",
+        "default": False,
+    },
+    "pre_rotate_objects": {
+        "name": "Pre-Rotate Objects",
+        "description": "Apply a rotation offset to objects before export and revert it afterwards.",
+        "default": False,
+    },
 }
 
 
@@ -402,6 +432,49 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         name=PROPERTY_METADATA["move_by_collection_offset"]["name"],
         description=PROPERTY_METADATA["move_by_collection_offset"]["description"],
         default=PROPERTY_METADATA["move_by_collection_offset"]["default"],
+    )
+
+    triangulate_before_export: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["triangulate_before_export"]["name"],
+        description=PROPERTY_METADATA["triangulate_before_export"]["description"],
+        default=PROPERTY_METADATA["triangulate_before_export"]["default"],
+    )
+
+    triangulate_keep_normals: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["triangulate_keep_normals"]["name"],
+        description=PROPERTY_METADATA["triangulate_keep_normals"]["description"],
+        default=PROPERTY_METADATA["triangulate_keep_normals"]["default"],
+    )
+
+    apply_scale_before_export: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["apply_scale_before_export"]["name"],
+        description=PROPERTY_METADATA["apply_scale_before_export"]["description"],
+        default=PROPERTY_METADATA["apply_scale_before_export"]["default"],
+    )
+
+    apply_rotation_before_export: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["apply_rotation_before_export"]["name"],
+        description=PROPERTY_METADATA["apply_rotation_before_export"]["description"],
+        default=PROPERTY_METADATA["apply_rotation_before_export"]["default"],
+    )
+
+    apply_transform_before_export: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["apply_transform_before_export"]["name"],
+        description=PROPERTY_METADATA["apply_transform_before_export"]["description"],
+        default=PROPERTY_METADATA["apply_transform_before_export"]["default"],
+    )
+
+    pre_rotate_objects: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["pre_rotate_objects"]["name"],
+        description=PROPERTY_METADATA["pre_rotate_objects"]["description"],
+        default=PROPERTY_METADATA["pre_rotate_objects"]["default"],
+    )
+
+    pre_rotate_euler: bpy.props.FloatVectorProperty(
+        name="Pre-Rotation",
+        description="Rotation offset (Euler XYZ) applied to objects before export.",
+        subtype='EULER',
+        default=(0.0, 0.0, 0.0),
     )
 
     ########################################
@@ -948,6 +1021,49 @@ def initialize_properties_collection_generation():
         default=prefs.move_by_collection_offset,
     )
 
+    bpy.types.Scene.triangulate_before_export = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["triangulate_before_export"]["name"],
+        description=PROPERTY_METADATA["triangulate_before_export"]["description"],
+        default=prefs.triangulate_before_export,
+    )
+
+    bpy.types.Scene.triangulate_keep_normals = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["triangulate_keep_normals"]["name"],
+        description=PROPERTY_METADATA["triangulate_keep_normals"]["description"],
+        default=prefs.triangulate_keep_normals,
+    )
+
+    bpy.types.Scene.apply_scale_before_export = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["apply_scale_before_export"]["name"],
+        description=PROPERTY_METADATA["apply_scale_before_export"]["description"],
+        default=prefs.apply_scale_before_export,
+    )
+
+    bpy.types.Scene.apply_rotation_before_export = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["apply_rotation_before_export"]["name"],
+        description=PROPERTY_METADATA["apply_rotation_before_export"]["description"],
+        default=prefs.apply_rotation_before_export,
+    )
+
+    bpy.types.Scene.apply_transform_before_export = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["apply_transform_before_export"]["name"],
+        description=PROPERTY_METADATA["apply_transform_before_export"]["description"],
+        default=prefs.apply_transform_before_export,
+    )
+
+    bpy.types.Scene.pre_rotate_objects = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["pre_rotate_objects"]["name"],
+        description=PROPERTY_METADATA["pre_rotate_objects"]["description"],
+        default=prefs.pre_rotate_objects,
+    )
+
+    bpy.types.Scene.pre_rotate_euler = bpy.props.FloatVectorProperty(
+        name="Pre-Rotation",
+        description="Rotation offset (Euler XYZ) applied to objects before export.",
+        subtype='EULER',
+        default=(0.0, 0.0, 0.0),
+    )
+
 
 def initialize_properties_file_path():
     prefs = bpy.context.preferences.addons[base_package].preferences
@@ -1108,6 +1224,13 @@ def unregister():
 
     # Pre export operations
     del bpy.types.Scene.move_by_collection_offset
+    del bpy.types.Scene.triangulate_before_export
+    del bpy.types.Scene.triangulate_keep_normals
+    del bpy.types.Scene.apply_scale_before_export
+    del bpy.types.Scene.apply_rotation_before_export
+    del bpy.types.Scene.apply_transform_before_export
+    del bpy.types.Scene.pre_rotate_objects
+    del bpy.types.Scene.pre_rotate_euler
 
     if hasattr(bpy.types.Scene, 'simple_export_selected_preset'):
         del bpy.types.Scene.simple_export_selected_preset

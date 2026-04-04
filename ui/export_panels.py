@@ -9,18 +9,38 @@ from ..functions.exporter_funcs import find_exporter
 
 
 def draw_pre_export_operations(layout, scene):
-    # Ensure the panel is collapsed by default
-    # header, body = col.panel(idname="PRE_EXPORT_OPERATIONS_PANEL", default_closed=False)
-
-    # Use a warning icon for Blender 4.3 and above, else use error icon
     icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
-
-    # Draw the panel header
     layout.label(text="Pre Export Operations", icon=icon)
 
-    # Check if the panel is expanded before drawing elements
-    # if body:
-    layout.prop(scene, 'move_by_collection_offset')
+    col = layout.column(align=True)
+
+    # Move to origin
+    col.prop(scene, 'move_by_collection_offset')
+
+    # Triangulate
+    col.prop(scene, 'triangulate_before_export')
+    if scene.triangulate_before_export:
+        sub = col.column(align=True)
+        sub.use_property_split = True
+        sub.prop(scene, 'triangulate_keep_normals')
+
+    col.separator(factor=0.5)
+
+    # Apply Transformation (subsumes scale + rotation when enabled)
+    col.prop(scene, 'apply_transform_before_export')
+    sub = col.column(align=True)
+    sub.enabled = not scene.apply_transform_before_export
+    sub.prop(scene, 'apply_scale_before_export')
+    sub.prop(scene, 'apply_rotation_before_export')
+
+    col.separator(factor=0.5)
+
+    # Pre-rotate with configurable offset
+    col.prop(scene, 'pre_rotate_objects')
+    if scene.pre_rotate_objects:
+        sub = col.column(align=True)
+        sub.use_property_split = True
+        sub.prop(scene, 'pre_rotate_euler', text="Rotation Offset")
 
 
 def draw_simple_export_header(layout, text="Simple Export"):
@@ -186,6 +206,7 @@ class ExportlistProperties(bpy.types.PropertyGroup):
             ('ROOT', "", "Root", 'EMPTY_ARROWS', 16),
             ('ORIGIN', "", "Origin option", 'OBJECT_ORIGIN', 32),
             ('FORMAT', "", "Format", 'FILE_LARGE', 64),
+            ('OPERATIONS', "", "Active Pre-Export Operations", 'MODIFIER', 128),
         ],
         options={'ENUM_FLAG'},  # This allows multi-select
         default={'DEFAULT'},

@@ -206,6 +206,16 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             text = self.get_format_name(exporter)
             row.label(text=text)  # Display the user-friendly label
 
+            # Active pre-export operation indicator icons
+            if scene.move_by_collection_offset:
+                row.label(text='', icon='OBJECT_ORIGIN')
+            if scene.triangulate_before_export:
+                row.label(text='', icon='MOD_TRIANGULATE')
+            if scene.apply_transform_before_export or scene.apply_scale_before_export or scene.apply_rotation_before_export:
+                row.label(text='', icon='OBJECT_DATA')
+            if scene.pre_rotate_objects:
+                row.label(text='', icon='DRIVER_ROTATIONAL_DIFFERENCE')
+
             ########## Name
             row = col_02.row(align=True)
             icon = self.get_collection_color_icon(collection)
@@ -320,6 +330,16 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             if 'FORMAT' in visibility_properties.list_visibility_settings:
                 text = self.get_format_name(exporter)
                 row.label(text=text)  # Display the user-friendly label
+
+            if 'OPERATIONS' in visibility_properties.list_visibility_settings:
+                if scene.move_by_collection_offset:
+                    row.label(text='', icon='OBJECT_ORIGIN')
+                if scene.triangulate_before_export:
+                    row.label(text='', icon='MOD_TRIANGULATE')
+                if scene.apply_transform_before_export or scene.apply_scale_before_export or scene.apply_rotation_before_export:
+                    row.label(text='', icon='OBJECT_DATA')
+                if scene.pre_rotate_objects:
+                    row.label(text='', icon='DRIVER_ROTATIONAL_DIFFERENCE')
 
             from ..core.export_path_func import generate_base_name
 

@@ -3,6 +3,13 @@ import bpy
 from .. import __package__ as base_package
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.collection_offset import apply_collection_offset
+from ..functions.pre_export_ops import (
+    apply_triangulate_modifiers, remove_triangulate_modifiers,
+    apply_scale_for_export, restore_scale_after_export,
+    apply_rotation_for_export, restore_rotation_after_export,
+    apply_transform_for_export, restore_transform_after_export,
+    apply_pre_rotation, restore_pre_rotation,
+)
 from ..functions.exporter_funcs import find_exporter, get_exporter_id, add_extension
 from ..functions.outliner_func import get_outliner_collections
 from ..functions.path_utils import clean_relative_path
@@ -61,6 +68,12 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
         # Iterate over export collections
         for collection in collection_list:
+            # Declare backup state before try so finally block can always access them
+            scale_backup = {}
+            rotation_backup = {}
+            transform_backup = {}
+            pre_rotate_backup = {}
+
             try:
                 if not collection.simple_export_selected and not self.individual_collection:  # Don't check selected for individual collection
                     continue
@@ -101,10 +114,27 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
                 file_exists_before, file_timestamp_before = pre_export_checks(export_path)
 
-                # Apply instance offset if enabled
+                # Pre-export operations (apply_transform subsumes scale+rotation)
+                if scene.apply_transform_before_export:
+                    transform_backup = apply_transform_for_export(collection)
+                else:
+                    if scene.apply_scale_before_export:
+                        scale_backup = apply_scale_for_export(collection)
+                    if scene.apply_rotation_before_export:
+                        rotation_backup = apply_rotation_for_export(collection)
+
+                # Triangulate (order-independent relative to transform baking)
+                if scene.triangulate_before_export:
+                    apply_triangulate_modifiers(collection, scene.triangulate_keep_normals)
+
+                # Apply collection offset after transform baking
                 if scene.move_by_collection_offset:
                     offset = collection.instance_offset.copy()
                     apply_collection_offset(collection, offset)
+
+                # Pre-rotate last (rotation offset over final position)
+                if scene.pre_rotate_objects:
+                    pre_rotate_backup = apply_pre_rotation(collection, scene.pre_rotate_euler)
 
                 export_collections.append(collection)
 
@@ -129,12 +159,20 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 error_count += 1
 
             finally:
+                # Restore in reverse order of application
+                if scene.pre_rotate_objects:
+                    restore_pre_rotation(collection, pre_rotate_backup)
                 if scene.move_by_collection_offset:
-                    # if not offset:
-                    #     print('ERROR: Position Reset is missing the offset input')
-                    #     continue
-                    # print(f'Offset 2 = {offset}')
                     apply_collection_offset(collection, offset, inverse=True)
+                if scene.triangulate_before_export:
+                    remove_triangulate_modifiers(collection)
+                if scene.apply_transform_before_export:
+                    restore_transform_after_export(collection, transform_backup)
+                else:
+                    if scene.apply_rotation_before_export:
+                        restore_rotation_after_export(collection, rotation_backup)
+                    if scene.apply_scale_before_export:
+                        restore_scale_after_export(collection, scale_backup)
 
         if error_count == 0:
             self.report({'INFO'}, f"Export Sucessful")
