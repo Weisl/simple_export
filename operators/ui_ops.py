@@ -148,11 +148,32 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class SIMPLE_EXPORT_OT_ClearFilters(bpy.types.Operator):
+    """Reset all Export Target filters"""
+    bl_idname = "simple_export.clear_filters"
+    bl_label = "Clear Filters"
+    bl_description = "Reset all Export Target filters to show all collections"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        scene = context.scene
+        scene.filter_format = 'ALL'
+        scene.filter_color_tag = 'ALL'
+        scene.filter_selected_only = False
+        scene.filter_name = ""
+        scene.filter_file_status = 'ALL'
+        scene.filter_directory = 'ALL'
+        scene.filter_preset = 'ALL'
+        scene.filter_addon_preset = 'ALL'
+        return {'FINISHED'}
+
+
 classes = (
     SCENE_OT_SelectAllCollections,
     SCENE_OT_OpenExportDirectory,
     SIMPLE_OT_OpenCollectionExporterProperties,
     SIMPLE_EXPORT_OT_ReloadAddon,
+    SIMPLE_EXPORT_OT_ClearFilters,
 )
 
 
@@ -165,4 +186,5 @@ def register():
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
-        unregister_class(cls)
+        if 'bl_rna' in cls.__dict__:
+            unregister_class(cls)

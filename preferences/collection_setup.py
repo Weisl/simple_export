@@ -20,14 +20,21 @@ def update_collection_offset(depsgraph):
 
 
 def ensure_collection_properties():
-    """Ensure all collections have the 'use_root_object' and 'root_object' properties set."""
+    """Ensure all collections have the addon properties set to their defaults.
+
+    Needed for .blend files created before the addon was installed, or after
+    a reload, where existing Collection instances may not yet carry the
+    properties registered on bpy.types.Collection.
+    """
+    if not hasattr(bpy.types.Collection, "use_root_object"):
+        return  # properties not registered yet — skip silently
     for collection in bpy.data.collections:
         if not hasattr(collection, "use_root_object"):
-            collection.use_root_object = True  # Set default value
+            collection.use_root_object = True
         if not hasattr(collection, "root_object"):
-            collection.root_object = None  # Ensure property exists
+            collection.root_object = None
         if not hasattr(collection, "simple_export_selected"):
-            collection.root_object = False  # Ensure property exists
+            collection.simple_export_selected = False
 
 
 def load_post_handler(dummy):
@@ -52,6 +59,18 @@ def register():
         description="Select this collection for export",
         default=False)
 
+    bpy.types.Collection.last_preset_name = bpy.props.StringProperty(
+        name="Last Export Preset",
+        description="Name of the last format export preset applied to this collection",
+        default=""
+    )
+
+    bpy.types.Collection.last_addon_preset_name = bpy.props.StringProperty(
+        name="Last Addon Preset",
+        description="Name of the Simple Export addon preset active when this collection was configured",
+        default=""
+    )
+
     # Delay execution to ensure Blender has initialized bpy.data.collections
     bpy.app.timers.register(ensure_collection_properties, first_interval=0.1)
 
@@ -68,6 +87,8 @@ def unregister():
     del bpy.types.Collection.root_object
     del bpy.types.Collection.use_root_object
     del bpy.types.Collection.simple_export_selected
+    del bpy.types.Collection.last_preset_name
+    del bpy.types.Collection.last_addon_preset_name
 
     """remove the handler."""
     if update_collection_offset in bpy.app.handlers.depsgraph_update_post:

@@ -72,7 +72,8 @@ def register():
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
-        unregister_class(cls)
+        if 'bl_rna' in cls.__dict__:
+            unregister_class(cls)
 
     if check_on_file_load in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.remove(check_on_file_load)  # Remove handler on unregister

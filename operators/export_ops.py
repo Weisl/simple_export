@@ -12,8 +12,9 @@ from ..functions.pre_export_ops import (
 )
 from ..functions.exporter_funcs import find_exporter, get_exporter_id, add_extension
 from ..functions.outliner_func import get_outliner_collections
-from ..functions.path_utils import clean_relative_path
+from ..functions.path_utils import clean_relative_path, ensure_export_folder_exists
 from ..functions.vallidate_func import validate_collection, post_export_checks, pre_export_checks
+from ..ui.uilist import collection_passes_uilist_filters
 
 
 def call_export_popup(export_results, context):
@@ -59,7 +60,8 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
         else:
             collection_list = [
                 col for col in bpy.data.collections
-                if getattr(col, "simple_export_selected", False) and len(getattr(col, "exporters", [])) > 0
+                if getattr(col, "simple_export_selected", False)
+                and collection_passes_uilist_filters(col, scene)
             ]
 
         if not collection_list:
@@ -75,9 +77,6 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
             pre_rotate_backup = {}
 
             try:
-                if not collection.simple_export_selected and not self.individual_collection:  # Don't check selected for individual collection
-                    continue
-
                 if not collection.exporters:
                     continue
 
@@ -106,6 +105,9 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 exporter.export_properties.filepath = export_path
 
                 export_path = clean_relative_path(export_path)
+
+                if not ensure_export_folder_exists(export_path):
+                    raise ValueError(f"Export directory does not exist and could not be created for {collection.name}.")
 
                 # Overwrite settings:
                 # Having use_selection causes unpredictable behavior and is not exposed to the UI.
@@ -206,4 +208,5 @@ def register():
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
-        unregister_class(cls)
+        if 'bl_rna' in cls.__dict__:
+            unregister_class(cls)

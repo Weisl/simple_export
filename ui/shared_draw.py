@@ -101,7 +101,7 @@ def draw_export_folderpath_properties(layout, element, is_preferences=False):
     if not is_file_saved:
         # if not is_preferences:
         #     row.enabled = False
-        layout.label(text="Save the blend file to use filepath modes", icon='INFO')
+        layout.label(text="Save the blend file to use this filepath modes", icon='INFO')
 
     if element.export_folder_mode == 'ABSOLUTE':
         layout.prop(element, "folder_path_absolute")
@@ -204,19 +204,41 @@ def draw_full_exporer_settings(layout, props):
 
 
 def draw_export_list(layout, list_id, scene):
-    # Export List
+    # === EXPORT TARGET (filters — above the list) ===
+    box = layout.box()
+    header_row = box.row(align=True)
+    header_row.label(text="Export Target", icon='FILTER')
+    header_row.operator("simple_export.clear_filters", text="Clear")
+
+    col = box.column(align=True)
+
+    def filter_row(label, prop, **kwargs):
+        split = col.split(factor=0.35, align=True)
+        split.label(text=label)
+        split.prop(scene, prop, text="", **kwargs)
+
+    filter_row("Format", "filter_format")
+    filter_row("Color", "filter_color_tag")
+    filter_row("Status", "filter_file_status")
+    filter_row("Export Preset", "filter_preset")
+    filter_row("Addon Preset", "filter_addon_preset")
+    filter_row("Directory", "filter_directory", icon='FILE_FOLDER')
+
+    row = col.row(align=True)
+    row.prop(scene, "filter_selected_only", text="", icon='CHECKBOX_HLT', toggle=True)
+    row.prop(scene, "filter_name", text="", icon='VIEWZOOM')
+
+    # === COLLECTION LIST ===
     row = layout.row()
     row.label(text="Simple Export Collection List")
 
-    # Headers
+    # Headers (popup only)
     factor = 0.97 if list_id == 'popup' else 0.9
     split = layout.split(factor=factor, align=True)
     main_column = split
     if list_id == 'popup':
         row = main_column.row(align=True)
         col_01, col_02, col_03, col_04, col_05 = get_table_columns(row)
-
-        ###### Header #####
         col_01.label(text="")
         col_02.label(text="Name")
         col_03.label(text="Filepath")
@@ -228,23 +250,18 @@ def draw_export_list(layout, list_id, scene):
     split = layout.split(factor=factor, align=True)
     main_column = split
 
-    # Main column for the UI List
     row = main_column.row(align=True)
     row.template_list("SCENE_UL_CollectionList", list_id, bpy.data, "collections", scene, "collection_index")
 
     narrow_column = split.column(align=True)
     col = narrow_column
-    # Draw Create exporter
     from .shared_operator_call import call_create_export_collection_op
     call_create_export_collection_op(scene, col, icon='ADD', text="")
 
     col.separator()
-    # Menu with a down arrow icon
     col.menu("SIMPLE_EXPORT_MT_context_menu", icon='DOWNARROW_HLT', text="")
 
     col.separator()
-    # Draw View Settings
-
     if list_id is 'npanel':
         visibility_properties = scene.exportlist_nPanel_properties
         col.prop(visibility_properties, "list_visibility_settings")
@@ -257,11 +274,3 @@ def draw_export_list(layout, list_id, scene):
     row.operator("scene.select_all_collections", text='All', icon='CHECKBOX_HLT').deselect = False
     row.operator("scene.select_all_collections", text='None', icon='CHECKBOX_DEHLT').deselect = True
 
-    # Always visible filter controls
-    box = layout.box()
-    box.prop(scene, "use_filter", text="Use Filter")
-
-    if scene.use_filter:
-        row = box.row(align=True)
-        row.label(text="Filter by Format")
-        row.prop(scene, 'export_format_filter', text='')

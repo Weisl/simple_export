@@ -7,7 +7,7 @@ import json
 update_available = False
 latest_version_str = ""
 
-_RELEASES_URL = "https://api.github.com/Weisl/simple_export/releases/latest"
+_RELEASES_URL = "https://api.github.com/repos/Weisl/simple_export/releases/latest"
 
 
 def _parse_version(version_str):

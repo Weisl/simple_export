@@ -8,6 +8,66 @@ from ..functions.exporter_funcs import find_exporter
 from ..functions.path_utils import clean_relative_path
 
 
+def collection_passes_uilist_filters(collection, scene):
+    """Return True if collection passes all active UIList filters."""
+    if not collection.exporters:
+        return False
+
+    exporter = find_exporter(collection)
+    export_path = clean_relative_path(exporter.export_properties.filepath)
+    file_exists = os.path.exists(export_path)
+    is_locked = file_exists and not os.access(export_path, os.W_OK)
+
+    # Format filter
+    if scene.filter_format != 'ALL':
+        export_format_obj = ExportFormats.get(scene.filter_format)
+        exporter_types = [str(type(e.export_properties)) for e in collection.exporters]
+        if not any(t == export_format_obj.op_type for t in exporter_types):
+            return False
+
+    # Color tag
+    if scene.filter_color_tag != 'ALL':
+        if collection.color_tag != scene.filter_color_tag:
+            return False
+
+    # Selected only
+    if scene.filter_selected_only:
+        if not collection.simple_export_selected:
+            return False
+
+    # Name search
+    if scene.filter_name:
+        if scene.filter_name.lower() not in collection.name.lower():
+            return False
+
+    # File status
+    if scene.filter_file_status != 'ALL':
+        if scene.filter_file_status == 'NEW' and file_exists:
+            return False
+        elif scene.filter_file_status == 'EXISTS' and not file_exists:
+            return False
+        elif scene.filter_file_status == 'LOCKED' and not is_locked:
+            return False
+
+    # Directory
+    if scene.filter_directory != 'ALL':
+        dir_path = os.path.dirname(export_path)
+        if scene.filter_directory != dir_path:
+            return False
+
+    # Export format preset
+    if scene.filter_preset != 'ALL':
+        if scene.filter_preset != getattr(collection, 'last_preset_name', ''):
+            return False
+
+    # Addon preset
+    if scene.filter_addon_preset != 'ALL':
+        if scene.filter_addon_preset != getattr(collection, 'last_addon_preset_name', ''):
+            return False
+
+    return True
+
+
 def collection_name_mismatch(base_name, export_path):
     """Check if the collection name does not match the export file name exactly."""
     export_filename = os.path.splitext(os.path.basename(export_path))[0]
@@ -165,7 +225,12 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
     """
 
     def draw_filter(self, context, layout):
-        pass
+        scene = context.scene
+        row = layout.row(align=True)
+        row.label(text="Sort:")
+        row.prop(scene, "sort_mode", text="")
+        icon = 'SORT_DESC' if scene.sort_reverse else 'SORT_ASC'
+        row.prop(scene, "sort_reverse", text="", icon=icon, toggle=True)
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         # Determine settings based on the list_id
@@ -180,7 +245,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         # Get exporter details
         scene = context.scene
-        format_filter = scene.export_format_filter if scene.use_filter else None
+        format_filter = scene.filter_format if scene.filter_format != 'ALL' else None
         exporter = find_exporter(collection, format_filter=format_filter)
 
         export_path = exporter.export_properties.filepath
@@ -393,26 +458,39 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         return icon
 
     def filter_items(self, context, data, propname):
-        flt_flags = []
         scene = context.scene
+        flt_flags = [
+            self.bitflag_filter_item if collection_passes_uilist_filters(col, scene) else 0
+            for col in bpy.data.collections
+        ]
 
-        export_format = scene.export_format_filter
-        export_format_obj = ExportFormats.get(export_format)
-
-        for collection in bpy.data.collections:
-            filter = 0
-            has_exporters = len(collection.exporters) > 0
-
-            if not scene.use_filter and has_exporters:
-                filter = self.bitflag_filter_item
-            elif scene.use_filter:
-                exporter_types = [str(type(exporter.export_properties)) for exporter in collection.exporters]
-                if any(exporter_type == export_format_obj.op_type for exporter_type in exporter_types):
-                    filter = self.bitflag_filter_item
-
-            flt_flags.append(filter)
-
+        # Sorting
         flt_neworder = []
+        if scene.sort_mode != 'NONE':
+            indexed = list(enumerate(bpy.data.collections))
+            rev = scene.sort_reverse
+
+            if scene.sort_mode == 'NAME':
+                sorted_pairs = sorted(indexed, key=lambda x: x[1].name.lower(), reverse=rev)
+            elif scene.sort_mode == 'FORMAT':
+                def format_key(pair):
+                    c = pair[1]
+                    if not c.exporters:
+                        return ''
+                    exp = find_exporter(c)
+                    return ExportFormats.get_key_from_op_type(str(type(exp.export_properties))) or ''
+                sorted_pairs = sorted(indexed, key=format_key, reverse=rev)
+            elif scene.sort_mode == 'SELECTED_FIRST':
+                sorted_pairs = sorted(indexed, key=lambda x: (0 if x[1].simple_export_selected else 1, x[1].name.lower()), reverse=rev)
+            elif scene.sort_mode == 'COLOR_TAG':
+                sorted_pairs = sorted(indexed, key=lambda x: x[1].color_tag, reverse=rev)
+            elif scene.sort_mode == 'PRESET':
+                sorted_pairs = sorted(indexed, key=lambda x: getattr(x[1], 'last_preset_name', '').lower(), reverse=rev)
+            else:
+                sorted_pairs = indexed
+
+            flt_neworder = [orig_idx for orig_idx, _ in sorted_pairs]
+
         return flt_flags, flt_neworder
 
 
@@ -443,7 +521,8 @@ def unregister():
     from bpy.utils import unregister_class
 
     for cls in reversed(classes):
-        unregister_class(cls)
+        if 'bl_rna' in cls.__dict__:
+            unregister_class(cls)
 
     # Remove Scene properties
     del bpy.types.Scene.menu_collection_name

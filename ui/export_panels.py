@@ -6,6 +6,7 @@ from .. import __package__ as base_package
 from ..core.export_formats import get_export_format_items
 from ..core.info import ADDON_NAME
 from ..functions.exporter_funcs import find_exporter
+from ..functions.path_utils import clean_relative_path
 
 
 def draw_pre_export_operations(layout, scene):
@@ -57,15 +58,6 @@ def draw_simple_export_header(layout, text="Simple Export"):
     op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
     row.label(text=text)
 
-
-def draw_scene_settings_overwrite(context, layout, scene):
-    # Collapsible Filepath Settings Section
-
-    from .shared_draw import draw_exporter_presets
-    draw_exporter_presets(layout, buttons=True)
-
-    from .shared_draw import draw_full_exporer_settings
-    draw_full_exporer_settings(layout, scene)
 
 
 def draw_active_list_element(layout, context, scene):
@@ -248,28 +240,6 @@ class SIMPLE_EXPORT_menu_base:
 
 
 
-class SimpleExportSettingsPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
-    # bl_options = {'DEFAULT_CLOSED'}
-
-    def draw_header(self, context):
-        layout = self.layout
-        draw_simple_export_header(layout, text="Simple Export Defaults")
-
-    def draw(self, context):
-        layout = self.layout
-        scene = context.scene
-
-        draw_scene_settings_overwrite(context, layout, scene)
-
-
-class VIEW3D_PT_SimpleExportMain(SimpleExportSettingsPanel):
-    """Creates a Panel in the Object properties window"""
-
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "Simple Export"
-    bl_label = ""
-
 
 class SimpleExportMainPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
 
@@ -320,13 +290,6 @@ class VIEW3D_PT_SimpleExportMain(SimpleExportMainPanel):
         self.layout.operator("simple_export.reload_addon", text="Reload Addon", icon='FILE_REFRESH')
 
 
-class VIEW3D_PT_SimpleExportSettings(SimpleExportSettingsPanel):
-    """Creates a Panel in the Object properties window"""
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "Simple Export"
-    bl_label = ""
-
 
 class PROPERTIES_PT_SimpleExportMain(SimpleExportMainPanel):
     bl_idname = "PROPERTIES_PT_SimpleExportMain"
@@ -336,14 +299,11 @@ class PROPERTIES_PT_SimpleExportMain(SimpleExportMainPanel):
 
     list_id = "scene"
 
+    @classmethod
+    def poll(cls, context):
+        prefs = context.preferences.addons[base_package].preferences
+        return prefs.enable_output_panel
 
-class PROPERTIES_PT_SimpleExportSettings(SimpleExportSettingsPanel):
-    bl_idname = "PROPERTIES_PT_SimpleExportSettings"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "output"
-
-    list_id = "scene"
 
 
 class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
@@ -364,9 +324,7 @@ class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
 
 classes = (
     VIEW3D_PT_SimpleExportMain,
-    VIEW3D_PT_SimpleExportSettings,
     PROPERTIES_PT_SimpleExportMain,
-    PROPERTIES_PT_SimpleExportSettings,
     SIMPLE_EXPORT_MT_context_menu,
     ExportlistProperties,
 )
@@ -383,6 +341,64 @@ def set_default_exportlist_properties(dummy):
         scene.exportlist_scene_properties.list_visibility_settings = {'DEFAULT', 'FILEPATH'}
 
 
+def get_filter_directory_items(self, context):
+    """Dynamic enum items: all distinct output directories across export collections."""
+    dirs = []
+    seen = set()
+    for col in bpy.data.collections:
+        if col.exporters:
+            try:
+                exp = find_exporter(col)
+                d = os.path.dirname(clean_relative_path(exp.export_properties.filepath))
+                if d and d not in seen:
+                    seen.add(d)
+                    dirs.append(d)
+            except Exception:
+                pass
+    items = [('ALL', "All Directories", "")]
+    for d in sorted(dirs):
+        items.append((d, d, ""))
+    return items
+
+
+def get_filter_addon_preset_items(self, context):
+    """Dynamic enum items: all Simple Export addon presets on disk."""
+    from ..presets_addon.exporter_preset import simple_export_presets_folder
+
+    items = [('ALL', "All Addon Presets", "")]
+    folder = simple_export_presets_folder()
+    if not os.path.isdir(folder):
+        return items
+    for fname in sorted(os.listdir(folder)):
+        if fname.endswith('.py'):
+            name = os.path.splitext(fname)[0]
+            items.append((name, name, ""))
+    return items
+
+
+def get_filter_preset_items(self, context):
+    """Dynamic enum items: all preset files available on disk."""
+    from ..presets_export.preset_format_functions import get_preset_format_folder
+    from ..core.export_formats import ExportFormats
+
+    items = [('ALL', "All Presets", "")]
+    preset_folder = get_preset_format_folder()
+    seen = set()
+
+    for fmt in ExportFormats.all():
+        subfolder_path = os.path.join(preset_folder, fmt.preset_subfolder)
+        if not os.path.isdir(subfolder_path):
+            continue
+        for fname in sorted(os.listdir(subfolder_path)):
+            if fname.endswith('.py'):
+                name = os.path.splitext(fname)[0]
+                if name not in seen:
+                    seen.add(name)
+                    items.append((name, name, ""))
+
+    return items
+
+
 # Register and Unregister
 def register():
     from bpy.utils import register_class
@@ -395,17 +411,91 @@ def register():
     bpy.types.Scene.exportlist_popup_properties = bpy.props.PointerProperty(type=ExportlistProperties)
 
     # Filter Properties
-    bpy.types.Scene.use_filter = bpy.props.BoolProperty(
-        name="Use Filter",
-        description="Use filter for the export list",
-        default=False
+    bpy.types.Scene.filter_format = bpy.props.EnumProperty(
+        name="Format",
+        description="Filter collections by export format",
+        items=[('ALL', "All Formats", "")] + get_export_format_items(),
+        default='ALL',
     )
 
-    bpy.types.Scene.export_format_filter = bpy.props.EnumProperty(
-        name="Export Format",
-        description="Select the export format",
-        items=get_export_format_items(),  # Dynamically generated items from EXPORT_FORMATS
-        default='FBX',
+    bpy.types.Scene.filter_color_tag = bpy.props.EnumProperty(
+        name="Color Tag",
+        description="Filter collections by color tag",
+        items=[
+            ('ALL', "All Colors", ""),
+            ('NONE', "No Color", "", 'OUTLINER_COLLECTION', 0),
+            ('COLOR_01', "Red", "", 'COLLECTION_COLOR_01', 1),
+            ('COLOR_02', "Orange", "", 'COLLECTION_COLOR_02', 2),
+            ('COLOR_03', "Yellow", "", 'COLLECTION_COLOR_03', 3),
+            ('COLOR_04', "Green", "", 'COLLECTION_COLOR_04', 4),
+            ('COLOR_05', "Teal", "", 'COLLECTION_COLOR_05', 5),
+            ('COLOR_06', "Blue", "", 'COLLECTION_COLOR_06', 6),
+            ('COLOR_07', "Purple", "", 'COLLECTION_COLOR_07', 7),
+            ('COLOR_08', "Pink", "", 'COLLECTION_COLOR_08', 8),
+        ],
+        default='ALL',
+    )
+
+    bpy.types.Scene.filter_selected_only = bpy.props.BoolProperty(
+        name="Selected Only",
+        description="Show only collections checked for export",
+        default=False,
+    )
+
+    bpy.types.Scene.filter_name = bpy.props.StringProperty(
+        name="Name",
+        description="Filter collections by name (substring match)",
+        default="",
+    )
+
+    bpy.types.Scene.filter_file_status = bpy.props.EnumProperty(
+        name="File Status",
+        description="Filter collections by export file status",
+        items=[
+            ('ALL', "All", ""),
+            ('NEW', "Not Exported", "Only show collections that haven't been exported yet"),
+            ('EXISTS', "Already Exported", "Only show collections with an existing output file"),
+            ('LOCKED', "Locked", "Only show collections whose output file is read-only"),
+        ],
+        default='ALL',
+    )
+
+    bpy.types.Scene.filter_directory = bpy.props.EnumProperty(
+        name="Directory",
+        description="Filter by output directory",
+        items=get_filter_directory_items,
+    )
+
+    bpy.types.Scene.filter_preset = bpy.props.EnumProperty(
+        name="Export Preset",
+        description="Filter by last applied format export preset",
+        items=get_filter_preset_items,
+    )
+
+    bpy.types.Scene.filter_addon_preset = bpy.props.EnumProperty(
+        name="Addon Preset",
+        description="Filter by the Simple Export addon preset used when configuring this collection",
+        items=get_filter_addon_preset_items,
+    )
+
+    bpy.types.Scene.sort_mode = bpy.props.EnumProperty(
+        name="Sort",
+        description="Sort the collection list",
+        items=[
+            ('NONE', "Default", ""),
+            ('NAME', "Name", ""),
+            ('FORMAT', "Format", ""),
+            ('SELECTED_FIRST', "Selected First", ""),
+            ('COLOR_TAG', "Color Tag", ""),
+            ('PRESET', "Preset", ""),
+        ],
+        default='NONE',
+    )
+
+    bpy.types.Scene.sort_reverse = bpy.props.BoolProperty(
+        name="Reverse",
+        description="Reverse the sort order",
+        default=False,
     )
 
     # Register the handler
@@ -416,10 +506,21 @@ def unregister():
     from bpy.utils import unregister_class
 
     for cls in reversed(classes):
-        unregister_class(cls)
+        if 'bl_rna' in cls.__dict__:
+            unregister_class(cls)
 
     del bpy.types.Scene.exportlist_nPanel_properties
     del bpy.types.Scene.exportlist_popup_properties
+    del bpy.types.Scene.filter_format
+    del bpy.types.Scene.filter_color_tag
+    del bpy.types.Scene.filter_selected_only
+    del bpy.types.Scene.filter_name
+    del bpy.types.Scene.filter_file_status
+    del bpy.types.Scene.filter_directory
+    del bpy.types.Scene.filter_preset
+    del bpy.types.Scene.filter_addon_preset
+    del bpy.types.Scene.sort_mode
+    del bpy.types.Scene.sort_reverse
 
     # Remove the handler
     if set_default_exportlist_properties in bpy.app.handlers.load_post:
