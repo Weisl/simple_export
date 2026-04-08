@@ -1,5 +1,51 @@
 import bpy
+from bpy.props import BoolProperty, FloatVectorProperty, PointerProperty
 from bpy.app.handlers import persistent
+
+
+class CollectionPreExportOps(bpy.types.PropertyGroup):
+    """Per-collection pre-export operation settings."""
+    move_by_collection_offset: BoolProperty(
+        name="Move to Origin",
+        description="Move objects to origin based on collection center/root object before export",
+        default=False,
+    )
+    triangulate_before_export: BoolProperty(
+        name="Triangulate Meshes",
+        description="Add a Triangulate modifier to all meshes before export",
+        default=False,
+    )
+    triangulate_keep_normals: BoolProperty(
+        name="Keep Custom Normals",
+        description="Preserve custom split normals when triangulating",
+        default=True,
+    )
+    apply_scale_before_export: BoolProperty(
+        name="Apply Scale",
+        description="Bake object scale into mesh data before export",
+        default=False,
+    )
+    apply_rotation_before_export: BoolProperty(
+        name="Apply Rotation",
+        description="Bake object rotation into mesh data before export",
+        default=False,
+    )
+    apply_transform_before_export: BoolProperty(
+        name="Apply Transformation",
+        description="Bake location, rotation, and scale into mesh data before export",
+        default=False,
+    )
+    pre_rotate_objects: BoolProperty(
+        name="Pre-Rotate Objects",
+        description="Apply a rotation offset to all objects before export",
+        default=False,
+    )
+    pre_rotate_euler: FloatVectorProperty(
+        name="Rotation Offset",
+        description="Rotation offset (Euler XYZ) applied before export",
+        subtype='EULER',
+        default=(0.0, 0.0, 0.0),
+    )
 
 
 @persistent
@@ -19,15 +65,32 @@ def update_collection_offset(depsgraph):
                     collection.instance_offset = offset_obj.location
 
 
+_PRE_EXPORT_BOOL_PROPS = [
+    'move_by_collection_offset',
+    'triangulate_before_export',
+    'triangulate_keep_normals',
+    'apply_scale_before_export',
+    'apply_rotation_before_export',
+    'apply_transform_before_export',
+    'pre_rotate_objects',
+]
+
+
 def ensure_collection_properties():
     """Ensure all collections have the addon properties set to their defaults.
 
     Needed for .blend files created before the addon was installed, or after
     a reload, where existing Collection instances may not yet carry the
     properties registered on bpy.types.Collection.
+
+    Also migrates legacy scene-level pre-export op values into each collection's
+    pre_export_ops block on first load.
     """
     if not hasattr(bpy.types.Collection, "use_root_object"):
         return  # properties not registered yet — skip silently
+
+    scene = bpy.context.scene if bpy.context else None
+
     for collection in bpy.data.collections:
         if not hasattr(collection, "use_root_object"):
             collection.use_root_object = True
@@ -36,6 +99,19 @@ def ensure_collection_properties():
         if not hasattr(collection, "simple_export_selected"):
             collection.simple_export_selected = False
 
+        # Migrate legacy scene-level pre-export ops into per-collection settings.
+        # Only runs if no per-collection values have been explicitly set yet
+        # (detected by all booleans being at their default False state).
+        if scene and hasattr(collection, "pre_export_ops"):
+            ops = collection.pre_export_ops
+            has_custom = any(getattr(ops, attr, False) for attr in _PRE_EXPORT_BOOL_PROPS)
+            if not has_custom:
+                for attr in _PRE_EXPORT_BOOL_PROPS:
+                    if hasattr(scene, attr):
+                        setattr(ops, attr, getattr(scene, attr))
+                if hasattr(scene, 'pre_rotate_euler'):
+                    ops.pre_rotate_euler = scene.pre_rotate_euler
+
 
 def load_post_handler(dummy):
     """Runs after a .blend file is loaded to ensure all collections have properties."""
@@ -43,6 +119,9 @@ def load_post_handler(dummy):
 
 
 def register():
+    bpy.utils.register_class(CollectionPreExportOps)
+    bpy.types.Collection.pre_export_ops = PointerProperty(type=CollectionPreExportOps)
+
     bpy.types.Collection.use_root_object = bpy.props.BoolProperty(
         name="Use Root Object",
         default=True,
@@ -84,6 +163,9 @@ def register():
 
 
 def unregister():
+    del bpy.types.Collection.pre_export_ops
+    bpy.utils.unregister_class(CollectionPreExportOps)
+
     del bpy.types.Collection.root_object
     del bpy.types.Collection.use_root_object
     del bpy.types.Collection.simple_export_selected

@@ -183,7 +183,6 @@ def draw_full_exporer_settings(layout, props):
 
     # --- Collection Name ---
     box = layout.box()
-
     draw_collection_name_properties(box, props)
 
     # --- File Path ---
@@ -202,31 +201,41 @@ def draw_full_exporer_settings(layout, props):
     box = layout.box()
     draw_collection_settings_properties(box, props)
 
+    # --- Pre-Export Operations (defaults for new collections) ---
+    box = layout.box()
+    icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
+    box.label(text="Pre-Export Operations (defaults for new collections)", icon=icon)
+    from ..ui.export_panels import draw_pre_export_operations
+    draw_pre_export_operations(box, props)
+
 
 def draw_export_list(layout, list_id, scene):
     # === EXPORT TARGET (filters — above the list) ===
     box = layout.box()
     header_row = box.row(align=True)
     header_row.label(text="Export Target", icon='FILTER')
-    header_row.operator("simple_export.clear_filters", text="Clear")
+    header_row.operator("simple_export.clear_filters", text="Clear Filter")
 
     col = box.column(align=True)
 
-    def filter_row(label, prop, **kwargs):
-        split = col.split(factor=0.35, align=True)
+    def filter_row(parent, label, prop, **kwargs):
+        split = parent.split(factor=0.35, align=True)
         split.label(text=label)
         split.prop(scene, prop, text="", **kwargs)
 
-    filter_row("Format", "filter_format")
-    filter_row("Color", "filter_color_tag")
-    filter_row("Status", "filter_file_status")
-    filter_row("Export Preset", "filter_preset")
-    filter_row("Addon Preset", "filter_addon_preset")
-    filter_row("Directory", "filter_directory", icon='FILE_FOLDER')
+    filter_row(col, "Addon Preset", "filter_addon_preset")
+    filter_row(col, "Format", "filter_format")
+    filter_row(col, "Directory", "filter_directory", icon='FILE_FOLDER')
 
-    row = col.row(align=True)
-    row.prop(scene, "filter_selected_only", text="", icon='CHECKBOX_HLT', toggle=True)
-    row.prop(scene, "filter_name", text="", icon='VIEWZOOM')
+    more_header, more_body = col.panel(idname="EXPORT_TARGET_MORE_FILTERS", default_closed=True)
+    more_header.label(text="More")
+    if more_body:
+        filter_row(more_body, "Color", "filter_color_tag")
+        filter_row(more_body, "Status", "filter_file_status")
+        filter_row(more_body, "Export Preset", "filter_preset")
+        row = more_body.row(align=True)
+        row.prop(scene, "filter_selected_only", text="", icon='CHECKBOX_HLT', toggle=True)
+        row.prop(scene, "filter_name", text="", icon='VIEWZOOM')
 
     # === COLLECTION LIST ===
     row = layout.row()

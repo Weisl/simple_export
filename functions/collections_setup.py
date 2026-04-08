@@ -1,3 +1,14 @@
+_PRE_EXPORT_BOOL_PROPS = [
+    'move_by_collection_offset',
+    'triangulate_before_export',
+    'triangulate_keep_normals',
+    'apply_scale_before_export',
+    'apply_rotation_before_export',
+    'apply_transform_before_export',
+    'pre_rotate_objects',
+]
+
+
 def setup_collection_properties(prop, collection, base_object=None):
     collection.simple_export_selected = True
     if prop.collection_color != 'NONE':
@@ -8,6 +19,18 @@ def setup_collection_properties(prop, collection, base_object=None):
         collection.use_root_object = prop.use_root_object
     if prop.use_root_object and base_object:
         collection.root_object = base_object
+
+    # Seed per-collection pre-export ops from scene-level defaults (set by presets)
+    if hasattr(collection, 'pre_export_ops'):
+        import bpy
+        scene = bpy.context.scene
+        ops = collection.pre_export_ops
+        for attr in _PRE_EXPORT_BOOL_PROPS:
+            if hasattr(scene, attr):
+                setattr(ops, attr, getattr(scene, attr))
+        if hasattr(scene, 'pre_rotate_euler'):
+            ops.pre_rotate_euler = scene.pre_rotate_euler
+
     return collection
 
 

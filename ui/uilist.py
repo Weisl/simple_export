@@ -6,6 +6,7 @@ from ..core.export_formats import ExportFormats
 from ..core.info import COLOR_TAG_ICONS
 from ..functions.exporter_funcs import find_exporter
 from ..functions.path_utils import clean_relative_path
+from ..functions.preset_func import collection_has_preset_changes
 
 
 def collection_passes_uilist_filters(collection, scene):
@@ -60,9 +61,10 @@ def collection_passes_uilist_filters(collection, scene):
         if scene.filter_preset != getattr(collection, 'last_preset_name', ''):
             return False
 
-    # Addon preset
+    # Addon preset — matches the displayed value: format preset with fallback to addon preset
     if scene.filter_addon_preset != 'ALL':
-        if scene.filter_addon_preset != getattr(collection, 'last_addon_preset_name', ''):
+        displayed_preset = getattr(collection, 'last_preset_name', '') or getattr(collection, 'last_addon_preset_name', '')
+        if scene.filter_addon_preset != displayed_preset:
             return False
 
     return True
@@ -271,14 +273,15 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             text = self.get_format_name(exporter)
             row.label(text=text)  # Display the user-friendly label
 
-            # Active pre-export operation indicator icons
-            if scene.move_by_collection_offset:
+            # Active pre-export operation indicator icons (per-collection)
+            col_ops = collection.pre_export_ops
+            if col_ops.move_by_collection_offset:
                 row.label(text='', icon='OBJECT_ORIGIN')
-            if scene.triangulate_before_export:
+            if col_ops.triangulate_before_export:
                 row.label(text='', icon='MOD_TRIANGULATE')
-            if scene.apply_transform_before_export or scene.apply_scale_before_export or scene.apply_rotation_before_export:
+            if col_ops.apply_transform_before_export or col_ops.apply_scale_before_export or col_ops.apply_rotation_before_export:
                 row.label(text='', icon='OBJECT_DATA')
-            if scene.pre_rotate_objects:
+            if col_ops.pre_rotate_objects:
                 row.label(text='', icon='DRIVER_ROTATIONAL_DIFFERENCE')
 
             ########## Name
@@ -397,14 +400,23 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 row.label(text=text)  # Display the user-friendly label
 
             if 'OPERATIONS' in visibility_properties.list_visibility_settings:
-                if scene.move_by_collection_offset:
+                col_ops = collection.pre_export_ops
+                if col_ops.move_by_collection_offset:
                     row.label(text='', icon='OBJECT_ORIGIN')
-                if scene.triangulate_before_export:
+                if col_ops.triangulate_before_export:
                     row.label(text='', icon='MOD_TRIANGULATE')
-                if scene.apply_transform_before_export or scene.apply_scale_before_export or scene.apply_rotation_before_export:
+                if col_ops.apply_transform_before_export or col_ops.apply_scale_before_export or col_ops.apply_rotation_before_export:
                     row.label(text='', icon='OBJECT_DATA')
-                if scene.pre_rotate_objects:
+                if col_ops.pre_rotate_objects:
                     row.label(text='', icon='DRIVER_ROTATIONAL_DIFFERENCE')
+
+            if 'PRESET' in visibility_properties.list_visibility_settings:
+                format_preset = getattr(collection, 'last_preset_name', '')
+                addon_preset = getattr(collection, 'last_addon_preset_name', '')
+                preset_text = format_preset or addon_preset or '-'
+                if preset_text != '-' and collection_has_preset_changes(collection, exporter, scene):
+                    preset_text += ' *'
+                row.label(text=preset_text,)
 
             from ..core.export_path_func import generate_base_name
 
