@@ -1,3 +1,5 @@
+import os
+
 import bpy
 
 from .shared_properties import (
@@ -11,6 +13,19 @@ from ..functions.collections_setup import setup_collection_properties
 from ..functions.exporter_funcs import get_all_children_and_descendants
 from ..functions.preset_func import assign_preset
 from ..ui.shared_draw import draw_export_folderpath_properties
+
+
+def get_addon_preset_items(self, context):
+    from ..presets_addon.exporter_preset import simple_export_presets_folder
+    folder = simple_export_presets_folder()
+    items = []
+    if os.path.isdir(folder):
+        for fname in sorted(os.listdir(folder)):
+            if fname.endswith('.py'):
+                name = os.path.splitext(fname)[0]
+                items.append((name, name, ""))
+    return items if items else [('NONE', "No Presets Available", "")]
+
 
 
 def determine_parent_collection(context, parent_collection_name="", top_object=None):
@@ -42,16 +57,16 @@ class EXPORT_OT_CreateExportCollections(
     bl_idname = "simple_export.create_export_collections"
     bl_label = "Create Export Collections"
     bl_description = "Create Export Collections for selected objects and their children, preserving hierarchy."
-    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
+    bl_options = {'REGISTER', 'UNDO'}
     # TODO: Add support for adding exporters without selected objects
 
-    # Internal Properties
-    # only_selection: bpy.props.BoolProperty(
-    #     name="Only affect selection",
-    #     description="Only affect selected objects",
-    #     default=False,
-    #     options={'HIDDEN'}
-    # )
+    addon_preset_selection: bpy.props.EnumProperty(
+        name="Preset",
+        description="Simple Export addon preset to use for this collection",
+        items=get_addon_preset_items,
+    )
+
+    applied_preset_tracker: bpy.props.StringProperty(options={'HIDDEN', 'SKIP_SAVE'})
 
     use_numbering: bpy.props.BoolProperty(
         name="Use Numbering",
@@ -59,8 +74,58 @@ class EXPORT_OT_CreateExportCollections(
         default=False
     )
 
+    def _apply_addon_preset_to_self(self, preset_path):
+        """Parse an addon preset file and apply its scene.* values to operator properties."""
+        if not os.path.isfile(preset_path):
+            return
+        with open(preset_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line.startswith('scene.'):
+                    continue
+                try:
+                    prop_part = line[6:]  # strip 'scene.'
+                    prop_name, value_str = prop_part.split(' = ', 1)
+                    if hasattr(self, prop_name):
+                        setattr(self, prop_name, eval(value_str))
+                except Exception:
+                    pass
+
+    def check(self, context):
+        if self.addon_preset_selection == self.applied_preset_tracker:
+            return False
+        self.applied_preset_tracker = self.addon_preset_selection
+        if self.addon_preset_selection and self.addon_preset_selection != 'NONE':
+            from ..presets_addon.exporter_preset import simple_export_presets_folder
+            preset_path = os.path.join(
+                simple_export_presets_folder(),
+                self.addon_preset_selection + '.py'
+            )
+            self._apply_addon_preset_to_self(preset_path)
+        return True
+
+    def invoke(self, context, event):
+        self.applied_preset_tracker = ""
+        selected = context.scene.simple_export_selected_preset
+        if selected:
+            name = os.path.splitext(os.path.basename(selected))[0]
+            try:
+                self.addon_preset_selection = name
+            except Exception:
+                pass
+        return context.window_manager.invoke_props_dialog(self, width=400)
+
     def execute(self, context):
         """Execute the operator to create export collections."""
+        # Apply the chosen addon preset locally (does not modify the scene)
+        if self.addon_preset_selection and self.addon_preset_selection != 'NONE':
+            from ..presets_addon.exporter_preset import simple_export_presets_folder
+            preset_path = os.path.join(
+                simple_export_presets_folder(),
+                self.addon_preset_selection + '.py'
+            )
+            self._apply_addon_preset_to_self(preset_path)
+
         selected_objects = context.selected_objects
         if not selected_objects:
             self.report({'WARNING'}, "No objects selected.")
@@ -103,6 +168,11 @@ class EXPORT_OT_CreateExportCollections(
                     from ..presets_export.preset_format_functions import get_format_preset_filepath
                     preset_file = get_format_preset_filepath(self, self.export_format)
                     assign_preset(exporter, preset_file)
+                    export_collection.last_preset_name = os.path.splitext(os.path.basename(preset_file))[0]
+
+            selected_addon_preset = context.scene.simple_export_selected_preset
+            if selected_addon_preset:
+                export_collection.last_addon_preset_name = os.path.splitext(os.path.basename(selected_addon_preset))[0]
 
             if self.set_export_path and hasattr(exporter, 'filepath'):
                 print(f"COLLECTION NAME = {export_collection.name}")
@@ -196,10 +266,17 @@ class EXPORT_OT_CreateExportCollections(
         return export_collection
 
     def draw(self, context):
-        """Draw the UI for the operator."""
+        from .. import __package__ as base_package
         layout = self.layout
-        from ..ui.shared_draw import draw_full_exporer_settings
-        draw_full_exporer_settings(layout, self)
+        layout.prop(self, "addon_preset_selection", text="")
+        op = layout.operator("preferences.addon_show", text="New Preset", icon='PREFERENCES')
+        op.module = base_package
+
+        layout.separator()
+        layout.prop(self, "set_export_path")
+        if self.set_export_path:
+            from ..ui.shared_draw import draw_export_folderpath_properties
+            draw_export_folderpath_properties(layout, self)
 
 
 
@@ -217,4 +294,5 @@ def register():
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
-        unregister_class(cls)
+        if 'bl_rna' in cls.__dict__:
+            unregister_class(cls)

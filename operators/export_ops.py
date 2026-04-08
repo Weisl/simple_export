@@ -3,10 +3,18 @@ import bpy
 from .. import __package__ as base_package
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.collection_offset import apply_collection_offset
+from ..functions.pre_export_ops import (
+    apply_triangulate_modifiers, remove_triangulate_modifiers,
+    apply_scale_for_export, restore_scale_after_export,
+    apply_rotation_for_export, restore_rotation_after_export,
+    apply_transform_for_export, restore_transform_after_export,
+    apply_pre_rotation, restore_pre_rotation,
+)
 from ..functions.exporter_funcs import find_exporter, get_exporter_id, add_extension
 from ..functions.outliner_func import get_outliner_collections
-from ..functions.path_utils import clean_relative_path
+from ..functions.path_utils import clean_relative_path, ensure_export_folder_exists
 from ..functions.vallidate_func import validate_collection, post_export_checks, pre_export_checks
+from ..ui.uilist import collection_passes_uilist_filters
 
 
 def call_export_popup(export_results, context):
@@ -52,7 +60,8 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
         else:
             collection_list = [
                 col for col in bpy.data.collections
-                if getattr(col, "simple_export_selected", False) and len(getattr(col, "exporters", [])) > 0
+                if getattr(col, "simple_export_selected", False)
+                and collection_passes_uilist_filters(col, scene)
             ]
 
         if not collection_list:
@@ -61,10 +70,14 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
         # Iterate over export collections
         for collection in collection_list:
-            try:
-                if not collection.simple_export_selected and not self.individual_collection:  # Don't check selected for individual collection
-                    continue
+            # Declare backup state before try so finally block can always access them
+            scale_backup = {}
+            rotation_backup = {}
+            transform_backup = {}
+            pre_rotate_backup = {}
+            ops = None  # per-collection pre-export ops; set inside try after validation
 
+            try:
                 if not collection.exporters:
                     continue
 
@@ -94,6 +107,9 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
                 export_path = clean_relative_path(export_path)
 
+                if not ensure_export_folder_exists(export_path):
+                    raise ValueError(f"Export directory does not exist and could not be created for {collection.name}.")
+
                 # Overwrite settings:
                 # Having use_selection causes unpredictable behavior and is not exposed to the UI.
                 if hasattr(exporter.export_properties, "use_selection"):
@@ -101,10 +117,30 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
                 file_exists_before, file_timestamp_before = pre_export_checks(export_path)
 
-                # Apply instance offset if enabled
-                if scene.move_by_collection_offset:
+                # Per-collection pre-export operations
+                ops = collection.pre_export_ops
+
+                # Apply transforms (apply_transform subsumes scale+rotation)
+                if ops.apply_transform_before_export:
+                    transform_backup = apply_transform_for_export(collection)
+                else:
+                    if ops.apply_scale_before_export:
+                        scale_backup = apply_scale_for_export(collection)
+                    if ops.apply_rotation_before_export:
+                        rotation_backup = apply_rotation_for_export(collection)
+
+                # Triangulate (order-independent relative to transform baking)
+                if ops.triangulate_before_export:
+                    apply_triangulate_modifiers(collection, ops.triangulate_keep_normals)
+
+                # Apply collection offset after transform baking
+                if ops.move_by_collection_offset:
                     offset = collection.instance_offset.copy()
                     apply_collection_offset(collection, offset)
+
+                # Pre-rotate last (rotation offset over final position)
+                if ops.pre_rotate_objects:
+                    pre_rotate_backup = apply_pre_rotation(collection, ops.pre_rotate_euler)
 
                 export_collections.append(collection)
 
@@ -129,12 +165,21 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 error_count += 1
 
             finally:
-                if scene.move_by_collection_offset:
-                    # if not offset:
-                    #     print('ERROR: Position Reset is missing the offset input')
-                    #     continue
-                    # print(f'Offset 2 = {offset}')
-                    apply_collection_offset(collection, offset, inverse=True)
+                # Restore in reverse order of application (ops may be None if we continued early)
+                if ops and collection:
+                    if ops.pre_rotate_objects:
+                        restore_pre_rotation(collection, pre_rotate_backup)
+                    if ops.move_by_collection_offset:
+                        apply_collection_offset(collection, offset, inverse=True)
+                    if ops.triangulate_before_export:
+                        remove_triangulate_modifiers(collection)
+                    if ops.apply_transform_before_export:
+                        restore_transform_after_export(collection, transform_backup)
+                    else:
+                        if ops.apply_rotation_before_export:
+                            restore_rotation_after_export(collection, rotation_backup)
+                        if ops.apply_scale_before_export:
+                            restore_scale_after_export(collection, scale_backup)
 
         if error_count == 0:
             self.report({'INFO'}, f"Export Sucessful")
@@ -168,4 +213,5 @@ def register():
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
-        unregister_class(cls)
+        if 'bl_rna' in cls.__dict__:
+            unregister_class(cls)

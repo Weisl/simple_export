@@ -64,6 +64,8 @@ def apply_default_preset():
     """Apply the default export preset to the current scene and update the selection tracker."""
     try:
         addon_prefs = bpy.context.preferences.addons[base_package].preferences
+        if addon_prefs is None:
+            return
         default_preset = addon_prefs.simple_export_default_preset
         if not default_preset or not os.path.exists(default_preset):
             return

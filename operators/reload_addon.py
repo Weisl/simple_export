@@ -2,7 +2,7 @@ import bpy
 from bpy.types import Operator
 
 
-class VIEW3D_OT_reload_addon(Operator):
+class VIEW3D_OT_simple_export_reload(Operator):
     """Reload all Simple Export scripts."""
     bl_idname      = "simple_export.reload_addon"
     bl_label       = "Reload Addon"
@@ -61,7 +61,7 @@ class VIEW3D_OT_reload_addon(Operator):
         return {'FINISHED'}
 
 classes = (
-    VIEW3D_OT_reload_addon,
+    VIEW3D_OT_simple_export_reload,
 )
 
 
@@ -75,4 +75,5 @@ def register():
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
-        unregister_class(cls)
+        if 'bl_rna' in cls.__dict__:
+            unregister_class(cls)

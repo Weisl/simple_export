@@ -34,6 +34,8 @@ def ensure_export_folder_exists(export_path):
 
     # Convert entire export_path to absolute first
     folder_path_absolute = bpy.path.abspath(export_path)
+    if not os.path.isabs(folder_path_absolute):
+        folder_path_absolute = os.path.abspath(folder_path_absolute)
 
     # Extract the directory portion and normalize
     export_dir = os.path.dirname(folder_path_absolute)

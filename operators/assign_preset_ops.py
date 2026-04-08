@@ -108,6 +108,8 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
         if not success:
             raise ValueError(msg)
 
+        collection.last_preset_name = os.path.splitext(preset_name)[0]
+
         # Add success result
         return {'name': collection.name, 'success': True, 'message': f"Applied preset '{preset_name}'."}
 
@@ -126,4 +128,5 @@ def register():
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
-        unregister_class(cls)
+        if 'bl_rna' in cls.__dict__:
+            unregister_class(cls)

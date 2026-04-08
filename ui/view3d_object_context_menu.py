@@ -6,6 +6,7 @@ def add_export_collections_to_menu(self, context):
     scene = context.scene
 
     self.layout.separator()
+    self.layout.operator_context = 'INVOKE_DEFAULT'
     from .shared_operator_call import call_create_export_collection_op
     op = call_create_export_collection_op(scene, self.layout)
 

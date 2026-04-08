@@ -2,8 +2,6 @@ import os
 
 import bpy
 
-from .preset_data_fbx import presets_fbx
-from .preset_data_gltf import presets_gltf
 from ..core.export_formats import ExportFormats
 from importlib import import_module
 
@@ -18,10 +16,12 @@ def get_blender_version():
 
 def get_versioned_module(version, preset_type):
     major, minor, _ = version
-    if major == 5 and minor >= 0:
-        return f".preset_data_{preset_type}_5_0"
+    if major == 5 and minor >= 1:
+        return f".blender_5_1.preset_data_{preset_type}"
+    elif major == 5 and minor >= 0:
+        return f".blender_5_0.preset_data_{preset_type}"
     else:
-        return f".preset_data_{preset_type}"
+        return f".blender_4x.preset_data_{preset_type}"
 
 
 def save_export_presets(preset_name, preset_folder, preset_data):

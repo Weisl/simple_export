@@ -66,6 +66,15 @@ class BaseExportPreset(AddPresetBase, Operator):
         "scene.collection_instance_offset",
         "scene.collection_color",
         "scene.parent_collection",
+        # Pre-export operations
+        "scene.move_by_collection_offset",
+        "scene.triangulate_before_export",
+        "scene.triangulate_keep_normals",
+        "scene.apply_scale_before_export",
+        "scene.apply_rotation_before_export",
+        "scene.apply_transform_before_export",
+        "scene.pre_rotate_objects",
+        "scene.pre_rotate_euler",
     ]
 
     # Directory to store the presets
@@ -150,7 +159,8 @@ def register():
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
-        unregister_class(cls)
+        if 'bl_rna' in cls.__dict__:
+            unregister_class(cls)
 
 
 if __name__ == "__main__":

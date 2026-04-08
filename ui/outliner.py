@@ -12,6 +12,7 @@ def draw_custom_outliner_menu(self, context):
         layout.menu(CUSTOM_MT_outliner_simple_export_menu.bl_idname, icon='EXPORT')
     elif isinstance(selected_element, bpy.types.Object):
         scene = context.scene
+        layout.operator_context = 'INVOKE_DEFAULT'
         from .shared_operator_call import call_create_export_collection_op
         op = call_create_export_collection_op(scene, layout)
 
@@ -67,4 +68,5 @@ def unregister():
 
     from bpy.utils import unregister_class
     for cls in reversed(classes):
-        unregister_class(cls)
+        if 'bl_rna' in cls.__dict__:
+            unregister_class(cls)

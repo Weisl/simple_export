@@ -5,7 +5,7 @@ import textwrap
 from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
 from ..core.export_formats import get_export_format_items
-from ..ui.export_panels import VIEW3D_PT_SimpleExportMain, VIEW3D_PT_SimpleExportSettings
+from ..ui.export_panels import VIEW3D_PT_SimpleExportMain
 
 
 def label_multiline(context, text, parent):
@@ -94,9 +94,9 @@ PROPERTY_METADATA = {
     # Set Folder Path
 
     "set_export_path": {
-        "name": "Assign Export Path",
+        "name": "Overwrite Export Path",
         "description": "Set filepath when creating an Exporter Collection.",
-        "default": True,
+        "default": False,
     },
 
     # Set Preset
@@ -146,6 +146,36 @@ PROPERTY_METADATA = {
     "move_by_collection_offset": {
         "name": "Move Collection to Origin",
         "description": "Objects are moved to the origin based on the Collection Center or root object before exporting.",
+        "default": False,
+    },
+    "triangulate_before_export": {
+        "name": "Triangulate Meshes",
+        "description": "Add a Triangulate modifier before export and remove it afterwards (non-destructive).",
+        "default": False,
+    },
+    "triangulate_keep_normals": {
+        "name": "Keep Custom Normals",
+        "description": "Preserve custom split normals when triangulating.",
+        "default": True,
+    },
+    "apply_scale_before_export": {
+        "name": "Apply Scale",
+        "description": "Bake object scale into mesh data before export and restore afterwards.",
+        "default": False,
+    },
+    "apply_rotation_before_export": {
+        "name": "Apply Rotation",
+        "description": "Bake object rotation into mesh data before export and restore afterwards.",
+        "default": False,
+    },
+    "apply_transform_before_export": {
+        "name": "Apply Transformation",
+        "description": "Bake location, rotation and scale into mesh data before export and restore afterwards.",
+        "default": False,
+    },
+    "pre_rotate_objects": {
+        "name": "Pre-Rotate Objects",
+        "description": "Apply a rotation offset to objects before export and revert it afterwards.",
         "default": False,
     },
 }
@@ -232,7 +262,6 @@ def update_panel_category(self, context):
     """Update panel tab for simple export"""
     panels = [
         VIEW3D_PT_SimpleExportMain,
-        VIEW3D_PT_SimpleExportSettings,
     ]
 
     for panel in panels:
@@ -381,7 +410,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     # Preference UI properties
     prefs_tabs: bpy.props.EnumProperty(
         name='Export Preferences',
-        items=(('SETTINGS', "Defaults", "General addon presets"),
+        items=(('SETTINGS', "Presets", "General addon presets"),
                ('UI', "UI", "Settings related to the UI."),
                ('KEYMAP', "Keymap", "Change the hotkeys for tools associated with this addon."),
                ('SUPPORT', "Support", "Get support and help with the addon and help improve it"),
@@ -391,17 +420,60 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     )
 
     # Main settings
-    default_export_format: bpy.props.EnumProperty(
-        name="Default Export Format",
+    export_format: bpy.props.EnumProperty(
+        name="Export Format",
         description="Default format for exporting collections.",
         items=get_export_format_items(),
-        default="FBX",  # Default value
+        default="FBX",
     )
 
     move_by_collection_offset: bpy.props.BoolProperty(
         name=PROPERTY_METADATA["move_by_collection_offset"]["name"],
         description=PROPERTY_METADATA["move_by_collection_offset"]["description"],
         default=PROPERTY_METADATA["move_by_collection_offset"]["default"],
+    )
+
+    triangulate_before_export: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["triangulate_before_export"]["name"],
+        description=PROPERTY_METADATA["triangulate_before_export"]["description"],
+        default=PROPERTY_METADATA["triangulate_before_export"]["default"],
+    )
+
+    triangulate_keep_normals: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["triangulate_keep_normals"]["name"],
+        description=PROPERTY_METADATA["triangulate_keep_normals"]["description"],
+        default=PROPERTY_METADATA["triangulate_keep_normals"]["default"],
+    )
+
+    apply_scale_before_export: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["apply_scale_before_export"]["name"],
+        description=PROPERTY_METADATA["apply_scale_before_export"]["description"],
+        default=PROPERTY_METADATA["apply_scale_before_export"]["default"],
+    )
+
+    apply_rotation_before_export: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["apply_rotation_before_export"]["name"],
+        description=PROPERTY_METADATA["apply_rotation_before_export"]["description"],
+        default=PROPERTY_METADATA["apply_rotation_before_export"]["default"],
+    )
+
+    apply_transform_before_export: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["apply_transform_before_export"]["name"],
+        description=PROPERTY_METADATA["apply_transform_before_export"]["description"],
+        default=PROPERTY_METADATA["apply_transform_before_export"]["default"],
+    )
+
+    pre_rotate_objects: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["pre_rotate_objects"]["name"],
+        description=PROPERTY_METADATA["pre_rotate_objects"]["description"],
+        default=PROPERTY_METADATA["pre_rotate_objects"]["default"],
+    )
+
+    pre_rotate_euler: bpy.props.FloatVectorProperty(
+        name="Pre-Rotation",
+        description="Rotation offset (Euler XYZ) applied to objects before export.",
+        subtype='EULER',
+        default=(0.0, 0.0, 0.0),
     )
 
     ########################################
@@ -568,6 +640,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=True,
         update=update_panel_category)
 
+    enable_output_panel: bpy.props.BoolProperty(
+        name="Enable Output Properties Panel",
+        description="Show Simple Export panels in the Output Properties.",
+        default=False,
+    )
+
     ########################################
     # Presets
 
@@ -670,16 +748,17 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         layout.separator()
 
         if self.prefs_tabs == 'SETTINGS':
+            # Addon preset selector
             box = layout.box()
-
             row = box.row(align=True)
-
-            row.label(text="Default Export Preset")
+            row.label(text="Default Addon Preset")
             row.prop(self, "simple_export_default_preset", text="")
-
-            # Operator to open a folder
             from ..presets_addon.exporter_preset import simple_export_presets_folder
             row.operator("wm.path_open", text='', icon='FILE_FOLDER').filepath = simple_export_presets_folder()
+
+            # Full export defaults
+            from ..ui.shared_draw import draw_full_exporer_settings
+            draw_full_exporer_settings(layout, self)
 
         elif self.prefs_tabs == 'UI':
 
@@ -687,6 +766,10 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.label(text="N Panel")
             box.prop(self, 'enable_n_panel')
             box.prop(self, 'panel_category')
+
+            box = layout.box()
+            box.label(text="Output Properties")
+            box.prop(self, 'enable_output_panel')
 
             box = layout.box()
             box.label(text="Warnings")
@@ -856,12 +939,14 @@ def initialize_format_specific_properties():
 # Helper function to initialize Window Manager properties
 def initialize_properties_collection_generation():
     prefs = bpy.context.preferences.addons[base_package].preferences
+    if prefs is None:
+        return
 
     bpy.types.Scene.export_format = bpy.props.EnumProperty(
         name="Export Format",
         description="Select the export format",
         items=get_export_format_items(),  # Dynamically generated items from EXPORT_FORMATS
-        default=prefs.default_export_format,
+        default=prefs.export_format,
     )
 
     bpy.types.Scene.override_path = bpy.props.BoolProperty(
@@ -948,27 +1033,76 @@ def initialize_properties_collection_generation():
         default=prefs.move_by_collection_offset,
     )
 
+    bpy.types.Scene.triangulate_before_export = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["triangulate_before_export"]["name"],
+        description=PROPERTY_METADATA["triangulate_before_export"]["description"],
+        default=prefs.triangulate_before_export,
+    )
+
+    bpy.types.Scene.triangulate_keep_normals = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["triangulate_keep_normals"]["name"],
+        description=PROPERTY_METADATA["triangulate_keep_normals"]["description"],
+        default=prefs.triangulate_keep_normals,
+    )
+
+    bpy.types.Scene.apply_scale_before_export = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["apply_scale_before_export"]["name"],
+        description=PROPERTY_METADATA["apply_scale_before_export"]["description"],
+        default=prefs.apply_scale_before_export,
+    )
+
+    bpy.types.Scene.apply_rotation_before_export = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["apply_rotation_before_export"]["name"],
+        description=PROPERTY_METADATA["apply_rotation_before_export"]["description"],
+        default=prefs.apply_rotation_before_export,
+    )
+
+    bpy.types.Scene.apply_transform_before_export = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["apply_transform_before_export"]["name"],
+        description=PROPERTY_METADATA["apply_transform_before_export"]["description"],
+        default=prefs.apply_transform_before_export,
+    )
+
+    bpy.types.Scene.pre_rotate_objects = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["pre_rotate_objects"]["name"],
+        description=PROPERTY_METADATA["pre_rotate_objects"]["description"],
+        default=prefs.pre_rotate_objects,
+    )
+
+    bpy.types.Scene.pre_rotate_euler = bpy.props.FloatVectorProperty(
+        name="Pre-Rotation",
+        description="Rotation offset (Euler XYZ) applied to objects before export.",
+        subtype='EULER',
+        default=(0.0, 0.0, 0.0),
+    )
+
 
 def initialize_properties_file_path():
     prefs = bpy.context.preferences.addons[base_package].preferences
+    if prefs is None:
+        return
 
     bpy.types.Scene.folder_path_search = bpy.props.StringProperty(
         name=PROPERTY_METADATA["folder_path_search"]["name"],
         description=PROPERTY_METADATA["folder_path_search"]["description"],
         default=prefs.folder_path_search,
-        update=update_mirror_preview
+        update=update_mirror_preview, 
+        subtype='DIR_PATH',
+        options={'PATH_SUPPORTS_BLEND_RELATIVE'}  # Add this option
     )
     bpy.types.Scene.folder_path_replace = bpy.props.StringProperty(
         name=PROPERTY_METADATA["folder_path_replace"]["name"],
         description=PROPERTY_METADATA["folder_path_replace"]["description"],
         default=prefs.folder_path_replace,
-        update=update_mirror_preview
+        update=update_mirror_preview,
+        subtype='DIR_PATH',
+        options={'PATH_SUPPORTS_BLEND_RELATIVE'}  # Add this option
     )
     bpy.types.Scene.export_folder_mode = bpy.props.EnumProperty(
         name=PROPERTY_METADATA["export_folder_mode"]["name"],
         items=PROPERTY_METADATA["export_folder_mode"]["items"],
         description=PROPERTY_METADATA["export_folder_mode"]["description"],
-        default=prefs.export_folder_mode
+        default=prefs.export_folder_mode,
     )
 
     bpy.types.Scene.folder_path_absolute = bpy.props.StringProperty(
@@ -985,11 +1119,16 @@ def initialize_properties_file_path():
         description=PROPERTY_METADATA["folder_path_relative"]["description"],
         default=prefs.folder_path_relative,
         get=get_relative_path_scene,  # Use extracted getter
-        set=set_relative_path_scene  # Use extracted setter
+        set=set_relative_path_scene,  # Use extracted setter
+        subtype='DIR_PATH',
+        options={'PATH_SUPPORTS_BLEND_RELATIVE'}  # Add this option
     )
 
 
 def post_register():
+    prefs = bpy.context.preferences.addons[base_package].preferences
+    if prefs is None:
+        return 0.5  # prefs not ready yet, retry
     initialize_properties_collection_generation()
     initialize_properties_file_path()
 
@@ -1076,7 +1215,8 @@ def unregister():
     from bpy.utils import unregister_class
 
     for cls in reversed(classes):
-        unregister_class(cls)
+        if 'bl_rna' in cls.__dict__:
+            unregister_class(cls)
 
     # Persistant settings
     del bpy.types.Scene.collection_index
@@ -1108,6 +1248,13 @@ def unregister():
 
     # Pre export operations
     del bpy.types.Scene.move_by_collection_offset
+    del bpy.types.Scene.triangulate_before_export
+    del bpy.types.Scene.triangulate_keep_normals
+    del bpy.types.Scene.apply_scale_before_export
+    del bpy.types.Scene.apply_rotation_before_export
+    del bpy.types.Scene.apply_transform_before_export
+    del bpy.types.Scene.pre_rotate_objects
+    del bpy.types.Scene.pre_rotate_euler
 
     if hasattr(bpy.types.Scene, 'simple_export_selected_preset'):
         del bpy.types.Scene.simple_export_selected_preset
