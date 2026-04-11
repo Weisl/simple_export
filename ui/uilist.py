@@ -49,6 +49,8 @@ def collection_passes_uilist_filters(collection, scene):
             return False
         elif scene.filter_file_status == 'LOCKED' and not is_locked:
             return False
+        elif scene.filter_file_status == 'FAILED' and not getattr(collection, 'last_export_failed', False):
+            return False
 
     # Directory
     if scene.filter_directory != 'ALL':
@@ -266,7 +268,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             # Checkbox
             row.prop(collection, "simple_export_selected", text="")
             # Status Icon
-            icon = self.get_export_status_icon(export_path, file_exists)
+            icon = self.get_export_status_icon(export_path, file_exists, collection)
             row.label(text='', icon=icon)
 
             # Format
@@ -351,7 +353,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             visibility_properties = scene.exportlist_nPanel_properties if self.list_id == 'npanel' else scene.exportlist_scene_properties
 
             if 'DEFAULT' in visibility_properties.list_visibility_settings:
-                icon = self.get_export_status_icon(export_path, file_exists)
+                icon = self.get_export_status_icon(export_path, file_exists, collection)
                 row.label(text='', icon=icon)
                 # Display the collection name with the color icon
                 icon = self.get_collection_color_icon(collection)
@@ -452,16 +454,16 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             text = exporter_type
         return text
 
-    def get_export_status_icon(self, export_path, file_exists):
+    def get_export_status_icon(self, export_path, file_exists, collection=None):
         is_locked = file_exists and not os.access(export_path, os.W_OK)
-        # Show lock icon based on file permissions
+        if collection and getattr(collection, 'last_export_failed', False):
+            return 'ERROR'
         if is_locked:
-            icon = 'LOCKED'
+            return 'LOCKED'
         elif file_exists:
-            icon = 'CURRENT_FILE'
+            return 'CURRENT_FILE'
         else:
-            icon = 'FILE_NEW'
-        return icon
+            return 'FILE_NEW'
 
     def get_collection_color_icon(self, collection):
         # Determine the icon based on the collection's color_tag

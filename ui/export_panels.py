@@ -458,6 +458,7 @@ def register():
             ('NEW', "Not Exported", "Only show collections that haven't been exported yet"),
             ('EXISTS', "Already Exported", "Only show collections with an existing output file"),
             ('LOCKED', "Locked", "Only show collections whose output file is read-only"),
+            ('FAILED', "Export Failed", "Only show collections where the last export attempt failed"),
         ],
         default='ALL',
     )
