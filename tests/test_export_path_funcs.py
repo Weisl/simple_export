@@ -81,6 +81,12 @@ class TestGenerateBaseName(unittest.TestCase):
         result = generate_base_name("MyMesh", use_file_name=False)
         self.assertEqual(result, "MyMesh")
 
+    def test_prefix_with_trailing_underscore_no_double_separator(self):
+        self.assertEqual(generate_base_name("MyMesh", prefix="SM_"), "SM_MyMesh")
+
+    def test_suffix_with_leading_underscore_no_double_separator(self):
+        self.assertEqual(generate_base_name("MyMesh", suffix="_LOD0"), "MyMesh_LOD0")
+
 
 # ---------------------------------------------------------------------------
 # 2. get_export_folder_path

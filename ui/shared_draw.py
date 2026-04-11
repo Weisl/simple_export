@@ -97,20 +97,14 @@ def draw_export_folderpath_properties(layout, element, is_preferences=False):
     elif element == bpy.context.scene:
         context = 'SCENE'
 
-    # Disable options that require a saved file
-    if not is_file_saved:
-        # if not is_preferences:
-        #     row.enabled = False
+    # Disable options that require a saved file (Absolute paths don't need one)
+    if not is_file_saved and element.export_folder_mode != 'ABSOLUTE':
         layout.label(text="Save the blend file to use this filepath modes", icon='INFO')
 
     if element.export_folder_mode == 'ABSOLUTE':
         layout.prop(element, "folder_path_absolute")
     if element.export_folder_mode == 'RELATIVE':
-        row = layout.row(align=True)
-        row.prop(element, "folder_path_relative")
-        if context is not None:
-            op = row.operator("simple_export.folder_path_relative_picker", text="", icon='FILE_FOLDER')
-            op.context = context
+        layout.prop(element, "folder_path_relative")
 
     if element.export_folder_mode == 'MIRROR':
         layout.prop(element, "folder_path_search", text="Search Path")

@@ -1,5 +1,6 @@
 import bpy
 import os
+import sys
 import textwrap
 
 from .. import __package__ as base_package
@@ -14,6 +15,13 @@ def label_multiline(context, text, parent):
     text_lines = wrapper.wrap(text=text)
     for text_line in text_lines:
         parent.label(text=text_line)
+
+
+if sys.platform == "darwin":
+    _DEFAULT_ABSOLUTE_PATH = os.path.expanduser("~/Desktop/")
+else:
+    # Linux and other Unix-like systems
+    _DEFAULT_ABSOLUTE_PATH = "/tmp/"
 
 
 PROPERTY_METADATA = {
@@ -52,7 +60,7 @@ PROPERTY_METADATA = {
     "folder_path_absolute": {
         "name": "Export Folder",
         "description": "Custom absolute folder to export files to.",
-        "default": '',
+        "default": _DEFAULT_ABSOLUTE_PATH,
     },
 
     "folder_path_relative": {
@@ -352,7 +360,7 @@ def get_absolute_path_prefs(self):
     stored_path = getattr(self, "_folder_path_absolute", "")
     if stored_path:
         return bpy.path.abspath(stored_path)
-    return ""
+    return _DEFAULT_ABSOLUTE_PATH
 
 def set_absolute_path_prefs(self, value):
     """Setter for AddonPreferences: Store the path as an absolute path."""
@@ -365,7 +373,7 @@ def get_absolute_path_scene(self):
     stored_path = self.get("folder_path_absolute", "")
     if stored_path:
         return bpy.path.abspath(stored_path)
-    return ""
+    return _DEFAULT_ABSOLUTE_PATH
 
 def set_absolute_path_scene(self, value):
     """Setter for Scene: Store the path as an absolute path."""
