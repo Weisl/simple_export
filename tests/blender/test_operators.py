@@ -1,0 +1,366 @@
+"""
+Headless Blender tests for Simple Export operators.
+
+Run with:
+    blender --background --python tests/blender/test_operators.py
+
+Replaces the MagicMock-based test_operators.py with tests that register the
+real operator classes inside Blender and invoke them through bpy.ops — the
+same path Blender itself uses.  This exercises the full execute() logic on
+real bpy.data.collections and bpy.data.objects rather than MagicMock stand-ins.
+
+Operator instances are created by calling bpy.ops.<namespace>.<name>(...).
+Properties are passed as keyword arguments; context overrides are applied with
+bpy.context.temp_override().
+
+Covers:
+  SIMPLEEXPORT_OT_FixExportFilename
+    - CANCELLED when collection does not exist
+    - CANCELLED when collection has no exporters
+    - Operator is findable via bpy.ops after registration
+
+  OBJECT_OT_set_collection_offset_cursor
+    - CANCELLED when collection does not exist
+    - FINISHED with a real collection and real cursor location
+    - Real instance_offset is updated to the cursor position
+    - Offset updates when cursor moves
+
+  OBJECT_OT_set_collection_offset_object
+    - CANCELLED when collection does not exist
+    - CANCELLED when no active object in context
+    - FINISHED with a real collection and a real active object
+    - Real instance_offset is updated to the object's location
+
+  SIMPLEEXPORT_OT_remove_exporters
+    - FINISHED even for an empty exporters list
+    - Operator is findable via bpy.ops after registration
+    - Exporters are cleared after add-then-remove (when exporter_add is available)
+"""
+
+import os
+import sys
+import unittest
+import bpy
+from mathutils import Vector
+
+# ---------------------------------------------------------------------------
+# Bootstrap
+# ---------------------------------------------------------------------------
+
+_FILE_DIR = os.path.dirname(os.path.abspath(__file__))
+_TESTS_DIR = os.path.dirname(_FILE_DIR)
+_ADDON_ROOT = os.path.dirname(_TESTS_DIR)
+_EXTENSIONS_ROOT = os.path.dirname(_ADDON_ROOT)
+if _EXTENSIONS_ROOT not in sys.path:
+    sys.path.insert(0, _EXTENSIONS_ROOT)
+if _ADDON_ROOT not in sys.path:
+    sys.path.insert(0, _ADDON_ROOT)
+
+import tests.blender._helpers as _h  # noqa: E402
+
+# Module-level references filled in by setUpModule.
+_fix_mod = None
+_offset_mod = None
+_remove_mod = None
+
+
+# ---------------------------------------------------------------------------
+# Module-level setup / teardown
+# ---------------------------------------------------------------------------
+
+def _load_operator_module(filename):
+    import importlib.util as _ilu
+    mod_name = f"simple_export.operators.{filename[:-3]}"
+    sys.modules.pop(mod_name, None)
+    path = os.path.join(_ADDON_ROOT, "operators", filename)
+    spec = _ilu.spec_from_file_location(mod_name, path)
+    mod = _ilu.module_from_spec(spec)
+    mod.__package__ = "simple_export.operators"
+    sys.modules[mod_name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def setUpModule():
+    global _fix_mod, _offset_mod, _remove_mod
+
+    # Register the scene property that operators read.
+    bpy.types.Scene.export_format = bpy.props.EnumProperty(
+        name="Export Format",
+        items=[("FBX", "FBX", ""), ("OBJ", "OBJ", ""), ("GLTF", "glTF", "")],
+        default="FBX",
+    )
+    _h.register_collection_props()
+
+    # shared_properties is imported by fix_filename — load it first.
+    _load_operator_module("shared_properties.py")
+    _fix_mod = _load_operator_module("fix_filename.py")
+    _offset_mod = _load_operator_module("collection_offset_ops.py")
+    _remove_mod = _load_operator_module("remove_exporters_ops.py")
+
+    for mod in (_fix_mod, _offset_mod, _remove_mod):
+        mod.register()
+
+
+def tearDownModule():
+    for mod in (_remove_mod, _offset_mod, _fix_mod):
+        try:
+            mod.unregister()
+        except Exception:
+            pass
+    _h.unregister_collection_props()
+    if hasattr(bpy.types.Scene, "export_format"):
+        del bpy.types.Scene.export_format
+
+
+# ---------------------------------------------------------------------------
+# Layer-collection context helper
+# ---------------------------------------------------------------------------
+
+def _find_layer_col(root, target_col):
+    """Recursively find the LayerCollection that wraps target_col."""
+    if root.collection == target_col:
+        return root
+    for child in root.children:
+        found = _find_layer_col(child, target_col)
+        if found:
+            return found
+    return None
+
+
+# ---------------------------------------------------------------------------
+# 1. SIMPLEEXPORT_OT_FixExportFilename
+# ---------------------------------------------------------------------------
+
+class TestFixFilename(unittest.TestCase):
+
+    def setUp(self):
+        self.col = _h.make_collection("FixFN_Test")
+
+    def tearDown(self):
+        _h.remove_collection(self.col)
+
+    def test_missing_collection_returns_cancelled(self):
+        result = bpy.ops.simple_export.fix_export_filename(
+            collection_name="__nonexistent__"
+        )
+        self.assertEqual(result, {"CANCELLED"})
+
+    def test_collection_with_no_exporters_returns_cancelled(self):
+        self.assertEqual(len(self.col.exporters), 0)
+        result = bpy.ops.simple_export.fix_export_filename(
+            collection_name=self.col.name
+        )
+        self.assertEqual(result, {"CANCELLED"})
+
+    def test_operator_accessible_via_bpy_ops(self):
+        self.assertTrue(
+            hasattr(bpy.ops.simple_export, "fix_export_filename"),
+            "bpy.ops.simple_export.fix_export_filename not found after registration",
+        )
+
+
+# ---------------------------------------------------------------------------
+# 2. OBJECT_OT_set_collection_offset_cursor
+# ---------------------------------------------------------------------------
+
+class TestCursorOffset(unittest.TestCase):
+
+    def setUp(self):
+        self.col = _h.make_collection("CursorOff_Test")
+        bpy.context.scene.cursor.location = (1.0, 2.0, 3.0)
+
+    def tearDown(self):
+        bpy.context.scene.cursor.location = (0.0, 0.0, 0.0)
+        _h.remove_collection(self.col)
+
+    def test_missing_collection_returns_cancelled(self):
+        result = bpy.ops.object.set_collection_offset_cursor(
+            collection_name="__nonexistent__"
+        )
+        self.assertEqual(result, {"CANCELLED"})
+
+    def test_existing_collection_returns_finished(self):
+        result = bpy.ops.object.set_collection_offset_cursor(
+            collection_name=self.col.name
+        )
+        self.assertEqual(result, {"FINISHED"})
+
+    def test_instance_offset_set_to_cursor_position(self):
+        bpy.ops.object.set_collection_offset_cursor(collection_name=self.col.name)
+        offset = tuple(self.col.instance_offset)
+        self.assertAlmostEqual(offset[0], 1.0, places=5)
+        self.assertAlmostEqual(offset[1], 2.0, places=5)
+        self.assertAlmostEqual(offset[2], 3.0, places=5)
+
+    def test_offset_tracks_cursor_position(self):
+        """A second call with a different cursor position produces a different offset."""
+        bpy.ops.object.set_collection_offset_cursor(collection_name=self.col.name)
+        first = tuple(self.col.instance_offset)
+
+        bpy.context.scene.cursor.location = (10.0, 20.0, 30.0)
+        bpy.ops.object.set_collection_offset_cursor(collection_name=self.col.name)
+        second = tuple(self.col.instance_offset)
+
+        self.assertNotEqual(first, second)
+        self.assertAlmostEqual(second[0], 10.0, places=5)
+        self.assertAlmostEqual(second[1], 20.0, places=5)
+        self.assertAlmostEqual(second[2], 30.0, places=5)
+
+    def test_operator_accessible_via_bpy_ops(self):
+        self.assertTrue(hasattr(bpy.ops.object, "set_collection_offset_cursor"))
+
+
+# ---------------------------------------------------------------------------
+# 3. OBJECT_OT_set_collection_offset_object
+# ---------------------------------------------------------------------------
+
+class TestObjectOffset(unittest.TestCase):
+
+    def setUp(self):
+        self.col = _h.make_collection("ObjOff_Test")
+        self.obj = _h.make_mesh_object("OffsetTarget", location=(5.0, 6.0, 7.0))
+
+    def tearDown(self):
+        _h.remove_object(self.obj)
+        _h.remove_collection(self.col)
+
+    def test_missing_collection_returns_cancelled(self):
+        with bpy.context.temp_override(object=self.obj, active_object=self.obj):
+            result = bpy.ops.object.set_collection_offset_object(
+                collection_name="__nonexistent__"
+            )
+        self.assertEqual(result, {"CANCELLED"})
+
+    def test_no_active_object_returns_cancelled(self):
+        with bpy.context.temp_override(object=None, active_object=None):
+            result = bpy.ops.object.set_collection_offset_object(
+                collection_name=self.col.name
+            )
+        self.assertEqual(result, {"CANCELLED"})
+
+    def test_happy_path_returns_finished(self):
+        with bpy.context.temp_override(object=self.obj, active_object=self.obj):
+            result = bpy.ops.object.set_collection_offset_object(
+                collection_name=self.col.name
+            )
+        self.assertEqual(result, {"FINISHED"})
+
+    def test_instance_offset_set_to_object_location(self):
+        with bpy.context.temp_override(object=self.obj, active_object=self.obj):
+            bpy.ops.object.set_collection_offset_object(
+                collection_name=self.col.name
+            )
+        offset = tuple(self.col.instance_offset)
+        self.assertAlmostEqual(offset[0], 5.0, places=5)
+        self.assertAlmostEqual(offset[1], 6.0, places=5)
+        self.assertAlmostEqual(offset[2], 7.0, places=5)
+
+    def test_offset_reflects_moved_object(self):
+        """Moving the object before invocation must change the stored offset."""
+        self.obj.location = (99.0, 0.0, 0.0)
+        with bpy.context.temp_override(object=self.obj, active_object=self.obj):
+            bpy.ops.object.set_collection_offset_object(
+                collection_name=self.col.name
+            )
+        offset = tuple(self.col.instance_offset)
+        self.assertAlmostEqual(offset[0], 99.0, places=5)
+
+    def test_operator_accessible_via_bpy_ops(self):
+        self.assertTrue(hasattr(bpy.ops.object, "set_collection_offset_object"))
+
+
+# ---------------------------------------------------------------------------
+# 4. SIMPLEEXPORT_OT_remove_exporters
+# ---------------------------------------------------------------------------
+
+class TestRemoveExporters(unittest.TestCase):
+
+    def setUp(self):
+        self.col = _h.make_collection("RemExp_Test")
+
+    def tearDown(self):
+        _h.remove_collection(self.col)
+
+    def test_empty_exporters_returns_finished(self):
+        """remove_exporters on a collection with no exporters must still FINISH."""
+        self.assertEqual(len(self.col.exporters), 0)
+        result = bpy.ops.simple_export.remove_exporters(
+            collection_name=self.col.name
+        )
+        self.assertEqual(result, {"FINISHED"})
+
+    def test_operator_accessible_via_bpy_ops(self):
+        self.assertTrue(hasattr(bpy.ops.simple_export, "remove_exporters"))
+
+    def test_exporters_cleared_after_add_and_remove(self):
+        """Add a real exporter then verify remove_exporters clears it.
+
+        Skipped if bpy.ops.collection.exporter_add is unavailable in
+        background context (no active layer collection).
+        """
+        lc = _find_layer_col(bpy.context.view_layer.layer_collection, self.col)
+        if lc is None:
+            self.skipTest("Could not find layer_collection for the test collection")
+
+        try:
+            with bpy.context.temp_override(layer_collection=lc):
+                bpy.ops.collection.exporter_add(name="ExportFBX")
+        except Exception as exc:
+            self.skipTest(f"bpy.ops.collection.exporter_add not available: {exc}")
+
+        self.assertGreater(len(self.col.exporters), 0, "Exporter was not added")
+
+        with bpy.context.temp_override(layer_collection=lc):
+            bpy.ops.simple_export.remove_exporters(collection_name=self.col.name)
+
+        self.assertEqual(len(self.col.exporters), 0, "Exporter was not removed")
+
+    def test_fix_filename_finished_after_exporter_added(self):
+        """With a real FBX exporter present, fix_export_filename must FINISH.
+
+        Skipped if exporter_add is unavailable in background context.
+        """
+        lc = _find_layer_col(bpy.context.view_layer.layer_collection, self.col)
+        if lc is None:
+            self.skipTest("Could not find layer_collection for the test collection")
+
+        try:
+            with bpy.context.temp_override(layer_collection=lc):
+                bpy.ops.collection.exporter_add(name="ExportFBX")
+        except Exception as exc:
+            self.skipTest(f"bpy.ops.collection.exporter_add not available: {exc}")
+
+        if not self.col.exporters:
+            self.skipTest("No exporter was added; skipping happy-path test")
+
+        # Ensure the exporter has a valid filepath to manipulate.
+        exporter = self.col.exporters[0]
+        exporter.export_properties.filepath = "/tmp/exports/OldName.fbx"
+
+        bpy.context.scene.export_format = "FBX"
+        result = bpy.ops.simple_export.fix_export_filename(
+            collection_name=self.col.name,
+            filename_prefix="SM",
+            filename_suffix="",
+            filename_blend_prefix=False,
+        )
+        self.assertEqual(result, {"FINISHED"})
+
+        # Verify the filename was updated.
+        new_path = self.col.exporters[0].export_properties.filepath
+        self.assertIn("SM_", new_path)
+
+        # Cleanup
+        with bpy.context.temp_override(layer_collection=lc):
+            bpy.ops.simple_export.remove_exporters(collection_name=self.col.name)
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
+    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    sys.exit(0 if result.wasSuccessful() else 1)
