@@ -98,6 +98,8 @@ def ensure_collection_properties():
             collection.root_object = None
         if not hasattr(collection, "simple_export_selected"):
             collection.simple_export_selected = False
+        if not hasattr(collection, "last_export_failed"):
+            collection.last_export_failed = False
 
         # Migrate legacy scene-level pre-export ops into per-collection settings.
         # Only runs if no per-collection values have been explicitly set yet
@@ -150,6 +152,12 @@ def register():
         default=""
     )
 
+    bpy.types.Collection.last_export_failed = bpy.props.BoolProperty(
+        name="Last Export Failed",
+        description="The most recent export attempt for this collection failed",
+        default=False,
+    )
+
     # Delay execution to ensure Blender has initialized bpy.data.collections
     bpy.app.timers.register(ensure_collection_properties, first_interval=0.1)
 
@@ -171,6 +179,7 @@ def unregister():
     del bpy.types.Collection.simple_export_selected
     del bpy.types.Collection.last_preset_name
     del bpy.types.Collection.last_addon_preset_name
+    del bpy.types.Collection.last_export_failed
 
     """remove the handler."""
     if update_collection_offset in bpy.app.handlers.depsgraph_update_post:

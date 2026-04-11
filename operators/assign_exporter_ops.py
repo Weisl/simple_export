@@ -37,12 +37,49 @@ class EXPORT_OT_AddSettingsToCollections(
         options={'HIDDEN'}
     )
 
+    existing_exporter_action: bpy.props.EnumProperty(
+        name="Existing Exporter",
+        description="How to handle the exporter already assigned to this collection",
+        items=[
+            ('REPLACE', "Replace", "Remove the existing exporter and replace it with a new one"),
+            ('ADD', "Add New", "Keep the existing exporter and add a new one alongside it"),
+            ('CANCEL', "Cancel", "Cancel the operation and leave the collection unchanged"),
+        ],
+        default='REPLACE'
+    )
+
+    def invoke(self, context, event):
+        collection = bpy.data.collections.get(self.collection_name)
+        if collection and collection.exporters:
+            return context.window_manager.invoke_props_dialog(self, width=400)
+        return self.execute(context)
+
+    def draw(self, context):
+        layout = self.layout
+        collection = bpy.data.collections.get(self.collection_name)
+        if collection and collection.exporters:
+            col = layout.column(align=True)
+            col.label(text=f"'{collection.name}' already has an exporter assigned.", icon='ERROR')
+            col.separator()
+            col.label(text="How would you like to proceed?")
+            col.separator()
+            col.prop(self, "existing_exporter_action", expand=True)
+        else:
+            from ..ui.shared_draw import draw_full_exporer_settings
+            draw_full_exporer_settings(layout, self)
+
     def execute(self, context):
         collection = bpy.data.collections.get(self.collection_name)
 
         if not collection:
             self.report({'ERROR'}, f"Collection '{self.collection_name}' not found.")
             return {'CANCELLED'}
+
+        # Handle choice when collection already has exporters
+        if collection.exporters:
+            if self.existing_exporter_action == 'CANCEL':
+                self.report({'INFO'}, "Operation cancelled.")
+                return {'CANCELLED'}
 
         # Optionally rename
         if self.collection_naming_overwrite and self.collection_name_new:
@@ -51,9 +88,9 @@ class EXPORT_OT_AddSettingsToCollections(
         from ..functions.collections_setup import setup_collection_properties
         setup_collection_properties(self, collection, base_object=None)
 
-        # replace existing exporter
         from ..functions.exporter_funcs import create_collection_exporter, remove_all_collection_exporters
-        remove_all_collection_exporters(collection)
+        if collection.exporters and self.existing_exporter_action == 'REPLACE':
+            remove_all_collection_exporters(collection)
         exporter = create_collection_exporter(self, context, collection)
 
         if not exporter:
@@ -77,11 +114,6 @@ class EXPORT_OT_AddSettingsToCollections(
 
         self.report({'INFO'}, f"Settings applied to collection '{collection.name}'.")
         return {'FINISHED'}
-
-    def draw(self, context):
-        layout = self.layout
-        from ..ui.shared_draw import draw_full_exporer_settings
-        draw_full_exporer_settings(layout, self)
 
 
 classes = (

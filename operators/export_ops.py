@@ -158,6 +158,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 success, message = post_export_checks(export_path, file_exists_before, file_timestamp_before)
                 export_results.append(
                     {'name': collection.name, 'success': success, 'filepath': export_path, 'message': message})
+                collection.last_export_failed = not success
                 if not success:
                     error_count += 1
                 else:
@@ -169,6 +170,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 export_results.append(
                     {'name': collection.name or "Unknown Collection", 'success': False, 'filepath': '',
                      'message': str(e)})
+                collection.last_export_failed = True
                 error_count += 1
 
             finally:

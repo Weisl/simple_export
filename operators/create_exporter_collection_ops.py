@@ -68,6 +68,22 @@ class EXPORT_OT_CreateExportCollections(
 
     applied_preset_tracker: bpy.props.StringProperty(options={'HIDDEN', 'SKIP_SAVE'})
 
+    existing_exporter_action: bpy.props.EnumProperty(
+        name="Existing Exporter",
+        description="How to handle exporters already assigned to collections that already exist",
+        items=[
+            ('REPLACE', "Replace", "Remove existing exporters and replace them with a new one"),
+            ('ADD', "Add New", "Keep existing exporters and add a new one alongside them"),
+            ('CANCEL', "Cancel", "Skip collections that already have an exporter assigned"),
+        ],
+        default='REPLACE'
+    )
+
+    warn_existing_exporters: bpy.props.BoolProperty(
+        default=False,
+        options={'HIDDEN', 'SKIP_SAVE'}
+    )
+
     use_numbering: bpy.props.BoolProperty(
         name="Use Numbering",
         description="Add numbered suffix to collection names",
@@ -113,6 +129,14 @@ class EXPORT_OT_CreateExportCollections(
                 self.addon_preset_selection = name
             except Exception:
                 pass
+
+        # Check whether any selected object already lives in a collection with an exporter
+        self.warn_existing_exporters = any(
+            col.exporters
+            for obj in context.selected_objects
+            for col in obj.users_collection
+        )
+
         return context.window_manager.invoke_props_dialog(self, width=400)
 
     def execute(self, context):
@@ -134,6 +158,17 @@ class EXPORT_OT_CreateExportCollections(
         top_objects = [top_object for top_object in selected_objects if
                        not top_object.parent or top_object.parent not in selected_objects]
 
+        # Snapshot each top object's current exporter-bearing collections BEFORE any collection
+        # creation or object relinking happens. This is needed so that REPLACE can remove exporters
+        # from the original collections even when the target collection has a different name.
+        from ..functions.exporter_funcs import create_collection_exporter, remove_all_collection_exporters
+        original_exporter_cols = {}
+        if self.warn_existing_exporters:
+            for obj in top_objects:
+                cols = [col for col in obj.users_collection if col.exporters]
+                if cols:
+                    original_exporter_cols[obj.name] = cols
+
         if not self.collection_naming_overwrite or not self.collection_name_new:
             exporter_collections = self.create_individual_collections(context, top_objects)
         else:
@@ -152,9 +187,23 @@ class EXPORT_OT_CreateExportCollections(
             if export_collection is not None:
                 export_collection = setup_collection_properties(self, export_collection, top_object)
 
-                # replace existing exporter
-                from ..functions.exporter_funcs import create_collection_exporter, remove_all_collection_exporters
-                remove_all_collection_exporters(export_collection)
+                has_exporters = bool(export_collection.exporters)
+                orig_cols = original_exporter_cols.get(top_object.name, []) if top_object else []
+
+                if has_exporters or orig_cols:
+                    if self.existing_exporter_action == 'CANCEL':
+                        self.report({'INFO'}, f"Skipped '{export_collection.name}': already has an exporter assigned.")
+                        continue
+                    elif self.existing_exporter_action == 'REPLACE':
+                        # Remove from the target collection if it already has exporters
+                        if has_exporters:
+                            remove_all_collection_exporters(export_collection)
+                        # Also remove from the original collections (covers the case where the
+                        # target collection was freshly created and has a different name)
+                        for orig_col in orig_cols:
+                            if orig_col != export_collection:
+                                remove_all_collection_exporters(orig_col)
+
                 exporter = create_collection_exporter(self, context, export_collection)
 
                 self.report({'INFO'},
@@ -190,10 +239,10 @@ class EXPORT_OT_CreateExportCollections(
                 getattr(self, 'collection_suffix', ''),
                 getattr(self, 'collection_blend_prefix', '')
             )
-            # Skip creation if collection already exists
             if collection_name in bpy.data.collections:
                 export_collection = bpy.data.collections[collection_name]
                 self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Using existing collection.")
+                self._link_objects_to_collection(top_object, export_collection)
             else:
                 export_collection = self.create_and_setup_collection(context, collection_name, top_object)
             exporter_collections.append((export_collection, top_object))
@@ -208,10 +257,21 @@ class EXPORT_OT_CreateExportCollections(
             if collection_name in bpy.data.collections:
                 export_collection = bpy.data.collections[collection_name]
                 self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Using existing collection.")
+                self._link_objects_to_collection(top_object, export_collection)
             else:
                 export_collection = self.create_and_setup_collection(context, collection_name, top_object)
             exporter_collections.append((export_collection, top_object))
         return exporter_collections
+
+    def _link_objects_to_collection(self, top_object, export_collection):
+        """Link top_object and its hierarchy into export_collection, moving them out of other collections."""
+        hierarchy_objects = get_all_children_and_descendants(top_object, include_top=True)
+        for obj in hierarchy_objects:
+            if export_collection not in obj.users_collection:
+                export_collection.objects.link(obj)
+            for col in obj.users_collection:
+                if col != export_collection:
+                    col.objects.unlink(obj)
 
     def create_single_collection(self, context, top_objects):
         """Create a single collection for all selected objects."""
@@ -268,6 +328,7 @@ class EXPORT_OT_CreateExportCollections(
     def draw(self, context):
         from .. import __package__ as base_package
         layout = self.layout
+
         layout.prop(self, "addon_preset_selection", text="")
         op = layout.operator("preferences.addon_show", text="New Preset", icon='PREFERENCES')
         op.module = base_package
@@ -277,6 +338,16 @@ class EXPORT_OT_CreateExportCollections(
         if self.set_export_path:
             from ..ui.shared_draw import draw_export_folderpath_properties
             draw_export_folderpath_properties(layout, self)
+
+        if self.warn_existing_exporters:
+            layout.separator()
+            box = layout.box()
+            col = box.column(align=True)
+            col.label(text="Selected object(s) are already in a collection", icon='ERROR')
+            col.label(text="with an exporter assigned.")
+            col.separator()
+            col.label(text="How would you like to proceed?")
+            col.prop(self, "existing_exporter_action", expand=True)
 
 
 
