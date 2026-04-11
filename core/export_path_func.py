@@ -174,14 +174,17 @@ def generate_base_name(entity_name, prefix='', suffix='', use_file_name=False):
     collection_name = entity_name
 
     if prefix and not collection_name.startswith(prefix):
-        collection_name = prefix + "_" + collection_name
+        sep = "" if prefix.endswith("_") or collection_name.startswith("_") else "_"
+        collection_name = prefix + sep + collection_name
 
     if suffix and not collection_name.endswith(suffix):
-        collection_name = collection_name + "_" + suffix
+        sep = "" if suffix.startswith("_") or collection_name.endswith("_") else "_"
+        collection_name = collection_name + sep + suffix
 
     if use_file_name:
         file_name_prefix = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
         if not collection_name.startswith(file_name_prefix):
-            collection_name = file_name_prefix + "_" + collection_name
+            sep = "" if file_name_prefix.endswith("_") or collection_name.startswith("_") else "_"
+            collection_name = file_name_prefix + sep + collection_name
 
     return collection_name

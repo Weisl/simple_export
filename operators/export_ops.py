@@ -85,6 +85,13 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 if not collection:
                     continue
 
+                if not collection.objects:
+                    export_results.append(
+                        {'name': collection.name, 'success': False, 'filepath': '',
+                         'message': "Collection is empty. Nothing to export."})
+                    error_count += 1
+                    continue
+
                 set_active_layer_Collection(collection.name)
 
                 # Find and validate exporter
