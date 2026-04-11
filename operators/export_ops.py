@@ -68,8 +68,14 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
             self.report({'WARNING'}, "No valid collections found for export.")
             return {'CANCELLED'}
 
+        total = len(collection_list)
+        wm = context.window_manager
+        wm.progress_begin(0, total)
+
         # Iterate over export collections
-        for collection in collection_list:
+        for i, collection in enumerate(collection_list):
+            wm.progress_update(i)
+            context.workspace.status_text_set(f"Exporting {i + 1}/{total}: {collection.name}")
             # Declare backup state before try so finally block can always access them
             scale_backup = {}
             rotation_backup = {}
@@ -103,8 +109,16 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 exporter_id = get_exporter_id(self, collection, exporter)
 
                 # Pre-export checks
-                if not exporter.export_properties.filepath:
-                    raise ValueError(f"Please specify a export path for {collection.name}.")
+                raw_filepath = exporter.export_properties.filepath
+                if not raw_filepath:
+                    raise ValueError(f"No export path set for '{collection.name}'. Please assign one before exporting.")
+
+                # Catch relative paths when blend file is not saved
+                if not bpy.data.filepath and raw_filepath.startswith("//"):
+                    raise ValueError(
+                        f"'{collection.name}' uses a relative export path but the .blend file has not been saved. "
+                        "Save the .blend file first, or switch to an absolute export path."
+                    )
 
                 # TODO: Reaply extension based on exporter type
                 export_path = add_extension(exporter)
@@ -114,8 +128,9 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
                 export_path = clean_relative_path(export_path)
 
-                if not ensure_export_folder_exists(export_path):
-                    raise ValueError(f"Export directory does not exist and could not be created for {collection.name}.")
+                folder_ok, folder_msg = ensure_export_folder_exists(export_path)
+                if not folder_ok:
+                    raise ValueError(folder_msg)
 
                 # Overwrite settings:
                 # Having use_selection causes unpredictable behavior and is not exposed to the UI.
@@ -189,6 +204,9 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                             restore_rotation_after_export(collection, rotation_backup)
                         if ops.apply_scale_before_export:
                             restore_scale_after_export(collection, scale_backup)
+
+        wm.progress_end()
+        context.workspace.status_text_set(None)
 
         if error_count == 0:
             self.report({'INFO'}, f"Export Sucessful")

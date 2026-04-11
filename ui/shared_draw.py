@@ -220,6 +220,7 @@ def draw_export_list(layout, list_id, scene):
     filter_row(col, "Addon Preset", "filter_addon_preset")
     filter_row(col, "Format", "filter_format")
     filter_row(col, "Directory", "filter_directory", icon='FILE_FOLDER')
+    filter_row(col, "Group", "filter_custom_group")
 
     more_header, more_body = col.panel(idname="EXPORT_TARGET_MORE_FILTERS", default_closed=True)
     more_header.label(text="More")

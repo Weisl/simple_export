@@ -79,6 +79,9 @@ def draw_active_list_element(layout, context, scene):
                               icon='PROPERTIES')
             op.collection_name = selected_collection.name
 
+            row = box.row(align=True)
+            row.prop(selected_collection, 'export_group_name', text="Export Group", icon='GROUP')
+
             if exporter:
                 row = box.row(align=True)
                 row.prop(exporter.export_properties, "filepath", text="", expand=True)
@@ -108,6 +111,8 @@ def draw_active_list_element(layout, context, scene):
                     row.prop(selected_collection, "instance_offset", text='Collection Center')
                     if not selected_collection.root_object:
                         col = root_box.column(align=True)
+                        op = col.operator("object.create_root_empty", text="Create Root Empty", icon='EMPTY_AXIS')
+                        op.collection_name = selected_collection.name
                         op = col.operator("object.set_collection_offset_cursor", text="Set Offset from Cursor")
                         op.collection_name = selected_collection.name
                         op = col.operator("object.set_collection_offset_object", text="Set Offset from Object")
@@ -168,8 +173,7 @@ def draw_custom_collection_ui(self, context):
     layout = self.layout
     collection = context.collection
 
-    # Add the Object Picker
-    layout.prop(collection, "root_object", text="Offset Object")
+    layout.prop(collection, "root_object", text="Collection Root")
 
 
 class ExportlistProperties(bpy.types.PropertyGroup):
@@ -378,6 +382,22 @@ def get_filter_addon_preset_items(self, context):
     return items
 
 
+def get_filter_custom_group_items(self, context):
+    """Dynamic enum items: all distinct non-empty export_group_name values."""
+    groups = []
+    seen = set()
+    for col in bpy.data.collections:
+        if col.exporters:
+            name = getattr(col, 'export_group_name', '')
+            if name and name not in seen:
+                seen.add(name)
+                groups.append(name)
+    items = [('ALL', "All Groups", "")]
+    for g in sorted(groups):
+        items.append((g, g, ""))
+    return items
+
+
 def get_filter_preset_items(self, context):
     """Dynamic enum items: all preset files available on disk."""
     from ..presets_export.preset_format_functions import get_preset_format_folder
@@ -475,6 +495,12 @@ def register():
         items=get_filter_preset_items,
     )
 
+    bpy.types.Scene.filter_custom_group = bpy.props.EnumProperty(
+        name="Group",
+        description="Filter collections by custom export group",
+        items=get_filter_custom_group_items,
+    )
+
     bpy.types.Scene.filter_addon_preset = bpy.props.EnumProperty(
         name="Addon Preset",
         description="Filter by the Simple Export addon preset used when configuring this collection",
@@ -504,6 +530,8 @@ def register():
     # Register the handler
     bpy.app.handlers.load_post.append(set_default_exportlist_properties)
 
+    bpy.types.COLLECTION_PT_instancing.append(draw_custom_collection_ui)
+
 
 def unregister():
     from bpy.utils import unregister_class
@@ -521,6 +549,7 @@ def unregister():
     del bpy.types.Scene.filter_file_status
     del bpy.types.Scene.filter_directory
     del bpy.types.Scene.filter_preset
+    del bpy.types.Scene.filter_custom_group
     del bpy.types.Scene.filter_addon_preset
     del bpy.types.Scene.sort_mode
     del bpy.types.Scene.sort_reverse
@@ -528,3 +557,5 @@ def unregister():
     # Remove the handler
     if set_default_exportlist_properties in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.remove(set_default_exportlist_properties)
+
+    bpy.types.COLLECTION_PT_instancing.remove(draw_custom_collection_ui)

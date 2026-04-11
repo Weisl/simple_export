@@ -76,7 +76,7 @@ def create_export_preset_files(preset_data, preset_folder, saved_preset_files):
         return
 
     for preset_name, preset in preset_data.items():
-        if preset_name not in saved_preset_files:
+        if f"{preset_name}.py" not in saved_preset_files:
             save_export_presets(preset_name, preset_folder, preset)
 
 

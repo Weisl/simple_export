@@ -69,6 +69,11 @@ def collection_passes_uilist_filters(collection, scene):
         if scene.filter_addon_preset != displayed_preset:
             return False
 
+    # Custom group filter
+    if scene.filter_custom_group != 'ALL':
+        if getattr(collection, 'export_group_name', '') != scene.filter_custom_group:
+            return False
+
     return True
 
 
@@ -166,6 +171,9 @@ class EXPORT_MT_root_object_menu(bpy.types.Menu):
         layout.separator()
 
         # Root Object Actions
+        op = layout.operator("object.create_root_empty", text="Create Root Empty", icon='EMPTY_AXIS')
+        op.collection_name = collection_name
+
         op = layout.operator("object.root_object_actions", text="Remove Root Object", icon='X')
         op.action = "remove"
         op.collection_name = collection_name

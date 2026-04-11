@@ -1,4 +1,5 @@
 import bpy
+import errno
 import os
 
 
@@ -26,11 +27,15 @@ def ensure_export_folder_exists(export_path):
     """
     Ensure the directory for the export path exists, creating it if necessary.
     Properly handles both relative and absolute paths.
+
+    Returns:
+        tuple: (success: bool, message: str)
     """
 
     if not export_path:
-        print("ERROR: Export path is empty. Please specify a valid export folder.")
-        return False
+        msg = "Export path is empty. Please specify a valid export folder."
+        print(f"ERROR: {msg}")
+        return False, msg
 
     # Convert entire export_path to absolute first
     folder_path_absolute = bpy.path.abspath(export_path)
@@ -43,8 +48,12 @@ def ensure_export_folder_exists(export_path):
 
     # Ensure directory is valid
     if not os.path.isabs(export_dir) or export_dir in ["", ".", "\\", "//"]:
-        print(f"ERROR: Invalid export directory: {export_dir}")
-        return False
+        msg = (
+            f"Invalid export directory '{export_dir}'. "
+            "If using a relative path, make sure the .blend file is saved first."
+        )
+        print(f"ERROR: {msg}")
+        return False, msg
 
     # Ensure directory exists
     if not os.path.exists(export_dir):
@@ -52,7 +61,13 @@ def ensure_export_folder_exists(export_path):
             os.makedirs(export_dir, exist_ok=True)
             print(f"Created export directory: {export_dir}")
         except OSError as e:
-            print(f"Failed to create directory: {e}")
-            return False
+            if e.errno == errno.EACCES:
+                msg = f"Permission denied: cannot create export folder '{export_dir}'."
+            elif e.errno == errno.ENOENT:
+                msg = f"Invalid path: a component of '{export_dir}' does not exist and could not be created."
+            else:
+                msg = f"Could not create export folder '{export_dir}': {e.strerror}."
+            print(f"ERROR: {msg}")
+            return False, msg
 
-    return True
+    return True, ""

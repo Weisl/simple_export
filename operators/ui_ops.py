@@ -165,6 +165,7 @@ class SIMPLE_EXPORT_OT_ClearFilters(bpy.types.Operator):
         scene.filter_directory = 'ALL'
         scene.filter_preset = 'ALL'
         scene.filter_addon_preset = 'ALL'
+        scene.filter_custom_group = 'ALL'
         return {'FINISHED'}
 
 

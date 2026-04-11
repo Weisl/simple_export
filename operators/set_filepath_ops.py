@@ -83,10 +83,16 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
                                                                          self.folder_path_search,
                                                                          self.folder_path_replace)
 
-                # Simple check for empty paths
+                # Check for empty paths with mode-specific hints
                 if not export_folder:
-                    results.append({'name': collection.name, 'success': False, 'filepath': '',
-                                    'message': 'Export path is empty. Please specify a valid export folder.'})
+                    if self.export_folder_mode in ('RELATIVE', 'MIRROR') and not bpy.data.filepath:
+                        msg = (
+                            f"Cannot assign a relative path: the .blend file has not been saved. "
+                            "Save the .blend file first, or switch to an absolute export folder."
+                        )
+                    else:
+                        msg = "Export path is empty. Please specify a valid export folder."
+                    results.append({'name': collection.name, 'success': False, 'filepath': '', 'message': msg})
                     continue
 
                 # FILE: filename properties

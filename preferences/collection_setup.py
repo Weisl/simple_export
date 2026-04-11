@@ -65,15 +65,19 @@ def update_collection_offset(depsgraph):
                     collection.instance_offset = offset_obj.location
 
 
-_PRE_EXPORT_BOOL_PROPS = [
-    'move_by_collection_offset',
-    'triangulate_before_export',
-    'triangulate_keep_normals',
-    'apply_scale_before_export',
-    'apply_rotation_before_export',
-    'apply_transform_before_export',
-    'pre_rotate_objects',
-]
+_PRE_EXPORT_BOOL_DEFAULTS = {
+    'move_by_collection_offset': False,
+    'triangulate_before_export': False,
+    'triangulate_keep_normals': True,
+    'apply_scale_before_export': False,
+    'apply_rotation_before_export': False,
+    'apply_transform_before_export': False,
+    'pre_rotate_objects': False,
+}
+
+_PRE_EXPORT_BOOL_PROPS = list(_PRE_EXPORT_BOOL_DEFAULTS.keys())
+
+_PRE_ROTATE_EULER_DEFAULT = (0.0, 0.0, 0.0)
 
 
 def ensure_collection_properties():
@@ -92,21 +96,17 @@ def ensure_collection_properties():
     scene = bpy.context.scene if bpy.context else None
 
     for collection in bpy.data.collections:
-        if not hasattr(collection, "use_root_object"):
-            collection.use_root_object = True
-        if not hasattr(collection, "root_object"):
-            collection.root_object = None
-        if not hasattr(collection, "simple_export_selected"):
-            collection.simple_export_selected = False
-        if not hasattr(collection, "last_export_failed"):
-            collection.last_export_failed = False
-
         # Migrate legacy scene-level pre-export ops into per-collection settings.
-        # Only runs if no per-collection values have been explicitly set yet
-        # (detected by all booleans being at their default False state).
+        # Only runs if no per-collection values have been explicitly set yet,
+        # detected by comparing each value against its registered default.
+        # Note: checking truthiness alone would always detect 'triangulate_keep_normals'
+        # as "custom" since its default is True, so we compare against known defaults.
         if scene and hasattr(collection, "pre_export_ops"):
             ops = collection.pre_export_ops
-            has_custom = any(getattr(ops, attr, False) for attr in _PRE_EXPORT_BOOL_PROPS)
+            has_custom = any(
+                getattr(ops, attr) != default
+                for attr, default in _PRE_EXPORT_BOOL_DEFAULTS.items()
+            ) or tuple(ops.pre_rotate_euler) != _PRE_ROTATE_EULER_DEFAULT
             if not has_custom:
                 for attr in _PRE_EXPORT_BOOL_PROPS:
                     if hasattr(scene, attr):
@@ -158,6 +158,12 @@ def register():
         default=False,
     )
 
+    bpy.types.Collection.export_group_name = bpy.props.StringProperty(
+        name="Export Group",
+        description="Custom group name for filtering this collection in the export list",
+        default="",
+    )
+
     # Delay execution to ensure Blender has initialized bpy.data.collections
     bpy.app.timers.register(ensure_collection_properties, first_interval=0.1)
 
@@ -180,6 +186,7 @@ def unregister():
     del bpy.types.Collection.last_preset_name
     del bpy.types.Collection.last_addon_preset_name
     del bpy.types.Collection.last_export_failed
+    del bpy.types.Collection.export_group_name
 
     """remove the handler."""
     if update_collection_offset in bpy.app.handlers.depsgraph_update_post:
