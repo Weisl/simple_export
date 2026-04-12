@@ -116,6 +116,22 @@ class SCENE_OT_SelectAllCollections(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class SCENE_OT_ExpandAllCollections(bpy.types.Operator):
+    bl_idname = "scene.expand_minimize_all_collections"
+    bl_label = "Expand or Minimize All Collections"
+    bl_description = "Expand or minimize all collections for export."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    minimize: bpy.props.BoolProperty(name="Invert", default=False)
+    list_id: bpy.props.StringProperty()
+
+
+    def execute(self, context):
+        visibility_properties = context.scene.exportlist_nPanel_properties
+        visibility_properties.list_visibility_settings = {'FILEPATH', 'ORIGIN', 'PRESET', 'OPERATIONS'} if not self.minimize else set()
+        return {'FINISHED'}
+
+
 class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
     """
     Operator to open the export directory of the currently selected collection in the file explorer.
@@ -319,6 +335,7 @@ class SIMPLE_EXPORT_MT_CollectionGroupMenu(bpy.types.Menu):
 
 classes = (
     SCENE_OT_SelectAllCollections,
+    SCENE_OT_ExpandAllCollections,
     SCENE_OT_OpenExportDirectory,
     SIMPLE_OT_OpenCollectionExporterProperties,
     SIMPLE_EXPORT_OT_ReloadAddon,

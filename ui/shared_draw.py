@@ -290,4 +290,9 @@ def draw_export_list(layout, list_id, scene):
     row = layout.row(align=True)
     row.operator("scene.select_all_collections", text='All', icon='CHECKBOX_HLT').deselect = False
     row.operator("scene.select_all_collections", text='None', icon='CHECKBOX_DEHLT').deselect = True
+    op = row.operator("scene.expand_minimize_all_collections", text='Expand', icon='CHECKBOX_HLT')
+    op.minimize = False
+    op = row.operator("scene.expand_minimize_all_collections", text='Mnimize', icon='CHECKBOX_DEHLT')  
+    op.minimize = True
+
 

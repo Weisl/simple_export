@@ -357,16 +357,18 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
 
         else:
-            # list_layout = layout.box() d;
-            list_layout = layout 
+            visibility_properties = scene.exportlist_nPanel_properties if self.list_id == 'npanel' else scene.exportlist_scene_properties
+
+            # create boxes for each entry if multiple lines are shown
+            list_layout = layout.box() if len(visibility_properties.list_visibility_settings) > 0 else layout
+
             col = list_layout.column(align=True)
             row = col.row(align=True)
 
+
             # Checkbox for selecting the collection for export
             row.prop(collection, "simple_export_selected", text="")
-            visibility_properties = scene.exportlist_nPanel_properties if self.list_id == 'npanel' else scene.exportlist_scene_properties
-
-
+   
             icon = self.get_export_status_icon(export_path, file_exists, collection)
             row.label(text='', icon=icon)
             # Display the collection name with the color icon
