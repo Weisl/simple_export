@@ -240,9 +240,10 @@ def draw_export_list(layout, list_id, scene):
     more_header, more_body = col.panel(idname="EXPORT_TARGET_MORE_FILTERS", default_closed=True)
     more_header.label(text="More")
     if more_body:
-        filter_row(more_body, "Color", "filter_color_tag")
-        filter_row(more_body, "Status", "filter_file_status")
-        filter_row(more_body, "Export Format Preset", "filter_preset_export_preset")
+        col= more_body.column(align=True)
+        filter_row(col, "Color", "filter_color_tag")
+        filter_row(col, "Status", "filter_file_status")
+        filter_row(col, "Export Format Preset", "filter_preset_export_preset")
 
 
     # === COLLECTION LIST ===
