@@ -14,7 +14,7 @@ class SIMPLEEXPORTER_PT_PresetResultsPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text="Assign Preset:")
+        layout.label(text="Assign Export Format Presets:")
 
         # Get results from Scene
         results_str = context.window_manager.assign_preset_info_data

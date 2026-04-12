@@ -110,8 +110,8 @@ PROPERTY_METADATA = {
     # Set Preset
 
     "assign_preset": {
-        "name": "Assign Export Preset",
-        "description": "Set export preset when creating an Exporter Collection.",
+        "name": "Assign Export Format Preset",
+        "description": "Set export format preset when creating an Exporter Collection.",
         "default": True,
     },
 
@@ -892,7 +892,7 @@ def get_py_files(self=None, context=None, folder=None):
     if not folder or not os.path.isdir(folder):
         # print(f"[DEBUG] Invalid folder: {folder}")
         return [("NONE", "Create Presets",
-                 "Create export presets export in Blender's default export window before assigning them in Simple Export.")]
+                 "Create export format presets export in Blender's default export window before assigning them in Simple Export.")]
 
     try:
         files = [
@@ -1207,8 +1207,8 @@ def register():
     )
 
     bpy.types.Scene.simple_export_selected_preset = bpy.props.StringProperty(
-        name="Selected Export Preset",
-        description="Path of the currently applied export preset",
+        name="Selected Export Format Preset",
+        description="Path of the currently applied export format preset",
         default="",
         options={'HIDDEN'},
     )

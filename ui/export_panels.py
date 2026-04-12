@@ -64,7 +64,7 @@ def draw_active_list_element(layout, context, scene):
         selected_collection = bpy.data.collections[scene.collection_index]
 
         # Draw the panel header
-        header, body = layout.panel(idname="ACTIVE_COL_PANEL", default_closed=True)
+        header, body = layout.panel(idname="ACTIVE_COL_PANEL", default_closed=False)
         header.label(text=f"Active Collection:", icon='OUTLINER_COLLECTION')
 
         if body:
@@ -131,6 +131,13 @@ def draw_active_list_element(layout, context, scene):
                 ops_header.label(text="Pre-Export Operations", icon=icon)
                 if ops_body:
                     draw_pre_export_operations(ops_body, selected_collection.pre_export_ops)
+
+                ops_header, ops_body = box.panel(idname="COL_EXPORT_SETTINGS", default_closed=True)
+                icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
+                ops_header.label(text="Exporter Settings", icon=icon)
+                if ops_body:
+                    ops_body.template_collection_exporters()
+
 
 
 def get_preset_format_folder():
@@ -220,16 +227,8 @@ class SIMPLE_EXPORT_menu_base:
         layout = self.layout
         scene = context.scene
 
-        # Draw Export Operators
-        layout.label(text="Collection Operators")
-        col = layout.column(align=True)
-        from .shared_operator_call import call_assign_preset_op
-        op = call_assign_preset_op(context, col)
-        from .shared_operator_call import call_simple_export_path_ops
-        op = call_simple_export_path_ops(context, col, outliner=False, individual_collection=False)
-        from .shared_operator_call import call_create_export_collection_op
-        op = call_create_export_collection_op(scene, col)
 
+        col = layout.column(align=True)
         # Draw Export Button
         row = col.row()
         row.scale_y = 2.0  # Adjust this value to change the height
@@ -320,6 +319,18 @@ class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
         op = row.operator("scene.select_all_collections", text="Unselect All", icon="CHECKBOX_DEHLT")
         op.deselect = True
 
+        row = layout.row()
+        from .shared_operator_call import call_assign_preset_op
+        op = call_assign_preset_op(context, row)
+        row = layout.row()
+        from .shared_operator_call import call_simple_export_path_ops
+        op = call_simple_export_path_ops(context, row, outliner=False, individual_collection=False)
+        row = layout.row()
+        from .shared_operator_call import call_create_export_collection_op
+        op = call_create_export_collection_op(scene, row)
+        
+
+
 
 classes = (
     VIEW3D_PT_SimpleExportMain,
@@ -363,24 +374,10 @@ def get_filter_directory_items(self, context):
 def get_filter_addon_preset_items(self, context):
     """Dynamic enum items: format presets and addon presets, matching the PRESET column display."""
     from ..presets_addon.exporter_preset import simple_export_presets_folder
-    from ..presets_export.preset_format_functions import get_preset_format_folder
     from ..core.export_formats import ExportFormats
 
     items = [('ALL', "All Presets", "")]
     seen = set()
-
-    # Format presets first (these are the primary displayed value)
-    preset_folder = get_preset_format_folder()
-    for fmt in ExportFormats.all():
-        subfolder_path = os.path.join(preset_folder, fmt.preset_subfolder)
-        if not os.path.isdir(subfolder_path):
-            continue
-        for fname in sorted(os.listdir(subfolder_path)):
-            if fname.endswith('.py'):
-                name = os.path.splitext(fname)[0]
-                if name not in seen:
-                    seen.add(name)
-                    items.append((name, name, ""))
 
     # Addon presets as fallback values
     folder = simple_export_presets_folder()
@@ -503,8 +500,8 @@ def register():
     )
 
     bpy.types.Scene.filter_preset = bpy.props.EnumProperty(
-        name="Export Preset",
-        description="Filter by last applied format export preset",
+        name="Export Format Preset",
+        description="Filter by last applied format export format preset",
         items=get_filter_preset_items,
     )
 

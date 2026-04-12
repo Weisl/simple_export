@@ -141,8 +141,8 @@ def register():
         default=False)
 
     bpy.types.Collection.last_preset_name = bpy.props.StringProperty(
-        name="Last Export Preset",
-        description="Name of the last format export preset applied to this collection",
+        name="Last Export Format Preset",
+        description="Name of the last format export format preset applied to this collection",
         default=""
     )
 

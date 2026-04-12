@@ -424,13 +424,16 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                     row.label(text='', icon='DRIVER_ROTATIONAL_DIFFERENCE')
 
             if 'PRESET' in visibility_properties.list_visibility_settings:
-                format_preset = getattr(collection, 'last_preset_name', '')
+                export_preset = getattr(collection, 'last_preset_name', '')
                 addon_preset = getattr(collection, 'last_addon_preset_name', '')
-                preset_text = format_preset or addon_preset or '-'
-                if preset_text != '-' and collection_has_preset_changes(collection, exporter, scene):
-                    preset_text += ' *'
-                row.label(text=preset_text,)
-
+                addon_preset_text = addon_preset or '-'
+                export_preset_text = export_preset or '-'
+                if addon_preset_text != '-' and collection_has_preset_changes(collection, exporter, scene):
+                    addon_preset_text += ' *'
+                if export_preset_text != '-' and collection_has_preset_changes(collection, exporter, scene):
+                    export_preset_text += ' *'
+                row.label(text=addon_preset_text)
+                row.label(text=export_preset_text)
             from ..core.export_path_func import generate_base_name
 
             filename_settings = scene

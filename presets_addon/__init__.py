@@ -61,7 +61,7 @@ def create_addon_preset_files(preset_data, preset_folder, saved_preset_files):
 
 
 def apply_default_preset():
-    """Apply the default export preset to the current scene and update the selection tracker."""
+    """Apply the default export format preset to the current scene and update the selection tracker."""
     try:
         addon_prefs = bpy.context.preferences.addons[base_package].preferences
         if addon_prefs is None:

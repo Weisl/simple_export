@@ -35,7 +35,7 @@ class BaseExportPreset(AddPresetBase, Operator):
         f"scene = bpy.context.scene"
     ]
 
-    """Base class for export presets"""
+    """Base class for export format presets"""
     # Common properties for all preset types
     preset_values = [
         "scene.export_format",
@@ -84,7 +84,7 @@ class BaseExportPreset(AddPresetBase, Operator):
 class SceneExportPreset(BaseExportPreset):
     """Presets for scene export settings"""
     bl_idname = "simple_export.scene_preset"
-    bl_label = "Export Presets"
+    bl_label = "Export Format Presets"
     preset_menu = "EXPORT_MT_scene_presets"
 
     def execute(self, context):
@@ -101,7 +101,7 @@ class SceneExportPreset(BaseExportPreset):
 class SIMPLE_EXPORT_OT_set_default_preset(bpy.types.Operator):
     """Pin this preset as the default applied when opening a new blend file"""
     bl_idname = "simple_export.set_default_preset"
-    bl_label = "Set as Default Export Preset"
+    bl_label = "Set as Default Export Format Preset"
     bl_options = {'REGISTER', 'INTERNAL'}
 
     def execute(self, context):
@@ -117,9 +117,9 @@ class SIMPLE_EXPORT_OT_set_default_preset(bpy.types.Operator):
 
 
 class SIMPLE_EXPORT_OT_ApplyPreset(bpy.types.Operator):
-    """Apply an export preset and track it as the currently selected preset"""
+    """Apply an export format preset and track it as the currently selected preset"""
     bl_idname = "simple_export.apply_preset"
-    bl_label = "Apply Export Preset"
+    bl_label = "Apply Export Format Preset"
     bl_options = {'REGISTER', 'INTERNAL'}
 
     filepath: bpy.props.StringProperty()
@@ -135,7 +135,7 @@ class SIMPLE_EXPORT_OT_ApplyPreset(bpy.types.Operator):
 
 
 class EXPORT_MT_scene_presets(Menu):
-    bl_label = "Export Presets"
+    bl_label = "Export Format Presets"
     preset_subdir = BaseExportPreset.preset_subdir
     preset_operator = "simple_export.apply_preset"
     draw = Menu.draw_preset

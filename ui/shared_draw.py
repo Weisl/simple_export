@@ -31,7 +31,7 @@ def draw_parent_collection(context, layout):
 def draw_export_preset_properties(layout, element):
     export_format = element.export_format  # Get the currently selected export format
 
-    layout.label(text="Export Preset")
+    layout.label(text="Export Format Preset")
 
     # Find the property for the current export format
     prop_name = f"simple_export_preset_file_{export_format.lower()}"
@@ -208,7 +208,7 @@ def draw_export_list(layout, list_id, scene):
     box = layout.box()
     header_row = box.row(align=True)
     header_row.label(text="Export Target", icon='FILTER')
-    header_row.operator("simple_export.clear_filters", text="Clear Filter")
+    header_row.operator("simple_export.clear_filters", text="Clear Filters")
 
     col = box.column(align=True)
 
@@ -230,19 +230,22 @@ def draw_export_list(layout, list_id, scene):
         label = "No Group"
     else:
         label = current
-    split.menu("SIMPLE_EXPORT_MT_FilterGroupMenu", text=label)
 
     filter_row(col, "Directory", "filter_directory", icon='FILE_FOLDER')
+
+    row = col.row(align=True)
+    row.prop(scene, "filter_selected_only", text="", icon='CHECKBOX_HLT', toggle=True)
+    row.prop(scene, "filter_name", text="", icon='VIEWZOOM')
+    split.menu("SIMPLE_EXPORT_MT_FilterGroupMenu", text=label)
+
 
     more_header, more_body = col.panel(idname="EXPORT_TARGET_MORE_FILTERS", default_closed=True)
     more_header.label(text="More")
     if more_body:
         filter_row(more_body, "Color", "filter_color_tag")
         filter_row(more_body, "Status", "filter_file_status")
-        filter_row(more_body, "Export Preset", "filter_preset")
-        row = more_body.row(align=True)
-        row.prop(scene, "filter_selected_only", text="", icon='CHECKBOX_HLT', toggle=True)
-        row.prop(scene, "filter_name", text="", icon='VIEWZOOM')
+        filter_row(more_body, "Export Format Preset", "filter_preset")
+
 
     # === COLLECTION LIST ===
     row = layout.row()

@@ -13,7 +13,7 @@ from ..functions.vallidate_func import validate_collection
 class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAssignmentProps, SharedFormatProps):
     """Operator to apply the preset to all collections"""
     bl_idname = "simple_export.assign_presets"
-    bl_label = "Assign Presets"
+    bl_label = "Assign Export Format Presets"
     bl_description = "Assign presets to selected collections based on the current export format."
     bl_options = {'REGISTER', 'UNDO'}
 
