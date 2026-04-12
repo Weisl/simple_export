@@ -398,7 +398,7 @@ def get_filter_custom_group_items(self, context):
             if name and name not in seen:
                 seen.add(name)
                 groups.append(name)
-    items = [('ALL', "All Groups", ""), ('NONE', "No Group", "")]
+    items = [('ALL', "All User Groups", ""), ('NONE', "No Group", "")]
     for g in sorted(groups):
         items.append((g, g, ""))
     return items

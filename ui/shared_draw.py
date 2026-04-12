@@ -223,9 +223,9 @@ def draw_export_list(layout, list_id, scene):
     split.label(text="User Group")
     current = scene.filter_custom_group
     if current == 'ALL':
-        label = "All Groups"
+        label = "All User Groups"
     elif current == 'NONE':
-        label = "No Group"
+        label = "No User Group"
     else:
         label = current
 

@@ -252,10 +252,10 @@ class SIMPLE_EXPORT_MT_FilterGroupMenu(bpy.types.Menu):
         layout = self.layout
         scene = context.scene
 
-        op = layout.operator("simple_export.set_filter_group", text="All Groups")
+        op = layout.operator("simple_export.set_filter_group", text="All User Groups")
         op.group_name = 'ALL'
 
-        op = layout.operator("simple_export.set_filter_group", text="No Group", icon='X')
+        op = layout.operator("simple_export.set_filter_group", text="No User Group", icon='X')
         op.group_name = 'NONE'
 
         layout.separator()
