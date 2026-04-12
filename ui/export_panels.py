@@ -372,7 +372,7 @@ def get_filter_addon_preset_items(self, context):
     from ..presets_addon.exporter_preset import simple_export_presets_folder
     from ..core.export_formats import ExportFormats
 
-    items = [('ALL', "All Presets", "")]
+    items = [('ALL', "All Presets", ""), ('NONE', "Missing Preset", "")]
     seen = set()
 
     # Addon presets as fallback values
@@ -409,7 +409,7 @@ def get_filter_preset_export_items(self, context):
     from ..presets_export.preset_format_functions import get_preset_format_folder
     from ..core.export_formats import ExportFormats
 
-    items = [('ALL', "All Presets", "")]
+    items = [('ALL', "All Presets", ""), ('NONE', "Missing Preset", "")]
     preset_folder = get_preset_format_folder()
     seen = set()
 
@@ -496,7 +496,7 @@ def register():
     )
 
     bpy.types.Scene.filter_preset_addon_preset = bpy.props.EnumProperty(
-        name="Export Format Preset",
+        name="Addon Preset",
         description="Filter by last applied format export format preset",
         items=get_filter_addon_preset_items,
     )

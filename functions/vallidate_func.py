@@ -24,6 +24,10 @@ def post_export_checks(export_path, file_exists_before, file_timestamp_before):
     """Validate the exported file."""
     if not export_path:
         return False, "No export path specified."
+    from .path_utils import make_folder_path_absolute
+    export_path = make_folder_path_absolute(export_path)
+    # export_dir = extract_directory(export_path)
+
     if not os.path.exists(export_path):
         export_dir = os.path.dirname(export_path)
         if not os.path.isdir(export_dir):
@@ -33,6 +37,4 @@ def post_export_checks(export_path, file_exists_before, file_timestamp_before):
         return False, "Export failed: the file was not created. Check the exporter settings or the system console for details."
     if not os.access(export_path, os.W_OK):
         return False, f"Exported file is read-only: '{export_path}'."
-    # if file_exists_before and os.path.getmtime(export_path) <= file_timestamp_before:
-    #     return False, f"File was not updated."
     return True, "Export successful."

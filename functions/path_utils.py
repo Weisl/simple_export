@@ -22,6 +22,18 @@ def clean_relative_path(path):
 
     return path
 
+def make_folder_path_absolute(path):
+    # Convert entire export_path to absolute first
+    folder_path_absolute = bpy.path.abspath(path)
+    if not os.path.isabs(folder_path_absolute):
+        folder_path_absolute = os.path.abspath(folder_path_absolute)
+    return folder_path_absolute
+
+def extract_directory(path):
+    # Extract the directory portion and normalize
+    path_dir = os.path.dirname(path)
+    path_dir = os.path.normpath(path)
+    return path_dir
 
 def ensure_export_folder_exists(export_path):
     """
@@ -37,14 +49,8 @@ def ensure_export_folder_exists(export_path):
         print(f"ERROR: {msg}")
         return False, msg
 
-    # Convert entire export_path to absolute first
-    folder_path_absolute = bpy.path.abspath(export_path)
-    if not os.path.isabs(folder_path_absolute):
-        folder_path_absolute = os.path.abspath(folder_path_absolute)
-
-    # Extract the directory portion and normalize
-    export_dir = os.path.dirname(folder_path_absolute)
-    export_dir = os.path.normpath(export_dir)
+    export_path = make_folder_path_absolute(export_path)
+    export_dir = extract_directory(export_path)
 
     # Ensure directory is valid
     if not os.path.isabs(export_dir) or export_dir in ["", ".", "\\", "//"]:

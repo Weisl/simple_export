@@ -72,6 +72,7 @@ def collection_passes_uilist_filters(collection, scene):
     if scene.filter_custom_group == 'NONE':
         if getattr(collection, 'export_group_name', ''):
             return False
+        
     elif scene.filter_custom_group != 'ALL':
         if getattr(collection, 'export_group_name', '') != scene.filter_custom_group:
             return False
@@ -356,7 +357,9 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
 
         else:
-            col = layout.column(align=True)
+            # list_layout = layout.box() d;
+            list_layout = layout 
+            col = list_layout.column(align=True)
             row = col.row(align=True)
 
             # Checkbox for selecting the collection for export
@@ -448,7 +451,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 op.filename_suffix = filename_settings.filename_suffix
                 op.filename_blend_prefix = filename_settings.filename_blend_prefix
 
-            col.separator()
+            # col.separator()
 
 
     def get_format_name(self, exporter):
