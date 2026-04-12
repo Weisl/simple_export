@@ -128,8 +128,7 @@ def draw_active_list_element(layout, context, scene):
             # Per-collection pre-export operations (always shown)
             if hasattr(selected_collection, 'pre_export_ops'):
                 ops_header, ops_body = box.panel(idname="COL_PRE_EXPORT_OPS", default_closed=True)
-                icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
-                ops_header.label(text="Pre-Export Operations", icon=icon)
+                ops_header.label(text="Pre-Export Operations")
                 if ops_body:
                     draw_pre_export_operations(ops_body, selected_collection.pre_export_ops)
 
@@ -204,13 +203,9 @@ class ExportlistProperties(bpy.types.PropertyGroup):
         description="Select multiple options",
         items=[
             ('FILEPATH', "", "Filepath", 'FILE_FOLDER', 1),
-            ('FILENAME', "", "Filename", 'FILE', 2),
-            ('COLLECTION', "", "Settings", 'OPTIONS', 4),
-            ('ROOT', "", "Root", 'EMPTY_ARROWS', 8),
-            ('ORIGIN', "", "Origin option", 'OBJECT_ORIGIN', 16),
-            ('FORMAT', "", "Format", 'FILE_LARGE', 32),
-            ('OPERATIONS', "", "Active Pre-Export Operations", 'MODIFIER', 64),
-            ('PRESET', "", "Preset", 'PRESET', 128),
+            ('ORIGIN', "", "Origin option", 'OBJECT_ORIGIN', 2),
+            ('OPERATIONS', "", "Active Pre-Export Operations", 'MODIFIER',4),
+            ('PRESET', "", "Preset", 'PRESET',8),
         ],
         options={'ENUM_FLAG'},  # This allows multi-select
         default={'FILEPATH', 'ORIGIN', 'PRESET'},
@@ -347,7 +342,7 @@ def set_default_exportlist_properties(dummy):
     if hasattr(scene, 'exportlist_nPanel_properties'):
         scene.exportlist_nPanel_properties.list_visibility_settings = {'FILEPATH', 'ORIGIN', 'PRESET'}
     if hasattr(scene, 'exportlist_popup_properties'):
-        scene.exportlist_popup_properties.list_visibility_settings = {'FILEPATH', 'ROOT', 'FORMAT'}
+        scene.exportlist_popup_properties.list_visibility_settings = {'FILEPATH', 'ORIGIN', 'FORMAT'}
     if hasattr(scene, 'exportlist_scene_properties'):
         scene.exportlist_scene_properties.list_visibility_settings = {'FILEPATH', 'ORIGIN', 'PRESET'}
 

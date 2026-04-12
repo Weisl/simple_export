@@ -32,7 +32,6 @@ def draw_export_preset_properties(layout, element):
     export_format = element.export_format  # Get the currently selected export format
 
     layout.label(text="Export Format Preset")
-
     # Find the property for the current export format
     prop_name = f"simple_export_preset_file_{export_format.lower()}"
 
@@ -197,8 +196,7 @@ def draw_full_exporer_settings(layout, props):
 
     # --- Pre-Export Operations (defaults for new collections) ---
     box = layout.box()
-    icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
-    box.label(text="Pre-Export Operations (defaults for new collections)", icon=icon)
+    box.label(text="Pre-Export Operations (defaults for new collections)")
     from ..ui.export_panels import draw_pre_export_operations
     draw_pre_export_operations(box, props)
 
@@ -217,8 +215,8 @@ def draw_export_list(layout, list_id, scene):
         split.label(text=label)
         split.prop(scene, prop, text="", **kwargs)
 
-    filter_row(col, "Format", "filter_format")
-    filter_row(col, "Addon Preset", "filter_addon_preset")
+    # filter_row(col, "Format", "filter_format")
+    # filter_row(col, "Addon Preset", "filter_addon_preset")
 
     # User Group: menu with inline "Add New Group..." entry
     split = col.split(factor=0.35, align=True)

@@ -407,42 +407,24 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 op = call_simple_export_path_ops(context, row, text='', outliner=False,
                                                  individual_collection=True, collection_name=collection.name)
 
-            if 'FILENAME' in visibility_properties.list_visibility_settings:
-                row = col.row(align=True)
-                filename = os.path.basename(exporter.export_properties.filepath)
-                row.label(text=filename)
 
             # Display Empty or Eyedropper button depending on the root_object state
-
-            if 'ROOT' in visibility_properties.list_visibility_settings:
-                row = col.row(align=True)
-                # if collection.use_root_object:
-
-                icon = "LINKED" if collection.use_root_object else "UNLINKED"
-                row.prop(collection, "use_root_object", text='', icon=icon)
-
-                if collection.use_root_object:
-                    row.prop(collection, "root_object", text="")
-                    op = row.operator("object.select_root", text="", icon='EMPTY_AXIS')
-                    op.collection_name = collection.name
-
             if 'ORIGIN' in visibility_properties.list_visibility_settings:
                 row = col.row(align=True)
                 icon = "LINKED" if collection.use_root_object else "UNLINKED"
                 row.prop(collection, "use_root_object", text='', icon=icon)
+    
+                row.enabled = False if collection.use_root_object else True
                 row.prop(collection, "instance_offset", text="")
+                    
+                row.prop(collection, "root_object", text="")
+                op = row.operator("object.select_root", text="", icon='EMPTY_AXIS')
+                op.collection_name = collection.name
 
             if 'COLLECTION' in visibility_properties.list_visibility_settings:
                 row = col.row(align=True)
                 pass
-            if 'FILENAME' in visibility_properties.list_visibility_settings:
-                row = col.row(align=True)
-                pass
 
-            if 'FORMAT' in visibility_properties.list_visibility_settings:
-                row = col.row(align=True)
-                text = self.get_format_name(exporter)
-                row.label(text=text)  # Display the user-friendly label
 
             if 'OPERATIONS' in visibility_properties.list_visibility_settings:
                 col_ops = collection.pre_export_ops
