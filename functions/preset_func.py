@@ -151,7 +151,7 @@ def assign_preset(exporter, preset_path):
     preset_properties = parse_preset_file(preset_path)
 
     if preset_properties:
-        del preset_properties['filepath']
+        preset_properties.pop('filepath', None)  # skip gracefully if key absent
 
     # Apply the properties to the exporter
     _assign_preset_to_exporter(preset_properties, exporter)

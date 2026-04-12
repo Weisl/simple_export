@@ -278,7 +278,10 @@ def update_panel_category(self, context):
         except:
             pass
 
-        prefs = context.preferences.addons[base_package].preferences
+        addon = context.preferences.addons.get(base_package)
+        if addon is None:
+            return  # addon not yet enabled (e.g. background mode during register)
+        prefs = addon.preferences
         panel.bl_category = prefs.panel_category
 
         if prefs.enable_n_panel:
@@ -946,9 +949,10 @@ def initialize_format_specific_properties():
 
 # Helper function to initialize Window Manager properties
 def initialize_properties_collection_generation():
-    prefs = bpy.context.preferences.addons[base_package].preferences
-    if prefs is None:
-        return
+    addon = bpy.context.preferences.addons.get(base_package)
+    if addon is None:
+        return  # not yet in addons list (background mode / first registration)
+    prefs = addon.preferences
 
     bpy.types.Scene.export_format = bpy.props.EnumProperty(
         name="Export Format",
@@ -1086,9 +1090,10 @@ def initialize_properties_collection_generation():
 
 
 def initialize_properties_file_path():
-    prefs = bpy.context.preferences.addons[base_package].preferences
-    if prefs is None:
-        return
+    addon = bpy.context.preferences.addons.get(base_package)
+    if addon is None:
+        return  # not yet in addons list (background mode / first registration)
+    prefs = addon.preferences
 
     bpy.types.Scene.folder_path_search = bpy.props.StringProperty(
         name=PROPERTY_METADATA["folder_path_search"]["name"],
@@ -1134,9 +1139,10 @@ def initialize_properties_file_path():
 
 
 def post_register():
-    prefs = bpy.context.preferences.addons[base_package].preferences
-    if prefs is None:
-        return 0.5  # prefs not ready yet, retry
+    addon = bpy.context.preferences.addons.get(base_package)
+    if addon is None:
+        return 0.5  # not yet in addons list, retry
+    prefs = addon.preferences  # noqa: F841 — kept for future use; guards the None case above
     initialize_properties_collection_generation()
     initialize_properties_file_path()
 

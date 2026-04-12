@@ -50,7 +50,10 @@ def remove_key(context, idname, properties_name):
 
 def add_keymap():
     context = bpy.context
-    prefs = context.preferences.addons[base_package].preferences
+    addon = context.preferences.addons.get(base_package)
+    if addon is None:
+        return  # not yet in addons list (background mode / first registration)
+    prefs = addon.preferences
     wm = context.window_manager
     if not wm.keyconfigs.active:
         return
