@@ -281,11 +281,11 @@ def draw_export_list(layout, list_id, scene):
     col.menu("SIMPLE_EXPORT_MT_context_menu", icon='DOWNARROW_HLT', text="")
 
     col.separator()
-    if list_id is 'npanel':
+    if list_id == 'npanel':
         visibility_properties = scene.exportlist_nPanel_properties
         col.prop(visibility_properties, "list_visibility_settings")
 
-    if list_id is 'scene':
+    if list_id == 'scene':
         visibility_properties = scene.exportlist_scene_properties
         col.prop(visibility_properties, "list_visibility_settings")
 
