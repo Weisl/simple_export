@@ -59,14 +59,13 @@ def collection_passes_uilist_filters(collection, scene):
             return False
 
     # Export format preset
-    if scene.filter_preset != 'ALL':
-        if scene.filter_preset != getattr(collection, 'simple_export_export_preset', ''):
+    if scene.filter_preset_addon_preset != 'ALL':
+        if scene.filter_preset_addon_preset != getattr(collection, 'simple_export_addon_preset', ''):
             return False
 
     # Addon preset — matches the displayed value: format preset with fallback to addon preset
-    if scene.filter_addon_preset != 'ALL':
-        displayed_preset = getattr(collection, 'simple_export_export_preset', '') or getattr(collection, 'simple_export_addon_preset', '')
-        if scene.filter_addon_preset != displayed_preset:
+    if scene.filter_preset_export_preset != 'ALL':
+        if scene.filter_preset_export_preset != getattr(collection, 'simple_export_export_preset', ''):
             return False
 
     # Custom group filter

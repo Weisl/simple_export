@@ -404,7 +404,7 @@ def get_filter_custom_group_items(self, context):
     return items
 
 
-def get_filter_preset_items(self, context):
+def get_filter_preset_export_items(self, context):
     """Dynamic enum items: all preset files available on disk."""
     from ..presets_export.preset_format_functions import get_preset_format_folder
     from ..core.export_formats import ExportFormats
@@ -495,10 +495,10 @@ def register():
         items=get_filter_directory_items,
     )
 
-    bpy.types.Scene.filter_preset = bpy.props.EnumProperty(
+    bpy.types.Scene.filter_preset_addon_preset = bpy.props.EnumProperty(
         name="Export Format Preset",
         description="Filter by last applied format export format preset",
-        items=get_filter_preset_items,
+        items=get_filter_addon_preset_items,
     )
 
     bpy.types.Scene.filter_custom_group = bpy.props.EnumProperty(
@@ -507,10 +507,10 @@ def register():
         items=get_filter_custom_group_items,
     )
 
-    bpy.types.Scene.filter_addon_preset = bpy.props.EnumProperty(
+    bpy.types.Scene.filter_preset_export_preset = bpy.props.EnumProperty(
         name="Addon Preset",
         description="Filter by the Simple Export addon preset used when configuring this collection",
-        items=get_filter_addon_preset_items,
+        items=get_filter_preset_export_items,
     )
 
     bpy.types.Scene.sort_mode = bpy.props.EnumProperty(
@@ -554,9 +554,9 @@ def unregister():
     del bpy.types.Scene.filter_name
     del bpy.types.Scene.filter_file_status
     del bpy.types.Scene.filter_directory
-    del bpy.types.Scene.filter_preset
+    del bpy.types.Scene.filter_preset_addon_preset
     del bpy.types.Scene.filter_custom_group
-    del bpy.types.Scene.filter_addon_preset
+    del bpy.types.Scene.filter_preset_export_preset
     del bpy.types.Scene.sort_mode
     del bpy.types.Scene.sort_reverse
 

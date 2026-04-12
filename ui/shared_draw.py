@@ -215,7 +215,7 @@ def draw_export_list(layout, list_id, scene):
         split.label(text=label)
         split.prop(scene, prop, text="", **kwargs)
 
-    filter_row(col, "Addon Preset", "filter_addon_preset")
+    filter_row(col, "Addon Preset", "filter_preset_export_preset")
     filter_row(col, "Format", "filter_format")
     
     # User Group: menu with inline "Add New Group..." entry
@@ -242,7 +242,7 @@ def draw_export_list(layout, list_id, scene):
     if more_body:
         filter_row(more_body, "Color", "filter_color_tag")
         filter_row(more_body, "Status", "filter_file_status")
-        filter_row(more_body, "Export Format Preset", "filter_preset")
+        filter_row(more_body, "Export Format Preset", "filter_preset_addon_preset")
 
 
     # === COLLECTION LIST ===
