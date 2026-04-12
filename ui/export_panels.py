@@ -124,6 +124,7 @@ def draw_active_list_element(layout, context, scene):
             else:
                 box.label(text='No exporter configured', icon='INFO')
 
+            
             # Per-collection pre-export operations (always shown)
             if hasattr(selected_collection, 'pre_export_ops'):
                 ops_header, ops_body = box.panel(idname="COL_PRE_EXPORT_OPS", default_closed=True)
@@ -132,9 +133,10 @@ def draw_active_list_element(layout, context, scene):
                 if ops_body:
                     draw_pre_export_operations(ops_body, selected_collection.pre_export_ops)
 
+                box.separator()
+                
                 ops_header, ops_body = box.panel(idname="COL_EXPORT_SETTINGS", default_closed=True)
-                icon = 'WARNING_LARGE' if bpy.app.version >= (4, 3, 0) else 'ERROR'
-                ops_header.label(text="Exporter Settings", icon=icon)
+                ops_header.label(text="Exporter Settings")
                 if ops_body:
                     ops_body.template_collection_exporters()
 
@@ -201,18 +203,17 @@ class ExportlistProperties(bpy.types.PropertyGroup):
         name="List Entry",
         description="Select multiple options",
         items=[
-            ('DEFAULT', "", "Status", 'OUTLINER_COLLECTION', 1),
-            ('FILEPATH', "", "Filepath", 'FILE_FOLDER', 2),
-            ('FILENAME', "", "Filename", 'FILE', 4),
-            ('COLLECTION', "", "Settings", 'OPTIONS', 8),
-            ('ROOT', "", "Root", 'EMPTY_ARROWS', 16),
-            ('ORIGIN', "", "Origin option", 'OBJECT_ORIGIN', 32),
-            ('FORMAT', "", "Format", 'FILE_LARGE', 64),
-            ('OPERATIONS', "", "Active Pre-Export Operations", 'MODIFIER', 128),
-            ('PRESET', "", "Preset", 'PRESET', 256),
+            ('FILEPATH', "", "Filepath", 'FILE_FOLDER', 1),
+            ('FILENAME', "", "Filename", 'FILE', 2),
+            ('COLLECTION', "", "Settings", 'OPTIONS', 4),
+            ('ROOT', "", "Root", 'EMPTY_ARROWS', 8),
+            ('ORIGIN', "", "Origin option", 'OBJECT_ORIGIN', 16),
+            ('FORMAT', "", "Format", 'FILE_LARGE', 32),
+            ('OPERATIONS', "", "Active Pre-Export Operations", 'MODIFIER', 64),
+            ('PRESET', "", "Preset", 'PRESET', 128),
         ],
         options={'ENUM_FLAG'},  # This allows multi-select
-        default={'DEFAULT', 'PRESET'},
+        default={'FILEPATH', 'ORIGIN', 'PRESET'},
     )
 
 
@@ -344,11 +345,11 @@ def set_default_exportlist_properties(dummy):
     scene = bpy.context.scene
     # Set defaults for each PointerProperty
     if hasattr(scene, 'exportlist_nPanel_properties'):
-        scene.exportlist_nPanel_properties.list_visibility_settings = {'DEFAULT', 'PRESET'}
+        scene.exportlist_nPanel_properties.list_visibility_settings = {'FILEPATH', 'ORIGIN', 'PRESET'}
     if hasattr(scene, 'exportlist_popup_properties'):
-        scene.exportlist_popup_properties.list_visibility_settings = {'DEFAULT', 'FILEPATH', 'ROOT', 'FORMAT'}
+        scene.exportlist_popup_properties.list_visibility_settings = {'FILEPATH', 'ROOT', 'FORMAT'}
     if hasattr(scene, 'exportlist_scene_properties'):
-        scene.exportlist_scene_properties.list_visibility_settings = {'DEFAULT', 'FILEPATH'}
+        scene.exportlist_scene_properties.list_visibility_settings = {'FILEPATH', 'ORIGIN', 'PRESET'}
 
 
 def get_filter_directory_items(self, context):

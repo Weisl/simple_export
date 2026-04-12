@@ -357,20 +357,46 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
 
         else:
-            row = layout.row(align=True)
+            col = layout.column(align=True)
+            row = col.row(align=True)
 
             # Checkbox for selecting the collection for export
             row.prop(collection, "simple_export_selected", text="")
             visibility_properties = scene.exportlist_nPanel_properties if self.list_id == 'npanel' else scene.exportlist_scene_properties
 
-            if 'DEFAULT' in visibility_properties.list_visibility_settings:
-                icon = self.get_export_status_icon(export_path, file_exists, collection)
-                row.label(text='', icon=icon)
-                # Display the collection name with the color icon
-                icon = self.get_collection_color_icon(collection)
-                row.label(text=collection.name, icon=icon)
+
+            icon = self.get_export_status_icon(export_path, file_exists, collection)
+            row.label(text='', icon=icon)
+            # Display the collection name with the color icon
+            icon = self.get_collection_color_icon(collection)
+            row.prop(collection, 'name',text='',icon=icon)
+
+            # Add arrow button that sets the collection name and opens the menu
+            arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
+            arrow_op.collection_name = collection.name
+
+            # Add the Export Collection button
+            op = row.operator("simple_export.export_collections", text="", icon='EXPORT')
+            op.outliner = False
+            op.individual_collection = True
+            op.collection_name = collection.name
+
+            if 'PRESET' in visibility_properties.list_visibility_settings:
+                row = col.row(align=True)
+                export_preset = getattr(collection, 'last_preset_name', '')
+                addon_preset = getattr(collection, 'last_addon_preset_name', '')
+                addon_preset_text = addon_preset or '-'
+                export_preset_text = export_preset or '-'
+                if addon_preset_text != '-' and collection_has_preset_changes(collection, exporter, scene):
+                    addon_preset_text += ' *'
+                if export_preset_text != '-' and collection_has_preset_changes(collection, exporter, scene):
+                    export_preset_text += ' *'
+                row.label(text=addon_preset_text)
+                row.label(text=export_preset_text)
+
 
             if 'FILEPATH' in visibility_properties.list_visibility_settings:
+                row = col.row(align=True)
                 # Display the export file path as an editable property
                 row.prop(exporter.export_properties, "filepath", text="", expand=True)
 
@@ -382,12 +408,14 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                                                  individual_collection=True, collection_name=collection.name)
 
             if 'FILENAME' in visibility_properties.list_visibility_settings:
+                row = col.row(align=True)
                 filename = os.path.basename(exporter.export_properties.filepath)
                 row.label(text=filename)
 
             # Display Empty or Eyedropper button depending on the root_object state
 
             if 'ROOT' in visibility_properties.list_visibility_settings:
+                row = col.row(align=True)
                 # if collection.use_root_object:
 
                 icon = "LINKED" if collection.use_root_object else "UNLINKED"
@@ -399,16 +427,20 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                     op.collection_name = collection.name
 
             if 'ORIGIN' in visibility_properties.list_visibility_settings:
+                row = col.row(align=True)
                 icon = "LINKED" if collection.use_root_object else "UNLINKED"
                 row.prop(collection, "use_root_object", text='', icon=icon)
                 row.prop(collection, "instance_offset", text="")
 
             if 'COLLECTION' in visibility_properties.list_visibility_settings:
+                row = col.row(align=True)
                 pass
             if 'FILENAME' in visibility_properties.list_visibility_settings:
+                row = col.row(align=True)
                 pass
 
             if 'FORMAT' in visibility_properties.list_visibility_settings:
+                row = col.row(align=True)
                 text = self.get_format_name(exporter)
                 row.label(text=text)  # Display the user-friendly label
 
@@ -423,19 +455,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 if col_ops.pre_rotate_objects:
                     row.label(text='', icon='DRIVER_ROTATIONAL_DIFFERENCE')
 
-            if 'PRESET' in visibility_properties.list_visibility_settings:
-                export_preset = getattr(collection, 'last_preset_name', '')
-                addon_preset = getattr(collection, 'last_addon_preset_name', '')
-                addon_preset_text = addon_preset or '-'
-                export_preset_text = export_preset or '-'
-                if addon_preset_text != '-' and collection_has_preset_changes(collection, exporter, scene):
-                    addon_preset_text += ' *'
-                if export_preset_text != '-' and collection_has_preset_changes(collection, exporter, scene):
-                    export_preset_text += ' *'
-                row.label(text=addon_preset_text)
-                row.label(text=export_preset_text)
             from ..core.export_path_func import generate_base_name
-
             filename_settings = scene
             base_name = generate_base_name(collection.name, filename_settings.filename_prefix,
                                            filename_settings.filename_suffix, filename_settings.filename_blend_prefix)
@@ -447,15 +467,8 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 op.filename_suffix = filename_settings.filename_suffix
                 op.filename_blend_prefix = filename_settings.filename_blend_prefix
 
-            # Add arrow button that sets the collection name and opens the menu
-            arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
-            arrow_op.collection_name = collection.name
+            col.separator()
 
-            # Add the Export Collection button
-            op = row.operator("simple_export.export_collections", text="", icon='EXPORT')
-            op.outliner = False
-            op.individual_collection = True
-            op.collection_name = collection.name
 
     def get_format_name(self, exporter):
         # Display the export format
