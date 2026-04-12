@@ -108,7 +108,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
         if not success:
             raise ValueError(msg)
 
-        collection.last_preset_name = os.path.splitext(preset_name)[0]
+        collection.simple_export_export_preset = os.path.splitext(preset_name)[0]
 
         # Add success result
         return {'name': collection.name, 'success': True, 'message': f"Applied preset '{preset_name}'."}

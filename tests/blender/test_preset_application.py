@@ -12,7 +12,7 @@ addon preferences), these tests register only the minimal set of Blender types
 that the preset functions actually require:
 
   - CollectionPreExportOps + its pointer property (from _helpers)
-  - Collection.last_preset_name  (StringProperty, read by format_preset_has_changes)
+  - Collection.simple_export_export_preset  (StringProperty, read by format_preset_has_changes)
 
 This avoids the background-mode failure caused by the full addon's register()
 chain accessing bpy.context.preferences.addons["simple_export"] before the
@@ -72,17 +72,17 @@ import tests.blender._helpers as _h  # noqa: E402
 def setUpModule():
     """Register only the Blender types the preset functions actually need."""
     _h.register_collection_props()
-    # format_preset_has_changes reads collection.last_preset_name via getattr
+    # format_preset_has_changes reads collection.simple_export_export_preset via getattr
     # with a '' default, but we also want to write it in tests.
-    if not hasattr(bpy.types.Collection, "last_preset_name"):
-        bpy.types.Collection.last_preset_name = bpy.props.StringProperty(default="")
-    if not hasattr(bpy.types.Collection, "last_addon_preset_name"):
-        bpy.types.Collection.last_addon_preset_name = bpy.props.StringProperty(default="")
+    if not hasattr(bpy.types.Collection, "simple_export_export_preset"):
+        bpy.types.Collection.simple_export_export_preset = bpy.props.StringProperty(default="")
+    if not hasattr(bpy.types.Collection, "simple_export_addon_preset"):
+        bpy.types.Collection.simple_export_addon_preset = bpy.props.StringProperty(default="")
 
 
 def tearDownModule():
     _h.unregister_collection_props()
-    for attr in ("last_preset_name", "last_addon_preset_name"):
+    for attr in ("simple_export_export_preset", "simple_export_addon_preset"):
         if hasattr(bpy.types.Collection, attr):
             delattr(bpy.types.Collection, attr)
 
@@ -371,7 +371,7 @@ class TestFormatPresetHasChanges(_PresetTestBase):
 
     def test_no_preset_name_returns_false(self):
         exporter = self._add_exporter("IO_FH_fbx")
-        self.col.last_preset_name = ""
+        self.col.simple_export_export_preset = ""
         from simple_export.functions.preset_func import format_preset_has_changes
         self.assertFalse(format_preset_has_changes(self.col, exporter))
 
@@ -390,7 +390,7 @@ class TestFormatPresetHasChanges(_PresetTestBase):
             op.filepath = ''
             op.global_scale = {current_scale!r}
         """)
-        self.col.last_preset_name = preset_name
+        self.col.simple_export_export_preset = preset_name
 
         from simple_export.functions.preset_func import assign_preset, format_preset_has_changes
         assign_preset(exporter, path)
@@ -413,7 +413,7 @@ class TestFormatPresetHasChanges(_PresetTestBase):
             op.filepath = ''
             op.global_scale = 1.0
         """)
-        self.col.last_preset_name = preset_name
+        self.col.simple_export_export_preset = preset_name
 
         from simple_export.functions.preset_func import assign_preset, format_preset_has_changes
         assign_preset(exporter, path)
@@ -427,7 +427,7 @@ class TestFormatPresetHasChanges(_PresetTestBase):
     def test_preset_file_missing_returns_false_no_crash(self):
         """Preset file deleted after assignment → treated as no drift, no crash."""
         exporter = self._add_exporter("IO_FH_fbx")
-        self.col.last_preset_name = "ghost-preset"  # file never created
+        self.col.simple_export_export_preset = "ghost-preset"  # file never created
 
         from simple_export.functions.preset_func import format_preset_has_changes
         with self._patch_preset_folder(self.tmpdir):

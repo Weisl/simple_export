@@ -63,7 +63,7 @@ def _props_equal(blender_val, preset_val):
 
 def format_preset_has_changes(collection, exporter):
     """Return True if the exporter's export properties differ from the stored format preset."""
-    preset_name = getattr(collection, 'last_preset_name', '')
+    preset_name = getattr(collection, 'simple_export_export_preset', '')
     if not preset_name:
         return False
 
@@ -94,7 +94,7 @@ def format_preset_has_changes(collection, exporter):
 
 def addon_preset_has_changes(collection, scene):
     """Return True if the scene properties differ from the stored addon preset."""
-    preset_name = getattr(collection, 'last_addon_preset_name', '')
+    preset_name = getattr(collection, 'simple_export_addon_preset', '')
     if not preset_name:
         return False
 
@@ -106,7 +106,7 @@ def addon_preset_has_changes(collection, scene):
         return False
 
     for prop_name, preset_value in preset_props.items():
-        # Skip format preset file paths — machine-specific, handled by last_preset_name
+        # Skip format preset file paths — machine-specific, handled by simple_export_export_preset
         if prop_name.startswith('simple_export_preset_file_'):
             continue
         if hasattr(scene, prop_name):

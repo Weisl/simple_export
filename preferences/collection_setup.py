@@ -140,13 +140,13 @@ def register():
         description="Select this collection for export",
         default=False)
 
-    bpy.types.Collection.last_preset_name = bpy.props.StringProperty(
+    bpy.types.Collection.simple_export_export_preset = bpy.props.StringProperty(
         name="Last Export Format Preset",
         description="Name of the last format export format preset applied to this collection",
         default=""
     )
 
-    bpy.types.Collection.last_addon_preset_name = bpy.props.StringProperty(
+    bpy.types.Collection.simple_export_addon_preset = bpy.props.StringProperty(
         name="Last Addon Preset",
         description="Name of the Simple Export addon preset active when this collection was configured",
         default=""
@@ -183,8 +183,8 @@ def unregister():
     del bpy.types.Collection.root_object
     del bpy.types.Collection.use_root_object
     del bpy.types.Collection.simple_export_selected
-    del bpy.types.Collection.last_preset_name
-    del bpy.types.Collection.last_addon_preset_name
+    del bpy.types.Collection.simple_export_export_preset
+    del bpy.types.Collection.simple_export_addon_preset
     del bpy.types.Collection.last_export_failed
     del bpy.types.Collection.export_group_name
 

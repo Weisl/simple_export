@@ -102,11 +102,11 @@ class EXPORT_OT_AddSettingsToCollections(
             from ..presets_export.preset_format_functions import get_format_preset_filepath
             preset_file = get_format_preset_filepath(self, self.export_format)
             assign_preset(exporter, preset_file)
-            collection.last_preset_name = os.path.splitext(os.path.basename(preset_file))[0]
+            collection.simple_export_export_preset = os.path.splitext(os.path.basename(preset_file))[0]
 
         selected_addon_preset = context.scene.simple_export_selected_preset
         if selected_addon_preset:
-            collection.last_addon_preset_name = os.path.splitext(os.path.basename(selected_addon_preset))[0]
+            collection.simple_export_export_preset = os.path.splitext(os.path.basename(selected_addon_preset))[0]
 
         # Assign filepath to exporter
         if self.set_export_path and hasattr(exporter, 'filepath'):

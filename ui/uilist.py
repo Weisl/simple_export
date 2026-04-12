@@ -60,12 +60,12 @@ def collection_passes_uilist_filters(collection, scene):
 
     # Export format preset
     if scene.filter_preset != 'ALL':
-        if scene.filter_preset != getattr(collection, 'last_preset_name', ''):
+        if scene.filter_preset != getattr(collection, 'simple_export_export_preset', ''):
             return False
 
     # Addon preset — matches the displayed value: format preset with fallback to addon preset
     if scene.filter_addon_preset != 'ALL':
-        displayed_preset = getattr(collection, 'last_preset_name', '') or getattr(collection, 'last_addon_preset_name', '')
+        displayed_preset = getattr(collection, 'simple_export_export_preset', '') or getattr(collection, 'simple_export_addon_preset', '')
         if scene.filter_addon_preset != displayed_preset:
             return False
 
@@ -383,8 +383,8 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
             if 'PRESET' in visibility_properties.list_visibility_settings:
                 row = col.row(align=True)
-                export_preset = getattr(collection, 'last_preset_name', '')
-                addon_preset = getattr(collection, 'last_addon_preset_name', '')
+                export_preset = getattr(collection, 'simple_export_export_preset', '')
+                addon_preset = getattr(collection, 'simple_export_addon_preset', '')
                 addon_preset_text = addon_preset or '-'
                 export_preset_text = export_preset or '-'
                 if addon_preset_text != '-' and collection_has_preset_changes(collection, exporter, scene):
@@ -508,7 +508,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             elif scene.sort_mode == 'COLOR_TAG':
                 sorted_pairs = sorted(indexed, key=lambda x: x[1].color_tag, reverse=rev)
             elif scene.sort_mode == 'PRESET':
-                sorted_pairs = sorted(indexed, key=lambda x: getattr(x[1], 'last_preset_name', '').lower(), reverse=rev)
+                sorted_pairs = sorted(indexed, key=lambda x: getattr(x[1], 'simple_export_export_preset', '').lower(), reverse=rev)
             else:
                 sorted_pairs = indexed
 

@@ -215,9 +215,9 @@ def draw_export_list(layout, list_id, scene):
         split.label(text=label)
         split.prop(scene, prop, text="", **kwargs)
 
-    # filter_row(col, "Format", "filter_format")
-    # filter_row(col, "Addon Preset", "filter_addon_preset")
-
+    filter_row(col, "Addon Preset", "filter_addon_preset")
+    filter_row(col, "Format", "filter_format")
+    
     # User Group: menu with inline "Add New Group..." entry
     split = col.split(factor=0.35, align=True)
     split.label(text="User Group")
