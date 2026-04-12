@@ -76,7 +76,7 @@ class EXPORT_OT_CreateExportCollections(
             ('ADD', "Add New", "Keep existing exporters and add a new one alongside them"),
             ('CANCEL', "Cancel", "Skip collections that already have an exporter assigned"),
         ],
-        default='REPLACE'
+        default='ADD'
     )
 
     warn_existing_exporters: bpy.props.BoolProperty(

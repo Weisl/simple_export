@@ -70,7 +70,10 @@ def collection_passes_uilist_filters(collection, scene):
             return False
 
     # Custom group filter
-    if scene.filter_custom_group != 'ALL':
+    if scene.filter_custom_group == 'NONE':
+        if getattr(collection, 'export_group_name', ''):
+            return False
+    elif scene.filter_custom_group != 'ALL':
         if getattr(collection, 'export_group_name', '') != scene.filter_custom_group:
             return False
 

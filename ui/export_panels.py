@@ -80,43 +80,47 @@ def draw_active_list_element(layout, context, scene):
             op.collection_name = selected_collection.name
 
             row = box.row(align=True)
-            row.prop(selected_collection, 'export_group_name', text="Export Group", icon='GROUP')
+            split = row.split(factor=0.4, align=True)
+            split.label(text="User Group")
+            current_group = selected_collection.export_group_name or "None"
+            split.menu("SIMPLE_EXPORT_MT_CollectionGroupMenu", text=current_group)
 
             if exporter:
+                # Filepath
                 row = box.row(align=True)
                 row.prop(exporter.export_properties, "filepath", text="", expand=True)
 
+                # User Group
                 from .shared_operator_call import call_simple_export_path_ops
                 op = call_simple_export_path_ops(context, row, text='', outliner=False,
                                                  individual_collection=True, collection_name=selected_collection.name)
 
-                box.label(text='Root Object')
-                box.prop(selected_collection, "use_root_object", text="Use Root Object")
+                # Collection offset object 
+                root_box = box.box()
 
+                row = root_box.row(align=True)
+                icon = "LINKED" if selected_collection.use_root_object else "UNLINKED"
                 if not selected_collection.use_root_object:
-                    root_box = box.box()
-                    row = root_box.row(align=True)
-                    row.prop(selected_collection, "instance_offset", text='Collection Center')
-                    col = root_box.column(align=True)
-                    op = col.operator("object.set_collection_offset_cursor", text="Set Offset from Cursor")
-                    op.collection_name = selected_collection.name
-                    op = col.operator("object.set_collection_offset_object", text="Set Offset from Object")
-                    op.collection_name = selected_collection.name
-                else:
-                    box.prop(selected_collection, "root_object", text="Root Object")
-                    root_box = box.box()
-                    if selected_collection.root_object:
-                        root_box.enabled = False
-                    row = root_box.row(align=True)
-                    row.prop(selected_collection, "instance_offset", text='Collection Center')
-                    if not selected_collection.root_object:
-                        col = root_box.column(align=True)
-                        op = col.operator("object.create_root_empty", text="Create Root Empty", icon='EMPTY_AXIS')
-                        op.collection_name = selected_collection.name
-                        op = col.operator("object.set_collection_offset_cursor", text="Set Offset from Cursor")
-                        op.collection_name = selected_collection.name
-                        op = col.operator("object.set_collection_offset_object", text="Set Offset from Object")
-                        op.collection_name = selected_collection.name
+                    row.prop(selected_collection, "use_root_object", text="", icon=icon, toggle=True)
+                else: 
+                    row.prop(selected_collection, "use_root_object", text='', icon=icon, toggle=True)
+                row.label(text='Rooth Object')
+
+                # root selection
+                row = root_box.row(align=True)
+                row.enabled = selected_collection.use_root_object
+                row.prop(selected_collection, "root_object", text="")
+
+                col = root_box.column(align=True)
+                col.enabled = not selected_collection.use_root_object 
+                row = col.row(align=True)
+                row.prop(selected_collection, "instance_offset", text='Collection Center')
+                op = col.operator("object.set_collection_offset_cursor", text="Set Offset from Cursor")
+                op.collection_name = selected_collection.name
+                op = col.operator("object.set_collection_offset_object", text="Set Offset from Object")
+                op.collection_name = selected_collection.name
+
+                    
             else:
                 box.label(text='No exporter configured', icon='INFO')
 
@@ -173,7 +177,16 @@ def draw_custom_collection_ui(self, context):
     layout = self.layout
     collection = context.collection
 
-    layout.prop(collection, "root_object", text="Collection Root")
+    row = layout.row(align = True)
+    icon = "LINKED" if collection.use_root_object else "UNLINKED"
+    if not collection.use_root_object:
+        row.prop(collection, "use_root_object", text="", icon=icon, toggle=True)
+    else: 
+        row.prop(collection, "use_root_object", text='', icon=icon, toggle=True)
+    row.label(text='Rooth Object')
+
+    row.prop(collection, "root_object", text="")
+
 
 
 class ExportlistProperties(bpy.types.PropertyGroup):
@@ -392,7 +405,7 @@ def get_filter_custom_group_items(self, context):
             if name and name not in seen:
                 seen.add(name)
                 groups.append(name)
-    items = [('ALL', "All Groups", "")]
+    items = [('ALL', "All Groups", ""), ('NONE', "No Group", "")]
     for g in sorted(groups):
         items.append((g, g, ""))
     return items

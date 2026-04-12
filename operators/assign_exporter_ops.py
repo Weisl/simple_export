@@ -41,11 +41,11 @@ class EXPORT_OT_AddSettingsToCollections(
         name="Existing Exporter",
         description="How to handle the exporter already assigned to this collection",
         items=[
-            ('REPLACE', "Replace", "Remove the existing exporter and replace it with a new one"),
             ('ADD', "Add New", "Keep the existing exporter and add a new one alongside it"),
+            ('REPLACE', "Replace", "Remove the existing exporter and replace it with a new one"),
             ('CANCEL', "Cancel", "Cancel the operation and leave the collection unchanged"),
         ],
-        default='REPLACE'
+        default='ADD'
     )
 
     def invoke(self, context, event):

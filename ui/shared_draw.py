@@ -217,10 +217,22 @@ def draw_export_list(layout, list_id, scene):
         split.label(text=label)
         split.prop(scene, prop, text="", **kwargs)
 
-    filter_row(col, "Addon Preset", "filter_addon_preset")
     filter_row(col, "Format", "filter_format")
+    filter_row(col, "Addon Preset", "filter_addon_preset")
+
+    # User Group: menu with inline "Add New Group..." entry
+    split = col.split(factor=0.35, align=True)
+    split.label(text="User Group")
+    current = scene.filter_custom_group
+    if current == 'ALL':
+        label = "All Groups"
+    elif current == 'NONE':
+        label = "No Group"
+    else:
+        label = current
+    split.menu("SIMPLE_EXPORT_MT_FilterGroupMenu", text=label)
+
     filter_row(col, "Directory", "filter_directory", icon='FILE_FOLDER')
-    filter_row(col, "Group", "filter_custom_group")
 
     more_header, more_body = col.panel(idname="EXPORT_TARGET_MORE_FILTERS", default_closed=True)
     more_header.label(text="More")
