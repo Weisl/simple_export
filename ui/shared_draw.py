@@ -4,6 +4,7 @@ import textwrap
 import bpy
 
 from .. import __package__ as base_package
+from ..core.info import ADDON_NAME
 
 
 def get_table_columns(layout):
@@ -152,6 +153,12 @@ def draw_exporter_presets(layout, buttons=False):
 
     # Determine the appropriate preset menu and operators based on the context
     row.menu(EXPORT_MT_scene_presets.__name__, text=EXPORT_MT_scene_presets.bl_label)
+
+    # + button: opens preferences on the Presets tab to create/manage presets
+    new_op = row.operator("simple_export.open_preferences", text="", icon='ADD')
+    new_op.addon_name = ADDON_NAME
+    new_op.prefs_tabs = 'SETTINGS'
+
     if buttons:
         add_op = row.operator(SceneExportPreset.bl_idname, text="", icon='ADD')
         remove_op = row.operator(SceneExportPreset.bl_idname, text="", icon='REMOVE')

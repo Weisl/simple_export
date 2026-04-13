@@ -758,13 +758,33 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         layout.separator()
 
         if self.prefs_tabs == 'SETTINGS':
-            # Addon preset selector
+            from ..presets_addon.exporter_preset import (
+                EXPORT_MT_scene_presets,
+                SceneExportPreset,
+                simple_export_presets_folder,
+            )
+
+            # Preset row: menu + add (from prefs) + remove + pin + folder
             box = layout.box()
             row = box.row(align=True)
-            row.label(text="Default Addon Preset")
-            row.prop(self, "simple_export_default_preset", text="")
-            from ..presets_addon.exporter_preset import simple_export_presets_folder
+            row.menu(EXPORT_MT_scene_presets.__name__, text=EXPORT_MT_scene_presets.bl_label)
+            row.operator("simple_export.save_preset_from_preferences", text="", icon='ADD')
+            remove_op = row.operator(SceneExportPreset.bl_idname, text="", icon='REMOVE')
+            remove_op.remove_active = True
+            try:
+                selected = bpy.context.scene.simple_export_selected_preset
+                if selected and self.simple_export_default_preset == selected:
+                    row.label(text="", icon='PINNED')
+                else:
+                    row.operator("simple_export.set_default_preset", text="", icon='UNPINNED')
+            except Exception:
+                pass
             row.operator("wm.path_open", text='', icon='FILE_FOLDER').filepath = simple_export_presets_folder()
+
+            # Default addon preset (auto-applied on new blend file)
+            row2 = box.row(align=True)
+            row2.label(text="Default Addon Preset")
+            row2.prop(self, "simple_export_default_preset", text="")
 
             # Full export defaults
             from ..ui.shared_draw import draw_full_exporer_settings
