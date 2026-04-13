@@ -361,7 +361,7 @@ def get_filter_directory_items(self, context):
                     dirs.append(d)
             except Exception:
                 pass
-    items = [('ALL', "All Directories", ""), ('MISSING_DIR', "Missing Directory", "")]
+    items = [('ALL', "All Directories", ""), ('NO_PATH', "No Directory", "")]
     for d in sorted(dirs):
         items.append((d, d, ""))
     return items

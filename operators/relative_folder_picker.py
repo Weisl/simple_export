@@ -27,6 +27,20 @@ class SIMPLEEXPORT_OT_RelativeFolderPicker(bpy.types.Operator, ImportHelper):
         default=True,
     )
 
+    def invoke(self, context, event):
+        props = context.scene if self.context == 'SCENE' else context.preferences.addons[base_package].preferences
+        current_path = None
+        if props.export_folder_mode == 'RELATIVE' and getattr(props, 'folder_path_relative', ''):
+            current_path = bpy.path.abspath(props.folder_path_relative)
+        elif props.export_folder_mode == 'ABSOLUTE' and getattr(props, 'folder_path_absolute', ''):
+            current_path = props.folder_path_absolute
+        if current_path:
+            if os.path.isdir(current_path):
+                self.filepath = current_path + os.sep
+            elif os.path.isdir(os.path.dirname(current_path)):
+                self.filepath = current_path
+        return super().invoke(context, event)
+
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "use_relative_path")
@@ -68,6 +82,7 @@ class SIMPLEEXPORT_OT_CollectionFilepathPicker(bpy.types.Operator, ImportHelper)
     filter_glob: StringProperty(default="", options={'HIDDEN'})
 
     collection_name: StringProperty(default="", options={'HIDDEN'})
+    directory: StringProperty(subtype='DIR_PATH', options={'HIDDEN'})
     use_relative_path: BoolProperty(
         name="Relative Path",
         description="Store the path relative to the .blend file. "
@@ -85,7 +100,11 @@ class SIMPLEEXPORT_OT_CollectionFilepathPicker(bpy.types.Operator, ImportHelper)
             if exporter and exporter.export_properties.filepath:
                 raw_path = exporter.export_properties.filepath
                 self.use_relative_path = raw_path.startswith("//")
-                self.filepath = bpy.path.abspath(raw_path)
+                abs_path = bpy.path.abspath(raw_path)
+                self.filepath = abs_path
+                dir_path = os.path.dirname(abs_path)
+                if os.path.isdir(dir_path):
+                    self.directory = dir_path
         return super().invoke(context, event)
 
     def draw(self, context):

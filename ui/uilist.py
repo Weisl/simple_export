@@ -55,8 +55,8 @@ def collection_passes_uilist_filters(collection, scene):
     # Directory
     if scene.filter_directory != 'ALL':
         dir_path = os.path.dirname(export_path)
-        if scene.filter_directory == 'MISSING_DIR':
-            if os.path.isdir(dir_path):
+        if scene.filter_directory == 'NO_PATH':
+            if collection.simple_export_filepath_proxy:
                 return False
         elif scene.filter_directory != dir_path:
             return False
