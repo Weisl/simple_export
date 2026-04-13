@@ -55,6 +55,10 @@ def register_collection_props():
     bpy.types.Collection.use_root_object = bpy.props.BoolProperty(
         name="Use Root Object", default=True
     )
+    bpy.types.Collection.root_object = bpy.props.PointerProperty(
+        name="Root Object",
+        type=bpy.types.Object,
+    )
 
 
 def unregister_collection_props():
@@ -63,6 +67,8 @@ def unregister_collection_props():
         del bpy.types.Collection.pre_export_ops
     if hasattr(bpy.types.Collection, "use_root_object"):
         del bpy.types.Collection.use_root_object
+    if hasattr(bpy.types.Collection, "root_object"):
+        del bpy.types.Collection.root_object
     try:
         bpy.utils.unregister_class(CollectionPreExportOps)
     except RuntimeError:

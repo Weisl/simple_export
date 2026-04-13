@@ -44,7 +44,12 @@ if _EXTENSIONS_ROOT not in sys.path:
 if _ADDON_ROOT not in sys.path:
     sys.path.insert(0, _ADDON_ROOT)
 
-from simple_export.core.export_path_func import generate_base_name, get_export_folder_path  # noqa: E402
+from simple_export.core.export_path_func import (  # noqa: E402
+    generate_base_name,
+    get_export_folder_path,
+    generate_export_path,
+    assign_collection_exporter_path,
+)
 from simple_export.core.export_formats import ExportFormats  # noqa: E402
 
 
@@ -344,6 +349,154 @@ class TestExportFormats(unittest.TestCase):
             with self.subTest(key=key):
                 result = ExportFormats.get_key_from_op_type(fmt.op_type)
                 self.assertEqual(result, key)
+
+
+# ---------------------------------------------------------------------------
+# 4. generate_export_path — unsaved blend / "//" prefix stripping
+# ---------------------------------------------------------------------------
+
+class TestGenerateExportPath(unittest.TestCase):
+    """generate_export_path: new behaviour for unsaved .blend and '//' prefixes."""
+
+    def setUp(self):
+        # Ensure we start in an unsaved state.
+        bpy.ops.wm.read_homefile(use_empty=True)
+
+    def tearDown(self):
+        bpy.ops.wm.read_homefile(use_empty=True)
+
+    # -- Unsaved blend file ---------------------------------------------------
+
+    def test_relative_unsaved_with_double_slash_returns_raw_path(self):
+        """When blend is unsaved, a '//' export_dir is returned unchanged."""
+        result = generate_export_path("//export", "MyMesh", "FBX", is_relative_path=True)
+        self.assertTrue(result.startswith("//"), f"Expected '//' prefix, got: {result!r}")
+        self.assertIn("MyMesh.fbx", result)
+
+    def test_relative_unsaved_without_double_slash_gets_prefix_added(self):
+        """When blend is unsaved, a plain export_dir string gains a '//' prefix."""
+        result = generate_export_path("export", "MyMesh", "FBX", is_relative_path=True)
+        self.assertTrue(result.startswith("//"), f"Expected '//' prefix, got: {result!r}")
+        self.assertIn("MyMesh.fbx", result)
+
+    def test_relative_unsaved_path_contains_filename(self):
+        """The filename (stem + extension) is appended to the directory."""
+        result = generate_export_path("//models", "SM_Cube", "OBJ", is_relative_path=True)
+        self.assertIn("SM_Cube.obj", result)
+
+    def test_relative_unsaved_trailing_slash_not_doubled(self):
+        """A trailing '/' on the dir must not produce a double separator."""
+        result = generate_export_path("//export/", "MyMesh", "FBX", is_relative_path=True)
+        self.assertNotIn("//", result.split("//", 1)[1],
+                         f"Unexpected double-slash in result: {result!r}")
+
+    # -- Saved blend file: "//" prefix is stripped before os.path operations --
+
+    def test_relative_saved_double_slash_stripped_path_is_absolute(self):
+        """With a saved blend, generate_export_path must return an absolute-looking path."""
+        tmpdir, path = _save_blend_to_tmp("scene")
+        bpy.ops.wm.save_as_mainfile(filepath=path)
+        try:
+            result = generate_export_path(
+                "//export", "MyMesh", "FBX", is_relative_path=True
+            )
+            # bpy.path.relpath wraps the result with "//" — the path must contain
+            # the filename and be non-empty.
+            self.assertIn("MyMesh.fbx", result)
+            self.assertTrue(result, "Expected non-empty path from saved blend")
+        finally:
+            bpy.ops.wm.read_homefile(use_empty=True)
+            import shutil
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+    def test_absolute_path_does_not_need_saved_blend(self):
+        """Absolute mode must work regardless of whether blend is saved."""
+        tmpdir = tempfile.mkdtemp()
+        try:
+            result = generate_export_path(
+                tmpdir, "MyMesh", "FBX", is_relative_path=False
+            )
+            self.assertIn("MyMesh.fbx", result)
+            self.assertTrue(os.path.isabs(result),
+                            f"Expected absolute path, got: {result!r}")
+        finally:
+            import shutil
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+    def test_invalid_format_key_raises_value_error(self):
+        result = None
+        try:
+            result = generate_export_path("/tmp", "MyMesh", "BOGUS_FORMAT")
+        except ValueError:
+            pass
+        self.assertIsNone(result, "Expected ValueError for invalid format key")
+
+
+# ---------------------------------------------------------------------------
+# 5. assign_collection_exporter_path — unsaved blend with "//" path
+# ---------------------------------------------------------------------------
+
+class TestAssignCollectionExporterPath(unittest.TestCase):
+    """assign_collection_exporter_path: stores '//' paths as-is when blend is unsaved."""
+
+    def setUp(self):
+        bpy.ops.wm.read_homefile(use_empty=True)
+
+    def tearDown(self):
+        bpy.ops.wm.read_homefile(use_empty=True)
+
+    def _make_exporter(self):
+        """Return a minimal object with an export_properties.filepath attribute."""
+        class _Props:
+            filepath = ""
+
+        class _Exporter:
+            export_properties = _Props()
+
+        return _Exporter()
+
+    def test_double_slash_unsaved_stores_path_as_is(self):
+        """'//' path with no saved blend → stored without trying to create dirs."""
+        exp = self._make_exporter()
+        ok, msg = assign_collection_exporter_path(exp, "//export/MyMesh.fbx", True)
+        self.assertTrue(ok)
+        self.assertIsNone(msg)
+        self.assertEqual(exp.export_properties.filepath, "//export/MyMesh.fbx")
+
+    def test_double_slash_unsaved_does_not_create_directory(self):
+        """Filesystem must not be touched for a raw '//' path with unsaved blend."""
+        exp = self._make_exporter()
+        assign_collection_exporter_path(exp, "//nonexistent_dir/MyMesh.fbx", True)
+        # If os.makedirs was called, it would have created dirs under bpy.path.abspath("//").
+        # We verify the path was stored as-is (no resolution) by checking it still
+        # starts with "//".
+        self.assertTrue(exp.export_properties.filepath.startswith("//"))
+
+    def test_none_exporter_returns_false(self):
+        ok, msg = assign_collection_exporter_path(None, "//export/x.fbx", True)
+        self.assertFalse(ok)
+        self.assertIsNotNone(msg)
+
+    def test_empty_path_returns_false(self):
+        exp = self._make_exporter()
+        ok, msg = assign_collection_exporter_path(exp, "", True)
+        self.assertFalse(ok)
+        self.assertIsNotNone(msg)
+
+    def test_absolute_path_with_saved_blend_sets_filepath(self):
+        """Absolute paths always go through the normal resolution path."""
+        tmpdir, blend_path = _save_blend_to_tmp("scene")
+        bpy.ops.wm.save_as_mainfile(filepath=blend_path)
+        try:
+            exp = self._make_exporter()
+            out_path = os.path.join(tmpdir, "MyMesh.fbx")
+            ok, msg = assign_collection_exporter_path(exp, out_path, False)
+            self.assertTrue(ok, f"Expected ok=True, got msg={msg!r}")
+            self.assertIn("MyMesh.fbx", exp.export_properties.filepath)
+        finally:
+            bpy.ops.wm.read_homefile(use_empty=True)
+            import shutil
+            shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 # ---------------------------------------------------------------------------

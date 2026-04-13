@@ -35,6 +35,21 @@ Covers:
     - FINISHED even for an empty exporters list
     - Operator is findable via bpy.ops after registration
     - Exporters are cleared after add-then-remove (when exporter_add is available)
+
+  create_root_empty_for_collection (helper function)
+    - Empty created with "<collection_name>_root" name
+    - Empty linked to the collection
+    - collection.root_object and use_root_object set
+    - Top-level objects are parented to the empty
+    - Objects already with a parent are not re-parented
+    - display_type and display_size are applied
+
+  OBJECT_OT_create_root_empty (operator)
+    - CANCELLED when collection does not exist
+    - CANCELLED when no objects are selected
+    - FINISHED with selected objects; root empty created
+    - location_mode=ACTIVE_OBJECT places empty at active object location
+    - location_mode=CENTER_OF_SELECTED places empty at bounding-box centre
 """
 
 import os
@@ -81,6 +96,23 @@ def _load_operator_module(filename):
     return mod
 
 
+class _MinimalPrefs(bpy.types.AddonPreferences):
+    """Minimal addon preferences stub exposing only what collection_offset_ops needs."""
+    bl_idname = "simple_export"
+    root_empty_display_type: bpy.props.EnumProperty(
+        name="Shape",
+        items=[
+            ('PLAIN_AXES', "Plain Axes", ""),
+            ('CUBE', "Cube", ""),
+            ('SPHERE', "Sphere", ""),
+        ],
+        default='PLAIN_AXES',
+    )
+    root_empty_display_size: bpy.props.FloatProperty(
+        name="Size", default=1.0, min=0.001,
+    )
+
+
 def setUpModule():
     global _fix_mod, _offset_mod, _remove_mod
 
@@ -91,6 +123,13 @@ def setUpModule():
         default="FBX",
     )
     _h.register_collection_props()
+
+    # Register minimal addon preferences so operators that read
+    # context.preferences.addons["simple_export"].preferences work.
+    bpy.utils.register_class(_MinimalPrefs)
+    if "simple_export" not in bpy.context.preferences.addons:
+        entry = bpy.context.preferences.addons.new()
+        entry.module = "simple_export"
 
     # shared_properties is imported by fix_filename — load it first.
     _load_operator_module("shared_properties.py")
@@ -111,6 +150,21 @@ def tearDownModule():
     _h.unregister_collection_props()
     if hasattr(bpy.types.Scene, "export_format"):
         del bpy.types.Scene.export_format
+    try:
+        addon_entry = bpy.context.preferences.addons.get("simple_export")
+        if addon_entry:
+            bpy.context.preferences.addons.remove(addon_entry)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(_MinimalPrefs)
+    except Exception:
+        pass
+
+
+# Convenience: module-level reference to the helper function under test.
+def _get_create_root_empty_fn():
+    return _offset_mod.create_root_empty_for_collection
 
 
 # ---------------------------------------------------------------------------
@@ -354,6 +408,186 @@ class TestRemoveExporters(unittest.TestCase):
         # Cleanup
         with bpy.context.temp_override(layer_collection=lc):
             bpy.ops.simple_export.remove_exporters(collection_name=self.col.name)
+
+
+# ---------------------------------------------------------------------------
+# 5. create_root_empty_for_collection (helper function)
+# ---------------------------------------------------------------------------
+
+class TestCreateRootEmptyHelper(unittest.TestCase):
+    """create_root_empty_for_collection creates and wires up an EMPTY object."""
+
+    def setUp(self):
+        self.col = _h.make_collection("RootEmpty_Helper_Test")
+
+    def tearDown(self):
+        # Remove objects that may have been added.
+        for obj in list(bpy.data.objects):
+            if obj.name.endswith("_root") and "_root" in obj.name:
+                try:
+                    bpy.data.objects.remove(obj)
+                except Exception:
+                    pass
+        _h.remove_collection(self.col)
+
+    def test_empty_created_with_correct_name(self):
+        fn = _get_create_root_empty_fn()
+        empty = fn(self.col, Vector((0, 0, 0)))
+        self.assertEqual(empty.name, self.col.name + "_root")
+
+    def test_empty_linked_to_collection(self):
+        fn = _get_create_root_empty_fn()
+        empty = fn(self.col, Vector((0, 0, 0)))
+        self.assertIn(empty, list(self.col.objects))
+
+    def test_use_root_object_set_true(self):
+        fn = _get_create_root_empty_fn()
+        fn(self.col, Vector((0, 0, 0)))
+        self.assertTrue(self.col.use_root_object)
+
+    def test_root_object_assigned_to_empty(self):
+        fn = _get_create_root_empty_fn()
+        empty = fn(self.col, Vector((0, 0, 0)))
+        self.assertIs(self.col.root_object, empty)
+
+    def test_top_level_object_parented_to_empty(self):
+        """Objects with no parent should become children of the root empty."""
+        obj = _h.make_mesh_object("RootChild", location=(1, 2, 3))
+        try:
+            fn = _get_create_root_empty_fn()
+            empty = fn(self.col, Vector((0, 0, 0)), objects_to_parent=[obj])
+            self.assertIs(obj.parent, empty)
+        finally:
+            _h.remove_object(obj)
+
+    def test_already_parented_object_not_reparented(self):
+        """An object that already has a parent must be skipped."""
+        parent_obj = _h.make_mesh_object("ExistingParent", location=(0, 0, 0))
+        child_obj = _h.make_mesh_object("AlreadyParented", location=(1, 0, 0))
+        child_obj.parent = parent_obj
+        try:
+            fn = _get_create_root_empty_fn()
+            fn(self.col, Vector((0, 0, 0)), objects_to_parent=[child_obj])
+            self.assertIs(child_obj.parent, parent_obj,
+                          "Already-parented object must not be re-parented")
+        finally:
+            child_obj.parent = None
+            _h.remove_object(child_obj)
+            _h.remove_object(parent_obj)
+
+    def test_display_type_applied(self):
+        fn = _get_create_root_empty_fn()
+        empty = fn(self.col, Vector((0, 0, 0)), display_type='CUBE')
+        self.assertEqual(empty.empty_display_type, 'CUBE')
+
+    def test_display_size_applied(self):
+        fn = _get_create_root_empty_fn()
+        empty = fn(self.col, Vector((0, 0, 0)), display_size=2.5)
+        self.assertAlmostEqual(empty.empty_display_size, 2.5, places=4)
+
+    def test_location_applied(self):
+        fn = _get_create_root_empty_fn()
+        empty = fn(self.col, Vector((3.0, 4.0, 5.0)))
+        self.assertAlmostEqual(empty.location.x, 3.0, places=4)
+        self.assertAlmostEqual(empty.location.y, 4.0, places=4)
+        self.assertAlmostEqual(empty.location.z, 5.0, places=4)
+
+    def test_no_objects_to_parent_creates_empty_only(self):
+        """Calling with objects_to_parent=None must not raise."""
+        fn = _get_create_root_empty_fn()
+        empty = fn(self.col, Vector((0, 0, 0)), objects_to_parent=None)
+        self.assertIsNotNone(empty)
+
+
+# ---------------------------------------------------------------------------
+# 6. OBJECT_OT_create_root_empty (operator via bpy.ops)
+# ---------------------------------------------------------------------------
+
+class TestCreateRootEmptyOperator(unittest.TestCase):
+    """OBJECT_OT_create_root_empty: operator-level integration tests."""
+
+    def setUp(self):
+        self.col = _h.make_collection("RootEmpty_Op_Test")
+
+    def tearDown(self):
+        for obj in list(bpy.data.objects):
+            if "_root" in obj.name:
+                try:
+                    bpy.data.objects.remove(obj)
+                except Exception:
+                    pass
+        for obj in list(bpy.data.objects):
+            if obj.name.startswith("OpTarget"):
+                try:
+                    bpy.data.objects.remove(obj)
+                except Exception:
+                    pass
+        _h.remove_collection(self.col)
+
+    def test_missing_collection_returns_cancelled(self):
+        obj = _h.make_mesh_object("OpTarget_miss", location=(0, 0, 0))
+        try:
+            with bpy.context.temp_override(
+                selected_objects=[obj], active_object=obj
+            ):
+                result = bpy.ops.object.create_root_empty(
+                    collection_name="__nonexistent__"
+                )
+            self.assertEqual(result, {"CANCELLED"})
+        finally:
+            _h.remove_object(obj)
+
+    def test_no_selected_objects_returns_cancelled(self):
+        with bpy.context.temp_override(selected_objects=[], active_object=None):
+            result = bpy.ops.object.create_root_empty(
+                collection_name=self.col.name
+            )
+        self.assertEqual(result, {"CANCELLED"})
+
+    def test_active_object_mode_places_empty_at_active_location(self):
+        obj = _h.make_mesh_object("OpTarget_active", location=(7.0, 8.0, 9.0))
+        self.col.objects.link(obj)
+        try:
+            with bpy.context.temp_override(
+                selected_objects=[obj], active_object=obj
+            ):
+                result = bpy.ops.object.create_root_empty(
+                    collection_name=self.col.name,
+                    location_mode='ACTIVE_OBJECT',
+                )
+            self.assertEqual(result, {"FINISHED"})
+            empty = self.col.root_object
+            self.assertIsNotNone(empty)
+            self.assertAlmostEqual(empty.location.x, 7.0, places=4)
+            self.assertAlmostEqual(empty.location.y, 8.0, places=4)
+            self.assertAlmostEqual(empty.location.z, 9.0, places=4)
+        finally:
+            _h.remove_object(obj)
+
+    def test_center_of_selected_mode_places_empty_at_midpoint(self):
+        obj1 = _h.make_mesh_object("OpTarget_c1", location=(0.0, 0.0, 0.0))
+        obj2 = _h.make_mesh_object("OpTarget_c2", location=(4.0, 0.0, 0.0))
+        self.col.objects.link(obj1)
+        self.col.objects.link(obj2)
+        try:
+            with bpy.context.temp_override(
+                selected_objects=[obj1, obj2], active_object=obj1
+            ):
+                result = bpy.ops.object.create_root_empty(
+                    collection_name=self.col.name,
+                    location_mode='CENTER_OF_SELECTED',
+                )
+            self.assertEqual(result, {"FINISHED"})
+            empty = self.col.root_object
+            self.assertIsNotNone(empty)
+            # midpoint of (0,0,0) and (4,0,0) is (2,0,0)
+            self.assertAlmostEqual(empty.location.x, 2.0, places=4)
+        finally:
+            _h.remove_object(obj1)
+            _h.remove_object(obj2)
+
+    def test_operator_accessible_via_bpy_ops(self):
+        self.assertTrue(hasattr(bpy.ops.object, "create_root_empty"))
 
 
 # ---------------------------------------------------------------------------
