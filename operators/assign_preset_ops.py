@@ -25,8 +25,66 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
     def draw(self, context):
         """Draw the UI for the operator."""
         layout = self.layout
+        layout.prop(self, 'export_format')
         from ..ui.shared_draw import draw_export_preset_properties
         draw_export_preset_properties(layout, self)
+
+    def invoke(self, context, event):
+        ref_col = self._get_reference_collection(context)
+
+        if ref_col:
+            # Determine format from the collection's exporter
+            exporter = find_exporter(ref_col)
+            if exporter:
+                from ..core.export_formats import ExportFormats
+                op_type = str(type(exporter.export_properties))
+                format_key = ExportFormats.get_key_from_op_type(op_type)
+                if format_key:
+                    self.export_format = format_key
+
+            # Prefill from the collection's assigned format preset
+            preset_name = getattr(ref_col, 'simple_export_export_preset', '')
+            if preset_name:
+                from ..core.export_formats import ExportFormats
+                fmt = ExportFormats.get(self.export_format)
+                if fmt:
+                    preset_path = os.path.join(fmt.preset_folder, f"{preset_name}.py")
+                    if os.path.exists(preset_path):
+                        prop_name = f"simple_export_preset_file_{self.export_format.lower()}"
+                        try:
+                            setattr(self, prop_name, preset_path)
+                        except Exception:
+                            pass
+                        return context.window_manager.invoke_props_dialog(self, width=400)
+
+        # Fall back to scene's current preset for the active format
+        scene = context.scene
+        format_key = getattr(scene, 'export_format', self.export_format)
+        try:
+            self.export_format = format_key
+        except Exception:
+            pass
+        prop_name = f"simple_export_preset_file_{self.export_format.lower()}"
+        scene_val = getattr(scene, prop_name, None)
+        if scene_val:
+            try:
+                setattr(self, prop_name, scene_val)
+            except Exception:
+                pass
+
+        return context.window_manager.invoke_props_dialog(self, width=400)
+
+    def _get_reference_collection(self, context):
+        """Return the first relevant collection to use as a reference for prefilling."""
+        if self.individual_collection and self.collection_name:
+            return bpy.data.collections.get(self.collection_name)
+        if self.outliner:
+            cols = get_outliner_collections(context)
+            return cols[0] if cols else None
+        for col in bpy.data.collections:
+            if getattr(col, 'simple_export_selected', False) and col.exporters:
+                return col
+        return None
 
     def execute(self, context):
         results = []  # To store the renaming status of each collection

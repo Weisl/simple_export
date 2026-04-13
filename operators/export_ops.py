@@ -1,4 +1,5 @@
 import bpy
+import os
 
 from .. import __package__ as base_package
 from ..functions.collection_layer import set_active_layer_Collection
@@ -12,7 +13,7 @@ from ..functions.pre_export_ops import (
 )
 from ..functions.exporter_funcs import find_exporter, get_exporter_id, add_extension
 from ..functions.outliner_func import get_outliner_collections
-from ..functions.path_utils import clean_relative_path, ensure_export_folder_exists
+from ..functions.path_utils import clean_relative_path, ensure_export_folder_exists, make_folder_path_absolute
 from ..functions.vallidate_func import validate_collection, post_export_checks, pre_export_checks
 from ..ui.uilist import collection_passes_uilist_filters
 
@@ -166,6 +167,14 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
                 export_collections.append(collection)
 
+                # Bail out before calling the exporter if the target file is read-only,
+                # so Blender's internal error popup is never triggered.
+                # Use make_folder_path_absolute because clean_relative_path may leave
+                # Blender-relative "//" prefixes that os.path.exists cannot resolve.
+                _abs_export_path = make_folder_path_absolute(export_path)
+                if os.path.exists(_abs_export_path) and not os.access(_abs_export_path, os.W_OK):
+                    raise PermissionError(f"Export file is read-only: '{_abs_export_path}'.")
+
                 # Perform the export
                 bpy.ops.collection.exporter_export(index=exporter_id)
 
@@ -216,11 +225,9 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
             return {'FINISHED'}
         elif success_count > 0:
-            self.report({'WARNING'}, f"Some Exports failed: see result windows and console")
             call_export_popup(export_results, context)
             return {'CANCELLED'}
         else:
-            self.report({'ERROR'}, f"Exports Failed: See result windows and console.")
             call_export_popup(export_results, context)
             return {'CANCELLED'}
 

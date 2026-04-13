@@ -38,16 +38,19 @@ class BaseExportPreset(AddPresetBase, Operator):
     """Base class for export format presets"""
     # Common properties for all preset types
     preset_values = [
+        # Export format
         "scene.export_format",
+        # Export folder path
         "scene.export_folder_mode",
         "scene.folder_path_absolute",
         "scene.folder_path_relative",
         "scene.folder_path_search",
         "scene.folder_path_replace",
+        # File name
         "scene.filename_prefix",
         "scene.filename_suffix",
         "scene.filename_blend_prefix",
-        "scene.set_export_path",
+        # Format-specific export preset files
         "scene.simple_export_preset_file_fbx",
         "scene.simple_export_preset_file_obj",
         "scene.simple_export_preset_file_gltf",
@@ -55,17 +58,17 @@ class BaseExportPreset(AddPresetBase, Operator):
         "scene.simple_export_preset_file_abc",
         "scene.simple_export_preset_file_ply",
         "scene.simple_export_preset_file_stl",
-        "scene.assign_preset",
+        # Collection name
         "scene.collection_prefix",
         "scene.collection_suffix",
         "scene.collection_blend_prefix",
-        "scene.use_root_object",
-        "scene.collection_instance_offset",
-        "scene.collection_color",
-        "scene.use_root_object",
-        "scene.collection_instance_offset",
-        "scene.collection_color",
+        # Collection settings
         "scene.parent_collection",
+        "scene.collection_color",
+        "scene.use_root_object",
+        "scene.collection_instance_offset",
+        "scene.set_export_path",
+        "scene.assign_preset",
         # Pre-export operations
         "scene.move_by_collection_offset",
         "scene.triangulate_before_export",
@@ -128,16 +131,19 @@ class SIMPLE_EXPORT_OT_SavePresetFromPreferences(bpy.types.Operator):
         filepath = os.path.join(preset_dir, filename)
 
         prop_names = [
+            # Export format
             "export_format",
+            # Export folder path
             "export_folder_mode",
             "folder_path_absolute",
             "folder_path_relative",
             "folder_path_search",
             "folder_path_replace",
+            # File name
             "filename_prefix",
             "filename_suffix",
             "filename_blend_prefix",
-            "set_export_path",
+            # Format-specific export preset files
             "simple_export_preset_file_fbx",
             "simple_export_preset_file_obj",
             "simple_export_preset_file_gltf",
@@ -145,14 +151,18 @@ class SIMPLE_EXPORT_OT_SavePresetFromPreferences(bpy.types.Operator):
             "simple_export_preset_file_abc",
             "simple_export_preset_file_ply",
             "simple_export_preset_file_stl",
-            "assign_preset",
+            # Collection name
             "collection_prefix",
             "collection_suffix",
             "collection_blend_prefix",
+            # Collection settings
+            "parent_collection",
+            "collection_color",
             "use_root_object",
             "collection_instance_offset",
-            "collection_color",
-            "parent_collection",
+            "set_export_path",
+            "assign_preset",
+            # Pre-export operations
             "move_by_collection_offset",
             "triangulate_before_export",
             "triangulate_keep_normals",

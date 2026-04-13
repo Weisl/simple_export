@@ -16,6 +16,7 @@ def pre_export_checks(export_path):
 
     file_exists = os.path.exists(export_path)
     file_timestamp = os.path.getmtime(export_path) if file_exists else None
+
     ensure_export_folder_exists(export_path)
     return file_exists, file_timestamp
 

@@ -289,9 +289,13 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             row = col_01.row(align=False)
             # Checkbox
             row.prop(collection, "simple_export_selected", text="")
-            # Status Icon
+            # Status Icon — clickable when last export failed
             icon = self.get_export_status_icon(export_path, file_exists, collection)
-            row.label(text='', icon=icon)
+            if getattr(collection, 'last_export_failed', False):
+                op = row.operator("simple_export.show_collection_error", text='', icon=icon)
+                op.collection_name = collection.name
+            else:
+                row.label(text='', icon=icon)
 
             # Format
             text = self.get_format_name(exporter)
@@ -381,9 +385,13 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
             # Checkbox for selecting the collection for export
             row.prop(collection, "simple_export_selected", text="")
-   
+
             icon = self.get_export_status_icon(export_path, file_exists, collection)
-            row.label(text='', icon=icon)
+            if getattr(collection, 'last_export_failed', False):
+                op = row.operator("simple_export.show_collection_error", text='', icon=icon)
+                op.collection_name = collection.name
+            else:
+                row.label(text='', icon=icon)
             # Display the collection name with the color icon
             icon = self.get_collection_color_icon(collection)
             row.prop(collection, 'name',text='',icon=icon)
@@ -550,7 +558,7 @@ classes = (
 # ---------------------------------------------------------------------------
 
 _syncing = False
-_msgbus_owner = object()
+_last_active_layer_collection = None
 
 
 def _find_layer_collection(layer_coll, target_collection):
@@ -564,20 +572,32 @@ def _find_layer_collection(layer_coll, target_collection):
     return None
 
 
-def _on_active_layer_collection_changed():
-    """Msgbus callback: sync Outliner active collection → scene.collection_index."""
-    global _syncing
+def _poll_active_collection():
+    """Timer callback: poll active_layer_collection and sync Outliner → scene.collection_index.
+
+    msgbus does not fire reliably for ViewLayer.active_layer_collection because
+    Blender's outliner updates it via internal C notifiers, not RNA callbacks.
+    A lightweight 0.1 s timer is used instead.
+    """
+    global _syncing, _last_active_layer_collection
+
     if _syncing:
-        return
+        return 0.1
+
     try:
         scene = bpy.context.scene
         view_layer = bpy.context.view_layer
-    except AttributeError:
-        return
+    except (AttributeError, RuntimeError):
+        return 0.1
+
+    if scene is None or view_layer is None:
+        return 0.1
 
     active_lc = view_layer.active_layer_collection
-    if not active_lc:
-        return
+    if active_lc is _last_active_layer_collection:
+        return 0.1
+
+    _last_active_layer_collection = active_lc
 
     active_collection = active_lc.collection
     # The scene's master (root) collection is not in bpy.data.collections – skip it.
@@ -589,12 +609,14 @@ def _on_active_layer_collection_changed():
                     scene.collection_index = i
                 finally:
                     _syncing = False
-            return
+            break
+
+    return 0.1
 
 
 def _on_collection_index_update(self, context):
     """Property update callback: sync scene.collection_index → Outliner active layer collection."""
-    global _syncing
+    global _syncing, _last_active_layer_collection
     if _syncing:
         return
 
@@ -609,6 +631,9 @@ def _on_collection_index_update(self, context):
     except AttributeError:
         return
 
+    if view_layer is None:
+        return
+
     layer_coll = _find_layer_collection(view_layer.layer_collection, target_collection)
     if not layer_coll:
         return
@@ -617,18 +642,10 @@ def _on_collection_index_update(self, context):
         _syncing = True
         try:
             view_layer.active_layer_collection = layer_coll
+            # Keep the poll cache in sync so the timer doesn't immediately re-fire.
+            _last_active_layer_collection = layer_coll
         finally:
             _syncing = False
-
-
-def _register_msgbus(*_):
-    """Subscribe to ViewLayer.active_layer_collection changes (called on register and load_post)."""
-    bpy.msgbus.subscribe_rna(
-        key=(bpy.types.ViewLayer, "active_layer_collection"),
-        owner=_msgbus_owner,
-        args=(),
-        notify=_on_active_layer_collection_changed,
-    )
 
 
 def register():
@@ -646,8 +663,8 @@ def register():
     for cls in classes:
         register_class(cls)
 
-    _register_msgbus()
-    bpy.app.handlers.load_post.append(_register_msgbus)
+    if not bpy.app.timers.is_registered(_poll_active_collection):
+        bpy.app.timers.register(_poll_active_collection, first_interval=0.1, persistent=True)
 
 
 def unregister():
@@ -660,6 +677,5 @@ def unregister():
     # Remove Scene properties
     del bpy.types.Scene.menu_collection_name
 
-    bpy.msgbus.clear_by_owner(_msgbus_owner)
-    if _register_msgbus in bpy.app.handlers.load_post:
-        bpy.app.handlers.load_post.remove(_register_msgbus)
+    if bpy.app.timers.is_registered(_poll_active_collection):
+        bpy.app.timers.unregister(_poll_active_collection)

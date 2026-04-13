@@ -1,7 +1,92 @@
 import bpy
 import os
+import textwrap
 
 from ..core.info import COLOR_TAG_ICONS
+
+
+class SIMPLEEXPORTER_OT_ShowCollectionError(bpy.types.Operator):
+    """Show the last export error for a specific collection."""
+    bl_idname = "simple_export.show_collection_error"
+    bl_label = "Export Error"
+    bl_description = "Show the last export error for this collection"
+
+    collection_name: bpy.props.StringProperty()
+    message: bpy.props.StringProperty()
+
+    def invoke(self, context, event):
+        results_str = context.window_manager.export_data_info
+        results = eval(results_str) if results_str else []
+        for r in results:
+            if r['name'] == self.collection_name and not r['success']:
+                self.message = r.get('message', '')
+                break
+        else:
+            self.message = "No error record found for this collection."
+        return context.window_manager.invoke_popup(self, width=400)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text=self.collection_name, icon='CANCEL')
+        layout.separator()
+        col = layout.column(align=True)
+        for line in textwrap.wrap(self.message, width=55) or [self.message]:
+            col.label(text=line)
+        layout.separator()
+        op = layout.operator("simple_export.copy_to_clipboard", text="Copy Error", icon='COPYDOWN')
+        op.text = self.message
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+
+class SIMPLEEXPORTER_OT_CopyExportReport(bpy.types.Operator):
+    """Copy a full export report (all collections, status, filepath, message) to the clipboard."""
+    bl_idname = "simple_export.copy_export_report"
+    bl_label = "Copy Full Report"
+    bl_description = "Copy a full export report to the clipboard"
+
+    def execute(self, context):
+        results_str = context.window_manager.export_data_info
+        results = eval(results_str) if results_str else []
+
+        if not results:
+            self.report({'WARNING'}, "No export results to report")
+            return {'CANCELLED'}
+
+        lines = ["Export Report", "=" * 60]
+        success_count = sum(1 for r in results if r['success'])
+        fail_count = len(results) - success_count
+
+        for r in results:
+            status = "OK  " if r['success'] else "FAIL"
+            filepath = r.get('filepath') or '-'
+            message = r.get('message', '')
+            lines.append(f"[{status}]  {r['name']}")
+            lines.append(f"       Path:    {filepath}")
+            if message:
+                lines.append(f"       Message: {message}")
+
+        lines.append("=" * 60)
+        lines.append(f"Summary: {success_count} succeeded, {fail_count} failed")
+
+        context.window_manager.clipboard = "\n".join(lines)
+        self.report({'INFO'}, f"Report copied ({len(results)} entries)")
+        return {'FINISHED'}
+
+
+class SIMPLEEXPORTER_OT_CopyToClipboard(bpy.types.Operator):
+    """Copy a message to the system clipboard."""
+    bl_idname = "simple_export.copy_to_clipboard"
+    bl_label = "Copy to Clipboard"
+    bl_description = "Copy this message to the clipboard"
+
+    text: bpy.props.StringProperty(name="Text", default="")
+
+    def execute(self, context):
+        context.window_manager.clipboard = self.text
+        self.report({'INFO'}, "Copied to clipboard")
+        return {'FINISHED'}
 
 
 class SIMPLEEXPORTER_PT_PresetResultsPanel(bpy.types.Panel):
@@ -112,17 +197,17 @@ class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
     bl_label = "Export Results"
     bl_space_type = "VIEW_3D"
     bl_region_type = "WINDOW"
-    bl_ui_units_x = 30
+    bl_ui_units_x = 45
 
     def draw(self, context):
         layout = self.layout
         layout.label(text="Export Results:")
 
         # Column Sizes
-        col1_split_fac = 0.05  # Adjust for first column width
-        col2_split_fac = 0.25  # Adjust for second column width
-        col3_split_fac = 0.45  # Adjust for filepath column width
-        col4_split_fac = 0.25  # Remaining for the info column
+        col1_split_fac = 0.04  # icon
+        col2_split_fac = 0.20  # collection name
+        col3_split_fac = 0.38  # filepath
+        # remaining ~38% goes to info + copy button
 
         # Get results from WindowManager
         results_str = context.window_manager.export_data_info
@@ -130,19 +215,17 @@ class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
 
         # Header row with column titles
         split = layout.split(factor=col1_split_fac)
-        col_icon = split.column()  # Icon column
-        split = split.split(factor=col2_split_fac / (1.0 - col1_split_fac))  # Normalize remaining space
-        col_name = split.column()  # Collection name column
+        col_icon = split.column()
+        split = split.split(factor=col2_split_fac / (1.0 - col1_split_fac))
+        col_name = split.column()
         split = split.split(factor=col3_split_fac / (1.0 - col2_split_fac))
-        col_filepath = split.column()  # Filepath column
-        col_info = split.column()  # Info message column
+        col_filepath = split.column()
+        col_info = split.column()
 
-        header_row = layout.row()
-        header_row.alignment = 'CENTER'
-        col_icon.label(text="")  # Icon column title (empty for icons)
-        col_name.label(text="Collection")  # Collection name column title
-        col_filepath.label(text="Filepath")  # Filepath column title
-        col_info.label(text="Info")  # Info message column title
+        col_icon.label(text="")
+        col_name.label(text="Collection")
+        col_filepath.label(text="Filepath")
+        col_info.label(text="Info")
 
         # Iterate over results and populate the table
         for result in results:
@@ -163,21 +246,33 @@ class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
             # Filepath Column
             col_filepath.label(text=result['filepath'] if 'filepath' in result else "-")
 
-            # Info Message Column
-            row = col_info.row(align=True)
-            row.label(text=result['message'])
+            # Info Message Column — multiline + copy button
+            message = result.get('message', '')
+            msg_row = col_info.row(align=True)
+            msg_col = msg_row.column(align=True)
+            for line in textwrap.wrap(message, width=40) or [message]:
+                msg_col.label(text=line)
 
-            if result['success']:
+            btn_col = msg_row.column(align=True)
+            if not result['success']:
+                copy_op = btn_col.operator("simple_export.copy_to_clipboard", text='', icon='COPYDOWN')
+                copy_op.text = message
+
+            if result['success'] and result.get('filepath'):
                 export_dir = os.path.dirname(result['filepath'])
-                row.operator("wm.path_open", text='', icon='FILE_FOLDER').filepath = export_dir
-            else:
-                print(f"Export failed for {result['name']}: {result['message']}")
+                btn_col.operator("wm.path_open", text='', icon='FILE_FOLDER').filepath = export_dir
+
+        layout.separator()
+        layout.operator("simple_export.copy_export_report", text="Copy Full Report", icon='COPYDOWN')
 
 
 classes = (
+    SIMPLEEXPORTER_OT_ShowCollectionError,
+    SIMPLEEXPORTER_OT_CopyExportReport,
+    SIMPLEEXPORTER_OT_CopyToClipboard,
     SIMPLEEXPORTER_PT_PresetResultsPanel,
     SIMPLEEXPORTER_PT_FilePathResultsPanel,
-    SIMPLEEXPORTER_PT_ExportResultsPanel
+    SIMPLEEXPORTER_PT_ExportResultsPanel,
 )
 
 
