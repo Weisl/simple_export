@@ -32,7 +32,7 @@ def make_folder_path_absolute(path):
 def extract_directory(path):
     # Extract the directory portion and normalize
     path_dir = os.path.dirname(path)
-    path_dir = os.path.normpath(path)
+    path_dir = os.path.normpath(path_dir)
     return path_dir
 
 def ensure_export_folder_exists(export_path):
