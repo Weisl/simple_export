@@ -90,6 +90,10 @@ class EXPORT_OT_CreateExportCollections(
         default=False
     )
 
+    # Properties whose current value should not be overwritten when switching presets
+    # inside the operator dialog — the user sets these explicitly.
+    _PRESET_SKIP_PROPS = {'set_export_path'}
+
     def _apply_addon_preset_to_self(self, preset_path):
         """Parse an addon preset file and apply its scene.* values to operator properties."""
         if not os.path.isfile(preset_path):
@@ -102,6 +106,8 @@ class EXPORT_OT_CreateExportCollections(
                 try:
                     prop_part = line[6:]  # strip 'scene.'
                     prop_name, value_str = prop_part.split(' = ', 1)
+                    if prop_name in self._PRESET_SKIP_PROPS:
+                        continue
                     if hasattr(self, prop_name):
                         setattr(self, prop_name, eval(value_str))
                 except Exception:
@@ -141,15 +147,6 @@ class EXPORT_OT_CreateExportCollections(
 
     def execute(self, context):
         """Execute the operator to create export collections."""
-        # Apply the chosen addon preset locally (does not modify the scene)
-        if self.addon_preset_selection and self.addon_preset_selection != 'NONE':
-            from ..presets_addon.exporter_preset import simple_export_presets_folder
-            preset_path = os.path.join(
-                simple_export_presets_folder(),
-                self.addon_preset_selection + '.py'
-            )
-            self._apply_addon_preset_to_self(preset_path)
-
         selected_objects = context.selected_objects
         if not selected_objects:
             self.report({'WARNING'}, "No objects selected.")
@@ -338,6 +335,15 @@ class EXPORT_OT_CreateExportCollections(
         if self.set_export_path:
             from ..ui.shared_draw import draw_export_folderpath_properties
             draw_export_folderpath_properties(layout, self)
+
+        layout.separator()
+        layout.prop(self, "create_empty_root")
+        if self.create_empty_root:
+            prefs = context.preferences.addons[base_package].preferences
+            col = layout.column(align=True)
+            col.use_property_split = True
+            col.prop(prefs, "root_empty_display_type", text="Shape")
+            col.prop(prefs, "root_empty_display_size", text="Size")
 
         if self.warn_existing_exporters:
             layout.separator()

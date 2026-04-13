@@ -4,13 +4,56 @@ from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.collection_offset import set_collection_offset
 
 
+def create_root_empty_for_collection(
+    collection, location,
+    objects_to_parent=None,
+    display_type='PLAIN_AXES',
+    display_size=1.0,
+):
+    """Create an empty, link it to *collection*, optionally parent objects to it,
+    and assign it as the collection's root object.
+
+    Args:
+        collection: The Blender collection to link the empty into and set as root.
+        location: World-space location (Vector or 3-tuple) for the empty.
+        objects_to_parent: Optional iterable of objects whose top-level items (no parent)
+                           should be parented to the empty, preserving world transforms.
+        display_type: Blender empty_display_type identifier (default 'PLAIN_AXES').
+        display_size: empty_display_size in Blender units (default 1.0).
+    Returns:
+        The newly created EMPTY object.
+    """
+    empty = bpy.data.objects.new(name=collection.name + "_root", object_data=None)
+    empty.empty_display_type = display_type
+    empty.empty_display_size = display_size
+    empty.location = location
+
+    collection.objects.link(empty)
+
+    # Parent top-level objects to the empty, preserving world transforms.
+    # matrix_parent_inverse is reset to identity so that setting matrix_world
+    # correctly back-calculates matrix_local without relying on empty.matrix_world
+    # being depsgraph-evaluated (newly created objects haven't gone through it yet).
+    if objects_to_parent:
+        for obj in objects_to_parent:
+            if obj == empty or obj.parent is not None:
+                continue
+            world_matrix = obj.matrix_world.copy()
+            obj.parent = empty
+            obj.matrix_parent_inverse.identity()
+            obj.matrix_world = world_matrix
+
+    collection.use_root_object = True
+    collection.root_object = empty
+    return empty
+
+
 class OBJECT_OT_create_root_empty(bpy.types.Operator):
     """Create an EMPTY object, parent the selected objects to it, and assign it as the collection's root object."""
     bl_idname = "object.create_root_empty"
     bl_label = "Create Root Empty"
     bl_description = (
-        "Create an EMPTY object at the collection offset, "
-        "parent selected objects to it, and assign it as the root object"
+        "Create an EMPTY object, parent selected objects to it, and assign it as the root object"
     )
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -21,39 +64,50 @@ class OBJECT_OT_create_root_empty(bpy.types.Operator):
         options={'HIDDEN'},
     )
 
+    location_mode: bpy.props.EnumProperty(
+        name="Location",
+        description="Where to place the root empty",
+        items=[
+            ('ACTIVE_OBJECT', "Active Object", "Place at the active object's location"),
+            ('CENTER_OF_SELECTED', "Center of Selected", "Place at the bounding-box center of all selected objects"),
+        ],
+        default='ACTIVE_OBJECT',
+    )
+
     def execute(self, context):
         collection = bpy.data.collections.get(self.collection_name)
         if not collection:
             self.report({'WARNING'}, "No valid collection found.")
             return {'CANCELLED'}
 
-        # Place the empty at the collection's current instance_offset
-        empty_location = collection.instance_offset.copy()
+        selected = context.selected_objects
+        if not selected:
+            self.report({'WARNING'}, "No objects selected.")
+            return {'CANCELLED'}
 
-        # Create the EMPTY object
-        empty = bpy.data.objects.new(name=collection.name + "_root", object_data=None)
-        empty.empty_display_type = 'PLAIN_AXES'
-        empty.location = empty_location
+        if self.location_mode == 'ACTIVE_OBJECT':
+            obj = context.active_object
+            if not obj:
+                self.report({'WARNING'}, "No active object.")
+                return {'CANCELLED'}
+            empty_location = obj.location.copy()
+        else:  # CENTER_OF_SELECTED
+            from mathutils import Vector
+            empty_location = sum(
+                (obj.location for obj in selected), Vector()
+            ) / len(selected)
 
-        # Link to the collection
-        collection.objects.link(empty)
-
-        # Parent selected top-level objects to the empty, preserving world transforms
-        for obj in list(context.selected_objects):
-            if obj == empty or obj.parent is not None:
-                continue
-            world_matrix = obj.matrix_world.copy()
-            obj.parent = empty
-            # Restore world position: matrix_parent_inverse cancels out the parent transform
-            obj.matrix_parent_inverse = empty.matrix_world.inverted()
-            obj.matrix_world = world_matrix
+        from .. import __package__ as base_package
+        prefs = context.preferences.addons[base_package].preferences
+        empty = create_root_empty_for_collection(
+            collection, empty_location,
+            objects_to_parent=selected,
+            display_type=prefs.root_empty_display_type,
+            display_size=prefs.root_empty_display_size,
+        )
 
         # Make the empty the active object
         context.view_layer.objects.active = empty
-
-        # Assign as root object for the collection
-        collection.use_root_object = True
-        collection.root_object = empty
 
         self.report({'INFO'}, f"Created root empty '{empty.name}' for collection '{collection.name}'")
         return {'FINISHED'}

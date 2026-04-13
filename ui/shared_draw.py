@@ -81,7 +81,7 @@ def draw_export_filename_properties(layout, element):
     layout.prop(element, "filename_blend_prefix")
 
 
-def draw_export_folderpath_properties(layout, element, is_preferences=False):
+def draw_export_folderpath_properties(layout, element):
     layout.label(text="Export Folder")
 
     # Check if blend file is saved
@@ -97,18 +97,18 @@ def draw_export_folderpath_properties(layout, element, is_preferences=False):
     elif element == bpy.context.scene:
         context = 'SCENE'
 
-    # Disable options that require a saved file (Absolute paths don't need one)
-    if not is_file_saved and element.export_folder_mode != 'ABSOLUTE':
-        layout.label(text="Save the blend file to use this filepath modes", icon='INFO')
+    # Warn when a saved file is required but the blend file hasn't been saved yet
+    if not is_file_saved and element.export_folder_mode in ('RELATIVE', 'MIRROR'):
+        layout.label(text="Blend file not saved \u2014 relative paths won't resolve at export time", icon='ERROR')
 
     if element.export_folder_mode == 'ABSOLUTE':
         layout.prop(element, "folder_path_absolute")
     if element.export_folder_mode == 'RELATIVE':
         row = layout.row(align=True)
         row.prop(element, "folder_path_relative")
-        op = row.operator("simple_export.folder_path_relative_picker", text="", icon='FILE_FOLDER')
-        op.use_relative_path = True
         if context is not None:
+            op = row.operator("simple_export.folder_path_relative_picker", text="", icon='FILE_FOLDER')
+            op.use_relative_path = True
             op.context = context
 
     if element.export_folder_mode == 'MIRROR':
@@ -160,7 +160,7 @@ def draw_exporter_presets(layout, buttons=False):
     new_op.prefs_tabs = 'SETTINGS'
 
     if buttons:
-        add_op = row.operator(SceneExportPreset.bl_idname, text="", icon='ADD')
+        row.operator(SceneExportPreset.bl_idname, text="", icon='ADD')
         remove_op = row.operator(SceneExportPreset.bl_idname, text="", icon='REMOVE')
         remove_op.remove_active = True
 

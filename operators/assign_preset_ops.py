@@ -100,6 +100,9 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
         # Get Export Collections
         if self.outliner:
             collection_list = get_outliner_collections(context)
+            if not collection_list and self.collection_name:
+                col = bpy.data.collections.get(self.collection_name)
+                collection_list = [col] if col else []
         elif self.individual_collection:
             collection = bpy.data.collections.get(self.collection_name)
             collection_list = [collection] if collection else []
@@ -114,7 +117,11 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
             return {'CANCELLED'}
 
         # Validate preset path
-        self.validate_preset_path(preset_path)
+        try:
+            self.validate_preset_path(preset_path)
+        except ValueError as e:
+            self.report({'ERROR'}, str(e))
+            return {'CANCELLED'}
 
         # Iterate over export collections
         for collection in collection_list:

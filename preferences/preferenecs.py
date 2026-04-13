@@ -1,11 +1,11 @@
 import bpy
 import os
-import sys
 import textwrap
 
 from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
 from ..core.export_formats import get_export_format_items
+from ..core.info import DEFAULT_ABSOLUTE_PATH as _DEFAULT_ABSOLUTE_PATH
 from ..ui.export_panels import VIEW3D_PT_SimpleExportMain
 
 
@@ -15,13 +15,6 @@ def label_multiline(context, text, parent):
     text_lines = wrapper.wrap(text=text)
     for text_line in text_lines:
         parent.label(text=text_line)
-
-
-if sys.platform == "darwin":
-    _DEFAULT_ABSOLUTE_PATH = os.path.expanduser("~/Desktop/")
-else:
-    # Linux and other Unix-like systems
-    _DEFAULT_ABSOLUTE_PATH = "/tmp/"
 
 
 PROPERTY_METADATA = {
@@ -584,6 +577,30 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=PROPERTY_METADATA["use_root_object"]["default"],
     )
 
+    root_empty_display_type: bpy.props.EnumProperty(
+        name="Root Empty Shape",
+        description="Display shape for root empties created by 'Create Root Empty'",
+        items=[
+            ('PLAIN_AXES', "Plain Axes", ""),
+            ('ARROWS', "Arrows", ""),
+            ('SINGLE_ARROW', "Single Arrow", ""),
+            ('CIRCLE', "Circle", ""),
+            ('CUBE', "Cube", ""),
+            ('SPHERE', "Sphere", ""),
+            ('CONE', "Cone", ""),
+        ],
+        default='PLAIN_AXES',
+    )
+
+    root_empty_display_size: bpy.props.FloatProperty(
+        name="Root Empty Size",
+        description="Display size for root empties created by 'Create Root Empty'",
+        default=1.0,
+        min=0.001,
+        soft_max=10.0,
+        unit='LENGTH',
+    )
+
     collection_color: bpy.props.EnumProperty(
         name=PROPERTY_METADATA["collection_color"]["name"],
         description=PROPERTY_METADATA["collection_color"]["description"],
@@ -805,6 +822,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box.label(text="Warnings")
             box.prop(self, "report_errors_only")
 
+            box = layout.box()
+            box.label(text="Root Empty")
+            col = box.column(align=True)
+            col.use_property_split = True
+            col.prop(self, "root_empty_display_type", text="Shape")
+            col.prop(self, "root_empty_display_size", text="Size")
 
         elif self.prefs_tabs == 'KEYMAP':
             self.keymap_ui(layout, 'Export Popup', 'simple_export_panel', 'wm.call_panel',

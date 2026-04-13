@@ -14,7 +14,7 @@ from ..functions.pre_export_ops import (
 from ..functions.exporter_funcs import find_exporter, get_exporter_id, add_extension
 from ..functions.outliner_func import get_outliner_collections
 from ..functions.path_utils import clean_relative_path, ensure_export_folder_exists, make_folder_path_absolute
-from ..functions.vallidate_func import validate_collection, post_export_checks, pre_export_checks
+from ..functions.vallidate_func import validate_collection, post_export_checks, pre_export_checks, check_collection_warnings
 from ..ui.uilist import collection_passes_uilist_filters
 
 
@@ -69,6 +69,48 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
             self.report({'WARNING'}, "No valid collections found for export.")
             return {'CANCELLED'}
 
+        # --- Pre-pass: detect duplicate output paths ---
+        # Resolve each collection's export path without modifying exporter state,
+        # then flag every collection involved in a conflict so nothing overwrites silently.
+        _path_to_col_names = {}  # abs_path -> [collection_name, ...]
+        for _col in collection_list:
+            if not _col.exporters:
+                continue
+            _exp = find_exporter(_col)
+            if not _exp:
+                continue
+            _raw_fp = _exp.export_properties.filepath
+            if not _raw_fp or (not bpy.data.filepath and _raw_fp.startswith("//")):
+                continue
+            try:
+                _abs = make_folder_path_absolute(clean_relative_path(add_extension(_exp)))
+            except Exception:
+                continue
+            _path_to_col_names.setdefault(_abs, []).append(_col.name)
+
+        # Build per-collection error messages for every path that is shared
+        _skip_duplicates = {}  # col_name -> error message string
+        for _abs_path, _col_names in _path_to_col_names.items():
+            if len(_col_names) > 1:
+                _filename = os.path.basename(_abs_path)
+                for _col_name in _col_names:
+                    _others = ', '.join(f"'{n}'" for n in _col_names if n != _col_name)
+                    _skip_duplicates[_col_name] = (
+                        f"Duplicate output path '{_filename}' — also targeted by: {_others}. "
+                        "Assign unique paths before exporting."
+                    )
+
+        # Emit error results for all duplicates up front so they appear in the popup
+        for _col_name, _dup_msg in _skip_duplicates.items():
+            export_results.append({
+                'name': _col_name, 'success': False, 'filepath': '',
+                'message': _dup_msg, 'warnings': [],
+            })
+            _dup_col = bpy.data.collections.get(_col_name)
+            if _dup_col:
+                _dup_col.last_export_failed = True
+            error_count += 1
+
         total = len(collection_list)
         wm = context.window_manager
         wm.progress_begin(0, total)
@@ -85,6 +127,10 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
             ops = None  # per-collection pre-export ops; set inside try after validation
 
             try:
+                # Skip collections already flagged by the duplicate-path pre-pass
+                if collection.name in _skip_duplicates:
+                    continue
+
                 if not collection.exporters:
                     continue
 
@@ -95,7 +141,8 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 if not collection.objects:
                     export_results.append(
                         {'name': collection.name, 'success': False, 'filepath': '',
-                         'message': "Collection is empty. Nothing to export."})
+                         'message': "Collection is empty. Nothing to export.", 'warnings': []})
+                    collection.last_export_failed = True
                     error_count += 1
                     continue
 
@@ -132,6 +179,9 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 folder_ok, folder_msg = ensure_export_folder_exists(export_path)
                 if not folder_ok:
                     raise ValueError(folder_msg)
+
+                # Non-blocking pre-export warnings (hidden objects, missing libraries, textures…)
+                pre_export_warnings = check_collection_warnings(collection, exporter)
 
                 # Overwrite settings:
                 # Having use_selection causes unpredictable behavior and is not exposed to the UI.
@@ -180,8 +230,10 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
                 # Post-export validation
                 success, message = post_export_checks(export_path, file_exists_before, file_timestamp_before)
-                export_results.append(
-                    {'name': collection.name, 'success': success, 'filepath': export_path, 'message': message})
+                export_results.append({
+                    'name': collection.name, 'success': success, 'filepath': export_path,
+                    'message': message, 'warnings': pre_export_warnings,
+                })
                 collection.last_export_failed = not success
                 if not success:
                     error_count += 1
@@ -191,9 +243,10 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
             except Exception as e:
                 # Handle errors in one place
-                export_results.append(
-                    {'name': collection.name or "Unknown Collection", 'success': False, 'filepath': '',
-                     'message': str(e)})
+                export_results.append({
+                    'name': collection.name or "Unknown Collection", 'success': False,
+                    'filepath': '', 'message': str(e), 'warnings': [],
+                })
                 collection.last_export_failed = True
                 error_count += 1
 

@@ -238,7 +238,14 @@ class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
             col_info = split.column()
 
             # Icon Column
-            col_icon.label(icon='CHECKMARK' if result['success'] else 'CANCEL')
+            warnings = result.get('warnings', [])
+            if not result['success']:
+                status_icon = 'CANCEL'
+            elif warnings:
+                status_icon = 'ERROR'  # yellow triangle — succeeded with warnings
+            else:
+                status_icon = 'CHECKMARK'
+            col_icon.label(icon=status_icon)
 
             # Collection Name Column
             col_name.label(text=result['name'])
@@ -246,12 +253,15 @@ class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
             # Filepath Column
             col_filepath.label(text=result['filepath'] if 'filepath' in result else "-")
 
-            # Info Message Column — multiline + copy button
+            # Info Message Column — main message + per-warning lines + copy button
             message = result.get('message', '')
             msg_row = col_info.row(align=True)
             msg_col = msg_row.column(align=True)
             for line in textwrap.wrap(message, width=40) or [message]:
                 msg_col.label(text=line)
+            for w in warnings:
+                for line in textwrap.wrap(w, width=38) or [w]:
+                    msg_col.label(text=f"! {line}")
 
             btn_col = msg_row.column(align=True)
             if not result['success']:

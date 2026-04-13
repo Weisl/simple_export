@@ -88,21 +88,22 @@ def draw_active_list_element(layout, context, scene):
             if exporter:
                 # Filepath
                 row = box.row(align=True)
-                row.prop(exporter.export_properties, "filepath", text="", expand=True)
+                row.prop(selected_collection, "simple_export_filepath_proxy", text="", expand=True)
+                browse_op = row.operator("simple_export.collection_filepath_picker", text="", icon='FILE_FOLDER')
+                browse_op.collection_name = selected_collection.name
 
-                # User Group
                 from .shared_operator_call import call_simple_export_path_ops
                 op = call_simple_export_path_ops(context, row, text='', outliner=False,
                                                  individual_collection=True, collection_name=selected_collection.name)
 
-                # Collection offset object 
+                # Collection offset object
                 root_box = box.box()
 
                 row = root_box.row(align=True)
                 icon = "LINKED" if selected_collection.use_root_object else "UNLINKED"
                 if not selected_collection.use_root_object:
                     row.prop(selected_collection, "use_root_object", text="", icon=icon, toggle=True)
-                else: 
+                else:
                     row.prop(selected_collection, "use_root_object", text='', icon=icon, toggle=True)
                 row.label(text='Rooth Object')
 
@@ -112,7 +113,7 @@ def draw_active_list_element(layout, context, scene):
                 row.prop(selected_collection, "root_object", text="")
 
                 col = root_box.column(align=True)
-                col.enabled = not selected_collection.use_root_object 
+                col.enabled = not selected_collection.use_root_object
                 row = col.row(align=True)
                 row.prop(selected_collection, "instance_offset", text='Collection Center')
                 op = col.operator("object.set_collection_offset_cursor", text="Set Offset from Cursor")
@@ -137,6 +138,9 @@ def draw_active_list_element(layout, context, scene):
                 ops_header, ops_body = box.panel(idname="COL_EXPORT_SETTINGS", default_closed=True)
                 ops_header.label(text="Exporter Settings")
                 if ops_body:
+                    from .shared_operator_call import call_assign_preset_op
+                    call_assign_preset_op(context, ops_body, individual_collection=True,
+                                         collection_name=selected_collection.name)
                     ops_body.template_collection_exporters()
 
 
@@ -323,7 +327,7 @@ class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
         op = call_simple_export_path_ops(context, row, outliner=False, individual_collection=False)
         row = layout.row()
         from .shared_operator_call import call_create_export_collection_op
-        op = call_create_export_collection_op(scene, row)
+        op = call_create_export_collection_op(context.scene, row)
         
 
 

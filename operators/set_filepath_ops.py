@@ -115,7 +115,7 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
         for collection in collection_list:
             try:
                 # vallidation
-                if not collection.simple_export_selected and not self.individual_collection:
+                if not collection.simple_export_selected and not self.individual_collection and not self.outliner:
                     continue
                 if not collection.exporters:
                     continue
@@ -125,7 +125,11 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
 
                 # set exporter
                 set_active_layer_Collection(collection.name)
-                exporter = find_exporter(collection, format_filter= scene.export_format)
+                # When targeting a specific collection (individual or outliner) ignore the
+                # scene format filter — assign to the collection's own exporter regardless of
+                # what format is currently selected in the scene.
+                _fmt = None if (self.individual_collection or self.outliner) else scene.export_format
+                exporter = find_exporter(collection, format_filter=_fmt)
                 if not exporter:
                     continue
 
@@ -137,16 +141,10 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
                                                                          self.folder_path_search,
                                                                          self.folder_path_replace)
 
-                # Check for empty paths with mode-specific hints
+                # Check for empty paths
                 if not export_folder:
-                    if self.export_folder_mode in ('RELATIVE', 'MIRROR') and not bpy.data.filepath:
-                        msg = (
-                            f"Cannot assign a relative path: the .blend file has not been saved. "
-                            "Save the .blend file first, or switch to an absolute export folder."
-                        )
-                    else:
-                        msg = "Export path is empty. Please specify a valid export folder."
-                    results.append({'name': collection.name, 'success': False, 'filepath': '', 'message': msg})
+                    results.append({'name': collection.name, 'success': False, 'filepath': '',
+                                    'message': "Export path is empty. Please specify a valid export folder."})
                     continue
 
                 # FILE: filename properties

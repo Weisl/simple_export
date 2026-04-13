@@ -50,14 +50,21 @@ def generate_export_path(export_dir, base_name, export_format_key, is_relative_p
 
     # Resolve relative paths
     if is_relative_path:
+        if not bpy.data.filepath:
+            # Blend file not saved — store the raw Blender-relative path as-is.
+            # Resolution to absolute happens at export time once the file is saved.
+            raw_dir = export_dir if export_dir.startswith("//") else f"//{export_dir}"
+            return raw_dir.rstrip("/") + "/" + export_name
+
         blend_dir = bpy.path.abspath("//")  # Get the blend file's directory
-        export_dir = os.path.join(blend_dir, export_dir) if not os.path.isabs(export_dir) else export_dir
+        # Strip Blender's "//" relative-path prefix before using os.path operations.
+        # os.path.isabs("//foo") returns True on POSIX, which would bypass the
+        # join with blend_dir and leave the raw "//foo" as the export directory.
+        clean_dir = export_dir[2:] if export_dir.startswith("//") else export_dir
+        export_dir = os.path.join(blend_dir, clean_dir) if not os.path.isabs(clean_dir) else clean_dir
 
     # Ensure directory exists
     ensure_export_folder_exists(export_dir)
-
-    # print(f"EXPORT NAME = {export_name}")
-    # print(f"DIRECTORY = {export_dir}")
 
     # Final export path
     export_path = os.path.join(export_dir, export_name)
@@ -83,6 +90,12 @@ def assign_collection_exporter_path(exporter, export_path, is_relative_path):
 
     if not export_path:
         return False, "Export path is empty. Please specify a valid export folder."
+
+    # Raw Blender-relative path (starts with "//") without a saved blend file:
+    # store it as-is without trying to resolve or create folders now.
+    if export_path.startswith("//") and not bpy.data.filepath:
+        exporter.export_properties.filepath = export_path
+        return True, None
 
     # Convert relative path to absolute only for directory creation
     folder_path_absolute = bpy.path.abspath(export_path)  # Convert to absolute

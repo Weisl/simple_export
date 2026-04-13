@@ -1,8 +1,16 @@
 import os
+import sys
 
 from ..presets_export.preset_format_functions import get_preset_format_folder
 
 ADDON_NAME = "Simple Export"
+
+if sys.platform == "win32":
+    DEFAULT_ABSOLUTE_PATH = "C:\\tmp\\"
+elif sys.platform == "darwin":
+    DEFAULT_ABSOLUTE_PATH = os.path.expanduser("~/Desktop/")
+else:
+    DEFAULT_ABSOLUTE_PATH = "/tmp/"
 
 # Map color_tag to icons
 COLOR_TAG_ICONS = {

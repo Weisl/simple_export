@@ -1,5 +1,6 @@
 import os
 
+from ..core.info import DEFAULT_ABSOLUTE_PATH as _DEFAULT_ABSOLUTE_PATH
 from ..presets_export import get_fbx_presets_folder
 from ..presets_export import get_gltf_presets_folder
 
@@ -7,7 +8,7 @@ presets_simple_exporter = {
     "UE-default": {
         "export_format": "FBX",
         "export_folder_mode": "RELATIVE",
-        "folder_path_absolute": "C:\\tmp\\",
+        "folder_path_absolute": _DEFAULT_ABSOLUTE_PATH,
         "folder_path_relative": "//export/",
         "folder_path_search": "work",
         "folder_path_replace": "source",
@@ -28,7 +29,7 @@ presets_simple_exporter = {
     "Unity-default": {
         "export_format": "FBX",
         "export_folder_mode": "RELATIVE",
-        "folder_path_absolute": "C:\\tmp\\",
+        "folder_path_absolute": _DEFAULT_ABSOLUTE_PATH,
         "folder_path_relative": "//export/",
         "folder_path_search": "work",
         "folder_path_replace": "source",
@@ -49,7 +50,7 @@ presets_simple_exporter = {
     "Godot-default": {
         "export_format": "GLTF",
         "export_folder_mode": "RELATIVE",
-        "folder_path_absolute": "C:\\tmp\\",
+        "folder_path_absolute": _DEFAULT_ABSOLUTE_PATH,
         "folder_path_relative": "//export/",
         "folder_path_search": "work",
         "folder_path_replace": "source",
@@ -70,7 +71,7 @@ presets_simple_exporter = {
     "Lowpoly-default": {
         "export_format": "FBX",
         "export_folder_mode": "RELATIVE",
-        "folder_path_absolute": "C:\\tmp\\",
+        "folder_path_absolute": _DEFAULT_ABSOLUTE_PATH,
         "folder_path_relative": "//bake/",
         "folder_path_search": "work",
         "folder_path_replace": "source",
@@ -92,7 +93,7 @@ presets_simple_exporter = {
     "Highpoly-default": {
         "export_format": "FBX",
         "export_folder_mode": "RELATIVE",
-        "folder_path_absolute": "C:\\tmp\\",
+        "folder_path_absolute": _DEFAULT_ABSOLUTE_PATH,
         "folder_path_relative": "//bake/",
         "folder_path_search": "work",
         "folder_path_replace": "source",
@@ -113,7 +114,7 @@ presets_simple_exporter = {
     # "Northlight-default": {
     #     "export_format": "FBX",
     #     "export_folder_mode": "MIRROR",
-    #     "folder_path_absolute": "C:\\tmp\\",
+    #     "folder_path_absolute": _DEFAULT_ABSOLUTE_PATH,
     #     "folder_path_relative": "//",
     #     "folder_path_search": "workdata",
     #     "folder_path_replace": "sourcedata",

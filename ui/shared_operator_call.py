@@ -44,31 +44,15 @@ def call_simple_add_exporter_to_collection(context, collection, layout):
 
 
 def call_simple_export_path_ops(context, layout, text=None, outliner=False,
-                                individual_collection=False, collection_name=''):
+                                individual_collection=False, collection_name='', icon='FOLDER_REDIRECT'):
     if text is None:
-        op = layout.operator("simple_export.set_export_paths", icon='FOLDER_REDIRECT')
+        op = layout.operator("simple_export.set_export_paths", icon=icon)
     else:
-        op = layout.operator("simple_export.set_export_paths", text=text, icon='FOLDER_REDIRECT')
+        op = layout.operator("simple_export.set_export_paths", text=text, icon=icon)
 
     op.outliner = outliner
     op.individual_collection = individual_collection
     op.collection_name = collection_name
-
-    # Get and set properties from preferences/scene
-    prefs = context.preferences.addons[base_package].preferences
-    scene = context.scene
-    # Filepath settings - use scene if overwrite is enabled, else prefs
-    filepath_settings = scene
-    op.export_folder_mode = filepath_settings.export_folder_mode
-    op.folder_path_absolute = filepath_settings.folder_path_absolute
-    op.folder_path_relative = filepath_settings.folder_path_relative
-    op.folder_path_search = filepath_settings.folder_path_search
-    op.folder_path_replace = filepath_settings.folder_path_replace
-    # Filename settings - use scene if overwrite is enabled, else prefs
-    filename_settings = scene
-    op.filename_prefix = filename_settings.filename_prefix
-    op.filename_suffix = filename_settings.filename_suffix
-    op.filename_blend_prefix = filename_settings.filename_blend_prefix
     return op
 
 
@@ -82,15 +66,6 @@ def call_assign_preset_op(context, layout, text=None, icon='PRESET_NEW', outline
     op.outliner = outliner
     op.individual_collection = individual_collection
     op.collection_name = collection_name
-
-    # Get and set properties from preferences/scene
-    scene = context.scene
-
-    # Set file format
-    op.export_format = scene.export_format
-
-    # Set preset filepath
-    set_operator_preset_property(op, scene)
 
 
 def call_create_export_collection_op(scene, layout, icon='COLLECTION_NEW', text=None):
