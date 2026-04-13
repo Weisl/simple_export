@@ -103,7 +103,12 @@ def draw_export_folderpath_properties(layout, element, is_preferences=False):
     if element.export_folder_mode == 'ABSOLUTE':
         layout.prop(element, "folder_path_absolute")
     if element.export_folder_mode == 'RELATIVE':
-        layout.prop(element, "folder_path_relative")
+        row = layout.row(align=True)
+        row.prop(element, "folder_path_relative")
+        op = row.operator("simple_export.folder_path_relative_picker", text="", icon='FILE_FOLDER')
+        op.use_relative_path = True
+        if context is not None:
+            op.context = context
 
     if element.export_folder_mode == 'MIRROR':
         layout.prop(element, "folder_path_search", text="Search Path")

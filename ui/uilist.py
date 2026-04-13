@@ -55,17 +55,28 @@ def collection_passes_uilist_filters(collection, scene):
     # Directory
     if scene.filter_directory != 'ALL':
         dir_path = os.path.dirname(export_path)
-        if scene.filter_directory != dir_path:
+        if scene.filter_directory == 'MISSING_DIR':
+            if os.path.isdir(dir_path):
+                return False
+        elif scene.filter_directory != dir_path:
             return False
 
     # Export format preset
     if scene.filter_preset_addon_preset != 'ALL':
-        if scene.filter_preset_addon_preset != getattr(collection, 'simple_export_addon_preset', ''):
+        addon_preset = getattr(collection, 'simple_export_addon_preset', '')
+        if scene.filter_preset_addon_preset == 'NONE':
+            if addon_preset:
+                return False
+        elif scene.filter_preset_addon_preset != addon_preset:
             return False
 
     # Addon preset — matches the displayed value: format preset with fallback to addon preset
     if scene.filter_preset_export_preset != 'ALL':
-        if scene.filter_preset_export_preset != getattr(collection, 'simple_export_export_preset', ''):
+        export_preset = getattr(collection, 'simple_export_export_preset', '')
+        if scene.filter_preset_export_preset == 'NONE':
+            if export_preset:
+                return False
+        elif scene.filter_preset_export_preset != export_preset:
             return False
 
     # Custom group filter
@@ -304,7 +315,9 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
             ########## Filepath
             row = col_03.row(align=True)
-            row.prop(exporter.export_properties, "filepath", text="", expand=True)
+            row.prop(collection, "simple_export_filepath_proxy", text="", expand=True)
+            browse_op = row.operator("simple_export.collection_filepath_picker", text="", icon='FILE_FOLDER')
+            browse_op.collection_name = collection.name
             from .shared_operator_call import call_simple_export_path_ops
             call_simple_export_path_ops(context, row, text='', outliner=False,
                                         individual_collection=True, collection_name=collection.name)
@@ -402,7 +415,9 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             if 'FILEPATH' in visibility_properties.list_visibility_settings:
                 row = col.row(align=True)
                 # Display the export file path as an editable property
-                row.prop(exporter.export_properties, "filepath", text="", expand=True)
+                row.prop(collection, "simple_export_filepath_proxy", text="", expand=True)
+                browse_op = row.operator("simple_export.collection_filepath_picker", text="", icon='FILE_FOLDER')
+                browse_op.collection_name = collection.name
 
                 # Buttons for setting the export path and opening the directory
                 # Assign Path
@@ -530,11 +545,99 @@ classes = (
 )
 
 
+# ---------------------------------------------------------------------------
+# Outliner ↔ Collection List sync
+# ---------------------------------------------------------------------------
+
+_syncing = False
+_msgbus_owner = object()
+
+
+def _find_layer_collection(layer_coll, target_collection):
+    """Recursively find the LayerCollection wrapping *target_collection*."""
+    if layer_coll.collection == target_collection:
+        return layer_coll
+    for child in layer_coll.children:
+        result = _find_layer_collection(child, target_collection)
+        if result:
+            return result
+    return None
+
+
+def _on_active_layer_collection_changed():
+    """Msgbus callback: sync Outliner active collection → scene.collection_index."""
+    global _syncing
+    if _syncing:
+        return
+    try:
+        scene = bpy.context.scene
+        view_layer = bpy.context.view_layer
+    except AttributeError:
+        return
+
+    active_lc = view_layer.active_layer_collection
+    if not active_lc:
+        return
+
+    active_collection = active_lc.collection
+    # The scene's master (root) collection is not in bpy.data.collections – skip it.
+    for i, col in enumerate(bpy.data.collections):
+        if col == active_collection:
+            if scene.collection_index != i:
+                _syncing = True
+                try:
+                    scene.collection_index = i
+                finally:
+                    _syncing = False
+            return
+
+
+def _on_collection_index_update(self, context):
+    """Property update callback: sync scene.collection_index → Outliner active layer collection."""
+    global _syncing
+    if _syncing:
+        return
+
+    collection_index = self.collection_index
+    if not (0 <= collection_index < len(bpy.data.collections)):
+        return
+
+    target_collection = bpy.data.collections[collection_index]
+
+    try:
+        view_layer = context.view_layer
+    except AttributeError:
+        return
+
+    layer_coll = _find_layer_collection(view_layer.layer_collection, target_collection)
+    if not layer_coll:
+        return
+
+    if view_layer.active_layer_collection != layer_coll:
+        _syncing = True
+        try:
+            view_layer.active_layer_collection = layer_coll
+        finally:
+            _syncing = False
+
+
+def _register_msgbus(*_):
+    """Subscribe to ViewLayer.active_layer_collection changes (called on register and load_post)."""
+    bpy.msgbus.subscribe_rna(
+        key=(bpy.types.ViewLayer, "active_layer_collection"),
+        owner=_msgbus_owner,
+        args=(),
+        notify=_on_active_layer_collection_changed,
+    )
+
+
 def register():
     from bpy.utils import register_class
 
     # UIList Properties
-    bpy.types.Scene.collection_index = bpy.props.IntProperty()
+    bpy.types.Scene.collection_index = bpy.props.IntProperty(
+        update=_on_collection_index_update,
+    )
     bpy.types.Scene.menu_collection_name = bpy.props.StringProperty(
         name="Menu Collection Name",
         description="Temporary storage for collection name"
@@ -542,6 +645,9 @@ def register():
 
     for cls in classes:
         register_class(cls)
+
+    _register_msgbus()
+    bpy.app.handlers.load_post.append(_register_msgbus)
 
 
 def unregister():
@@ -553,3 +659,7 @@ def unregister():
 
     # Remove Scene properties
     del bpy.types.Scene.menu_collection_name
+
+    bpy.msgbus.clear_by_owner(_msgbus_owner)
+    if _register_msgbus in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(_register_msgbus)

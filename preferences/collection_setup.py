@@ -120,6 +120,31 @@ def load_post_handler(dummy):
     ensure_collection_properties()
 
 
+def _get_filepath_proxy(self):
+    try:
+        scene = bpy.context.scene
+        format_filter = scene.filter_format if scene.filter_format != 'ALL' else None
+        from ..functions.exporter_funcs import find_exporter
+        exporter = find_exporter(self, format_filter=format_filter)
+        if exporter:
+            return exporter.export_properties.filepath
+    except Exception:
+        pass
+    return ""
+
+
+def _set_filepath_proxy(self, value):
+    try:
+        scene = bpy.context.scene
+        format_filter = scene.filter_format if scene.filter_format != 'ALL' else None
+        from ..functions.exporter_funcs import find_exporter
+        exporter = find_exporter(self, format_filter=format_filter)
+        if exporter:
+            exporter.export_properties.filepath = value
+    except Exception:
+        pass
+
+
 def register():
     bpy.utils.register_class(CollectionPreExportOps)
     bpy.types.Collection.pre_export_ops = PointerProperty(type=CollectionPreExportOps)
@@ -164,6 +189,15 @@ def register():
         default="",
     )
 
+    # Proxy property without FILE_PATH subtype to avoid Blender's red "file not found"
+    # validation on export destinations (both relative // and absolute paths are valid).
+    bpy.types.Collection.simple_export_filepath_proxy = bpy.props.StringProperty(
+        name="Export Path",
+        description="Export file path for this collection",
+        get=_get_filepath_proxy,
+        set=_set_filepath_proxy,
+    )
+
     # Delay execution to ensure Blender has initialized bpy.data.collections
     bpy.app.timers.register(ensure_collection_properties, first_interval=0.1)
 
@@ -187,6 +221,7 @@ def unregister():
     del bpy.types.Collection.simple_export_addon_preset
     del bpy.types.Collection.last_export_failed
     del bpy.types.Collection.export_group_name
+    del bpy.types.Collection.simple_export_filepath_proxy
 
     """remove the handler."""
     if update_collection_offset in bpy.app.handlers.depsgraph_update_post:

@@ -509,7 +509,6 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         name=PROPERTY_METADATA["folder_path_relative"]["name"],
         description=PROPERTY_METADATA["folder_path_relative"]["description"],
         default=PROPERTY_METADATA["folder_path_relative"]["default"],
-        subtype='DIR_PATH',
         get=get_relative_path_prefs,  # Use the same getter
         set=set_relative_path_prefs  # Use the same setter
     )
@@ -1133,8 +1132,6 @@ def initialize_properties_file_path():
         default=prefs.folder_path_relative,
         get=get_relative_path_scene,  # Use extracted getter
         set=set_relative_path_scene,  # Use extracted setter
-        subtype='DIR_PATH',
-        options={'PATH_SUPPORTS_BLEND_RELATIVE'}  # Add this option
     )
 
 
