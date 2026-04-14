@@ -31,17 +31,19 @@ def create_root_empty_for_collection(
     collection.objects.link(empty)
 
     # Parent top-level objects to the empty, preserving world transforms.
-    # matrix_parent_inverse is reset to identity so that setting matrix_world
-    # correctly back-calculates matrix_local without relying on empty.matrix_world
-    # being depsgraph-evaluated (newly created objects haven't gone through it yet).
+    # Newly created objects haven't been depsgraph-evaluated, so empty.matrix_world
+    # is unreliable. Instead, build the empty's world matrix from its location
+    # directly and compute matrix_local = empty_world_inv @ obj_world.
     if objects_to_parent:
+        from mathutils import Matrix
+        empty_world_matrix = Matrix.Translation(location)
         for obj in objects_to_parent:
             if obj == empty or obj.parent is not None:
                 continue
             world_matrix = obj.matrix_world.copy()
             obj.parent = empty
             obj.matrix_parent_inverse.identity()
-            obj.matrix_world = world_matrix
+            obj.matrix_local = empty_world_matrix.inverted() @ world_matrix
 
     collection.use_root_object = True
     collection.root_object = empty
