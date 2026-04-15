@@ -176,7 +176,7 @@ class EXPORT_OT_AddSettingsToCollections(
             collection.simple_export_export_preset = os.path.splitext(os.path.basename(selected_addon_preset))[0]
 
         # Assign filepath to exporter
-        if self.set_export_path and hasattr(exporter, 'filepath'):
+        if self.set_export_path and exporter and hasattr(exporter, 'export_properties'):
             assign_exporter_path(self, collection.name, exporter)
 
         self.report({'INFO'}, f"Settings applied to collection '{collection.name}'.")

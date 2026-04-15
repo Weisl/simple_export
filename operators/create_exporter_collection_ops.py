@@ -128,6 +128,16 @@ class EXPORT_OT_CreateExportCollections(
 
     def invoke(self, context, event):
         self.applied_preset_tracker = ""
+
+        # Pre-populate set_export_path from the scene so that the preset's saved
+        # value is visible in the dialog.  The preset applies its settings to the
+        # scene, so context.scene.set_export_path reflects the preset's intent.
+        # Because set_export_path is in _PRESET_SKIP_PROPS it will NOT be
+        # overwritten again when check() fires below.
+        scene = context.scene
+        if hasattr(scene, 'set_export_path'):
+            self.set_export_path = scene.set_export_path
+
         selected = context.scene.simple_export_selected_preset
         if selected:
             name = os.path.splitext(os.path.basename(selected))[0]
@@ -205,24 +215,22 @@ class EXPORT_OT_CreateExportCollections(
 
                 self.report({'INFO'},
                             f"Export collection '{export_collection.name}' created successfully for all objects.")
-            else:
-                self.report({'ERROR'}, "Failed to create export collection.")
 
-            # Set preset
-            if self.assign_preset:
+                # Set preset
                 if self.assign_preset:
                     from ..presets_export.preset_format_functions import get_format_preset_filepath
                     preset_file = get_format_preset_filepath(self, self.export_format)
                     assign_preset(exporter, preset_file)
                     export_collection.simple_export_export_preset = os.path.splitext(os.path.basename(preset_file))[0]
 
-            selected_addon_preset = context.scene.simple_export_selected_preset
-            if selected_addon_preset:
-                export_collection.simple_export_addon_preset = self.addon_preset_selection
+                selected_addon_preset = context.scene.simple_export_selected_preset
+                if selected_addon_preset:
+                    export_collection.simple_export_addon_preset = self.addon_preset_selection
 
-            if self.set_export_path and hasattr(exporter, 'filepath'):
-                print(f"COLLECTION NAME = {export_collection.name}")
-                assign_exporter_path(self, export_collection.name, exporter)
+                if self.set_export_path and exporter and hasattr(exporter, 'export_properties'):
+                    assign_exporter_path(self, export_collection.name, exporter)
+            else:
+                self.report({'ERROR'}, "Failed to create export collection.")
 
         return {'FINISHED'}
 

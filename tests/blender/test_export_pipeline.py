@@ -476,9 +476,6 @@ class TestExportViaAddonSetup(_ExportTestBase):
                 f"add_settings_to_collections produced no exporters for {export_format!r}"
             )
 
-        # Verify the operator set a filepath; if it didn't (assign_exporter_path
-        # path via exporter.filepath had no effect), set one manually so the
-        # export step can still run.
         exporter = self.col.exporters[0]
         from simple_export.core.export_formats import ExportFormats
         fmt = ExportFormats.get(export_format)
@@ -494,9 +491,8 @@ class TestExportViaAddonSetup(_ExportTestBase):
 
         expected_path = os.path.join(self.tmpdir, f"{filename_stem}.{ext}")
 
-        # If the filepath was not set by the operator (exporter.filepath shortcut
-        # may not be equivalent to export_properties.filepath in all builds),
-        # set it explicitly so the export can proceed.
+        # Fallback in case the operator did not set the filepath (e.g. no valid
+        # export folder was provided for this test run).
         if not exporter.export_properties.filepath:
             exporter.export_properties.filepath = expected_path
 

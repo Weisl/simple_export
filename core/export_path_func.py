@@ -12,15 +12,15 @@ def assign_exporter_path(properties, collection_name, exporter):
                                                              properties.folder_path_relative,
                                                              properties.folder_path_search,
                                                              properties.folder_path_replace)
-    # FILE: filename properties
+
     filename = generate_base_name(collection_name, properties.filename_prefix, properties.filename_suffix,
                                   properties.filename_blend_prefix)
-    # Generate final export path
+
     export_path = generate_export_path(export_folder, filename, properties.export_format,
                                        is_relative_path=is_relative_path)
-    # 3. Assign to exporter
+
     if export_path:
-        exporter.filepath = export_path
+        exporter.export_properties.filepath = export_path
 
 
 def generate_export_path(export_dir, base_name, export_format_key, is_relative_path=False):
