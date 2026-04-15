@@ -4,6 +4,7 @@ import textwrap
 import bpy
 
 from .. import __package__ as base_package
+from ..core.info import ADDON_NAME
 
 
 def get_table_columns(layout):
@@ -31,8 +32,7 @@ def draw_parent_collection(context, layout):
 def draw_export_preset_properties(layout, element):
     export_format = element.export_format  # Get the currently selected export format
 
-    layout.label(text="Export Preset")
-
+    layout.label(text="Export Format Preset")
     # Find the property for the current export format
     prop_name = f"simple_export_preset_file_{export_format.lower()}"
 
@@ -81,7 +81,7 @@ def draw_export_filename_properties(layout, element):
     layout.prop(element, "filename_blend_prefix")
 
 
-def draw_export_folderpath_properties(layout, element, is_preferences=False):
+def draw_export_folderpath_properties(layout, element):
     layout.label(text="Export Folder")
 
     # Check if blend file is saved
@@ -97,19 +97,19 @@ def draw_export_folderpath_properties(layout, element, is_preferences=False):
     elif element == bpy.context.scene:
         context = 'SCENE'
 
-    # Disable options that require a saved file
-    if not is_file_saved:
-        # if not is_preferences:
-        #     row.enabled = False
-        layout.label(text="Save the blend file to use filepath modes", icon='INFO')
+    # Warn when a saved file is required but the blend file hasn't been saved yet
+    if not is_file_saved and element.export_folder_mode in ('RELATIVE', 'MIRROR'):
+        layout.label(text="Blend file not saved \u2014 relative paths won't resolve at export time", icon='ERROR')
 
     if element.export_folder_mode == 'ABSOLUTE':
         layout.prop(element, "folder_path_absolute")
     if element.export_folder_mode == 'RELATIVE':
         row = layout.row(align=True)
         row.prop(element, "folder_path_relative")
-        op = row.operator("simple_export.folder_path_relative_picker", text="", icon='FILE_FOLDER')
-        op.context = context
+        if context is not None:
+            op = row.operator("simple_export.folder_path_relative_picker", text="", icon='FILE_FOLDER')
+            op.use_relative_path = True
+            op.context = context
 
     if element.export_folder_mode == 'MIRROR':
         layout.prop(element, "folder_path_search", text="Search Path")
@@ -153,10 +153,27 @@ def draw_exporter_presets(layout, buttons=False):
 
     # Determine the appropriate preset menu and operators based on the context
     row.menu(EXPORT_MT_scene_presets.__name__, text=EXPORT_MT_scene_presets.bl_label)
+
+    # + button: opens preferences on the Presets tab to create/manage presets
+    new_op = row.operator("simple_export.open_preferences", text="", icon='ADD')
+    new_op.addon_name = ADDON_NAME
+    new_op.prefs_tabs = 'SETTINGS'
+
     if buttons:
-        add_op = row.operator(SceneExportPreset.bl_idname, text="", icon='ADD')
+        row.operator(SceneExportPreset.bl_idname, text="", icon='ADD')
         remove_op = row.operator(SceneExportPreset.bl_idname, text="", icon='REMOVE')
         remove_op.remove_active = True
+
+    # Pin button: shows PINNED when the current preset is the default, UNPINNED otherwise
+    try:
+        prefs = bpy.context.preferences.addons[base_package].preferences
+        selected = bpy.context.scene.simple_export_selected_preset
+        if selected and prefs.simple_export_default_preset == selected:
+            row.label(text="", icon='PINNED')
+        else:
+            row.operator("simple_export.set_default_preset", text="", icon='UNPINNED')
+    except Exception:
+        pass
 
     # Operator to open a folder
     from ..presets_addon.exporter_preset import simple_export_presets_folder
@@ -171,7 +188,6 @@ def draw_full_exporer_settings(layout, props):
 
     # --- Collection Name ---
     box = layout.box()
-
     draw_collection_name_properties(box, props)
 
     # --- File Path ---
@@ -190,21 +206,69 @@ def draw_full_exporer_settings(layout, props):
     box = layout.box()
     draw_collection_settings_properties(box, props)
 
+    # --- Pre-Export Operations (defaults for new collections) ---
+    box = layout.box()
+    box.label(text="Pre-Export Operations (defaults for new collections)")
+    from ..ui.export_panels import draw_pre_export_operations
+    draw_pre_export_operations(box, props)
+
 
 def draw_export_list(layout, list_id, scene):
-    # Export List
+    # === EXPORT TARGET (filters — above the list) ===
+    box = layout.box()
+    header_row = box.row(align=True)
+    header_row.label(text="Export Target", icon='FILTER')
+    header_row.operator("simple_export.clear_filters", text="Clear Filters")
+
+    col = box.column(align=True)
+
+    def filter_row(parent, label, prop, **kwargs):
+        split = parent.split(factor=0.35, align=True)
+        split.label(text=label)
+        split.prop(scene, prop, text="", **kwargs)
+
+    filter_row(col, "Addon Preset", "filter_preset_addon_preset")
+    filter_row(col, "Format", "filter_format")
+    
+    # User Group: menu with inline "Add New Group..." entry
+    split = col.split(factor=0.35, align=True)
+    split.label(text="User Group")
+    current = scene.filter_custom_group
+    if current == 'ALL':
+        label = "All User Groups"
+    elif current == 'NONE':
+        label = "No User Group"
+    else:
+        label = current
+
+    filter_row(col, "Directory", "filter_directory", icon='FILE_FOLDER')
+
+    row = col.row(align=True)
+    row.prop(scene, "filter_selected_only", text="", icon='CHECKBOX_HLT', toggle=True)
+    row.prop(scene, "filter_name", text="", icon='VIEWZOOM')
+    split.menu("SIMPLE_EXPORT_MT_FilterGroupMenu", text=label)
+
+
+    more_header, more_body = col.panel(idname="EXPORT_TARGET_MORE_FILTERS", default_closed=True)
+    more_header.label(text="More")
+    if more_body:
+        col= more_body.column(align=True)
+        filter_row(col, "Color", "filter_color_tag")
+        filter_row(col, "Status", "filter_file_status")
+        filter_row(col, "Export Format Preset", "filter_preset_export_preset")
+
+
+    # === COLLECTION LIST ===
     row = layout.row()
     row.label(text="Simple Export Collection List")
 
-    # Headers
+    # Headers (popup only)
     factor = 0.97 if list_id == 'popup' else 0.9
     split = layout.split(factor=factor, align=True)
     main_column = split
     if list_id == 'popup':
         row = main_column.row(align=True)
         col_01, col_02, col_03, col_04, col_05 = get_table_columns(row)
-
-        ###### Header #####
         col_01.label(text="")
         col_02.label(text="Name")
         col_03.label(text="Filepath")
@@ -216,40 +280,32 @@ def draw_export_list(layout, list_id, scene):
     split = layout.split(factor=factor, align=True)
     main_column = split
 
-    # Main column for the UI List
     row = main_column.row(align=True)
     row.template_list("SCENE_UL_CollectionList", list_id, bpy.data, "collections", scene, "collection_index")
 
     narrow_column = split.column(align=True)
     col = narrow_column
-    # Draw Create exporter
     from .shared_operator_call import call_create_export_collection_op
     call_create_export_collection_op(scene, col, icon='ADD', text="")
 
     col.separator()
-    # Menu with a down arrow icon
     col.menu("SIMPLE_EXPORT_MT_context_menu", icon='DOWNARROW_HLT', text="")
 
     col.separator()
-    # Draw View Settings
-
-    if list_id is 'npanel':
+    if list_id == 'npanel':
         visibility_properties = scene.exportlist_nPanel_properties
         col.prop(visibility_properties, "list_visibility_settings")
 
-    if list_id is 'scene':
+    if list_id == 'scene':
         visibility_properties = scene.exportlist_scene_properties
         col.prop(visibility_properties, "list_visibility_settings")
 
     row = layout.row(align=True)
     row.operator("scene.select_all_collections", text='All', icon='CHECKBOX_HLT').deselect = False
     row.operator("scene.select_all_collections", text='None', icon='CHECKBOX_DEHLT').deselect = True
+    op = row.operator("scene.expand_minimize_all_collections", text='Expand', icon='CHECKBOX_HLT')
+    op.minimize = False
+    op = row.operator("scene.expand_minimize_all_collections", text='Mnimize', icon='CHECKBOX_DEHLT')  
+    op.minimize = True
 
-    # Always visible filter controls
-    box = layout.box()
-    box.prop(scene, "use_filter", text="Use Filter")
 
-    if scene.use_filter:
-        row = box.row(align=True)
-        row.label(text="Filter by Format")
-        row.prop(scene, 'export_format_filter', text='')

@@ -1,5 +1,6 @@
 from . import assign_exporter_ops, export_ops, set_filepath_ops, assign_preset_ops, ui_ops, \
-    create_exporter_collection_ops, collection_offset_ops, remove_exporters_ops, fix_filename, relative_folder_picker
+    create_exporter_collection_ops, collection_offset_ops, remove_exporters_ops, fix_filename, relative_folder_picker, reload_addon
+from .version_check import start_version_check
 
 files = [
     assign_exporter_ops,
@@ -12,6 +13,7 @@ files = [
     remove_exporters_ops,
     fix_filename,
     relative_folder_picker,
+    reload_addon,
 ]
 
 # Register scene properties here so they're only registered once
@@ -46,6 +48,8 @@ def register():
     register_scene_properties()
     for file in files:
         file.register()
+
+    start_version_check()
 
 
 def unregister():

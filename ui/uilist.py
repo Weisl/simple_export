@@ -6,6 +6,89 @@ from ..core.export_formats import ExportFormats
 from ..core.info import COLOR_TAG_ICONS
 from ..functions.exporter_funcs import find_exporter
 from ..functions.path_utils import clean_relative_path
+from ..functions.preset_func import collection_has_preset_changes
+
+
+def collection_passes_uilist_filters(collection, scene):
+    """Return True if collection passes all active UIList filters."""
+    if not collection.exporters:
+        return False
+
+    exporter = find_exporter(collection)
+    export_path = clean_relative_path(exporter.export_properties.filepath)
+    file_exists = os.path.exists(export_path)
+    is_locked = file_exists and not os.access(export_path, os.W_OK)
+
+    # Format filter
+    if scene.filter_format != 'ALL':
+        export_format_obj = ExportFormats.get(scene.filter_format)
+        exporter_types = [str(type(e.export_properties)) for e in collection.exporters]
+        if not any(t == export_format_obj.op_type for t in exporter_types):
+            return False
+
+    # Color tag
+    if scene.filter_color_tag != 'ALL':
+        if collection.color_tag != scene.filter_color_tag:
+            return False
+
+    # Selected only
+    if scene.filter_selected_only:
+        if not collection.simple_export_selected:
+            return False
+
+    # Name search
+    if scene.filter_name:
+        if scene.filter_name.lower() not in collection.name.lower():
+            return False
+
+    # File status
+    if scene.filter_file_status != 'ALL':
+        if scene.filter_file_status == 'NEW' and file_exists:
+            return False
+        elif scene.filter_file_status == 'EXISTS' and not file_exists:
+            return False
+        elif scene.filter_file_status == 'LOCKED' and not is_locked:
+            return False
+        elif scene.filter_file_status == 'FAILED' and not getattr(collection, 'last_export_failed', False):
+            return False
+
+    # Directory
+    if scene.filter_directory != 'ALL':
+        dir_path = os.path.dirname(export_path)
+        if scene.filter_directory == 'NO_PATH':
+            if collection.simple_export_filepath_proxy:
+                return False
+        elif scene.filter_directory != dir_path:
+            return False
+
+    # Export format preset
+    if scene.filter_preset_addon_preset != 'ALL':
+        addon_preset = getattr(collection, 'simple_export_addon_preset', '')
+        if scene.filter_preset_addon_preset == 'NONE':
+            if addon_preset:
+                return False
+        elif scene.filter_preset_addon_preset != addon_preset:
+            return False
+
+    # Addon preset — matches the displayed value: format preset with fallback to addon preset
+    if scene.filter_preset_export_preset != 'ALL':
+        export_preset = getattr(collection, 'simple_export_export_preset', '')
+        if scene.filter_preset_export_preset == 'NONE':
+            if export_preset:
+                return False
+        elif scene.filter_preset_export_preset != export_preset:
+            return False
+
+    # Custom group filter
+    if scene.filter_custom_group == 'NONE':
+        if getattr(collection, 'export_group_name', ''):
+            return False
+        
+    elif scene.filter_custom_group != 'ALL':
+        if getattr(collection, 'export_group_name', '') != scene.filter_custom_group:
+            return False
+
+    return True
 
 
 def collection_name_mismatch(base_name, export_path):
@@ -102,6 +185,14 @@ class EXPORT_MT_root_object_menu(bpy.types.Menu):
         layout.separator()
 
         # Root Object Actions
+        op = layout.operator("object.create_root_empty", text="Root at Active Object", icon='EMPTY_AXIS')
+        op.collection_name = collection_name
+        op.location_mode = 'ACTIVE_OBJECT'
+
+        op = layout.operator("object.create_root_empty", text="Root at Center of Selected", icon='EMPTY_AXIS')
+        op.collection_name = collection_name
+        op.location_mode = 'CENTER_OF_SELECTED'
+
         op = layout.operator("object.root_object_actions", text="Remove Root Object", icon='X')
         op.action = "remove"
         op.collection_name = collection_name
@@ -165,7 +256,12 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
     """
 
     def draw_filter(self, context, layout):
-        pass
+        scene = context.scene
+        row = layout.row(align=True)
+        row.label(text="Sort:")
+        row.prop(scene, "sort_mode", text="")
+        icon = 'SORT_DESC' if scene.sort_reverse else 'SORT_ASC'
+        row.prop(scene, "sort_reverse", text="", icon=icon, toggle=True)
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         # Determine settings based on the list_id
@@ -180,7 +276,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
         # Get exporter details
         scene = context.scene
-        format_filter = scene.export_format_filter if scene.use_filter else None
+        format_filter = scene.filter_format if scene.filter_format != 'ALL' else None
         exporter = find_exporter(collection, format_filter=format_filter)
 
         export_path = exporter.export_properties.filepath
@@ -198,13 +294,28 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             row = col_01.row(align=False)
             # Checkbox
             row.prop(collection, "simple_export_selected", text="")
-            # Status Icon
-            icon = self.get_export_status_icon(export_path, file_exists)
-            row.label(text='', icon=icon)
+            # Status Icon — clickable when last export failed
+            icon = self.get_export_status_icon(export_path, file_exists, collection)
+            if getattr(collection, 'last_export_failed', False):
+                op = row.operator("simple_export.show_collection_error", text='', icon=icon)
+                op.collection_name = collection.name
+            else:
+                row.label(text='', icon=icon)
 
             # Format
             text = self.get_format_name(exporter)
             row.label(text=text)  # Display the user-friendly label
+
+            # Active pre-export operation indicator icons (per-collection)
+            col_ops = collection.pre_export_ops
+            if col_ops.move_by_collection_offset:
+                row.label(text='', icon='OBJECT_ORIGIN')
+            if col_ops.triangulate_before_export:
+                row.label(text='', icon='MOD_TRIANGULATE')
+            if col_ops.apply_transform_before_export or col_ops.apply_scale_before_export or col_ops.apply_rotation_before_export:
+                row.label(text='', icon='OBJECT_DATA')
+            if col_ops.pre_rotate_objects:
+                row.label(text='', icon='DRIVER_ROTATIONAL_DIFFERENCE')
 
             ########## Name
             row = col_02.row(align=True)
@@ -213,7 +324,9 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
             ########## Filepath
             row = col_03.row(align=True)
-            row.prop(exporter.export_properties, "filepath", text="", expand=True)
+            row.prop(collection, "simple_export_filepath_proxy", text="", expand=True)
+            browse_op = row.operator("simple_export.collection_filepath_picker", text="", icon='FILE_FOLDER')
+            browse_op.collection_name = collection.name
             from .shared_operator_call import call_simple_export_path_ops
             call_simple_export_path_ops(context, row, text='', outliner=False,
                                         individual_collection=True, collection_name=collection.name)
@@ -266,22 +379,58 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
 
 
         else:
-            row = layout.row(align=True)
+            visibility_properties = scene.exportlist_nPanel_properties if self.list_id == 'npanel' else scene.exportlist_scene_properties
+
+            # create boxes for each entry if multiple lines are shown
+            list_layout = layout.box() if len(visibility_properties.list_visibility_settings) > 0 else layout
+
+            col = list_layout.column(align=True)
+            row = col.row(align=True)
+
 
             # Checkbox for selecting the collection for export
             row.prop(collection, "simple_export_selected", text="")
-            visibility_properties = scene.exportlist_nPanel_properties if self.list_id == 'npanel' else scene.exportlist_scene_properties
 
-            if 'DEFAULT' in visibility_properties.list_visibility_settings:
-                icon = self.get_export_status_icon(export_path, file_exists)
+            icon = self.get_export_status_icon(export_path, file_exists, collection)
+            if getattr(collection, 'last_export_failed', False):
+                op = row.operator("simple_export.show_collection_error", text='', icon=icon)
+                op.collection_name = collection.name
+            else:
                 row.label(text='', icon=icon)
-                # Display the collection name with the color icon
-                icon = self.get_collection_color_icon(collection)
-                row.label(text=collection.name, icon=icon)
+            # Display the collection name with the color icon
+            icon = self.get_collection_color_icon(collection)
+            row.prop(collection, 'name',text='',icon=icon)
+
+            # Add arrow button that sets the collection name and opens the menu
+            arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
+            arrow_op.collection_name = collection.name
+
+            # Add the Export Collection button
+            op = row.operator("simple_export.export_collections", text="", icon='EXPORT')
+            op.outliner = False
+            op.individual_collection = True
+            op.collection_name = collection.name
+
+            if 'PRESET' in visibility_properties.list_visibility_settings:
+                row = col.row(align=True)
+                export_preset = getattr(collection, 'simple_export_export_preset', '')
+                addon_preset = getattr(collection, 'simple_export_addon_preset', '')
+                addon_preset_text = addon_preset or '-'
+                export_preset_text = export_preset or '-'
+                if addon_preset_text != '-' and collection_has_preset_changes(collection, exporter, scene):
+                    addon_preset_text += ' *'
+                if export_preset_text != '-' and collection_has_preset_changes(collection, exporter, scene):
+                    export_preset_text += ' *'
+                row.label(text=addon_preset_text)
+                row.label(text=export_preset_text)
+
 
             if 'FILEPATH' in visibility_properties.list_visibility_settings:
+                row = col.row(align=True)
                 # Display the export file path as an editable property
-                row.prop(exporter.export_properties, "filepath", text="", expand=True)
+                row.prop(collection, "simple_export_filepath_proxy", text="", expand=True)
+                browse_op = row.operator("simple_export.collection_filepath_picker", text="", icon='FILE_FOLDER')
+                browse_op.collection_name = collection.name
 
                 # Buttons for setting the export path and opening the directory
                 # Assign Path
@@ -290,39 +439,37 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 op = call_simple_export_path_ops(context, row, text='', outliner=False,
                                                  individual_collection=True, collection_name=collection.name)
 
-            if 'FILENAME' in visibility_properties.list_visibility_settings:
-                filename = os.path.basename(exporter.export_properties.filepath)
-                row.label(text=filename)
 
             # Display Empty or Eyedropper button depending on the root_object state
-
-            if 'ROOT' in visibility_properties.list_visibility_settings:
-                # if collection.use_root_object:
-
-                icon = "LINKED" if collection.use_root_object else "UNLINKED"
-                row.prop(collection, "use_root_object", text='', icon=icon)
-
-                if collection.use_root_object:
-                    row.prop(collection, "root_object", text="")
-                    op = row.operator("object.select_root", text="", icon='EMPTY_AXIS')
-                    op.collection_name = collection.name
-
             if 'ORIGIN' in visibility_properties.list_visibility_settings:
+                row = col.row(align=True)
                 icon = "LINKED" if collection.use_root_object else "UNLINKED"
                 row.prop(collection, "use_root_object", text='', icon=icon)
+
+                row.enabled = False if collection.use_root_object else True
                 row.prop(collection, "instance_offset", text="")
 
+                row.prop(collection, "root_object", text="")
+                op = row.operator("object.select_root", text="", icon='EMPTY_AXIS')
+                op.collection_name = collection.name
+
             if 'COLLECTION' in visibility_properties.list_visibility_settings:
-                pass
-            if 'FILENAME' in visibility_properties.list_visibility_settings:
+                row = col.row(align=True)
                 pass
 
-            if 'FORMAT' in visibility_properties.list_visibility_settings:
-                text = self.get_format_name(exporter)
-                row.label(text=text)  # Display the user-friendly label
+
+            if 'OPERATIONS' in visibility_properties.list_visibility_settings:
+                col_ops = collection.pre_export_ops
+                if col_ops.move_by_collection_offset:
+                    row.label(text='', icon='OBJECT_ORIGIN')
+                if col_ops.triangulate_before_export:
+                    row.label(text='', icon='MOD_TRIANGULATE')
+                if col_ops.apply_transform_before_export or col_ops.apply_scale_before_export or col_ops.apply_rotation_before_export:
+                    row.label(text='', icon='OBJECT_DATA')
+                if col_ops.pre_rotate_objects:
+                    row.label(text='', icon='DRIVER_ROTATIONAL_DIFFERENCE')
 
             from ..core.export_path_func import generate_base_name
-
             filename_settings = scene
             base_name = generate_base_name(collection.name, filename_settings.filename_prefix,
                                            filename_settings.filename_suffix, filename_settings.filename_blend_prefix)
@@ -334,15 +481,8 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 op.filename_suffix = filename_settings.filename_suffix
                 op.filename_blend_prefix = filename_settings.filename_blend_prefix
 
-            # Add arrow button that sets the collection name and opens the menu
-            arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
-            arrow_op.collection_name = collection.name
+            # col.separator()
 
-            # Add the Export Collection button
-            op = row.operator("simple_export.export_collections", text="", icon='EXPORT')
-            op.outliner = False
-            op.individual_collection = True
-            op.collection_name = collection.name
 
     def get_format_name(self, exporter):
         # Display the export format
@@ -355,16 +495,16 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             text = exporter_type
         return text
 
-    def get_export_status_icon(self, export_path, file_exists):
+    def get_export_status_icon(self, export_path, file_exists, collection=None):
         is_locked = file_exists and not os.access(export_path, os.W_OK)
-        # Show lock icon based on file permissions
+        if collection and getattr(collection, 'last_export_failed', False):
+            return 'ERROR'
         if is_locked:
-            icon = 'LOCKED'
+            return 'LOCKED'
         elif file_exists:
-            icon = 'CURRENT_FILE'
+            return 'CURRENT_FILE'
         else:
-            icon = 'FILE_NEW'
-        return icon
+            return 'FILE_NEW'
 
     def get_collection_color_icon(self, collection):
         # Determine the icon based on the collection's color_tag
@@ -373,26 +513,39 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         return icon
 
     def filter_items(self, context, data, propname):
-        flt_flags = []
         scene = context.scene
+        flt_flags = [
+            self.bitflag_filter_item if collection_passes_uilist_filters(col, scene) else 0
+            for col in bpy.data.collections
+        ]
 
-        export_format = scene.export_format_filter
-        export_format_obj = ExportFormats.get(export_format)
-
-        for collection in bpy.data.collections:
-            filter = 0
-            has_exporters = len(collection.exporters) > 0
-
-            if not scene.use_filter and has_exporters:
-                filter = self.bitflag_filter_item
-            elif scene.use_filter:
-                exporter_types = [str(type(exporter.export_properties)) for exporter in collection.exporters]
-                if any(exporter_type == export_format_obj.op_type for exporter_type in exporter_types):
-                    filter = self.bitflag_filter_item
-
-            flt_flags.append(filter)
-
+        # Sorting
         flt_neworder = []
+        if scene.sort_mode != 'NONE':
+            indexed = list(enumerate(bpy.data.collections))
+            rev = scene.sort_reverse
+
+            if scene.sort_mode == 'NAME':
+                sorted_pairs = sorted(indexed, key=lambda x: x[1].name.lower(), reverse=rev)
+            elif scene.sort_mode == 'FORMAT':
+                def format_key(pair):
+                    c = pair[1]
+                    if not c.exporters:
+                        return ''
+                    exp = find_exporter(c)
+                    return ExportFormats.get_key_from_op_type(str(type(exp.export_properties))) or ''
+                sorted_pairs = sorted(indexed, key=format_key, reverse=rev)
+            elif scene.sort_mode == 'SELECTED_FIRST':
+                sorted_pairs = sorted(indexed, key=lambda x: (0 if x[1].simple_export_selected else 1, x[1].name.lower()), reverse=rev)
+            elif scene.sort_mode == 'COLOR_TAG':
+                sorted_pairs = sorted(indexed, key=lambda x: x[1].color_tag, reverse=rev)
+            elif scene.sort_mode == 'PRESET':
+                sorted_pairs = sorted(indexed, key=lambda x: getattr(x[1], 'simple_export_export_preset', '').lower(), reverse=rev)
+            else:
+                sorted_pairs = indexed
+
+            flt_neworder = [orig_idx for orig_idx, _ in sorted_pairs]
+
         return flt_flags, flt_neworder
 
 
@@ -405,11 +558,108 @@ classes = (
 )
 
 
+# ---------------------------------------------------------------------------
+# Outliner ↔ Collection List sync
+# ---------------------------------------------------------------------------
+
+_syncing = False
+_last_active_layer_collection = None
+
+
+def _find_layer_collection(layer_coll, target_collection):
+    """Recursively find the LayerCollection wrapping *target_collection*."""
+    if layer_coll.collection == target_collection:
+        return layer_coll
+    for child in layer_coll.children:
+        result = _find_layer_collection(child, target_collection)
+        if result:
+            return result
+    return None
+
+
+def _poll_active_collection():
+    """Timer callback: poll active_layer_collection and sync Outliner → scene.collection_index.
+
+    msgbus does not fire reliably for ViewLayer.active_layer_collection because
+    Blender's outliner updates it via internal C notifiers, not RNA callbacks.
+    A lightweight 0.1 s timer is used instead.
+    """
+    global _syncing, _last_active_layer_collection
+
+    if _syncing:
+        return 0.1
+
+    try:
+        scene = bpy.context.scene
+        view_layer = bpy.context.view_layer
+    except (AttributeError, RuntimeError):
+        return 0.1
+
+    if scene is None or view_layer is None:
+        return 0.1
+
+    active_lc = view_layer.active_layer_collection
+    if active_lc is _last_active_layer_collection:
+        return 0.1
+
+    _last_active_layer_collection = active_lc
+
+    active_collection = active_lc.collection
+    # The scene's master (root) collection is not in bpy.data.collections – skip it.
+    for i, col in enumerate(bpy.data.collections):
+        if col == active_collection:
+            if scene.collection_index != i:
+                _syncing = True
+                try:
+                    scene.collection_index = i
+                finally:
+                    _syncing = False
+            break
+
+    return 0.1
+
+
+def _on_collection_index_update(self, context):
+    """Property update callback: sync scene.collection_index → Outliner active layer collection."""
+    global _syncing, _last_active_layer_collection
+    if _syncing:
+        return
+
+    collection_index = self.collection_index
+    if not (0 <= collection_index < len(bpy.data.collections)):
+        return
+
+    target_collection = bpy.data.collections[collection_index]
+
+    try:
+        view_layer = context.view_layer
+    except AttributeError:
+        return
+
+    if view_layer is None:
+        return
+
+    layer_coll = _find_layer_collection(view_layer.layer_collection, target_collection)
+    if not layer_coll:
+        return
+
+    if view_layer.active_layer_collection != layer_coll:
+        _syncing = True
+        try:
+            view_layer.active_layer_collection = layer_coll
+            # Keep the poll cache in sync so the timer doesn't immediately re-fire.
+            _last_active_layer_collection = layer_coll
+        finally:
+            _syncing = False
+
+
 def register():
     from bpy.utils import register_class
 
     # UIList Properties
-    bpy.types.Scene.collection_index = bpy.props.IntProperty()
+    bpy.types.Scene.collection_index = bpy.props.IntProperty(
+        update=_on_collection_index_update,
+    )
     bpy.types.Scene.menu_collection_name = bpy.props.StringProperty(
         name="Menu Collection Name",
         description="Temporary storage for collection name"
@@ -418,12 +668,19 @@ def register():
     for cls in classes:
         register_class(cls)
 
+    if not bpy.app.timers.is_registered(_poll_active_collection):
+        bpy.app.timers.register(_poll_active_collection, first_interval=0.1, persistent=True)
+
 
 def unregister():
     from bpy.utils import unregister_class
 
     for cls in reversed(classes):
-        unregister_class(cls)
+        if 'bl_rna' in cls.__dict__:
+            unregister_class(cls)
 
     # Remove Scene properties
     del bpy.types.Scene.menu_collection_name
+
+    if bpy.app.timers.is_registered(_poll_active_collection):
+        bpy.app.timers.unregister(_poll_active_collection)

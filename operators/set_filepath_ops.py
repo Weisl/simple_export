@@ -1,3 +1,5 @@
+import os
+
 import bpy
 
 from .shared_properties import SharedPathProps, SharedFilenameProps
@@ -7,6 +9,12 @@ from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.exporter_funcs import find_exporter
 from ..functions.outliner_func import get_outliner_collections
 from ..functions.vallidate_func import validate_collection
+
+_PATH_PROPS = [
+    'export_folder_mode', 'folder_path_absolute', 'folder_path_relative',
+    'folder_path_search', 'folder_path_replace',
+    'filename_prefix', 'filename_suffix', 'filename_blend_prefix',
+]
 
 
 class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bpy.types.Operator):
@@ -37,6 +45,52 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
         box = layout.box()
         draw_export_folderpath_properties(box, self)
 
+    def invoke(self, context, event):
+        ref_col = self._get_reference_collection(context)
+
+        if ref_col:
+            addon_preset_name = getattr(ref_col, 'simple_export_addon_preset', '')
+            if addon_preset_name:
+                from ..presets_addon.exporter_preset import simple_export_presets_folder
+                preset_path = os.path.join(simple_export_presets_folder(), f"{addon_preset_name}.py")
+                if os.path.exists(preset_path):
+                    self._apply_preset_props(preset_path)
+                    return context.window_manager.invoke_props_dialog(self, width=400)
+
+        # Fall back to scene's current values (set by the active addon preset)
+        scene = context.scene
+        for prop_name in _PATH_PROPS:
+            if hasattr(scene, prop_name):
+                try:
+                    setattr(self, prop_name, getattr(scene, prop_name))
+                except Exception:
+                    pass
+
+        return context.window_manager.invoke_props_dialog(self, width=400)
+
+    def _apply_preset_props(self, preset_path):
+        """Apply path/naming settings from an addon preset file to this operator."""
+        from ..functions.preset_func import _parse_prefix_preset_file
+        props = _parse_prefix_preset_file(preset_path, "scene")
+        for prop_name in _PATH_PROPS:
+            if prop_name in props:
+                try:
+                    setattr(self, prop_name, props[prop_name])
+                except Exception:
+                    pass
+
+    def _get_reference_collection(self, context):
+        """Return the first relevant collection to use as a reference for prefilling."""
+        if self.individual_collection and self.collection_name:
+            return bpy.data.collections.get(self.collection_name)
+        if self.outliner:
+            cols = get_outliner_collections(context)
+            return cols[0] if cols else None
+        for col in bpy.data.collections:
+            if getattr(col, 'simple_export_selected', False) and col.exporters:
+                return col
+        return None
+
     def execute(self, context):
         results = []
         scene = context.scene
@@ -61,7 +115,7 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
         for collection in collection_list:
             try:
                 # vallidation
-                if not collection.simple_export_selected and not self.individual_collection:
+                if not collection.simple_export_selected and not self.individual_collection and not self.outliner:
                     continue
                 if not collection.exporters:
                     continue
@@ -71,7 +125,11 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
 
                 # set exporter
                 set_active_layer_Collection(collection.name)
-                exporter = find_exporter(collection, format_filter= scene.export_format)
+                # When targeting a specific collection (individual or outliner) ignore the
+                # scene format filter — assign to the collection's own exporter regardless of
+                # what format is currently selected in the scene.
+                _fmt = None if (self.individual_collection or self.outliner) else scene.export_format
+                exporter = find_exporter(collection, format_filter=_fmt)
                 if not exporter:
                     continue
 
@@ -83,10 +141,10 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
                                                                          self.folder_path_search,
                                                                          self.folder_path_replace)
 
-                # Simple check for empty paths
+                # Check for empty paths
                 if not export_folder:
                     results.append({'name': collection.name, 'success': False, 'filepath': '',
-                                    'message': 'Export path is empty. Please specify a valid export folder.'})
+                                    'message': "Export path is empty. Please specify a valid export folder."})
                     continue
 
                 # FILE: filename properties
@@ -140,4 +198,5 @@ def register():
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
-        unregister_class(cls)
+        if 'bl_rna' in cls.__dict__:
+            unregister_class(cls)

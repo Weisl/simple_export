@@ -60,30 +60,25 @@ def create_addon_preset_files(preset_data, preset_folder, saved_preset_files):
             save_addon_presets(preset_name, preset_folder, preset)
 
 
+def apply_default_preset():
+    """Apply the default export format preset to the current scene and update the selection tracker."""
+    try:
+        addon_prefs = bpy.context.preferences.addons[base_package].preferences
+        if addon_prefs is None:
+            return
+        default_preset = addon_prefs.simple_export_default_preset
+        if not default_preset or not os.path.exists(default_preset):
+            return
+        from .exporter_preset import EXPORT_MT_scene_presets
+        bpy.ops.script.execute_preset(filepath=default_preset, menu_idname=EXPORT_MT_scene_presets.__name__)
+        bpy.context.scene.simple_export_selected_preset = default_preset
+    except Exception as e:
+        print(f"[Simple Export] Could not apply default preset: {e}")
+
+
 @persistent
 def load_preset_on_scene_open(dummy):
-    # Access the add-on preferences
-    addon_prefs = bpy.context.preferences.addons[base_package].preferences
-    default_preset = addon_prefs.simple_export_default_preset
-
-    if not default_preset:
-        print("No default preset specified.")
-        return
-
-    # Get the presets folder path using the add-on's function
-    from ..presets_addon.exporter_preset import simple_export_presets_folder
-    presets_folder = simple_export_presets_folder()
-
-    # Construct the preset file path
-    preset_file = os.path.join(presets_folder, default_preset)
-    if not os.path.exists(preset_file):
-        print(f"Preset file not found: {preset_file}")
-        return
-
-    # Execute the preset using script.execute_preset
-    from .exporter_preset import EXPORT_MT_scene_presets
-    bpy.ops.script.execute_preset(filepath=preset_file, menu_idname=EXPORT_MT_scene_presets.__name__)
-    # print(f"Applied preset: {default_preset}")
+    apply_default_preset()
 
 
 def initialize_addon_presets():
@@ -103,6 +98,7 @@ def register():
     for file in files:
         file.register()
     initialize_addon_presets()
+    bpy.app.timers.register(apply_default_preset, first_interval=0.1)
 
 
 def unregister():

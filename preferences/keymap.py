@@ -19,6 +19,8 @@ keymaps_items_dict = {
 
 def add_key(context, idname, type, ctrl, shift, alt, operator, active):
     wm = context.window_manager
+    if not wm.keyconfigs.active:
+        return
     addon_km = wm.keyconfigs.active.keymaps.get('Window')
     if not addon_km:
         addon_km = wm.keyconfigs.active.keymaps.new(name="Window")
@@ -48,23 +50,19 @@ def remove_key(context, idname, properties_name):
 
 def add_keymap():
     context = bpy.context
-    prefs = context.preferences.addons[base_package].preferences
+    addon = context.preferences.addons.get(base_package)
+    if addon is None:
+        return  # not yet in addons list (background mode / first registration)
+    prefs = addon.preferences
     wm = context.window_manager
+    if not wm.keyconfigs.active:
+        return
     addon_km = wm.keyconfigs.active.keymaps.get('Window')
     if not addon_km:
         addon_km = wm.keyconfigs.active.keymaps.new(name="Window")
 
-    # Remove existing keymap items for this addon
-    for kmi in addon_km.keymap_items[:]:
-        for key, valueDic in keymaps_items_dict.items():
-            idname = valueDic["idname"]
-            operator = valueDic["operator"]
-            if kmi.idname == idname and (
-                    not operator or (hasattr(kmi.properties, 'name') and kmi.properties.name == operator)):
-                addon_km.keymap_items.remove(kmi)
-
-    # Add new keymap items
-    for key, valueDic in keymaps_items_dict.items():
+    # Add new keymap items (without removing existing ones)
+    for _, valueDic in keymaps_items_dict.items():
         idname = valueDic["idname"]
         type = getattr(prefs, f'{valueDic["name"]}_type')
         ctrl = getattr(prefs, f'{valueDic["name"]}_ctrl')
@@ -80,8 +78,11 @@ def add_keymap():
         add_key(context, idname, type, ctrl, shift, alt, operator, active)
 
 
+
 def remove_keymap():
     wm = bpy.context.window_manager
+    if not wm.keyconfigs.active:
+        return
     addon_km = wm.keyconfigs.active.keymaps.get('Window')
     if not addon_km:
         return
@@ -168,5 +169,6 @@ def register():
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
-        unregister_class(cls)
+        if 'bl_rna' in cls.__dict__:
+            unregister_class(cls)
     remove_keymap()

@@ -5,6 +5,55 @@ from ..functions.exporter_funcs import find_exporter
 from ..functions.path_utils import clean_relative_path
 
 
+class SIMPLE_EXPORT_OT_ReloadAddon(bpy.types.Operator):
+    """Reload all Simple Export scripts"""
+    bl_idname = "simple_export.reload_addon"
+    bl_label = "Reload Addon"
+    bl_description = "Reload all Simple Export scripts"
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    def execute(self, context):
+        import importlib
+        import sys
+
+        root_pkg = __package__.rsplit(".", 1)[0]
+
+        mod_names = sorted(
+            [name for name in sys.modules
+             if name == root_pkg or name.startswith(root_pkg + ".")],
+            key=lambda n: (-n.count("."), n),
+        )
+
+        def _do_reload():
+            root_mod = sys.modules.get(root_pkg)
+            if root_mod and hasattr(root_mod, "unregister"):
+                try:
+                    root_mod.unregister()
+                except Exception as exc:
+                    print(f"[Simple Export] unregister error: {exc}")
+
+            for name in mod_names:
+                mod = sys.modules.get(name)
+                if mod is not None:
+                    try:
+                        importlib.reload(mod)
+                    except Exception as exc:
+                        print(f"[Simple Export] reload error for '{name}': {exc}")
+
+            root_mod = sys.modules.get(root_pkg)
+            if root_mod and hasattr(root_mod, "register"):
+                try:
+                    root_mod.register()
+                except Exception as exc:
+                    print(f"[Simple Export] register error: {exc}")
+
+            print(f"[Simple Export] Reloaded {len(mod_names)} modules from '{root_pkg}'")
+
+        bpy.app.timers.register(_do_reload, first_interval=0.0)
+        self.report({'INFO'}, f"Queued reload of {len(mod_names)} modules…")
+        return {'FINISHED'}
+
+
 class SIMPLE_OT_OpenCollectionExporterProperties(bpy.types.Operator):
     """Go to the selected collection's properties and focus on the exporter"""
     bl_idname = "simple_export.open_exporter_in_properties"
@@ -67,6 +116,22 @@ class SCENE_OT_SelectAllCollections(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class SCENE_OT_ExpandAllCollections(bpy.types.Operator):
+    bl_idname = "scene.expand_minimize_all_collections"
+    bl_label = "Expand or Minimize All Collections"
+    bl_description = "Expand or minimize all collections for export."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    minimize: bpy.props.BoolProperty(name="Invert", default=False)
+    list_id: bpy.props.StringProperty()
+
+
+    def execute(self, context):
+        visibility_properties = context.scene.exportlist_nPanel_properties
+        visibility_properties.list_visibility_settings = {'FILEPATH', 'ORIGIN', 'PRESET', 'OPERATIONS'} if not self.minimize else set()
+        return {'FINISHED'}
+
+
 class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
     """
     Operator to open the export directory of the currently selected collection in the file explorer.
@@ -99,10 +164,187 @@ class SCENE_OT_OpenExportDirectory(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class SIMPLE_EXPORT_OT_ClearFilters(bpy.types.Operator):
+    """Reset all Export Target filters"""
+    bl_idname = "simple_export.clear_filters"
+    bl_label = "Clear Filters"
+    bl_description = "Reset all Export Target filters to show all collections"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        scene = context.scene
+        scene.filter_format = 'ALL'
+        scene.filter_color_tag = 'ALL'
+        scene.filter_selected_only = False
+        scene.filter_name = ""
+        scene.filter_file_status = 'ALL'
+        scene.filter_directory = 'ALL'
+        scene.filter_preset_addon_preset = 'ALL'
+        scene.filter_preset_export_preset = 'ALL'
+        scene.filter_custom_group = 'ALL'
+        return {'FINISHED'}
+
+
+class SIMPLE_EXPORT_OT_AssignCollectionGroup(bpy.types.Operator):
+    """Assign an existing group name to the collection"""
+    bl_idname = "simple_export.assign_collection_group"
+    bl_label = "Assign Group"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    group_name: bpy.props.StringProperty(options={'HIDDEN'})
+    collection_name: bpy.props.StringProperty(options={'HIDDEN'})
+
+    def execute(self, context):
+        collection = bpy.data.collections.get(self.collection_name)
+        if not collection:
+            self.report({'WARNING'}, f"Collection '{self.collection_name}' not found.")
+            return {'CANCELLED'}
+        collection.export_group_name = self.group_name
+        return {'FINISHED'}
+
+
+class SIMPLE_EXPORT_OT_AddNewCollectionGroup(bpy.types.Operator):
+    """Create a new group name and assign it to a collection"""
+    bl_idname = "simple_export.add_new_collection_group"
+    bl_label = "Add New Group"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    group_name: bpy.props.StringProperty(name="Group Name", default="")
+    collection_name: bpy.props.StringProperty(options={'HIDDEN'}, default="")
+    update_filter: bpy.props.BoolProperty(options={'HIDDEN'}, default=False)
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        self.layout.prop(self, "group_name")
+
+    def execute(self, context):
+        if not self.group_name.strip():
+            self.report({'WARNING'}, "Group name cannot be empty.")
+            return {'CANCELLED'}
+
+        scene = context.scene
+        collection = None
+
+        if self.collection_name:
+            collection = bpy.data.collections.get(self.collection_name)
+        elif 0 <= scene.collection_index < len(bpy.data.collections):
+            collection = bpy.data.collections[scene.collection_index]
+
+        if not collection:
+            self.report({'WARNING'}, "No collection selected to assign the group to.")
+            return {'CANCELLED'}
+
+        name = self.group_name.strip()
+        collection.export_group_name = name
+
+        if self.update_filter:
+            scene.filter_custom_group = name
+
+        self.report({'INFO'}, f"Group '{name}' assigned to '{collection.name}'.")
+        return {'FINISHED'}
+
+
+class SIMPLE_EXPORT_OT_SetFilterGroup(bpy.types.Operator):
+    """Set the User Group filter"""
+    bl_idname = "simple_export.set_filter_group"
+    bl_label = "Filter by Group"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    group_name: bpy.props.StringProperty(options={'HIDDEN'}, default='ALL')
+
+    def execute(self, context):
+        context.scene.filter_custom_group = self.group_name
+        return {'FINISHED'}
+
+
+class SIMPLE_EXPORT_MT_FilterGroupMenu(bpy.types.Menu):
+    """Filter collections by user group"""
+    bl_label = "User Group"
+    bl_idname = "SIMPLE_EXPORT_MT_FilterGroupMenu"
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+
+        op = layout.operator("simple_export.set_filter_group", text="All User Groups")
+        op.group_name = 'ALL'
+
+        op = layout.operator("simple_export.set_filter_group", text="No User Group", icon='X')
+        op.group_name = 'NONE'
+
+        layout.separator()
+
+        groups = sorted({
+            col.export_group_name
+            for col in bpy.data.collections
+            if getattr(col, 'export_group_name', '')
+        })
+
+        if groups:
+            for group in groups:
+                op = layout.operator("simple_export.set_filter_group", text=group)
+                op.group_name = group
+            layout.separator()
+
+        op = layout.operator("simple_export.add_new_collection_group", text="Add New Group...", icon='ADD')
+        op.collection_name = ""
+        op.update_filter = True
+
+
+class SIMPLE_EXPORT_MT_CollectionGroupMenu(bpy.types.Menu):
+    """Pick or clear the user group for the active collection"""
+    bl_label = "User Group"
+    bl_idname = "SIMPLE_EXPORT_MT_CollectionGroupMenu"
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+
+        if not (0 <= scene.collection_index < len(bpy.data.collections)):
+            layout.label(text="No collection selected", icon='INFO')
+            return
+
+        selected_collection = bpy.data.collections[scene.collection_index]
+
+        # Clear / none option
+        op = layout.operator("simple_export.assign_collection_group", text="None", icon='X')
+        op.group_name = ""
+        op.collection_name = selected_collection.name
+
+        layout.separator()
+
+        # Existing groups collected from all collections
+        groups = sorted({
+            col.export_group_name
+            for col in bpy.data.collections
+            if getattr(col, 'export_group_name', '')
+        })
+
+        if groups:
+            for group in groups:
+                op = layout.operator("simple_export.assign_collection_group", text=group)
+                op.group_name = group
+                op.collection_name = selected_collection.name
+            layout.separator()
+
+        op = layout.operator("simple_export.add_new_collection_group", text="Add New Group...", icon='ADD')
+        op.collection_name = selected_collection.name
+
+
 classes = (
     SCENE_OT_SelectAllCollections,
+    SCENE_OT_ExpandAllCollections,
     SCENE_OT_OpenExportDirectory,
     SIMPLE_OT_OpenCollectionExporterProperties,
+    SIMPLE_EXPORT_OT_ReloadAddon,
+    SIMPLE_EXPORT_OT_ClearFilters,
+    SIMPLE_EXPORT_OT_AssignCollectionGroup,
+    SIMPLE_EXPORT_OT_AddNewCollectionGroup,
+    SIMPLE_EXPORT_OT_SetFilterGroup,
+    SIMPLE_EXPORT_MT_CollectionGroupMenu,
+    SIMPLE_EXPORT_MT_FilterGroupMenu,
 )
 
 
@@ -115,4 +357,5 @@ def register():
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
-        unregister_class(cls)
+        if 'bl_rna' in cls.__dict__:
+            unregister_class(cls)

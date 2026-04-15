@@ -171,6 +171,14 @@ class CollectionOriginProps:
         description=PROPERTY_METADATA["collection_instance_offset"]["description"],
         default=PROPERTY_METADATA["collection_instance_offset"]["default"]
     )
+    create_empty_root: bpy.props.BoolProperty(
+        name="Create Root Empty",
+        description=(
+            "Create a new EMPTY object, parent the collection's top-level objects to it, "
+            "and assign it as the collection's root object"
+        ),
+        default=False,
+    )
 
 
 class CollectionSettingsProps:

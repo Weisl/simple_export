@@ -1,3 +1,5 @@
+import os
+
 import bpy
 
 from .shared_properties import (
@@ -11,6 +13,19 @@ from ..functions.collections_setup import setup_collection_properties
 from ..functions.exporter_funcs import get_all_children_and_descendants
 from ..functions.preset_func import assign_preset
 from ..ui.shared_draw import draw_export_folderpath_properties
+
+
+def get_addon_preset_items(self, context):
+    from ..presets_addon.exporter_preset import simple_export_presets_folder
+    folder = simple_export_presets_folder()
+    items = []
+    if os.path.isdir(folder):
+        for fname in sorted(os.listdir(folder)):
+            if fname.endswith('.py'):
+                name = os.path.splitext(fname)[0]
+                items.append((name, name, ""))
+    return items if items else [('NONE', "No Presets Available", "")]
+
 
 
 def determine_parent_collection(context, parent_collection_name="", top_object=None):
@@ -42,22 +57,93 @@ class EXPORT_OT_CreateExportCollections(
     bl_idname = "simple_export.create_export_collections"
     bl_label = "Create Export Collections"
     bl_description = "Create Export Collections for selected objects and their children, preserving hierarchy."
-    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
+    bl_options = {'REGISTER', 'UNDO'}
     # TODO: Add support for adding exporters without selected objects
 
-    # Internal Properties
-    # only_selection: bpy.props.BoolProperty(
-    #     name="Only affect selection",
-    #     description="Only affect selected objects",
-    #     default=False,
-    #     options={'HIDDEN'}
-    # )
+    addon_preset_selection: bpy.props.EnumProperty(
+        name="Preset",
+        description="Simple Export addon preset to use for this collection",
+        items=get_addon_preset_items,
+    )
+
+    applied_preset_tracker: bpy.props.StringProperty(options={'HIDDEN', 'SKIP_SAVE'})
+
+    existing_exporter_action: bpy.props.EnumProperty(
+        name="Existing Exporter",
+        description="How to handle exporters already assigned to collections that already exist",
+        items=[
+            ('REPLACE', "Replace", "Remove existing exporters and replace them with a new one"),
+            ('ADD', "Add New", "Keep existing exporters and add a new one alongside them"),
+            ('CANCEL', "Cancel", "Skip collections that already have an exporter assigned"),
+        ],
+        default='ADD'
+    )
+
+    warn_existing_exporters: bpy.props.BoolProperty(
+        default=False,
+        options={'HIDDEN', 'SKIP_SAVE'}
+    )
 
     use_numbering: bpy.props.BoolProperty(
         name="Use Numbering",
         description="Add numbered suffix to collection names",
         default=False
     )
+
+    # Properties whose current value should not be overwritten when switching presets
+    # inside the operator dialog — the user sets these explicitly.
+    _PRESET_SKIP_PROPS = {'set_export_path'}
+
+    def _apply_addon_preset_to_self(self, preset_path):
+        """Parse an addon preset file and apply its scene.* values to operator properties."""
+        if not os.path.isfile(preset_path):
+            return
+        with open(preset_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line.startswith('scene.'):
+                    continue
+                try:
+                    prop_part = line[6:]  # strip 'scene.'
+                    prop_name, value_str = prop_part.split(' = ', 1)
+                    if prop_name in self._PRESET_SKIP_PROPS:
+                        continue
+                    if hasattr(self, prop_name):
+                        setattr(self, prop_name, eval(value_str))
+                except Exception:
+                    pass
+
+    def check(self, context):
+        if self.addon_preset_selection == self.applied_preset_tracker:
+            return False
+        self.applied_preset_tracker = self.addon_preset_selection
+        if self.addon_preset_selection and self.addon_preset_selection != 'NONE':
+            from ..presets_addon.exporter_preset import simple_export_presets_folder
+            preset_path = os.path.join(
+                simple_export_presets_folder(),
+                self.addon_preset_selection + '.py'
+            )
+            self._apply_addon_preset_to_self(preset_path)
+        return True
+
+    def invoke(self, context, event):
+        self.applied_preset_tracker = ""
+        selected = context.scene.simple_export_selected_preset
+        if selected:
+            name = os.path.splitext(os.path.basename(selected))[0]
+            try:
+                self.addon_preset_selection = name
+            except Exception:
+                pass
+
+        # Check whether any selected object already lives in a collection with an exporter
+        self.warn_existing_exporters = any(
+            col.exporters
+            for obj in context.selected_objects
+            for col in obj.users_collection
+        )
+
+        return context.window_manager.invoke_props_dialog(self, width=400)
 
     def execute(self, context):
         """Execute the operator to create export collections."""
@@ -68,6 +154,17 @@ class EXPORT_OT_CreateExportCollections(
 
         top_objects = [top_object for top_object in selected_objects if
                        not top_object.parent or top_object.parent not in selected_objects]
+
+        # Snapshot each top object's current exporter-bearing collections BEFORE any collection
+        # creation or object relinking happens. This is needed so that REPLACE can remove exporters
+        # from the original collections even when the target collection has a different name.
+        from ..functions.exporter_funcs import create_collection_exporter, remove_all_collection_exporters
+        original_exporter_cols = {}
+        if self.warn_existing_exporters:
+            for obj in top_objects:
+                cols = [col for col in obj.users_collection if col.exporters]
+                if cols:
+                    original_exporter_cols[obj.name] = cols
 
         if not self.collection_naming_overwrite or not self.collection_name_new:
             exporter_collections = self.create_individual_collections(context, top_objects)
@@ -87,9 +184,23 @@ class EXPORT_OT_CreateExportCollections(
             if export_collection is not None:
                 export_collection = setup_collection_properties(self, export_collection, top_object)
 
-                # replace existing exporter
-                from ..functions.exporter_funcs import create_collection_exporter, remove_all_collection_exporters
-                remove_all_collection_exporters(export_collection)
+                has_exporters = bool(export_collection.exporters)
+                orig_cols = original_exporter_cols.get(top_object.name, []) if top_object else []
+
+                if has_exporters or orig_cols:
+                    if self.existing_exporter_action == 'CANCEL':
+                        self.report({'INFO'}, f"Skipped '{export_collection.name}': already has an exporter assigned.")
+                        continue
+                    elif self.existing_exporter_action == 'REPLACE':
+                        # Remove from the target collection if it already has exporters
+                        if has_exporters:
+                            remove_all_collection_exporters(export_collection)
+                        # Also remove from the original collections (covers the case where the
+                        # target collection was freshly created and has a different name)
+                        for orig_col in orig_cols:
+                            if orig_col != export_collection:
+                                remove_all_collection_exporters(orig_col)
+
                 exporter = create_collection_exporter(self, context, export_collection)
 
                 self.report({'INFO'},
@@ -103,6 +214,11 @@ class EXPORT_OT_CreateExportCollections(
                     from ..presets_export.preset_format_functions import get_format_preset_filepath
                     preset_file = get_format_preset_filepath(self, self.export_format)
                     assign_preset(exporter, preset_file)
+                    export_collection.simple_export_export_preset = os.path.splitext(os.path.basename(preset_file))[0]
+
+            selected_addon_preset = context.scene.simple_export_selected_preset
+            if selected_addon_preset:
+                export_collection.simple_export_addon_preset = self.addon_preset_selection
 
             if self.set_export_path and hasattr(exporter, 'filepath'):
                 print(f"COLLECTION NAME = {export_collection.name}")
@@ -120,10 +236,10 @@ class EXPORT_OT_CreateExportCollections(
                 getattr(self, 'collection_suffix', ''),
                 getattr(self, 'collection_blend_prefix', '')
             )
-            # Skip creation if collection already exists
             if collection_name in bpy.data.collections:
                 export_collection = bpy.data.collections[collection_name]
                 self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Using existing collection.")
+                self._link_objects_to_collection(top_object, export_collection)
             else:
                 export_collection = self.create_and_setup_collection(context, collection_name, top_object)
             exporter_collections.append((export_collection, top_object))
@@ -138,10 +254,21 @@ class EXPORT_OT_CreateExportCollections(
             if collection_name in bpy.data.collections:
                 export_collection = bpy.data.collections[collection_name]
                 self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Using existing collection.")
+                self._link_objects_to_collection(top_object, export_collection)
             else:
                 export_collection = self.create_and_setup_collection(context, collection_name, top_object)
             exporter_collections.append((export_collection, top_object))
         return exporter_collections
+
+    def _link_objects_to_collection(self, top_object, export_collection):
+        """Link top_object and its hierarchy into export_collection, moving them out of other collections."""
+        hierarchy_objects = get_all_children_and_descendants(top_object, include_top=True)
+        for obj in hierarchy_objects:
+            if export_collection not in obj.users_collection:
+                export_collection.objects.link(obj)
+            for col in obj.users_collection:
+                if col != export_collection:
+                    col.objects.unlink(obj)
 
     def create_single_collection(self, context, top_objects):
         """Create a single collection for all selected objects."""
@@ -196,10 +323,37 @@ class EXPORT_OT_CreateExportCollections(
         return export_collection
 
     def draw(self, context):
-        """Draw the UI for the operator."""
+        from .. import __package__ as base_package
         layout = self.layout
-        from ..ui.shared_draw import draw_full_exporer_settings
-        draw_full_exporer_settings(layout, self)
+
+        layout.prop(self, "addon_preset_selection", text="")
+        op = layout.operator("preferences.addon_show", text="New Preset", icon='PREFERENCES')
+        op.module = base_package
+
+        layout.separator()
+        layout.prop(self, "set_export_path")
+        if self.set_export_path:
+            from ..ui.shared_draw import draw_export_folderpath_properties
+            draw_export_folderpath_properties(layout, self)
+
+        layout.separator()
+        layout.prop(self, "create_empty_root")
+        if self.create_empty_root:
+            prefs = context.preferences.addons[base_package].preferences
+            col = layout.column(align=True)
+            col.use_property_split = True
+            col.prop(prefs, "root_empty_display_type", text="Shape")
+            col.prop(prefs, "root_empty_display_size", text="Size")
+
+        if self.warn_existing_exporters:
+            layout.separator()
+            box = layout.box()
+            col = box.column(align=True)
+            col.label(text="Selected object(s) are already in a collection", icon='ERROR')
+            col.label(text="with an exporter assigned.")
+            col.separator()
+            col.label(text="How would you like to proceed?")
+            col.prop(self, "existing_exporter_action", expand=True)
 
 
 
@@ -217,4 +371,5 @@ def register():
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
-        unregister_class(cls)
+        if 'bl_rna' in cls.__dict__:
+            unregister_class(cls)
