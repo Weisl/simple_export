@@ -541,6 +541,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=PROPERTY_METADATA["filename_blend_prefix"]["default"],
     )
 
+    auto_update_path_on_rename: bpy.props.BoolProperty(
+        name="Auto-Update Path on Rename",
+        description="Automatically update the export filepath when a collection is renamed",
+        default=True,
+    )
+
     ########################################
     # Collection Name
 
@@ -821,6 +827,10 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box = layout.box()
             box.label(text="Warnings")
             box.prop(self, "report_errors_only")
+
+            box = layout.box()
+            box.label(text="Behavior")
+            box.prop(self, "auto_update_path_on_rename")
 
             box = layout.box()
             box.label(text="Root Empty")
