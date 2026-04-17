@@ -18,28 +18,24 @@ def draw_pre_export_operations(layout, target):
 
     # Triangulate
     col.prop(target, 'triangulate_before_export')
-    if target.triangulate_before_export:
-        sub = col.column(align=True)
-        sub.use_property_split = True
-        sub.prop(target, 'triangulate_keep_normals')
 
-    col.separator(factor=0.5)
+    # col.separator(factor=0.5)
 
     # Apply Transformation (subsumes scale + rotation when enabled)
-    col.prop(target, 'apply_transform_before_export')
-    sub = col.column(align=True)
-    sub.enabled = not target.apply_transform_before_export
-    sub.prop(target, 'apply_scale_before_export')
-    sub.prop(target, 'apply_rotation_before_export')
+    # col.prop(target, 'apply_transform_before_export')
+    # sub = col.column(align=True)
+    # sub.enabled = not target.apply_transform_before_export
+    # sub.prop(target, 'apply_scale_before_export')
+    # sub.prop(target, 'apply_rotation_before_export')
 
-    col.separator(factor=0.5)
+    # col.separator(factor=0.5)
 
     # Pre-rotate with configurable offset
-    col.prop(target, 'pre_rotate_objects')
-    if target.pre_rotate_objects:
-        sub = col.column(align=True)
-        sub.use_property_split = True
-        sub.prop(target, 'pre_rotate_euler', text="Rotation Offset")
+    # col.prop(target, 'pre_rotate_objects')
+    # if target.pre_rotate_objects:
+    #     sub = col.column(align=True)
+    #     sub.use_property_split = True
+    #     sub.prop(target, 'pre_rotate_euler', text="Rotation Offset")
 
 
 def draw_simple_export_header(layout, text="Simple Export"):

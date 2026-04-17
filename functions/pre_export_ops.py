@@ -6,7 +6,7 @@ TRIANGULATE_MOD_NAME = "_SimpleExport_Triangulate"
 
 # --- Triangulate ---
 
-def apply_triangulate_modifiers(collection, keep_custom_normals=True):
+def apply_triangulate_modifiers(collection):
     """Bake triangulation into mesh data before export (non-destructive).
 
     Returns a backup dict {obj.name: original_mesh} so the caller can restore
@@ -18,7 +18,7 @@ def apply_triangulate_modifiers(collection, keep_custom_normals=True):
         if obj.type != 'MESH':
             continue
         mod = obj.modifiers.new(name=TRIANGULATE_MOD_NAME, type='TRIANGULATE')
-        mod.keep_custom_normals = keep_custom_normals
+        mod.keep_custom_normals = True
         depsgraph.update()
         eval_obj = obj.evaluated_get(depsgraph)
         triangulated_mesh = bpy.data.meshes.new_from_object(eval_obj)

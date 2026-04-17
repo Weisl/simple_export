@@ -306,10 +306,6 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 row.label(text='', icon='OBJECT_ORIGIN')
             if col_ops.triangulate_before_export:
                 row.label(text='', icon='MOD_TRIANGULATE')
-            if col_ops.apply_transform_before_export or col_ops.apply_scale_before_export or col_ops.apply_rotation_before_export:
-                row.label(text='', icon='OBJECT_DATA')
-            if col_ops.pre_rotate_objects:
-                row.label(text='', icon='DRIVER_ROTATIONAL_DIFFERENCE')
 
             ########## Name
             row = col_02.row(align=True)
@@ -460,10 +456,10 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                     row.label(text='', icon='OBJECT_ORIGIN')
                 if col_ops.triangulate_before_export:
                     row.label(text='', icon='MOD_TRIANGULATE')
-                if col_ops.apply_transform_before_export or col_ops.apply_scale_before_export or col_ops.apply_rotation_before_export:
-                    row.label(text='', icon='OBJECT_DATA')
-                if col_ops.pre_rotate_objects:
-                    row.label(text='', icon='DRIVER_ROTATIONAL_DIFFERENCE')
+                # if col_ops.apply_transform_before_export or col_ops.apply_scale_before_export or col_ops.apply_rotation_before_export:
+                #     row.label(text='', icon='OBJECT_DATA')
+                # if col_ops.pre_rotate_objects:
+                #     row.label(text='', icon='DRIVER_ROTATIONAL_DIFFERENCE')
 
             from ..core.export_path_func import generate_base_name
             filename_settings = scene

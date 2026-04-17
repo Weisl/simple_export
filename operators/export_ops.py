@@ -205,7 +205,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
                 # Triangulate (order-independent relative to transform baking)
                 if ops.triangulate_before_export:
-                    triangulate_backup = apply_triangulate_modifiers(collection, ops.triangulate_keep_normals)
+                    triangulate_backup = apply_triangulate_modifiers(collection)
 
                 # Apply collection offset after transform baking
                 if ops.move_by_collection_offset:

@@ -58,6 +58,7 @@ def call_simple_export_path_ops(context, layout, text=None, outliner=False,
 
 def call_assign_preset_op(context, layout, text=None, icon='PRESET_NEW', outliner=False, individual_collection=False,
                           collection_name=''):
+    layout.operator_context = 'INVOKE_DEFAULT'
     if text is None:
         op = layout.operator("simple_export.assign_presets", icon=icon)
     else:
