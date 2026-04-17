@@ -52,71 +52,6 @@ def create_root_empty_for_collection(
     return empty
 
 
-class OBJECT_OT_create_root_empty(bpy.types.Operator):
-    """Create an EMPTY object, parent the selected objects to it, and assign it as the collection's root object."""
-    bl_idname = "object.create_root_empty"
-    bl_label = "Create Root Empty"
-    bl_description = (
-        "Create an EMPTY object, parent selected objects to it, and assign it as the root object"
-    )
-    bl_options = {'REGISTER', 'UNDO'}
-
-    collection_name: bpy.props.StringProperty(
-        name="Collection Name",
-        default='',
-        description="Name of the collection to assign the root empty to",
-        options={'HIDDEN'},
-    )
-
-    location_mode: bpy.props.EnumProperty(
-        name="Location",
-        description="Where to place the root empty",
-        items=[
-            ('ACTIVE_OBJECT', "Active Object", "Place at the active object's location"),
-            ('CENTER_OF_SELECTED', "Center of Selected", "Place at the bounding-box center of all selected objects"),
-        ],
-        default='ACTIVE_OBJECT',
-    )
-
-    def execute(self, context):
-        collection = bpy.data.collections.get(self.collection_name)
-        if not collection:
-            self.report({'WARNING'}, "No valid collection found.")
-            return {'CANCELLED'}
-
-        selected = context.selected_objects
-        if not selected:
-            self.report({'WARNING'}, "No objects selected.")
-            return {'CANCELLED'}
-
-        if self.location_mode == 'ACTIVE_OBJECT':
-            obj = context.active_object
-            if not obj:
-                self.report({'WARNING'}, "No active object.")
-                return {'CANCELLED'}
-            empty_location = obj.location.copy()
-        else:  # CENTER_OF_SELECTED
-            from mathutils import Vector
-            empty_location = sum(
-                (obj.location for obj in selected), Vector()
-            ) / len(selected)
-
-        from .. import __package__ as base_package
-        prefs = context.preferences.addons[base_package].preferences
-        empty = create_root_empty_for_collection(
-            collection, empty_location,
-            objects_to_parent=selected,
-            display_type=prefs.root_empty_display_type,
-            display_size=prefs.root_empty_display_size,
-        )
-
-        # Make the empty the active object
-        context.view_layer.objects.active = empty
-
-        self.report({'INFO'}, f"Created root empty '{empty.name}' for collection '{collection.name}'")
-        return {'FINISHED'}
-
-
 class OBJECT_OT_set_collection_offset_cursor(bpy.types.Operator):
     """Set the collection offset to the 3D cursor location."""
     bl_idname = "object.set_collection_offset_cursor"
@@ -178,7 +113,6 @@ class OBJECT_OT_set_collection_offset_object(bpy.types.Operator):
 
 
 classes = (
-    OBJECT_OT_create_root_empty,
     OBJECT_OT_set_collection_offset_object,
     OBJECT_OT_set_collection_offset_cursor,
 )

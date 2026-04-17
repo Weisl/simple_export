@@ -123,6 +123,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
             scale_backup = {}
             rotation_backup = {}
             transform_backup = {}
+            triangulate_backup = {}
             pre_rotate_backup = {}
             ops = None  # per-collection pre-export ops; set inside try after validation
 
@@ -204,7 +205,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
                 # Triangulate (order-independent relative to transform baking)
                 if ops.triangulate_before_export:
-                    apply_triangulate_modifiers(collection, ops.triangulate_keep_normals)
+                    triangulate_backup = apply_triangulate_modifiers(collection, ops.triangulate_keep_normals)
 
                 # Apply collection offset after transform baking
                 if ops.move_by_collection_offset:
@@ -258,7 +259,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                     if ops.move_by_collection_offset:
                         apply_collection_offset(collection, offset, inverse=True)
                     if ops.triangulate_before_export:
-                        remove_triangulate_modifiers(collection)
+                        remove_triangulate_modifiers(collection, triangulate_backup)
                     if ops.apply_transform_before_export:
                         restore_transform_after_export(collection, transform_backup)
                     else:

@@ -44,12 +44,6 @@ Covers:
     - Objects already with a parent are not re-parented
     - display_type and display_size are applied
 
-  OBJECT_OT_create_root_empty (operator)
-    - CANCELLED when collection does not exist
-    - CANCELLED when no objects are selected
-    - FINISHED with selected objects; root empty created
-    - location_mode=ACTIVE_OBJECT places empty at active object location
-    - location_mode=CENTER_OF_SELECTED places empty at bounding-box centre
 """
 
 import os
@@ -497,97 +491,6 @@ class TestCreateRootEmptyHelper(unittest.TestCase):
         fn = _get_create_root_empty_fn()
         empty = fn(self.col, Vector((0, 0, 0)), objects_to_parent=None)
         self.assertIsNotNone(empty)
-
-
-# ---------------------------------------------------------------------------
-# 6. OBJECT_OT_create_root_empty (operator via bpy.ops)
-# ---------------------------------------------------------------------------
-
-class TestCreateRootEmptyOperator(unittest.TestCase):
-    """OBJECT_OT_create_root_empty: operator-level integration tests."""
-
-    def setUp(self):
-        self.col = _h.make_collection("RootEmpty_Op_Test")
-
-    def tearDown(self):
-        for obj in list(bpy.data.objects):
-            if "_root" in obj.name:
-                try:
-                    bpy.data.objects.remove(obj)
-                except Exception:
-                    pass
-        for obj in list(bpy.data.objects):
-            if obj.name.startswith("OpTarget"):
-                try:
-                    bpy.data.objects.remove(obj)
-                except Exception:
-                    pass
-        _h.remove_collection(self.col)
-
-    def test_missing_collection_returns_cancelled(self):
-        obj = _h.make_mesh_object("OpTarget_miss", location=(0, 0, 0))
-        try:
-            with bpy.context.temp_override(
-                selected_objects=[obj], active_object=obj
-            ):
-                result = bpy.ops.object.create_root_empty(
-                    collection_name="__nonexistent__"
-                )
-            self.assertEqual(result, {"CANCELLED"})
-        finally:
-            _h.remove_object(obj)
-
-    def test_no_selected_objects_returns_cancelled(self):
-        with bpy.context.temp_override(selected_objects=[], active_object=None):
-            result = bpy.ops.object.create_root_empty(
-                collection_name=self.col.name
-            )
-        self.assertEqual(result, {"CANCELLED"})
-
-    def test_active_object_mode_places_empty_at_active_location(self):
-        obj = _h.make_mesh_object("OpTarget_active", location=(7.0, 8.0, 9.0))
-        self.col.objects.link(obj)
-        try:
-            with bpy.context.temp_override(
-                selected_objects=[obj], active_object=obj
-            ):
-                result = bpy.ops.object.create_root_empty(
-                    collection_name=self.col.name,
-                    location_mode='ACTIVE_OBJECT',
-                )
-            self.assertEqual(result, {"FINISHED"})
-            empty = self.col.root_object
-            self.assertIsNotNone(empty)
-            self.assertAlmostEqual(empty.location.x, 7.0, places=4)
-            self.assertAlmostEqual(empty.location.y, 8.0, places=4)
-            self.assertAlmostEqual(empty.location.z, 9.0, places=4)
-        finally:
-            _h.remove_object(obj)
-
-    def test_center_of_selected_mode_places_empty_at_midpoint(self):
-        obj1 = _h.make_mesh_object("OpTarget_c1", location=(0.0, 0.0, 0.0))
-        obj2 = _h.make_mesh_object("OpTarget_c2", location=(4.0, 0.0, 0.0))
-        self.col.objects.link(obj1)
-        self.col.objects.link(obj2)
-        try:
-            with bpy.context.temp_override(
-                selected_objects=[obj1, obj2], active_object=obj1
-            ):
-                result = bpy.ops.object.create_root_empty(
-                    collection_name=self.col.name,
-                    location_mode='CENTER_OF_SELECTED',
-                )
-            self.assertEqual(result, {"FINISHED"})
-            empty = self.col.root_object
-            self.assertIsNotNone(empty)
-            # midpoint of (0,0,0) and (4,0,0) is (2,0,0)
-            self.assertAlmostEqual(empty.location.x, 2.0, places=4)
-        finally:
-            _h.remove_object(obj1)
-            _h.remove_object(obj2)
-
-    def test_operator_accessible_via_bpy_ops(self):
-        self.assertTrue(hasattr(bpy.ops.object, "create_root_empty"))
 
 
 # ---------------------------------------------------------------------------

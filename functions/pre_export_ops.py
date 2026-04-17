@@ -7,22 +7,35 @@ TRIANGULATE_MOD_NAME = "_SimpleExport_Triangulate"
 # --- Triangulate ---
 
 def apply_triangulate_modifiers(collection, keep_custom_normals=True):
-    """Add a temporary Triangulate modifier to top-level mesh objects in the collection."""
-    for obj in collection.objects:
-        if obj.parent is not None or obj.type != 'MESH':
+    """Bake triangulation into mesh data before export (non-destructive).
+
+    Returns a backup dict {obj.name: original_mesh} so the caller can restore
+    with remove_triangulate_modifiers.  Consistent with the other bake helpers.
+    """
+    backup = {}
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    for obj in collection.all_objects:
+        if obj.type != 'MESH':
             continue
         mod = obj.modifiers.new(name=TRIANGULATE_MOD_NAME, type='TRIANGULATE')
         mod.keep_custom_normals = keep_custom_normals
+        depsgraph.update()
+        eval_obj = obj.evaluated_get(depsgraph)
+        triangulated_mesh = bpy.data.meshes.new_from_object(eval_obj)
+        obj.modifiers.remove(mod)
+        backup[obj.name] = obj.data
+        obj.data = triangulated_mesh
+    return backup
 
 
-def remove_triangulate_modifiers(collection):
-    """Remove the temporary Triangulate modifier from top-level mesh objects."""
-    for obj in collection.objects:
-        if obj.parent is not None or obj.type != 'MESH':
+def remove_triangulate_modifiers(collection, backup):
+    """Restore original mesh data after a triangulated export."""
+    for obj in collection.all_objects:
+        if obj.name not in backup:
             continue
-        mod = obj.modifiers.get(TRIANGULATE_MOD_NAME)
-        if mod:
-            obj.modifiers.remove(mod)
+        temp_mesh = obj.data
+        obj.data = backup[obj.name]
+        bpy.data.meshes.remove(temp_mesh)
 
 
 # --- Apply Scale ---
