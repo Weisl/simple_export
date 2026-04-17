@@ -240,7 +240,10 @@ class SIMPLE_EXPORT_OT_AddNewCollectionGroup(bpy.types.Operator):
         collection.export_group_name = name
 
         if self.update_filter:
-            scene.filter_custom_group = name
+            if not collection.exporters:
+                self.report({'WARNING'}, f"Group '{name}' created, but '{collection.name}' has no exporter — filter not set.")
+            else:
+                scene.filter_custom_group = name
 
         self.report({'INFO'}, f"Group '{name}' assigned to '{collection.name}'.")
         return {'FINISHED'}
@@ -279,7 +282,7 @@ class SIMPLE_EXPORT_MT_FilterGroupMenu(bpy.types.Menu):
         groups = sorted({
             col.export_group_name
             for col in bpy.data.collections
-            if getattr(col, 'export_group_name', '')
+            if getattr(col, 'export_group_name', '') and col.exporters
         })
 
         if groups:

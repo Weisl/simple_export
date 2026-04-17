@@ -7,6 +7,7 @@ from ..core.export_path_func import get_export_folder_path, generate_base_name, 
     assign_collection_exporter_path
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.exporter_funcs import find_exporter
+from ..core.export_formats import ExportFormats
 from ..functions.outliner_func import get_outliner_collections
 from ..functions.vallidate_func import validate_collection
 
@@ -86,6 +87,10 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
         if self.outliner:
             cols = get_outliner_collections(context)
             return cols[0] if cols else None
+        if self.collection_name:
+            col = bpy.data.collections.get(self.collection_name)
+            if col:
+                return col
         for col in bpy.data.collections:
             if getattr(col, 'simple_export_selected', False) and col.exporters:
                 return col
@@ -125,13 +130,12 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
 
                 # set exporter
                 set_active_layer_Collection(collection.name)
-                # When targeting a specific collection (individual or outliner) ignore the
-                # scene format filter — assign to the collection's own exporter regardless of
-                # what format is currently selected in the scene.
-                _fmt = None if (self.individual_collection or self.outliner) else scene.export_format
-                exporter = find_exporter(collection, format_filter=_fmt)
+                exporter = find_exporter(collection, format_filter=None)
                 if not exporter:
                     continue
+
+                exporter_op_type = str(type(exporter.export_properties))
+                exporter_format_key = ExportFormats.get_key_from_op_type(exporter_op_type) or scene.export_format
 
                 collection_name = collection.name
 
@@ -152,7 +156,7 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
                                               self.filename_blend_prefix)
 
                 # Generate final export path
-                export_path = generate_export_path(export_folder, filename, scene.export_format,
+                export_path = generate_export_path(export_folder, filename, exporter_format_key,
                                                    is_relative_path=is_relative_path)
 
                 try:

@@ -342,7 +342,7 @@ def set_default_exportlist_properties(dummy):
     if hasattr(scene, 'exportlist_nPanel_properties'):
         scene.exportlist_nPanel_properties.list_visibility_settings = {'FILEPATH', 'ORIGIN', 'PRESET'}
     if hasattr(scene, 'exportlist_popup_properties'):
-        scene.exportlist_popup_properties.list_visibility_settings = {'FILEPATH', 'ORIGIN', 'FORMAT'}
+        scene.exportlist_popup_properties.list_visibility_settings = {'FILEPATH', 'ORIGIN', 'OPERATIONS'}
     if hasattr(scene, 'exportlist_scene_properties'):
         scene.exportlist_scene_properties.list_visibility_settings = {'FILEPATH', 'ORIGIN', 'PRESET'}
 

@@ -70,7 +70,7 @@ class EXPORT_OT_CreateExportCollections(
 
     applied_preset_tracker: bpy.props.StringProperty(options={'HIDDEN', 'SKIP_SAVE'})
 
-selection_mode: bpy.props.EnumProperty(
+    selection_mode: bpy.props.EnumProperty(
         name="Selection Mode",
         description="How to interpret the selection when creating export collections",
         items=[
@@ -205,7 +205,7 @@ selection_mode: bpy.props.EnumProperty(
             exporter_collections.append((export_collection, top_object))
         return exporter_collections
 
-def _link_objects_to_collection(self, top_object, export_collection):
+    def _link_objects_to_collection(self, top_object, export_collection):
         """Link top_object and its hierarchy into export_collection, moving them out of other collections."""
         hierarchy_objects = get_all_children_and_descendants(top_object, include_top=True)
         for obj in hierarchy_objects:

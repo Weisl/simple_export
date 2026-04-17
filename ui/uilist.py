@@ -176,7 +176,7 @@ class EXPORT_MT_root_object_menu(bpy.types.Menu):
         # Exporter actions
         from .shared_operator_call import call_simple_export_path_ops
         op = call_simple_export_path_ops(context, layout, outliner=False,
-                                         individual_collection=True, collection_name=collection_name)
+                                         individual_collection=False, collection_name=collection_name)
 
         from .shared_operator_call import call_assign_preset_op
         call_assign_preset_op(context, layout, individual_collection=True, collection_name=collection_name)
@@ -255,7 +255,9 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         row.label(text="Sort:")
         row.prop(scene, "sort_mode", text="")
         icon = 'SORT_DESC' if scene.sort_reverse else 'SORT_ASC'
-        row.prop(scene, "sort_reverse", text="", icon=icon, toggle=True)
+        sub = row.row(align=True)
+        sub.enabled = scene.sort_mode != 'NONE'
+        sub.prop(scene, "sort_reverse", text="", icon=icon, toggle=True)
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         # Determine settings based on the list_id
@@ -518,13 +520,12 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             if scene.sort_mode == 'NAME':
                 sorted_pairs = sorted(indexed, key=lambda x: x[1].name.lower(), reverse=rev)
             elif scene.sort_mode == 'FORMAT':
-                def format_key(pair):
-                    c = pair[1]
-                    if not c.exporters:
+                def get_format_key(col):
+                    if not col.exporters:
                         return ''
-                    exp = find_exporter(c)
+                    exp = find_exporter(col)
                     return ExportFormats.get_key_from_op_type(str(type(exp.export_properties))) or ''
-                sorted_pairs = sorted(indexed, key=format_key, reverse=rev)
+                sorted_pairs = sorted(indexed, key=lambda x: (get_format_key(x[1]), x[1].name.lower()), reverse=rev)
             elif scene.sort_mode == 'SELECTED_FIRST':
                 sorted_pairs = sorted(indexed, key=lambda x: (0 if x[1].simple_export_selected else 1, x[1].name.lower()), reverse=rev)
             elif scene.sort_mode == 'COLOR_TAG':
@@ -534,7 +535,9 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             else:
                 sorted_pairs = indexed
 
-            flt_neworder = [orig_idx for orig_idx, _ in sorted_pairs]
+            flt_neworder = [0] * len(indexed)
+            for display_pos, (orig_idx, _) in enumerate(sorted_pairs):
+                flt_neworder[orig_idx] = display_pos
 
         return flt_flags, flt_neworder
 

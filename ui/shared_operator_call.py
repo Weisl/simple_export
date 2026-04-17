@@ -45,6 +45,7 @@ def call_simple_add_exporter_to_collection(context, collection, layout):
 
 def call_simple_export_path_ops(context, layout, text=None, outliner=False,
                                 individual_collection=False, collection_name='', icon='FOLDER_REDIRECT'):
+    layout.operator_context = 'INVOKE_DEFAULT'
     if text is None:
         op = layout.operator("simple_export.set_export_paths", icon=icon)
     else:
@@ -79,7 +80,6 @@ def call_create_export_collection_op(scene, layout, icon='COLLECTION_NEW', text=
     # op.only_selection = True
     op.collection_naming_overwrite = False
     op.collection_name_new = ""
-    op.use_numbering = False
     op.parent_collection = scene.parent_collection if scene.parent_collection else ""
 
     # Get and set properties from preferences/scene
