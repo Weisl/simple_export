@@ -90,6 +90,16 @@ class EXPORT_OT_CreateExportCollections(
         default=False
     )
 
+    selection_mode: bpy.props.EnumProperty(
+        name="Selection Mode",
+        description="How to interpret the selection when creating export collections",
+        items=[
+            ('BY_HIERARCHY', "By Hierarchy", "One export collection per top-level selected object; all children included"),
+            ('SINGLE',       "Single",       "One export collection for all selected objects"),
+        ],
+        default='BY_HIERARCHY'
+    )
+
     # Properties whose current value should not be overwritten when switching presets
     # inside the operator dialog — the user sets these explicitly.
     _PRESET_SKIP_PROPS = {'set_export_path'}
@@ -129,14 +139,7 @@ class EXPORT_OT_CreateExportCollections(
     def invoke(self, context, event):
         self.applied_preset_tracker = ""
 
-        # Pre-populate set_export_path from the scene so that the preset's saved
-        # value is visible in the dialog.  The preset applies its settings to the
-        # scene, so context.scene.set_export_path reflects the preset's intent.
-        # Because set_export_path is in _PRESET_SKIP_PROPS it will NOT be
-        # overwritten again when check() fires below.
-        scene = context.scene
-        if hasattr(scene, 'set_export_path'):
-            self.set_export_path = scene.set_export_path
+        self.set_export_path = False
 
         selected = context.scene.simple_export_selected_preset
         if selected:
@@ -162,6 +165,10 @@ class EXPORT_OT_CreateExportCollections(
             self.report({'WARNING'}, "No objects selected.")
             return {'CANCELLED'}
 
+        if self.selection_mode == 'SINGLE' and not self.collection_name_new:
+            self.report({'ERROR'}, "A collection name is required for Single mode.")
+            return {'CANCELLED'}
+
         top_objects = [top_object for top_object in selected_objects if
                        not top_object.parent or top_object.parent not in selected_objects]
 
@@ -176,13 +183,13 @@ class EXPORT_OT_CreateExportCollections(
                 if cols:
                     original_exporter_cols[obj.name] = cols
 
-        if not self.collection_naming_overwrite or not self.collection_name_new:
-            exporter_collections = self.create_individual_collections(context, top_objects)
-        else:
-            if self.use_numbering:
+        if self.selection_mode == 'SINGLE':
+            exporter_collections = self.create_single_collection(context, top_objects)
+        else:  # BY_HIERARCHY
+            if self.use_numbering and self.collection_name_new:
                 exporter_collections = self.create_numbered_collections(context, top_objects)
             else:
-                exporter_collections = self.create_single_collection(context, top_objects)
+                exporter_collections = self.create_individual_collections(context, top_objects)
 
         for export_data in exporter_collections:
             if isinstance(export_data, tuple):
@@ -303,7 +310,7 @@ class EXPORT_OT_CreateExportCollections(
                         col.objects.unlink(obj)
 
         if export_collection:
-            exporter_collections.append((export_collection, top_object))
+            exporter_collections.append((export_collection, None))
         return exporter_collections
 
     def create_and_setup_collection(self, context, collection_name, top_object):
@@ -334,16 +341,17 @@ class EXPORT_OT_CreateExportCollections(
         from .. import __package__ as base_package
         layout = self.layout
 
-        layout.prop(self, "addon_preset_selection", text="")
-        op = layout.operator("preferences.addon_show", text="New Preset", icon='PREFERENCES')
+        row = layout.row(align=True)
+        row.prop(self, "addon_preset_selection", text="")
+        op = row.operator("preferences.addon_show", text="", icon='ADD')
         op.module = base_package
 
         layout.separator()
-        layout.prop(self, "set_export_path")
-        if self.set_export_path:
-            from ..ui.shared_draw import draw_export_folderpath_properties
-            draw_export_folderpath_properties(layout, self)
-
+        layout.prop(self, "selection_mode", expand=True)
+        if self.selection_mode == 'SINGLE':
+            row = layout.row()
+            row.alert = not self.collection_name_new
+            row.prop(self, "collection_name_new", text="Collection Name")
         layout.separator()
         layout.prop(self, "create_empty_root")
         if self.create_empty_root:
@@ -352,6 +360,12 @@ class EXPORT_OT_CreateExportCollections(
             col.use_property_split = True
             col.prop(prefs, "root_empty_display_type", text="Shape")
             col.prop(prefs, "root_empty_display_size", text="Size")
+
+        layout.separator()
+        layout.prop(self, "set_export_path")
+        if self.set_export_path:
+            from ..ui.shared_draw import draw_export_folderpath_properties
+            draw_export_folderpath_properties(layout, self)
 
         if self.warn_existing_exporters:
             layout.separator()
