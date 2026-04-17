@@ -145,9 +145,8 @@ class EXPORT_OT_AddSettingsToCollections(
             assign_preset(exporter, preset_file)
             collection.simple_export_export_preset = os.path.splitext(os.path.basename(preset_file))[0]
 
-        selected_addon_preset = context.scene.simple_export_selected_preset
-        if selected_addon_preset:
-            collection.simple_export_export_preset = os.path.splitext(os.path.basename(selected_addon_preset))[0]
+        if self.addon_preset_selection and self.addon_preset_selection != 'NONE':
+            collection.simple_export_addon_preset = self.addon_preset_selection
 
         # Assign filepath to exporter
         if self.set_export_path and exporter and hasattr(exporter, 'export_properties'):

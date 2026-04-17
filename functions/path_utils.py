@@ -4,6 +4,10 @@ import os
 
 
 def is_really_absolute(path):
+    # Blender uses "//" as a relative path prefix; on Linux os.path.abspath
+    # preserves the leading "//" (valid POSIX), so we must reject it explicitly.
+    if path.startswith('//'):
+        return False
     return os.path.abspath(path) == path
 
 

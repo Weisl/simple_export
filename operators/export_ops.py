@@ -112,13 +112,10 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
             error_count += 1
 
         total = len(collection_list)
-        wm = context.window_manager
-        wm.progress_begin(0, total)
 
         # Iterate over export collections
         for i, collection in enumerate(collection_list):
-            wm.progress_update(i)
-            context.workspace.status_text_set(f"Exporting {i + 1}/{total}: {collection.name}")
+            print(f"[Simple Export] Exporting {i + 1}/{total}: {collection.name}")
             # Declare backup state before try so finally block can always access them
             scale_backup = {}
             rotation_backup = {}
@@ -268,20 +265,19 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                         if ops.apply_scale_before_export:
                             restore_scale_after_export(collection, scale_backup)
 
-        wm.progress_end()
-        context.workspace.status_text_set(None)
-
         if error_count == 0:
-            self.report({'INFO'}, f"Export Sucessful")
+            self.report({'INFO'}, f"Exported {success_count}/{total} collections")
             # Always show export infos
             if not prefs.report_errors_only:
                 call_export_popup(export_results, context)
 
             return {'FINISHED'}
         elif success_count > 0:
+            self.report({'WARNING'}, f"Exported {success_count}/{total} collections ({error_count} failed)")
             call_export_popup(export_results, context)
             return {'CANCELLED'}
         else:
+            self.report({'ERROR'}, f"Export failed — 0/{total} collections exported")
             call_export_popup(export_results, context)
             return {'CANCELLED'}
 

@@ -70,13 +70,7 @@ class EXPORT_OT_CreateExportCollections(
 
     applied_preset_tracker: bpy.props.StringProperty(options={'HIDDEN', 'SKIP_SAVE'})
 
-    use_numbering: bpy.props.BoolProperty(
-        name="Use Numbering",
-        description="Add numbered suffix to collection names",
-        default=False
-    )
-
-    selection_mode: bpy.props.EnumProperty(
+selection_mode: bpy.props.EnumProperty(
         name="Selection Mode",
         description="How to interpret the selection when creating export collections",
         items=[
@@ -154,10 +148,7 @@ class EXPORT_OT_CreateExportCollections(
         if self.selection_mode == 'SINGLE':
             exporter_collections = self.create_single_collection(context, top_objects)
         else:  # BY_HIERARCHY
-            if self.use_numbering and self.collection_name_new:
-                exporter_collections = self.create_numbered_collections(context, top_objects)
-            else:
-                exporter_collections = self.create_individual_collections(context, top_objects)
+            exporter_collections = self.create_individual_collections(context, top_objects)
 
         for export_data in exporter_collections:
             if isinstance(export_data, tuple):
@@ -214,22 +205,7 @@ class EXPORT_OT_CreateExportCollections(
             exporter_collections.append((export_collection, top_object))
         return exporter_collections
 
-    def create_numbered_collections(self, context, top_objects):
-        """Create numbered collections for each selected object."""
-        exporter_collections = []
-        for index, top_object in enumerate(top_objects):
-            padded_index = f"{index:03}"
-            collection_name = f"{self.collection_name_new}_{padded_index}"
-            if collection_name in bpy.data.collections:
-                export_collection = bpy.data.collections[collection_name]
-                self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Using existing collection.")
-                self._link_objects_to_collection(top_object, export_collection)
-            else:
-                export_collection = self.create_and_setup_collection(context, collection_name, top_object)
-            exporter_collections.append((export_collection, top_object))
-        return exporter_collections
-
-    def _link_objects_to_collection(self, top_object, export_collection):
+def _link_objects_to_collection(self, top_object, export_collection):
         """Link top_object and its hierarchy into export_collection, moving them out of other collections."""
         hierarchy_objects = get_all_children_and_descendants(top_object, include_top=True)
         for obj in hierarchy_objects:
