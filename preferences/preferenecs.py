@@ -96,7 +96,7 @@ PROPERTY_METADATA = {
 
     "set_export_path": {
         "name": "Overwrite Export Path",
-        "description": "Set filepath when creating an Exporter Collection.",
+        "description": "Override the export path configured by the selected preset with a custom path.",
         "default": False,
     },
 
@@ -589,7 +589,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             ('SPHERE', "Sphere", ""),
             ('CONE', "Cone", ""),
         ],
-        default='PLAIN_AXES',
+        default='CUBE',
     )
 
     root_empty_display_size: bpy.props.FloatProperty(

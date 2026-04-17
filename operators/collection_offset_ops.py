@@ -9,6 +9,7 @@ def create_root_empty_for_collection(
     objects_to_parent=None,
     display_type='PLAIN_AXES',
     display_size=1.0,
+    suffix="_root",
 ):
     """Create an empty, link it to *collection*, optionally parent objects to it,
     and assign it as the collection's root object.
@@ -23,7 +24,7 @@ def create_root_empty_for_collection(
     Returns:
         The newly created EMPTY object.
     """
-    empty = bpy.data.objects.new(name=collection.name + "_root", object_data=None)
+    empty = bpy.data.objects.new(name=collection.name + suffix, object_data=None)
     empty.empty_display_type = display_type
     empty.empty_display_size = display_size
     empty.location = location
@@ -37,8 +38,9 @@ def create_root_empty_for_collection(
     if objects_to_parent:
         from mathutils import Matrix
         empty_world_matrix = Matrix.Translation(location)
+        collection_objects_set = set(collection.objects)
         for obj in objects_to_parent:
-            if obj == empty or obj.parent is not None:
+            if obj == empty or (obj.parent is not None and obj.parent in collection_objects_set):
                 continue
             world_matrix = obj.matrix_world.copy()
             obj.parent = empty

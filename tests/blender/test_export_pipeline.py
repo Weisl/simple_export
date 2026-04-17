@@ -542,22 +542,15 @@ class TestExportViaAddonSetup(_ExportTestBase):
 
     def test_replace_existing_exporter(self):
         """
-        Calling add_settings_to_collections twice with REPLACE leaves only one exporter.
-
-        The second call's existing_exporter_action defaults to REPLACE, so the
-        original exporter should be removed and a fresh one added.
+        Calling add_settings_to_collections twice always replaces, leaving only one exporter.
         """
         self._setup_via_addon("FBX", self.col.name)
         count_after_first = len(self.col.exporters)
 
-        # Second setup call — the collection now has exporters.
-        # The operator's invoke() opens a dialog when exporters already exist, so
-        # we call it with EXEC_DEFAULT to skip invoke and go straight to execute.
         bpy.ops.simple_export.add_settings_to_collections(
             "EXEC_DEFAULT",
             collection_name=self.col.name,
             export_format="FBX",
-            existing_exporter_action="REPLACE",
             set_export_path=False,
             assign_preset=False,
             export_folder_mode="ABSOLUTE",
@@ -567,7 +560,7 @@ class TestExportViaAddonSetup(_ExportTestBase):
         count_after_second = len(self.col.exporters)
         self.assertEqual(
             count_after_second, count_after_first,
-            "REPLACE action should keep the same number of exporters (one)",
+            "Second call should replace the existing exporter, keeping the count at one",
         )
 
 

@@ -139,10 +139,15 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
 
                 set_active_layer_Collection(collection.name)
 
-                # Find the appropriate exporter
-                exporter = find_exporter(collection, format_filter= export_format)
+                # Find the appropriate exporter, creating one of the selected format if needed
+                exporter = find_exporter(collection, format_filter=export_format)
                 if not exporter:
-                    continue
+                    from ..functions.exporter_funcs import create_collection_exporter, remove_all_collection_exporters
+                    remove_all_collection_exporters(collection)
+                    exporter = create_collection_exporter(self, context, collection)
+                    if not exporter:
+                        results.append({'name': collection.name, 'success': False, 'message': "Failed to create exporter."})
+                        continue
 
                 result = self.apply_preset_to_collections(collection, preset_path, exporter)
                 results.append(result)

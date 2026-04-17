@@ -180,6 +180,12 @@ class CollectionOriginProps:
         default=False,
     )
 
+    root_empty_suffix: bpy.props.StringProperty(
+        name="Root Empty Suffix",
+        description="Suffix appended to the collection name when naming the root empty object",
+        default="_root",
+    )
+
 
 class CollectionSettingsProps:
     collection_color: bpy.props.EnumProperty(
