@@ -5,7 +5,8 @@ import bpy
 from .shared_properties import (
     SharedPathProps, SharedFilenameProps,
     SharedPathAssignmentProps, SharedPresetAssignmentProps, CollectionNamingProps,
-    CollectionOriginProps, CollectionSettingsProps, SharedFormatProps
+    CollectionOriginProps, CollectionSettingsProps, SharedFormatProps,
+    CollectionPreExportProps
 )
 from ..core.export_path_func import assign_exporter_path
 from ..core.export_path_func import generate_base_name
@@ -49,6 +50,7 @@ class EXPORT_OT_CreateExportCollections(
     CollectionNamingProps,
     CollectionOriginProps,
     CollectionSettingsProps,
+    CollectionPreExportProps,
     SharedPathProps,
     SharedFilenameProps,
     bpy.types.Operator

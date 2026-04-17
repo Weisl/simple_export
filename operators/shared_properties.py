@@ -187,6 +187,44 @@ class CollectionOriginProps:
     )
 
 
+class CollectionPreExportProps:
+    move_by_collection_offset: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["move_by_collection_offset"]["name"],
+        description=PROPERTY_METADATA["move_by_collection_offset"]["description"],
+        default=PROPERTY_METADATA["move_by_collection_offset"]["default"],
+    )
+    triangulate_before_export: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["triangulate_before_export"]["name"],
+        description=PROPERTY_METADATA["triangulate_before_export"]["description"],
+        default=PROPERTY_METADATA["triangulate_before_export"]["default"],
+    )
+    triangulate_keep_normals: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["triangulate_keep_normals"]["name"],
+        description=PROPERTY_METADATA["triangulate_keep_normals"]["description"],
+        default=PROPERTY_METADATA["triangulate_keep_normals"]["default"],
+    )
+    apply_scale_before_export: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["apply_scale_before_export"]["name"],
+        description=PROPERTY_METADATA["apply_scale_before_export"]["description"],
+        default=PROPERTY_METADATA["apply_scale_before_export"]["default"],
+    )
+    apply_rotation_before_export: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["apply_rotation_before_export"]["name"],
+        description=PROPERTY_METADATA["apply_rotation_before_export"]["description"],
+        default=PROPERTY_METADATA["apply_rotation_before_export"]["default"],
+    )
+    apply_transform_before_export: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["apply_transform_before_export"]["name"],
+        description=PROPERTY_METADATA["apply_transform_before_export"]["description"],
+        default=PROPERTY_METADATA["apply_transform_before_export"]["default"],
+    )
+    pre_rotate_objects: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["pre_rotate_objects"]["name"],
+        description=PROPERTY_METADATA["pre_rotate_objects"]["description"],
+        default=PROPERTY_METADATA["pre_rotate_objects"]["default"],
+    )
+
+
 class CollectionSettingsProps:
     collection_color: bpy.props.EnumProperty(
         name=PROPERTY_METADATA["collection_color"]["name"],

@@ -39,15 +39,19 @@ def setup_collection_properties(prop, collection, base_object=None):
         if base_object:
             collection.root_object = base_object
 
-    # Seed per-collection pre-export ops from scene-level defaults (set by presets)
+    # Seed per-collection pre-export ops from operator props (set by preset) or scene fallback
     if hasattr(collection, 'pre_export_ops'):
         import bpy
         scene = bpy.context.scene
         ops = collection.pre_export_ops
         for attr in _PRE_EXPORT_BOOL_PROPS:
-            if hasattr(scene, attr):
+            if hasattr(prop, attr):
+                setattr(ops, attr, getattr(prop, attr))
+            elif hasattr(scene, attr):
                 setattr(ops, attr, getattr(scene, attr))
-        if hasattr(scene, 'pre_rotate_euler'):
+        if hasattr(prop, 'pre_rotate_euler'):
+            ops.pre_rotate_euler = prop.pre_rotate_euler
+        elif hasattr(scene, 'pre_rotate_euler'):
             ops.pre_rotate_euler = scene.pre_rotate_euler
 
     return collection

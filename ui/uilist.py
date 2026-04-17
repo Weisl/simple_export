@@ -296,16 +296,14 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             else:
                 row.label(text='', icon=icon)
 
-            # Format
-            text = self.get_format_name(exporter)
-            row.label(text=text)  # Display the user-friendly label
-
-            # Active pre-export operation indicator icons (per-collection)
+            # Active pre-export operation indicator icons (only when enabled)
             col_ops = collection.pre_export_ops
-            if col_ops.move_by_collection_offset:
-                row.label(text='', icon='OBJECT_ORIGIN')
-            if col_ops.triangulate_before_export:
-                row.label(text='', icon='MOD_TRIANGULATE')
+            if col_ops.move_by_collection_offset or col_ops.triangulate_before_export:
+                row.separator(factor=0.5)
+                if col_ops.move_by_collection_offset:
+                    row.label(text='', icon='OBJECT_ORIGIN')
+                if col_ops.triangulate_before_export:
+                    row.label(text='', icon='MOD_TRIANGULATE')
 
             ########## Name
             row = col_02.row(align=True)
