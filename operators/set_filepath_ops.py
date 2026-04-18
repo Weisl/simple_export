@@ -32,6 +32,9 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
         name="Collection Name", default='',
         description="Name of the collection to process", options={'HIDDEN'}
     )
+    # Stores outliner-selected collection names captured at invoke time,
+    # because context.selected_ids is unavailable after the dialog opens.
+    outliner_collection_names: bpy.props.StringProperty(default='', options={'HIDDEN'})
 
     # Operator Properties are inherited from the parent classes
 
@@ -47,6 +50,10 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
         draw_export_folderpath_properties(box, self)
 
     def invoke(self, context, event):
+        if self.outliner:
+            cols = get_outliner_collections(context)
+            self.outliner_collection_names = ','.join(c.name for c in cols)
+
         ref_col = self._get_reference_collection(context)
 
         if ref_col:
@@ -85,6 +92,9 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
         if self.individual_collection and self.collection_name:
             return bpy.data.collections.get(self.collection_name)
         if self.outliner:
+            if self.outliner_collection_names:
+                first_name = self.outliner_collection_names.split(',')[0]
+                return bpy.data.collections.get(first_name)
             cols = get_outliner_collections(context)
             return cols[0] if cols else None
         if self.collection_name:
@@ -102,7 +112,12 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
 
         # Get Export Collections
         if self.outliner:
-            collection_list = get_outliner_collections(context)
+            if self.outliner_collection_names:
+                names = [n for n in self.outliner_collection_names.split(',') if n]
+                collection_list = [bpy.data.collections.get(n) for n in names]
+                collection_list = [c for c in collection_list if c]
+            else:
+                collection_list = get_outliner_collections(context)
         elif self.individual_collection:
             collection = bpy.data.collections.get(self.collection_name)
             collection_list = [collection] if collection else []

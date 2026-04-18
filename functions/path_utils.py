@@ -33,6 +33,28 @@ def make_folder_path_absolute(path):
         folder_path_absolute = os.path.abspath(folder_path_absolute)
     return folder_path_absolute
 
+def export_dir_raw(raw_filepath):
+    """Return the directory portion of a raw filepath, preserving the Blender // prefix."""
+    # Normalize Windows backslashes so dirname works correctly on Linux
+    path = raw_filepath.replace('\\', '/')
+    if path.endswith('/'):
+        return path.rstrip('/') or '//'
+    return os.path.dirname(path)
+
+
+def export_dir_absolute(raw_filepath):
+    """Return the resolved absolute directory for a filepath.
+
+    Handles directory-only paths that end with a slash (e.g. //bake/) where
+    os.path.dirname would incorrectly strip the final component.
+    Normalizes Windows backslashes so the function works on Linux too.
+    """
+    path = raw_filepath.replace('\\', '/')
+    if path.endswith('/'):
+        return os.path.normpath(bpy.path.abspath(path))
+    return os.path.dirname(clean_relative_path(path))
+
+
 def extract_directory(path):
     # Extract the directory portion and normalize
     path_dir = os.path.dirname(path)

@@ -5,7 +5,7 @@ import bpy
 from ..core.export_formats import ExportFormats
 from ..core.info import COLOR_TAG_ICONS
 from ..functions.exporter_funcs import find_exporter
-from ..functions.path_utils import clean_relative_path
+from ..functions.path_utils import clean_relative_path, export_dir_absolute
 from ..functions.preset_func import collection_has_preset_changes
 
 
@@ -54,7 +54,7 @@ def collection_passes_uilist_filters(collection, scene):
 
     # Directory
     if scene.filter_directory != 'ALL':
-        dir_path = os.path.dirname(export_path)
+        dir_path = export_dir_absolute(exporter.export_properties.filepath)
         if scene.filter_directory == 'NO_PATH':
             if collection.simple_export_filepath_proxy:
                 return False

@@ -6,7 +6,7 @@ from .. import __package__ as base_package
 from ..core.export_formats import get_export_format_items
 from ..core.info import ADDON_NAME
 from ..functions.exporter_funcs import find_exporter
-from ..functions.path_utils import clean_relative_path
+from ..functions.path_utils import export_dir_absolute, export_dir_raw
 
 
 def draw_pre_export_operations(layout, target):
@@ -76,7 +76,7 @@ def draw_active_list_element(layout, context, scene):
             # User Group
             row = box.row(align=True)
             row.label(text="", icon='GROUP')
-            group_name = getattr(selected_collection, 'export_group_name', '') or "No User Group"
+            group_name = getattr(selected_collection, 'export_group_name', '') or "No User Groups"
             row.menu("SIMPLE_EXPORT_MT_CollectionGroupMenu", text=group_name)
 
             if len(selected_collection.exporters) > 0:
@@ -354,24 +354,32 @@ def set_default_exportlist_properties(dummy):
         scene.exportlist_scene_properties.list_visibility_settings = {'FILEPATH', 'ORIGIN', 'PRESET'}
 
 
+_filter_directory_items_cache = []
+
+
 def get_filter_directory_items(self, context):
     """Dynamic enum items: all distinct output directories across export collections."""
+    global _filter_directory_items_cache
     dirs = []
     seen = set()
     for col in bpy.data.collections:
         if col.exporters:
             try:
                 exp = find_exporter(col)
-                d = os.path.dirname(clean_relative_path(exp.export_properties.filepath))
-                if d and d not in seen:
-                    seen.add(d)
-                    dirs.append(d)
-            except Exception:
-                pass
+                if exp is None:
+                    continue
+                raw = exp.export_properties.filepath
+                abs_d = export_dir_absolute(raw)
+                if abs_d and abs_d not in seen:
+                    seen.add(abs_d)
+                    dirs.append((abs_d, export_dir_raw(raw)))
+            except Exception as e:
+                print(f"[SimpleExport] filter_directory skipped '{col.name}': {type(e).__name__}: {e}")
     items = [('ALL', "All Directories", ""), ('NO_PATH', "No Directory", "")]
-    for d in sorted(dirs):
-        items.append((d, d, ""))
-    return items
+    for abs_d, raw_d in sorted(dirs):
+        items.append((abs_d, raw_d or abs_d, ""))
+    _filter_directory_items_cache = items
+    return _filter_directory_items_cache
 
 
 def get_filter_addon_preset_items(self, context):
@@ -405,7 +413,7 @@ def get_filter_custom_group_items(self, context):
             if name and name not in seen:
                 seen.add(name)
                 groups.append(name)
-    items = [('ALL', "All User Groups", ""), ('NONE', "No User Group", "")]
+    items = [('ALL', "All User Groups", ""), ('NONE', "No User Groups", "")]
     for g in sorted(groups):
         items.append((g, g, ""))
     return items
