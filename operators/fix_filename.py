@@ -37,7 +37,8 @@ class SIMPLEEXPORT_OT_FixExportFilename(SharedPathProps, SharedFilenameProps, bp
 
         base_name = generate_base_name(collection.name, self.filename_prefix,
                                        self.filename_suffix,
-                                       self.filename_blend_prefix)
+                                       self.filename_blend_prefix,
+                                       self.filename_separator)
 
         new_export_path = os.path.join(export_dir, f"{base_name}{ext}")
         exporter.export_properties.filepath = new_export_path

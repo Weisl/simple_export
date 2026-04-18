@@ -47,6 +47,11 @@ class SharedFilenameProps:
         description=PROPERTY_METADATA["filename_suffix"]["description"],
         default=PROPERTY_METADATA["filename_suffix"]["default"]
     )
+    filename_separator: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["filename_separator"]["name"],
+        description=PROPERTY_METADATA["filename_separator"]["description"],
+        default=PROPERTY_METADATA["filename_separator"]["default"]
+    )
     filename_blend_prefix: bpy.props.BoolProperty(
         name=PROPERTY_METADATA["filename_blend_prefix"]["name"],
         description=PROPERTY_METADATA["filename_blend_prefix"]["description"],
@@ -138,6 +143,12 @@ class CollectionNamingProps:
         name=PROPERTY_METADATA["collection_suffix"]["name"],
         description=PROPERTY_METADATA["collection_suffix"]["description"],
         default=PROPERTY_METADATA["collection_suffix"]["default"]
+    )
+
+    collection_separator: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["collection_separator"]["name"],
+        description=PROPERTY_METADATA["collection_separator"]["description"],
+        default=PROPERTY_METADATA["collection_separator"]["default"]
     )
 
     collection_blend_prefix: bpy.props.BoolProperty(

@@ -153,7 +153,7 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
 
                 # FILE: filename properties
                 filename = generate_base_name(collection_name, self.filename_prefix, self.filename_suffix,
-                                              self.filename_blend_prefix)
+                                              self.filename_blend_prefix, self.filename_separator)
 
                 # Generate final export path
                 export_path = generate_export_path(export_folder, filename, exporter_format_key,

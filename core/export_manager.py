@@ -54,6 +54,7 @@ def auto_update_export_paths_on_rename(depsgraph):
     prefix = getattr(scene, 'filename_prefix', '')
     suffix = getattr(scene, 'filename_suffix', '')
     blend_prefix = getattr(scene, 'filename_blend_prefix', False)
+    separator = getattr(scene, 'filename_separator', '_')
 
     for collection in bpy.data.collections:
         old_name = collection.get("prev_name", collection.name)
@@ -62,8 +63,8 @@ def auto_update_export_paths_on_rename(depsgraph):
 
         collection["prev_name"] = collection.name
 
-        expected_old_base = generate_base_name(old_name, prefix, suffix, blend_prefix)
-        new_base = generate_base_name(collection.name, prefix, suffix, blend_prefix)
+        expected_old_base = generate_base_name(old_name, prefix, suffix, blend_prefix, separator)
+        new_base = generate_base_name(collection.name, prefix, suffix, blend_prefix, separator)
 
         for exporter in collection.exporters:
             current_path = exporter.export_properties.filepath

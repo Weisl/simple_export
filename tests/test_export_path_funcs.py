@@ -81,11 +81,38 @@ class TestGenerateBaseName(unittest.TestCase):
         result = generate_base_name("MyMesh", use_file_name=False)
         self.assertEqual(result, "MyMesh")
 
+    def test_use_file_name_unsaved_prepends_unsaved(self):
+        sys.modules["bpy"].data.filepath = ""
+        result = generate_base_name("MyMesh", use_file_name=True)
+        sys.modules["bpy"].data.filepath = "/projects/my_scene.blend"
+        self.assertEqual(result, "UNSAVED_MyMesh")
+
+    def test_use_file_name_unsaved_not_duplicated(self):
+        sys.modules["bpy"].data.filepath = ""
+        result = generate_base_name("UNSAVED_MyMesh", use_file_name=True)
+        sys.modules["bpy"].data.filepath = "/projects/my_scene.blend"
+        self.assertEqual(result, "UNSAVED_MyMesh")
+
     def test_prefix_with_trailing_underscore_no_double_separator(self):
         self.assertEqual(generate_base_name("MyMesh", prefix="SM_"), "SM_MyMesh")
 
     def test_suffix_with_leading_underscore_no_double_separator(self):
         self.assertEqual(generate_base_name("MyMesh", suffix="_LOD0"), "MyMesh_LOD0")
+
+    def test_custom_separator(self):
+        self.assertEqual(generate_base_name("MyMesh", prefix="SM", separator="-"), "SM-MyMesh")
+
+    def test_custom_separator_suffix(self):
+        self.assertEqual(generate_base_name("MyMesh", suffix="LOD0", separator="-"), "MyMesh-LOD0")
+
+    def test_empty_separator_no_sep(self):
+        self.assertEqual(generate_base_name("MyMesh", prefix="SM", suffix="LOD0", separator=""), "SMMyMeshLOD0")
+
+    def test_empty_separator_direct_concat(self):
+        self.assertEqual(generate_base_name("Tank", prefix="SM", suffix="low", separator=""), "SMTanklow")
+
+    def test_custom_separator_no_double(self):
+        self.assertEqual(generate_base_name("MyMesh", prefix="SM-", separator="-"), "SM-MyMesh")
 
 
 # ---------------------------------------------------------------------------

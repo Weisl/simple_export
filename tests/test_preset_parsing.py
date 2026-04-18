@@ -542,5 +542,126 @@ class TestParseAddonPresetFile(unittest.TestCase):
             os.unlink(path)
 
 
+# ---------------------------------------------------------------------------
+# 5. Corrupt preset sanitization (_sanitize_value_str applied via parse functions)
+# ---------------------------------------------------------------------------
+
+class TestCorruptPresetSanitization(unittest.TestCase):
+    """Presets with invalid mathutils repr (as written by Blender's AddPresetBase)
+    must be parsed without error and yield the correct numeric tuple."""
+
+    # -- parse_preset_file (op. prefix) ----------------------------------------
+
+    def test_euler_repr_in_op_preset_parsed_as_tuple(self):
+        """<Euler (x=..., y=..., z=...), order='XYZ'> is converted to a tuple."""
+        path = _write_preset(
+            "op.rotation = <Euler (x=0.0000, y=0.0000, z=0.0000), order='XYZ'>\n"
+        )
+        try:
+            result = parse_preset_file(path)
+            self.assertIn("rotation", result)
+            self.assertEqual(result["rotation"], (0.0, 0.0, 0.0))
+        finally:
+            os.unlink(path)
+
+    def test_euler_repr_negative_values(self):
+        """Negative Euler components (e.g. -1.5708 for 90°) survive the conversion."""
+        path = _write_preset(
+            "op.rotation = <Euler (x=-1.5708, y=0.0000, z=0.0000), order='XYZ'>\n"
+        )
+        try:
+            result = parse_preset_file(path)
+            self.assertAlmostEqual(result["rotation"][0], -1.5708, places=4)
+            self.assertAlmostEqual(result["rotation"][1], 0.0)
+            self.assertAlmostEqual(result["rotation"][2], 0.0)
+        finally:
+            os.unlink(path)
+
+    def test_vector_repr_in_op_preset_parsed_as_tuple(self):
+        """<Vector (x, y, z)> (no key= labels) is converted to a tuple."""
+        path = _write_preset(
+            "op.offset = <Vector (1.0000, 2.0000, 3.0000)>\n"
+        )
+        try:
+            result = parse_preset_file(path)
+            self.assertIn("offset", result)
+            self.assertEqual(result["offset"], (1.0, 2.0, 3.0))
+        finally:
+            os.unlink(path)
+
+    def test_color_repr_in_op_preset_parsed_as_tuple(self):
+        """<Color (r=..., g=..., b=...)> is converted to a tuple."""
+        path = _write_preset(
+            "op.diffuse_color = <Color (r=1.0000, g=0.5000, b=0.0000)>\n"
+        )
+        try:
+            result = parse_preset_file(path)
+            self.assertIn("diffuse_color", result)
+            self.assertEqual(result["diffuse_color"], (1.0, 0.5, 0.0))
+        finally:
+            os.unlink(path)
+
+    def test_mixed_valid_and_corrupt_lines(self):
+        """Valid properties are still applied when a preset also has a corrupt line."""
+        path = _write_preset(
+            "op.filepath = ''\n"
+            "op.global_scale = 1.5\n"
+            "op.rotation = <Euler (x=0.0000, y=1.5708, z=0.0000), order='XYZ'>\n"
+            "op.bake_anim = False\n"
+        )
+        try:
+            result = parse_preset_file(path)
+            self.assertAlmostEqual(result["global_scale"], 1.5)
+            self.assertIs(result["bake_anim"], False)
+            self.assertIn("rotation", result)
+            self.assertAlmostEqual(result["rotation"][1], 1.5708, places=4)
+        finally:
+            os.unlink(path)
+
+    def test_corrupt_euler_applied_via_assign_preset(self):
+        """assign_preset correctly sets a property whose value was a corrupt Euler."""
+        path = _write_preset(
+            "op.filepath = ''\n"
+            "op.global_scale = 2.0\n"
+            "op.rotation = <Euler (x=0.0000, y=0.0000, z=1.5708), order='XYZ'>\n"
+        )
+        try:
+            exporter = _make_exporter(global_scale=1.0, rotation=(0.0, 0.0, 0.0))
+            ok, _ = assign_preset(exporter, path)
+            self.assertTrue(ok)
+            self.assertAlmostEqual(exporter.export_properties.global_scale, 2.0)
+        finally:
+            os.unlink(path)
+
+    # -- _parse_prefix_preset_file (scene. prefix) ------------------------------
+
+    def test_euler_repr_in_scene_preset_parsed_as_tuple(self):
+        """scene.pre_rotate_euler = <Euler ...> is parsed correctly for change detection."""
+        path = _write_preset(
+            "scene.export_format = 'FBX'\n"
+            "scene.pre_rotate_euler = <Euler (x=0.0000, y=0.0000, z=0.0000), order='XYZ'>\n"
+        )
+        try:
+            result = _parse_prefix_preset_file(path, "scene")
+            self.assertIn("pre_rotate_euler", result)
+            self.assertEqual(result["pre_rotate_euler"], (0.0, 0.0, 0.0))
+            self.assertEqual(result["export_format"], "FBX")
+        finally:
+            os.unlink(path)
+
+    def test_euler_repr_non_zero_in_scene_preset(self):
+        """Non-zero corrupt Euler in a scene preset round-trips to the correct tuple."""
+        path = _write_preset(
+            "scene.pre_rotate_euler = <Euler (x=-1.5708, y=0.7854, z=0.0000), order='XYZ'>\n"
+        )
+        try:
+            result = _parse_prefix_preset_file(path, "scene")
+            self.assertAlmostEqual(result["pre_rotate_euler"][0], -1.5708, places=4)
+            self.assertAlmostEqual(result["pre_rotate_euler"][1], 0.7854, places=4)
+            self.assertAlmostEqual(result["pre_rotate_euler"][2], 0.0)
+        finally:
+            os.unlink(path)
+
+
 if __name__ == "__main__":
     unittest.main()

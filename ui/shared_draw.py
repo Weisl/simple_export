@@ -68,6 +68,7 @@ def draw_collection_settings_properties(layout, element):
 def draw_collection_name_properties(layout, element):
     layout.label(text="Collection Name")
     layout.prop(element, "collection_prefix")
+    layout.prop(element, "collection_separator")
     layout.prop(element, "collection_suffix")
     layout.prop(element, "collection_blend_prefix")
 
@@ -77,6 +78,7 @@ def draw_export_filename_properties(layout, element):
     layout.label(text="File Name")
 
     layout.prop(element, "filename_prefix")
+    layout.prop(element, "filename_separator")
     layout.prop(element, "filename_suffix")
     layout.prop(element, "filename_blend_prefix")
 
@@ -305,7 +307,7 @@ def draw_export_list(layout, list_id, scene):
     row.operator("scene.select_all_collections", text='None', icon='CHECKBOX_DEHLT').deselect = True
     op = row.operator("scene.expand_minimize_all_collections", text='Expand', icon='CHECKBOX_HLT')
     op.minimize = False
-    op = row.operator("scene.expand_minimize_all_collections", text='Mnimize', icon='CHECKBOX_DEHLT')  
+    op = row.operator("scene.expand_minimize_all_collections", text='Mnimize', icon='CHECKBOX_DEHLT')
     op.minimize = True
 
 

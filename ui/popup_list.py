@@ -20,7 +20,14 @@ class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Pa
         from .shared_draw import draw_export_list
         draw_export_list(layout, self.list_id, scene)
 
-        super().draw(context)
+        col = layout.column(align=True)
+        row = col.row()
+        row.alignment = 'RIGHT'
+        row.scale_x = 2.5
+        row.scale_y = 1.5
+        op = row.operator("simple_export.export_collections", text="Export Selected", icon='EXPORT')
+        op.outliner = False
+        op.individual_collection = False
 
 
 classes = (

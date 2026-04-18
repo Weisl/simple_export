@@ -41,9 +41,7 @@ def save_addon_presets(preset_name, preset_folder, preset_data):
 
             for key, value in preset_data.items():
                 if isinstance(value, str):
-                    # Escape backslashes for Python string literals
-                    value = value.replace('\\', '\\\\')
-                    preset_file.write(f"scene.{key} = '{value}'\n")
+                    preset_file.write(f"scene.{key} = {repr(value)}\n")
                 else:
                     preset_file.write(f"scene.{key} = {value}\n")
 
@@ -69,7 +67,8 @@ def apply_default_preset():
         default_preset = addon_prefs.simple_export_default_preset
         if not default_preset or not os.path.exists(default_preset):
             return
-        from .exporter_preset import EXPORT_MT_scene_presets
+        from .exporter_preset import EXPORT_MT_scene_presets, _sanitize_preset_file
+        _sanitize_preset_file(default_preset)
         bpy.ops.script.execute_preset(filepath=default_preset, menu_idname=EXPORT_MT_scene_presets.__name__)
         bpy.context.scene.simple_export_selected_preset = default_preset
     except Exception as e:

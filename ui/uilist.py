@@ -347,13 +347,15 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             from ..core.export_path_func import generate_base_name
             filename_settings = scene
             base_name = generate_base_name(collection.name, filename_settings.filename_prefix,
-                                           filename_settings.filename_suffix, filename_settings.filename_blend_prefix)
+                                           filename_settings.filename_suffix, filename_settings.filename_blend_prefix,
+                                           filename_settings.filename_separator)
 
             if exporter.export_properties.filepath and collection_name_mismatch(base_name, export_path):
                 op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
                 op.collection_name = collection.name
                 op.filename_prefix = filename_settings.filename_prefix
                 op.filename_suffix = filename_settings.filename_suffix
+                op.filename_separator = filename_settings.filename_separator
                 op.filename_blend_prefix = filename_settings.filename_blend_prefix
 
             # Add arrow button that sets the collection name and opens the menu
@@ -464,13 +466,15 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             from ..core.export_path_func import generate_base_name
             filename_settings = scene
             base_name = generate_base_name(collection.name, filename_settings.filename_prefix,
-                                           filename_settings.filename_suffix, filename_settings.filename_blend_prefix)
+                                           filename_settings.filename_suffix, filename_settings.filename_blend_prefix,
+                                           filename_settings.filename_separator)
 
             if exporter.export_properties.filepath and collection_name_mismatch(base_name, export_path):
                 op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
                 op.collection_name = collection.name
                 op.filename_prefix = filename_settings.filename_prefix
                 op.filename_suffix = filename_settings.filename_suffix
+                op.filename_separator = filename_settings.filename_separator
                 op.filename_blend_prefix = filename_settings.filename_blend_prefix
 
             # col.separator()

@@ -14,7 +14,7 @@ def assign_exporter_path(properties, collection_name, exporter):
                                                              properties.folder_path_replace)
 
     filename = generate_base_name(collection_name, properties.filename_prefix, properties.filename_suffix,
-                                  properties.filename_blend_prefix)
+                                  properties.filename_blend_prefix, properties.filename_separator)
 
     export_path = generate_export_path(export_folder, filename, properties.export_format,
                                        is_relative_path=is_relative_path)
@@ -183,21 +183,21 @@ def get_export_folder_path(export_folder_mode, folder_path_absolute, folder_path
     return export_dir, is_relative_path
 
 
-def generate_base_name(entity_name, prefix='', suffix='', use_file_name=False):
+def generate_base_name(entity_name, prefix='', suffix='', use_file_name=False, separator='_'):
     collection_name = entity_name
 
     if prefix and not collection_name.startswith(prefix):
-        sep = "" if prefix.endswith("_") or collection_name.startswith("_") else "_"
+        sep = "" if separator and (prefix.endswith(separator) or collection_name.startswith(separator)) else separator
         collection_name = prefix + sep + collection_name
 
     if suffix and not collection_name.endswith(suffix):
-        sep = "" if suffix.startswith("_") or collection_name.endswith("_") else "_"
+        sep = "" if separator and (suffix.startswith(separator) or collection_name.endswith(separator)) else separator
         collection_name = collection_name + sep + suffix
 
     if use_file_name:
-        file_name_prefix = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
+        file_name_prefix = os.path.splitext(os.path.basename(bpy.data.filepath))[0] or "UNSAVED"
         if not collection_name.startswith(file_name_prefix):
-            sep = "" if file_name_prefix.endswith("_") or collection_name.startswith("_") else "_"
+            sep = "" if separator and (file_name_prefix.endswith(separator) or collection_name.startswith(separator)) else separator
             collection_name = file_name_prefix + sep + collection_name
 
     return collection_name

@@ -194,7 +194,8 @@ class EXPORT_OT_CreateExportCollections(
                 top_object.name,
                 getattr(self, 'collection_prefix', ''),
                 getattr(self, 'collection_suffix', ''),
-                getattr(self, 'collection_blend_prefix', '')
+                getattr(self, 'collection_blend_prefix', ''),
+                getattr(self, 'collection_separator', '_')
             )
             if collection_name in bpy.data.collections:
                 export_collection = bpy.data.collections[collection_name]
