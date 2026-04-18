@@ -301,11 +301,20 @@ class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
         row = layout.row()
         row.label(text="Exporter Operations")
         row = layout.row()
-        op = row.operator("scene.select_all_collections", text="Select All", icon="CHECKBOX_HLT")
+        op = row.operator("scene.select_all_collections", text="Select All")
         op.deselect = False
         row = layout.row()
-        op = row.operator("scene.select_all_collections", text="Unselect All", icon="CHECKBOX_DEHLT")
+        op = row.operator("scene.select_all_collections", text="Unselect All")
         op.deselect = True
+
+        row = layout.row()
+        op = row.operator("scene.expand_minimize_all_collections", text='Expand All')
+        op.minimize = False
+        row = layout.row()
+        op = row.operator("scene.expand_minimize_all_collections", text='Mnimize All',)
+        op.minimize = True
+
+
 
         row = layout.row()
         from .shared_operator_call import call_assign_preset_op

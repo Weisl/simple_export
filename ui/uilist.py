@@ -352,6 +352,10 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                                            filename_settings.filename_suffix, filename_settings.filename_blend_prefix,
                                            filename_settings.filename_separator)
 
+            if len(collection.exporters) > 1:
+                op = row.operator("simple_export.fix_multiple_exporters", text="", icon='ERROR')
+                op.collection_name = collection.name
+
             if exporter.export_properties.filepath and collection_name_mismatch(base_name, export_path):
                 from ..core.export_formats import ExportFormats
                 op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
@@ -472,6 +476,10 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             base_name = generate_base_name(collection.name, filename_settings.filename_prefix,
                                            filename_settings.filename_suffix, filename_settings.filename_blend_prefix,
                                            filename_settings.filename_separator)
+
+            if len(collection.exporters) > 1:
+                op = row.operator("simple_export.fix_multiple_exporters", text="", icon='ERROR')
+                op.collection_name = collection.name
 
             if exporter.export_properties.filepath and collection_name_mismatch(base_name, export_path):
                 from ..core.export_formats import ExportFormats

@@ -216,6 +216,12 @@ def draw_full_exporer_settings(layout, props):
 
 
 def draw_export_list(layout, list_id, scene):
+    # === PROMINENT ADD BUTTON ===
+    from .shared_operator_call import call_create_export_collection_op
+    row = layout.row(align=True)
+    row.scale_y = 1.5
+    call_create_export_collection_op(scene, row, icon='ADD', text="Create Export Collection")
+
     # === EXPORT TARGET (filters — above the list) ===
     box = layout.box()
     header_row = box.row(align=True)
@@ -287,7 +293,6 @@ def draw_export_list(layout, list_id, scene):
 
     narrow_column = split.column(align=True)
     col = narrow_column
-    from .shared_operator_call import call_create_export_collection_op
     call_create_export_collection_op(scene, col, icon='ADD', text="")
 
     col.separator()
@@ -305,9 +310,9 @@ def draw_export_list(layout, list_id, scene):
     row = layout.row(align=True)
     row.operator("scene.select_all_collections", text='All', icon='CHECKBOX_HLT').deselect = False
     row.operator("scene.select_all_collections", text='None', icon='CHECKBOX_DEHLT').deselect = True
-    op = row.operator("scene.expand_minimize_all_collections", text='Expand', icon='CHECKBOX_HLT')
+    op = row.operator("scene.expand_minimize_all_collections", text='Expand', icon='TRIA_DOWN')
     op.minimize = False
-    op = row.operator("scene.expand_minimize_all_collections", text='Mnimize', icon='CHECKBOX_DEHLT')
+    op = row.operator("scene.expand_minimize_all_collections", text='Mnimize', icon='TRIA_UP')
     op.minimize = True
 
 
