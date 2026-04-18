@@ -87,13 +87,19 @@ class SIMPLEEXPORT_OT_FixMultipleExporters(bpy.types.Operator):
         total = len(collection.exporters)
         set_active_layer_Collection(collection.name)
 
-        # Find a real window area — dialog popups lack one, causing exporter_remove poll to fail
+        # Find a suitable area — exporter_remove poll requires PROPERTIES or OUTLINER context
         override = None
-        for window in context.window_manager.windows:
-            for area in window.screen.areas:
-                for region in area.regions:
-                    if region.type == 'WINDOW':
-                        override = {'window': window, 'area': area, 'region': region}
+        preferred_types = ('PROPERTIES', 'OUTLINER')
+        for pass_types in (preferred_types, None):
+            for window in context.window_manager.windows:
+                for area in window.screen.areas:
+                    if pass_types is not None and area.type not in pass_types:
+                        continue
+                    for region in area.regions:
+                        if region.type == 'WINDOW':
+                            override = {'window': window, 'area': area, 'region': region}
+                            break
+                    if override:
                         break
                 if override:
                     break
