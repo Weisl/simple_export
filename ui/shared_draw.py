@@ -249,12 +249,23 @@ def draw_export_list(layout, list_id, scene):
     else:
         label = current
 
-    filter_row(col, "Directory", "filter_directory", icon='FILE_FOLDER')
+    split.menu("SIMPLE_EXPORT_MT_FilterGroupMenu", text=label)
+
+    dir_split = col.split(factor=0.35, align=True)
+    dir_split.label(text="Directory")
+    current_dir = scene.filter_directory
+    if current_dir == 'ALL':
+        dir_label = "All Directories"
+    elif current_dir == 'NO_PATH':
+        dir_label = "No Directory"
+    else:
+        import os
+        dir_label = os.path.basename(current_dir) or current_dir
+    dir_split.menu("SIMPLE_EXPORT_MT_FilterDirectoryMenu", text=dir_label, icon='FILE_FOLDER')
 
     row = col.row(align=True)
     row.prop(scene, "filter_selected_only", text="", icon='CHECKBOX_HLT', toggle=True)
     row.prop(scene, "filter_name", text="", icon='VIEWZOOM')
-    split.menu("SIMPLE_EXPORT_MT_FilterGroupMenu", text=label)
 
 
     more_header, more_body = col.panel(idname="EXPORT_TARGET_MORE_FILTERS", default_closed=True)

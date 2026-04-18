@@ -2,7 +2,7 @@ import bpy
 import os
 
 from ..functions.exporter_funcs import find_exporter
-from ..functions.path_utils import clean_relative_path
+from ..functions.path_utils import clean_relative_path, export_dir_absolute, export_dir_raw
 
 
 class SIMPLE_EXPORT_OT_ReloadAddon(bpy.types.Operator):
@@ -341,6 +341,56 @@ class SIMPLE_EXPORT_MT_CollectionGroupMenu(bpy.types.Menu):
         op.collection_name = collection.name
 
 
+class SIMPLE_EXPORT_OT_SetFilterDirectory(bpy.types.Operator):
+    """Set the Directory filter"""
+    bl_idname = "simple_export.set_filter_directory"
+    bl_label = "Filter by Directory"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    directory: bpy.props.StringProperty(options={'HIDDEN'}, default='ALL')
+
+    def execute(self, context):
+        context.scene.filter_directory = self.directory
+        return {'FINISHED'}
+
+
+class SIMPLE_EXPORT_MT_FilterDirectoryMenu(bpy.types.Menu):
+    """Filter collections by output directory"""
+    bl_label = "Directory"
+    bl_idname = "SIMPLE_EXPORT_MT_FilterDirectoryMenu"
+
+    def draw(self, context):
+        layout = self.layout
+
+        op = layout.operator("simple_export.set_filter_directory", text="All Directories")
+        op.directory = 'ALL'
+
+        op = layout.operator("simple_export.set_filter_directory", text="No Directory", icon='X')
+        op.directory = 'NO_PATH'
+
+        layout.separator()
+
+        dirs = {}
+        for col in bpy.data.collections:
+            if col.exporters:
+                try:
+                    exp = find_exporter(col)
+                    if exp is None:
+                        continue
+                    raw = exp.export_properties.filepath
+                    abs_d = export_dir_absolute(raw)
+                    if abs_d and abs_d not in dirs:
+                        dirs[abs_d] = export_dir_raw(raw)
+                except Exception:
+                    pass
+
+        for abs_d in sorted(dirs):
+            raw_d = dirs[abs_d]
+            op = layout.operator("simple_export.set_filter_directory",
+                                 text=raw_d or abs_d, icon='FILE_FOLDER')
+            op.directory = abs_d
+
+
 class SIMPLE_EXPORT_OT_EditPreExportOps(bpy.types.Operator):
     """Edit pre-export operations for a collection"""
     bl_idname = "simple_export.edit_pre_export_ops"
@@ -378,6 +428,8 @@ classes = (
     SIMPLE_EXPORT_OT_SetFilterGroup,
     SIMPLE_EXPORT_MT_CollectionGroupMenu,
     SIMPLE_EXPORT_MT_FilterGroupMenu,
+    SIMPLE_EXPORT_OT_SetFilterDirectory,
+    SIMPLE_EXPORT_MT_FilterDirectoryMenu,
     SIMPLE_EXPORT_OT_EditPreExportOps,
 )
 

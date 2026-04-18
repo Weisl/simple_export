@@ -5,8 +5,6 @@ import bpy
 from .. import __package__ as base_package
 from ..core.export_formats import get_export_format_items
 from ..core.info import ADDON_NAME
-from ..functions.exporter_funcs import find_exporter
-from ..functions.path_utils import export_dir_absolute, export_dir_raw
 
 
 def draw_pre_export_operations(layout, target):
@@ -354,33 +352,6 @@ def set_default_exportlist_properties(dummy):
         scene.exportlist_scene_properties.list_visibility_settings = {'FILEPATH', 'ORIGIN', 'PRESET'}
 
 
-_filter_directory_items_cache = []
-
-
-def get_filter_directory_items(self, context):
-    """Dynamic enum items: all distinct output directories across export collections."""
-    global _filter_directory_items_cache
-    dirs = []
-    seen = set()
-    for col in bpy.data.collections:
-        if col.exporters:
-            try:
-                exp = find_exporter(col)
-                if exp is None:
-                    continue
-                raw = exp.export_properties.filepath
-                abs_d = export_dir_absolute(raw)
-                if abs_d and abs_d not in seen:
-                    seen.add(abs_d)
-                    dirs.append((abs_d, export_dir_raw(raw)))
-            except Exception as e:
-                print(f"[SimpleExport] filter_directory skipped '{col.name}': {type(e).__name__}: {e}")
-    items = [('ALL', "All Directories", ""), ('NO_PATH', "No Directory", "")]
-    for abs_d, raw_d in sorted(dirs):
-        items.append((abs_d, raw_d or abs_d, ""))
-    _filter_directory_items_cache = items
-    return _filter_directory_items_cache
-
 
 def get_filter_addon_preset_items(self, context):
     """Dynamic enum items: format presets and addon presets, matching the PRESET column display."""
@@ -504,10 +475,10 @@ def register():
         default='ALL',
     )
 
-    bpy.types.Scene.filter_directory = bpy.props.EnumProperty(
+    bpy.types.Scene.filter_directory = bpy.props.StringProperty(
         name="Directory",
         description="Filter by output directory",
-        items=get_filter_directory_items,
+        default='ALL',
     )
 
     bpy.types.Scene.filter_preset_addon_preset = bpy.props.EnumProperty(
