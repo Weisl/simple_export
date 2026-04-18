@@ -97,7 +97,7 @@ def draw_active_list_element(layout, context, scene):
                     row.prop(selected_collection, "use_root_object", text="", icon=icon, toggle=True)
                 else:
                     row.prop(selected_collection, "use_root_object", text='', icon=icon, toggle=True)
-                row.label(text='Rooth Object')
+                row.label(text='Root Object')
 
                 # root selection
                 row = root_box.row(align=True)
@@ -187,7 +187,7 @@ def draw_custom_collection_ui(self, context):
         row.prop(collection, "use_root_object", text="", icon=icon, toggle=True)
     else: 
         row.prop(collection, "use_root_object", text='', icon=icon, toggle=True)
-    row.label(text='Rooth Object')
+    row.label(text='Root Object')
 
     row.prop(collection, "root_object", text="")
 
@@ -315,7 +315,7 @@ class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
         op = row.operator("scene.expand_minimize_all_collections", text='Expand All')
         op.minimize = False
         row = layout.row()
-        op = row.operator("scene.expand_minimize_all_collections", text='Mnimize All',)
+        op = row.operator("scene.expand_minimize_all_collections", text='Minimize All',)
         op.minimize = True
 
 
