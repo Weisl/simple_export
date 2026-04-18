@@ -274,7 +274,7 @@ class SIMPLE_EXPORT_MT_FilterGroupMenu(bpy.types.Menu):
         op = layout.operator("simple_export.set_filter_group", text="All User Groups")
         op.group_name = 'ALL'
 
-        op = layout.operator("simple_export.set_filter_group", text="No User Group", icon='X')
+        op = layout.operator("simple_export.set_filter_group", text="No User Groups", icon='X')
         op.group_name = 'NONE'
 
         layout.separator()
@@ -297,7 +297,8 @@ class SIMPLE_EXPORT_MT_FilterGroupMenu(bpy.types.Menu):
 
 
 class SIMPLE_EXPORT_MT_CollectionGroupMenu(bpy.types.Menu):
-    """Pick or clear the user group for the active collection"""
+    """Pick or clear the user group for a collection.
+    Resolves via menu_collection_name when set, otherwise falls back to collection_index."""
     bl_label = "User Group"
     bl_idname = "SIMPLE_EXPORT_MT_CollectionGroupMenu"
 
@@ -305,20 +306,24 @@ class SIMPLE_EXPORT_MT_CollectionGroupMenu(bpy.types.Menu):
         layout = self.layout
         scene = context.scene
 
-        if not (0 <= scene.collection_index < len(bpy.data.collections)):
+        menu_name = getattr(scene, 'menu_collection_name', '')
+        if menu_name:
+            collection = bpy.data.collections.get(menu_name)
+        elif 0 <= scene.collection_index < len(bpy.data.collections):
+            collection = bpy.data.collections[scene.collection_index]
+        else:
+            collection = None
+
+        if not collection:
             layout.label(text="No collection selected", icon='INFO')
             return
 
-        selected_collection = bpy.data.collections[scene.collection_index]
-
-        # Clear / none option
         op = layout.operator("simple_export.assign_collection_group", text="None", icon='X')
         op.group_name = ""
-        op.collection_name = selected_collection.name
+        op.collection_name = collection.name
 
         layout.separator()
 
-        # Existing groups collected from all collections
         groups = sorted({
             col.export_group_name
             for col in bpy.data.collections
@@ -329,11 +334,36 @@ class SIMPLE_EXPORT_MT_CollectionGroupMenu(bpy.types.Menu):
             for group in groups:
                 op = layout.operator("simple_export.assign_collection_group", text=group)
                 op.group_name = group
-                op.collection_name = selected_collection.name
+                op.collection_name = collection.name
             layout.separator()
 
         op = layout.operator("simple_export.add_new_collection_group", text="Add New Group...", icon='ADD')
-        op.collection_name = selected_collection.name
+        op.collection_name = collection.name
+
+
+class SIMPLE_EXPORT_OT_EditPreExportOps(bpy.types.Operator):
+    """Edit pre-export operations for a collection"""
+    bl_idname = "simple_export.edit_pre_export_ops"
+    bl_label = "Pre-Export Operations"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    collection_name: bpy.props.StringProperty(options={'HIDDEN'})
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=250)
+
+    def draw(self, context):
+        layout = self.layout
+        collection = bpy.data.collections.get(self.collection_name)
+        if not collection or not hasattr(collection, 'pre_export_ops'):
+            layout.label(text="Collection not found", icon='ERROR')
+            return
+        col = layout.column(align=True)
+        col.prop(collection.pre_export_ops, 'move_by_collection_offset')
+        col.prop(collection.pre_export_ops, 'triangulate_before_export')
+
+    def execute(self, context):
+        return {'FINISHED'}
 
 
 classes = (
@@ -348,6 +378,7 @@ classes = (
     SIMPLE_EXPORT_OT_SetFilterGroup,
     SIMPLE_EXPORT_MT_CollectionGroupMenu,
     SIMPLE_EXPORT_MT_FilterGroupMenu,
+    SIMPLE_EXPORT_OT_EditPreExportOps,
 )
 
 

@@ -245,7 +245,7 @@ def draw_export_list(layout, list_id, scene):
     if current == 'ALL':
         label = "All User Groups"
     elif current == 'NONE':
-        label = "No User Group"
+        label = "No User Groups"
     else:
         label = current
 

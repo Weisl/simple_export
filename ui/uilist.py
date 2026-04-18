@@ -218,6 +218,15 @@ class EXPORT_MT_root_object_menu(bpy.types.Menu):
 
         op = layout.operator("simple_export.remove_exporters", icon='X')
         op.collection_name = collection_name
+
+        # User Group
+        layout.separator()
+        layout.menu("SIMPLE_EXPORT_MT_CollectionGroupMenu", icon='GROUP')
+
+        # Pre-Export Operations
+        op = layout.operator("simple_export.edit_pre_export_ops", icon='MODIFIER')
+        op.collection_name = collection_name
+
         layout.separator()
 
 

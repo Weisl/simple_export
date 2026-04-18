@@ -73,6 +73,12 @@ def draw_active_list_element(layout, context, scene):
                               icon='PROPERTIES')
             op.collection_name = selected_collection.name
 
+            # User Group
+            row = box.row(align=True)
+            row.label(text="", icon='GROUP')
+            group_name = getattr(selected_collection, 'export_group_name', '') or "No User Group"
+            row.menu("SIMPLE_EXPORT_MT_CollectionGroupMenu", text=group_name)
+
             if len(selected_collection.exporters) > 0:
                 # Filepath
                 row = box.row(align=True)
@@ -399,7 +405,7 @@ def get_filter_custom_group_items(self, context):
             if name and name not in seen:
                 seen.add(name)
                 groups.append(name)
-    items = [('ALL', "All User Groups", ""), ('NONE', "No Group", "")]
+    items = [('ALL', "All User Groups", ""), ('NONE', "No User Group", "")]
     for g in sorted(groups):
         items.append((g, g, ""))
     return items
