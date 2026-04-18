@@ -220,6 +220,11 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 # Use make_folder_path_absolute because clean_relative_path may leave
                 # Blender-relative "//" prefixes that os.path.exists cannot resolve.
                 _abs_export_path = make_folder_path_absolute(export_path)
+                _abs_export_dir = os.path.dirname(_abs_export_path)
+                if not os.path.exists(_abs_export_dir):
+                    raise FileNotFoundError(f"Export directory does not exist: '{_abs_export_dir}'.")
+                if not os.access(_abs_export_dir, os.W_OK):
+                    raise PermissionError(f"Export directory is not writable: '{_abs_export_dir}'.")
                 if os.path.exists(_abs_export_path) and not os.access(_abs_export_path, os.W_OK):
                     raise PermissionError(f"Export file is read-only: '{_abs_export_path}'.")
 

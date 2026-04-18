@@ -93,7 +93,9 @@ def collection_passes_uilist_filters(collection, scene):
 
 def collection_name_mismatch(base_name, export_path):
     """Check if the collection name does not match the export file name exactly."""
-    export_filename = os.path.splitext(os.path.basename(export_path))[0]
+    last_sep = max(export_path.rfind('/'), export_path.rfind('\\'))
+    filename = export_path[last_sep + 1:] if last_sep >= 0 else export_path
+    export_filename = os.path.splitext(filename)[0]
 
     return base_name != export_filename
 
@@ -330,7 +332,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             # Root Link
             row = col_root.row(align=True)
             icon = "LINKED" if collection.use_root_object else "UNLINKED"
-            row.prop(collection, "use_root_object", text='', icon=icon)
+            row.prop(collection, "use_root_object", text='', icon=icon, emboss=False)
             if not collection.use_root_object:
                 row.enabled = False
             row.prop(collection, "root_object", text="")
@@ -351,12 +353,14 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                                            filename_settings.filename_separator)
 
             if exporter.export_properties.filepath and collection_name_mismatch(base_name, export_path):
+                from ..core.export_formats import ExportFormats
                 op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
                 op.collection_name = collection.name
                 op.filename_prefix = filename_settings.filename_prefix
                 op.filename_suffix = filename_settings.filename_suffix
                 op.filename_separator = filename_settings.filename_separator
                 op.filename_blend_prefix = filename_settings.filename_blend_prefix
+                op.exporter_format = ExportFormats.get_key_from_op_type(str(type(exporter.export_properties))) or ""
 
             # Add arrow button that sets the collection name and opens the menu
             arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
@@ -436,7 +440,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             if 'ORIGIN' in visibility_properties.list_visibility_settings:
                 row = col.row(align=True)
                 icon = "LINKED" if collection.use_root_object else "UNLINKED"
-                row.prop(collection, "use_root_object", text='', icon=icon)
+                row.prop(collection, "use_root_object", text='', icon=icon, emboss=False)
 
                 row.prop(collection, "root_object", text="")
 
@@ -470,12 +474,14 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                                            filename_settings.filename_separator)
 
             if exporter.export_properties.filepath and collection_name_mismatch(base_name, export_path):
+                from ..core.export_formats import ExportFormats
                 op = row.operator("simple_export.fix_export_filename", text="", icon='ERROR')
                 op.collection_name = collection.name
                 op.filename_prefix = filename_settings.filename_prefix
                 op.filename_suffix = filename_settings.filename_suffix
                 op.filename_separator = filename_settings.filename_separator
                 op.filename_blend_prefix = filename_settings.filename_blend_prefix
+                op.exporter_format = ExportFormats.get_key_from_op_type(str(type(exporter.export_properties))) or ""
 
             # col.separator()
 
