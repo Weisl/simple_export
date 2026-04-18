@@ -249,8 +249,6 @@ def draw_export_list(layout, list_id, scene):
     else:
         label = current
 
-    split.menu("SIMPLE_EXPORT_MT_FilterGroupMenu", text=label)
-
     dir_split = col.split(factor=0.35, align=True)
     dir_split.label(text="Directory")
     current_dir = scene.filter_directory
@@ -266,6 +264,7 @@ def draw_export_list(layout, list_id, scene):
     row = col.row(align=True)
     row.prop(scene, "filter_selected_only", text="", icon='CHECKBOX_HLT', toggle=True)
     row.prop(scene, "filter_name", text="", icon='VIEWZOOM')
+    split.menu("SIMPLE_EXPORT_MT_FilterGroupMenu", text=label)
 
 
     more_header, more_body = col.panel(idname="EXPORT_TARGET_MORE_FILTERS", default_closed=True)
