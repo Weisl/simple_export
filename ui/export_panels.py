@@ -64,8 +64,6 @@ def draw_active_list_element(layout, context, scene):
         header.label(text=f"Active Collection:", icon='OUTLINER_COLLECTION')
 
         if body:
-            exporter = find_exporter(selected_collection, format_filter=scene.export_format)
-
             box = body.box()
 
             # Collection name and icon
@@ -75,13 +73,7 @@ def draw_active_list_element(layout, context, scene):
                               icon='PROPERTIES')
             op.collection_name = selected_collection.name
 
-            row = box.row(align=True)
-            split = row.split(factor=0.4, align=True)
-            split.label(text="User Group")
-            current_group = selected_collection.export_group_name or "None"
-            split.menu("SIMPLE_EXPORT_MT_CollectionGroupMenu", text=current_group)
-
-            if exporter:
+            if len(selected_collection.exporters) > 0:
                 # Filepath
                 row = box.row(align=True)
                 row.prop(selected_collection, "simple_export_filepath_proxy", text="", expand=True)
@@ -117,27 +109,27 @@ def draw_active_list_element(layout, context, scene):
                 op = col.operator("object.set_collection_offset_object", text="Set Offset from Object")
                 op.collection_name = selected_collection.name
 
-                    
+                # Per-collection pre-export operations
+                if hasattr(selected_collection, 'pre_export_ops'):
+                    ops_header, ops_body = box.panel(idname="COL_PRE_EXPORT_OPS", default_closed=True)
+                    ops_header.label(text="Pre-Export Operations")
+                    if ops_body:
+                        draw_pre_export_operations(ops_body, selected_collection.pre_export_ops)
+
+                    box.separator()
+
+                    ops_header, ops_body = box.panel(idname="COL_EXPORT_SETTINGS", default_closed=True)
+                    ops_header.label(text="Exporter Settings")
+                    if ops_body:
+                        from .shared_operator_call import call_assign_preset_op
+                        call_assign_preset_op(context, ops_body, individual_collection=True,
+                                             collection_name=selected_collection.name)
+                        ops_body.template_collection_exporters()
+
             else:
                 box.label(text='No exporter configured', icon='INFO')
-
-            
-            # Per-collection pre-export operations (always shown)
-            if hasattr(selected_collection, 'pre_export_ops'):
-                ops_header, ops_body = box.panel(idname="COL_PRE_EXPORT_OPS", default_closed=True)
-                ops_header.label(text="Pre-Export Operations")
-                if ops_body:
-                    draw_pre_export_operations(ops_body, selected_collection.pre_export_ops)
-
-                box.separator()
-                
-                ops_header, ops_body = box.panel(idname="COL_EXPORT_SETTINGS", default_closed=True)
-                ops_header.label(text="Exporter Settings")
-                if ops_body:
-                    from .shared_operator_call import call_assign_preset_op
-                    call_assign_preset_op(context, ops_body, individual_collection=True,
-                                         collection_name=selected_collection.name)
-                    ops_body.template_collection_exporters()
+                from .shared_operator_call import call_simple_add_exporter_to_collection
+                call_simple_add_exporter_to_collection(context, selected_collection, box)
 
 
 
