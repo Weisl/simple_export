@@ -16,8 +16,8 @@ class CollectionPreExportOps(bpy.types.PropertyGroup):
         default=False,
     )
     triangulate_keep_normals: BoolProperty(
-        name="Keep Custom Normals",
-        description="Preserve custom split normals when triangulating",
+        name="Keep Normals",
+        description="Preserve custom normals when triangulating meshes before export",
         default=True,
     )
     apply_scale_before_export: BoolProperty(

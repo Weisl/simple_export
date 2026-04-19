@@ -30,6 +30,11 @@ PROPERTY_METADATA = {
         "description": "Custom suffix added to the export collections.",
         "default": "",
     },
+    "collection_separator": {
+        "name": "Separator",
+        "description": "Character(s) placed between the prefix/suffix and the collection name. Leave empty for no separator.",
+        "default": "_",
+    },
 
     "collection_blend_prefix": {
         "name": "Blend Name as Prefix",
@@ -78,13 +83,18 @@ PROPERTY_METADATA = {
 
     "filename_prefix": {
         "name": "Prefix",
-        "description": "Custom prefix added when to the export filename.",
+        "description": "Custom prefix added to the export filename.",
         "default": "",
     },
     "filename_suffix": {
         "name": "Suffix",
-        "description": "Custom suffix added when to the export filename.",
+        "description": "Custom suffix added to the export filename.",
         "default": "",
+    },
+    "filename_separator": {
+        "name": "Separator",
+        "description": "Character(s) placed between the prefix/suffix and the filename. Leave empty for no separator.",
+        "default": "_",
     },
     "filename_blend_prefix": {
         "name": "Blend Name Prefix",
@@ -96,7 +106,7 @@ PROPERTY_METADATA = {
 
     "set_export_path": {
         "name": "Overwrite Export Path",
-        "description": "Set filepath when creating an Exporter Collection.",
+        "description": "Override the export path configured by the selected preset with a custom path.",
         "default": False,
     },
 
@@ -125,7 +135,7 @@ PROPERTY_METADATA = {
             ('COLOR_02', "Color 2", "Orange tag", 'COLLECTION_COLOR_02', 2),
             ('COLOR_03', "Color 3", "Yellow tag", 'COLLECTION_COLOR_03', 3),
             ('COLOR_04', "Color 4", "Green tag", 'COLLECTION_COLOR_04', 4),
-            ('COLOR_05', "Color 5", "Blue tag", 'COLLECTION_COLOR_05', 5),
+            ('COLOR_05', "Color 5", "Teal tag", 'COLLECTION_COLOR_05', 5),
             ('COLOR_06', "Color 6", "Purple tag", 'COLLECTION_COLOR_06', 6),
             ('COLOR_07', "Color 7", "Pink tag", 'COLLECTION_COLOR_07', 7),
             ('COLOR_08', "Color 8", "Gray tag", 'COLLECTION_COLOR_08', 8),
@@ -135,13 +145,13 @@ PROPERTY_METADATA = {
 
     "collection_instance_offset": {
         "name": "Set Collection Center Location",
-        "description": "Use active object as Collection Instance Offset.",
+        "description": "Set the collection's center point using the active object's location.",
         "default": False,
     },
 
     "use_root_object": {
         "name": "Assign Root Object",
-        "description": "Use active object as Collection Instance Offset and link it.",
+        "description": "Pin the collection's origin to a designated root object instead of using the geometric center.",
         "default": True,
     },
     "move_by_collection_offset": {
@@ -414,12 +424,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     # Preference UI properties
     prefs_tabs: bpy.props.EnumProperty(
         name='Export Preferences',
-        items=(('SETTINGS', "Presets", "General addon presets"),
-               ('UI', "UI", "Settings related to the UI."),
+        items=(('GENERAL', "General", "General addon settings"),
+               ('SETTINGS', "Presets", "Manage and edit export presets"),
                ('KEYMAP', "Keymap", "Change the hotkeys for tools associated with this addon."),
                ('SUPPORT', "Support", "Get support and help with the addon and help improve it"),
                ),
-        default='SETTINGS',
+        default='GENERAL',
         description='Settings category:'
     )
 
@@ -535,10 +545,22 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=PROPERTY_METADATA["filename_suffix"]["default"],
     )
 
+    filename_separator: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["filename_separator"]["name"],
+        description=PROPERTY_METADATA["filename_separator"]["description"],
+        default=PROPERTY_METADATA["filename_separator"]["default"],
+    )
+
     filename_blend_prefix: bpy.props.BoolProperty(
         name=PROPERTY_METADATA["filename_blend_prefix"]["name"],
         description=PROPERTY_METADATA["filename_blend_prefix"]["description"],
         default=PROPERTY_METADATA["filename_blend_prefix"]["default"],
+    )
+
+    auto_update_path_on_rename: bpy.props.BoolProperty(
+        name="Auto-Update Path on Rename",
+        description="Automatically update the export filepath when a collection is renamed",
+        default=True,
     )
 
     ########################################
@@ -554,6 +576,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         name=PROPERTY_METADATA["collection_suffix"]["name"],
         description=PROPERTY_METADATA["collection_suffix"]["description"],
         default=PROPERTY_METADATA["collection_suffix"]["default"],
+    )
+
+    collection_separator: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["collection_separator"]["name"],
+        description=PROPERTY_METADATA["collection_separator"]["description"],
+        default=PROPERTY_METADATA["collection_separator"]["default"],
     )
 
     collection_blend_prefix: bpy.props.BoolProperty(
@@ -589,7 +617,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             ('SPHERE', "Sphere", ""),
             ('CONE', "Cone", ""),
         ],
-        default='PLAIN_AXES',
+        default='CUBE',
     )
 
     root_empty_display_size: bpy.props.FloatProperty(
@@ -671,6 +699,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         name="Enable Output Properties Panel",
         description="Show Simple Export panels in the Output Properties.",
         default=False,
+    )
+
+    show_hints: bpy.props.BoolProperty(
+        name="Show Hints",
+        description="Show onboarding hints in the Create Export Collections dialog.",
+        default=True,
     )
 
     ########################################
@@ -781,13 +815,14 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                 simple_export_presets_folder,
             )
 
-            # Preset row: menu + add (from prefs) + remove + pin + folder
+            # Preset row: menu + add (from prefs) + remove + duplicate + pin + folder
             box = layout.box()
             row = box.row(align=True)
             row.menu(EXPORT_MT_scene_presets.__name__, text=EXPORT_MT_scene_presets.bl_label)
             row.operator("simple_export.save_preset_from_preferences", text="", icon='ADD')
             remove_op = row.operator(SceneExportPreset.bl_idname, text="", icon='REMOVE')
             remove_op.remove_active = True
+            row.operator("simple_export.duplicate_preset", text="", icon='COPYDOWN')
             try:
                 selected = bpy.context.scene.simple_export_selected_preset
                 if selected and self.simple_export_default_preset == selected:
@@ -798,16 +833,17 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                 pass
             row.operator("wm.path_open", text='', icon='FILE_FOLDER').filepath = simple_export_presets_folder()
 
-            # Default addon preset (auto-applied on new blend file)
-            row2 = box.row(align=True)
-            row2.label(text="Default Addon Preset")
-            row2.prop(self, "simple_export_default_preset", text="")
-
             # Full export defaults
             from ..ui.shared_draw import draw_full_exporer_settings
             draw_full_exporer_settings(layout, self)
 
-        elif self.prefs_tabs == 'UI':
+        elif self.prefs_tabs == 'GENERAL':
+
+            box = layout.box()
+            box.label(text="Presets")
+            row = box.row(align=True)
+            row.label(text="Auto-Apply on New File")
+            row.prop(self, "simple_export_default_preset", text="")
 
             box = layout.box()
             box.label(text="N Panel")
@@ -821,6 +857,14 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box = layout.box()
             box.label(text="Warnings")
             box.prop(self, "report_errors_only")
+
+            box = layout.box()
+            box.label(text="Onboarding")
+            box.prop(self, "show_hints")
+
+            box = layout.box()
+            box.label(text="Behavior")
+            box.prop(self, "auto_update_path_on_rename")
 
             box = layout.box()
             box.label(text="Root Empty")
@@ -1020,6 +1064,11 @@ def initialize_properties_collection_generation():
         description=PROPERTY_METADATA["collection_suffix"]["description"],
         default=prefs.collection_suffix
     )
+    bpy.types.Scene.collection_separator = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["collection_separator"]["name"],
+        description=PROPERTY_METADATA["collection_separator"]["description"],
+        default=prefs.collection_separator
+    )
     bpy.types.Scene.collection_blend_prefix = bpy.props.BoolProperty(
         name=PROPERTY_METADATA["collection_blend_prefix"]["name"],
         description=PROPERTY_METADATA["collection_blend_prefix"]["description"],
@@ -1036,6 +1085,11 @@ def initialize_properties_collection_generation():
         name=PROPERTY_METADATA["filename_suffix"]["name"],
         description=PROPERTY_METADATA["filename_suffix"]["description"],
         default=prefs.filename_suffix
+    )
+    bpy.types.Scene.filename_separator = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["filename_separator"]["name"],
+        description=PROPERTY_METADATA["filename_separator"]["description"],
+        default=prefs.filename_separator
     )
     bpy.types.Scene.filename_blend_prefix = bpy.props.BoolProperty(
         name=PROPERTY_METADATA["filename_blend_prefix"]["name"],
@@ -1282,10 +1336,12 @@ def unregister():
     # Collection creation
     del bpy.types.Scene.collection_prefix
     del bpy.types.Scene.collection_suffix
+    del bpy.types.Scene.collection_separator
     del bpy.types.Scene.collection_blend_prefix
     del bpy.types.Scene.filename_blend_prefix
     del bpy.types.Scene.filename_prefix
     del bpy.types.Scene.filename_suffix
+    del bpy.types.Scene.filename_separator
     del bpy.types.Scene.collection_instance_offset
     del bpy.types.Scene.use_root_object
     del bpy.types.Scene.set_export_path

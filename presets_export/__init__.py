@@ -53,7 +53,7 @@ def save_export_presets(preset_name, preset_folder, preset_data):
 
             for key, value in preset_data.items():
                 if isinstance(value, str):
-                    preset_file.write(f"op.{key} = '{value}'\n")
+                    preset_file.write(f"op.{key} = {repr(value)}\n")
                 else:
                     preset_file.write(f"op.{key} = {value}\n")
 

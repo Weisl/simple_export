@@ -91,17 +91,6 @@ class EXPORT_OT_AddSettingsToCollections(
             self._apply_addon_preset_to_self(preset_path)
         return True
 
-    existing_exporter_action: bpy.props.EnumProperty(
-        name="Existing Exporter",
-        description="How to handle the exporter already assigned to this collection",
-        items=[
-            ('ADD', "Add New", "Keep the existing exporter and add a new one alongside it"),
-            ('REPLACE', "Replace", "Remove the existing exporter and replace it with a new one"),
-            ('CANCEL', "Cancel", "Cancel the operation and leave the collection unchanged"),
-        ],
-        default='ADD'
-    )
-
     def invoke(self, context, event):
         self.applied_preset_tracker = ""
         selected = context.scene.simple_export_selected_preset
@@ -116,24 +105,15 @@ class EXPORT_OT_AddSettingsToCollections(
     def draw(self, context):
         from .. import __package__ as base_package
         layout = self.layout
-        collection = bpy.data.collections.get(self.collection_name)
-        if collection and collection.exporters:
-            col = layout.column(align=True)
-            col.label(text=f"'{collection.name}' already has an exporter assigned.", icon='ERROR')
-            col.separator()
-            col.label(text="How would you like to proceed?")
-            col.separator()
-            col.prop(self, "existing_exporter_action", expand=True)
-        else:
-            layout.prop(self, "addon_preset_selection", text="")
-            op = layout.operator("preferences.addon_show", text="New Preset", icon='PREFERENCES')
-            op.module = base_package
+        layout.prop(self, "addon_preset_selection", text="")
+        op = layout.operator("preferences.addon_show", text="New Preset", icon='PREFERENCES')
+        op.module = base_package
 
-            layout.separator()
-            layout.prop(self, "set_export_path")
-            if self.set_export_path:
-                from ..ui.shared_draw import draw_export_folderpath_properties
-                draw_export_folderpath_properties(layout, self)
+        layout.separator()
+        layout.prop(self, "set_export_path")
+        if self.set_export_path:
+            from ..ui.shared_draw import draw_export_folderpath_properties
+            draw_export_folderpath_properties(layout, self)
 
     def execute(self, context):
         collection = bpy.data.collections.get(self.collection_name)
@@ -141,12 +121,6 @@ class EXPORT_OT_AddSettingsToCollections(
         if not collection:
             self.report({'ERROR'}, f"Collection '{self.collection_name}' not found.")
             return {'CANCELLED'}
-
-        # Handle choice when collection already has exporters
-        if collection.exporters:
-            if self.existing_exporter_action == 'CANCEL':
-                self.report({'INFO'}, "Operation cancelled.")
-                return {'CANCELLED'}
 
         # Optionally rename
         if self.collection_naming_overwrite and self.collection_name_new:
@@ -156,7 +130,7 @@ class EXPORT_OT_AddSettingsToCollections(
         setup_collection_properties(self, collection, base_object=None)
 
         from ..functions.exporter_funcs import create_collection_exporter, remove_all_collection_exporters
-        if collection.exporters and self.existing_exporter_action == 'REPLACE':
+        if collection.exporters:
             remove_all_collection_exporters(collection)
         exporter = create_collection_exporter(self, context, collection)
 
@@ -171,12 +145,11 @@ class EXPORT_OT_AddSettingsToCollections(
             assign_preset(exporter, preset_file)
             collection.simple_export_export_preset = os.path.splitext(os.path.basename(preset_file))[0]
 
-        selected_addon_preset = context.scene.simple_export_selected_preset
-        if selected_addon_preset:
-            collection.simple_export_export_preset = os.path.splitext(os.path.basename(selected_addon_preset))[0]
+        if self.addon_preset_selection and self.addon_preset_selection != 'NONE':
+            collection.simple_export_addon_preset = self.addon_preset_selection
 
         # Assign filepath to exporter
-        if self.set_export_path and hasattr(exporter, 'filepath'):
+        if self.set_export_path and exporter and hasattr(exporter, 'export_properties'):
             assign_exporter_path(self, collection.name, exporter)
 
         self.report({'INFO'}, f"Settings applied to collection '{collection.name}'.")

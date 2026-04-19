@@ -20,6 +20,8 @@ from ..ui.uilist import collection_passes_uilist_filters
 
 def call_export_popup(export_results, context):
     """Handle cancellation with results."""
+    if bpy.app.background:
+        return {'CANCELLED'}
     # Store results in WindowManager
     context.window_manager.export_data_info = str(export_results)
 
@@ -112,17 +114,15 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
             error_count += 1
 
         total = len(collection_list)
-        wm = context.window_manager
-        wm.progress_begin(0, total)
 
         # Iterate over export collections
         for i, collection in enumerate(collection_list):
-            wm.progress_update(i)
-            context.workspace.status_text_set(f"Exporting {i + 1}/{total}: {collection.name}")
+            print(f"[Simple Export] Exporting {i + 1}/{total}: {collection.name}")
             # Declare backup state before try so finally block can always access them
             scale_backup = {}
             rotation_backup = {}
             transform_backup = {}
+            triangulate_backup = {}
             pre_rotate_backup = {}
             ops = None  # per-collection pre-export ops; set inside try after validation
 
@@ -204,7 +204,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
                 # Triangulate (order-independent relative to transform baking)
                 if ops.triangulate_before_export:
-                    apply_triangulate_modifiers(collection, ops.triangulate_keep_normals)
+                    triangulate_backup = apply_triangulate_modifiers(collection)
 
                 # Apply collection offset after transform baking
                 if ops.move_by_collection_offset:
@@ -222,6 +222,11 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 # Use make_folder_path_absolute because clean_relative_path may leave
                 # Blender-relative "//" prefixes that os.path.exists cannot resolve.
                 _abs_export_path = make_folder_path_absolute(export_path)
+                _abs_export_dir = os.path.dirname(_abs_export_path)
+                if not os.path.exists(_abs_export_dir):
+                    raise FileNotFoundError(f"Export directory does not exist: '{_abs_export_dir}'.")
+                if not os.access(_abs_export_dir, os.W_OK):
+                    raise PermissionError(f"Export directory is not writable: '{_abs_export_dir}'.")
                 if os.path.exists(_abs_export_path) and not os.access(_abs_export_path, os.W_OK):
                     raise PermissionError(f"Export file is read-only: '{_abs_export_path}'.")
 
@@ -258,7 +263,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                     if ops.move_by_collection_offset:
                         apply_collection_offset(collection, offset, inverse=True)
                     if ops.triangulate_before_export:
-                        remove_triangulate_modifiers(collection)
+                        remove_triangulate_modifiers(collection, triangulate_backup)
                     if ops.apply_transform_before_export:
                         restore_transform_after_export(collection, transform_backup)
                     else:
@@ -267,20 +272,19 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                         if ops.apply_scale_before_export:
                             restore_scale_after_export(collection, scale_backup)
 
-        wm.progress_end()
-        context.workspace.status_text_set(None)
-
         if error_count == 0:
-            self.report({'INFO'}, f"Export Sucessful")
+            self.report({'INFO'}, f"Exported {success_count}/{total} collections")
             # Always show export infos
             if not prefs.report_errors_only:
                 call_export_popup(export_results, context)
 
             return {'FINISHED'}
         elif success_count > 0:
+            self.report({'WARNING'}, f"Exported {success_count}/{total} collections ({error_count} failed)")
             call_export_popup(export_results, context)
             return {'CANCELLED'}
         else:
+            self.report({'WARNING'}, f"Export failed — 0/{total} collections exported")
             call_export_popup(export_results, context)
             return {'CANCELLED'}
 

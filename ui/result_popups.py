@@ -5,6 +5,19 @@ import textwrap
 from ..core.info import COLOR_TAG_ICONS
 
 
+def _build_clipboard_text(message, warnings):
+    parts = [message] + [f"! {w}" for w in warnings]
+    return "\n".join(filter(None, parts))
+
+
+def _draw_messages(col, message, warnings, width=55):
+    for line in textwrap.wrap(message, width=width) or [message]:
+        col.label(text=line)
+    for w in warnings:
+        for line in textwrap.wrap(w, width=width - 2) or [w]:
+            col.label(text=f"! {line}")
+
+
 class SIMPLEEXPORTER_OT_ShowCollectionError(bpy.types.Operator):
     """Show the last export error for a specific collection."""
     bl_idname = "simple_export.show_collection_error"
@@ -13,6 +26,7 @@ class SIMPLEEXPORTER_OT_ShowCollectionError(bpy.types.Operator):
 
     collection_name: bpy.props.StringProperty()
     message: bpy.props.StringProperty()
+    warnings: bpy.props.StringProperty()
 
     def invoke(self, context, event):
         results_str = context.window_manager.export_data_info
@@ -20,21 +34,22 @@ class SIMPLEEXPORTER_OT_ShowCollectionError(bpy.types.Operator):
         for r in results:
             if r['name'] == self.collection_name and not r['success']:
                 self.message = r.get('message', '')
+                self.warnings = "\n".join(r.get('warnings', []))
                 break
         else:
             self.message = "No error record found for this collection."
+            self.warnings = ""
         return context.window_manager.invoke_popup(self, width=400)
 
     def draw(self, context):
         layout = self.layout
         layout.label(text=self.collection_name, icon='CANCEL')
         layout.separator()
-        col = layout.column(align=True)
-        for line in textwrap.wrap(self.message, width=55) or [self.message]:
-            col.label(text=line)
+        warnings = self.warnings.splitlines()
+        _draw_messages(layout.column(align=True), self.message, warnings)
         layout.separator()
         op = layout.operator("simple_export.copy_to_clipboard", text="Copy Error", icon='COPYDOWN')
-        op.text = self.message
+        op.text = _build_clipboard_text(self.message, warnings)
 
     def execute(self, context):
         return {'FINISHED'}
@@ -60,12 +75,11 @@ class SIMPLEEXPORTER_OT_CopyExportReport(bpy.types.Operator):
 
         for r in results:
             status = "OK  " if r['success'] else "FAIL"
-            filepath = r.get('filepath') or '-'
-            message = r.get('message', '')
             lines.append(f"[{status}]  {r['name']}")
-            lines.append(f"       Path:    {filepath}")
-            if message:
-                lines.append(f"       Message: {message}")
+            lines.append(f"       Path:    {r.get('filepath') or '-'}")
+            detail = _build_clipboard_text(r.get('message', ''), r.get('warnings', []))
+            if detail:
+                lines.append(f"       Detail:  {detail}")
 
         lines.append("=" * 60)
         lines.append(f"Summary: {success_count} succeeded, {fail_count} failed")
@@ -256,17 +270,12 @@ class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
             # Info Message Column — main message + per-warning lines + copy button
             message = result.get('message', '')
             msg_row = col_info.row(align=True)
-            msg_col = msg_row.column(align=True)
-            for line in textwrap.wrap(message, width=40) or [message]:
-                msg_col.label(text=line)
-            for w in warnings:
-                for line in textwrap.wrap(w, width=38) or [w]:
-                    msg_col.label(text=f"! {line}")
+            _draw_messages(msg_row.column(align=True), message, warnings, width=40)
 
             btn_col = msg_row.column(align=True)
             if not result['success']:
                 copy_op = btn_col.operator("simple_export.copy_to_clipboard", text='', icon='COPYDOWN')
-                copy_op.text = message
+                copy_op.text = _build_clipboard_text(message, warnings)
 
             if result['success'] and result.get('filepath'):
                 export_dir = os.path.dirname(result['filepath'])

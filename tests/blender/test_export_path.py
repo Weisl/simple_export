@@ -128,14 +128,17 @@ class TestGenerateBaseName(unittest.TestCase):
         """Passing use_file_name=False must never prepend the file stem."""
         self.assertEqual(generate_base_name("MyMesh", use_file_name=False), "MyMesh")
 
-    def test_use_file_name_with_unsaved_blend_no_prepend(self):
-        """When bpy.data.filepath is empty the file-stem prefix is empty → skipped."""
-        # Blender starts in background mode with filepath == ''
+    def test_use_file_name_with_unsaved_blend_uses_unsaved_prefix(self):
+        """When bpy.data.filepath is empty, 'UNSAVED' is used as the file-stem prefix."""
         bpy.ops.wm.read_homefile(use_empty=True)
         result = generate_base_name("MyMesh", use_file_name=True)
-        # With an empty filepath, os.path.splitext(os.path.basename(''))[0] == ''
-        # so no prefix is prepended (the prefix is the empty string which is falsy).
-        self.assertEqual(result, "MyMesh")
+        self.assertEqual(result, "UNSAVED_MyMesh")
+
+    def test_use_file_name_with_unsaved_blend_not_duplicated(self):
+        """'UNSAVED' prefix is not added twice when entity name already starts with it."""
+        bpy.ops.wm.read_homefile(use_empty=True)
+        result = generate_base_name("UNSAVED_MyMesh", use_file_name=True)
+        self.assertEqual(result, "UNSAVED_MyMesh")
 
     def test_use_file_name_prepends_blend_stem(self):
         """With a saved .blend the stem is prepended to the entity name."""

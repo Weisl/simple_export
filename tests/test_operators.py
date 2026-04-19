@@ -129,11 +129,12 @@ class TestFixFilename(unittest.TestCase):
     """SIMPLEEXPORT_OT_FixExportFilename.execute updates the exporter filepath."""
 
     def _make_self(self, collection_name="MyCollection", prefix="", suffix="",
-                   blend_prefix=False):
+                   blend_prefix=False, separator="_"):
         mock_self = MagicMock()
         mock_self.collection_name = collection_name
         mock_self.filename_prefix = prefix
         mock_self.filename_suffix = suffix
+        mock_self.filename_separator = separator
         mock_self.filename_blend_prefix = blend_prefix
         return mock_self
 
@@ -222,7 +223,7 @@ class TestFixFilename(unittest.TestCase):
         ):
             SIMPLEEXPORT_OT_FixExportFilename.execute(mock_self, _make_context())
 
-        mock_gen.assert_called_once_with("MyCollection", "SM", "LOD0", False)
+        mock_gen.assert_called_once_with("MyCollection", "SM", "LOD0", False, "_")
 
 
 # ---------------------------------------------------------------------------

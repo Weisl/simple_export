@@ -7,6 +7,7 @@ from ..core.export_path_func import get_export_folder_path, generate_base_name, 
     assign_collection_exporter_path
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.exporter_funcs import find_exporter
+from ..core.export_formats import ExportFormats
 from ..functions.outliner_func import get_outliner_collections
 from ..functions.vallidate_func import validate_collection
 
@@ -21,7 +22,7 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
     """Assign Exporter Pathss for selected collections."""
     bl_idname = "simple_export.set_export_paths"
     bl_label = "Assign Exporter Paths"
-    bl_description = "Assign Exporter Pathss for selected collections based on the current naming conventions and folder settings."
+    bl_description = "Assign Exporter Paths for selected collections based on the current naming conventions and folder settings."
     bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
     # Internal Properties
@@ -31,6 +32,9 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
         name="Collection Name", default='',
         description="Name of the collection to process", options={'HIDDEN'}
     )
+    # Stores outliner-selected collection names captured at invoke time,
+    # because context.selected_ids is unavailable after the dialog opens.
+    outliner_collection_names: bpy.props.StringProperty(default='', options={'HIDDEN'})
 
     # Operator Properties are inherited from the parent classes
 
@@ -46,6 +50,10 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
         draw_export_folderpath_properties(box, self)
 
     def invoke(self, context, event):
+        if self.outliner:
+            cols = get_outliner_collections(context)
+            self.outliner_collection_names = ','.join(c.name for c in cols)
+
         ref_col = self._get_reference_collection(context)
 
         if ref_col:
@@ -84,8 +92,15 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
         if self.individual_collection and self.collection_name:
             return bpy.data.collections.get(self.collection_name)
         if self.outliner:
+            if self.outliner_collection_names:
+                first_name = self.outliner_collection_names.split(',')[0]
+                return bpy.data.collections.get(first_name)
             cols = get_outliner_collections(context)
             return cols[0] if cols else None
+        if self.collection_name:
+            col = bpy.data.collections.get(self.collection_name)
+            if col:
+                return col
         for col in bpy.data.collections:
             if getattr(col, 'simple_export_selected', False) and col.exporters:
                 return col
@@ -97,7 +112,12 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
 
         # Get Export Collections
         if self.outliner:
-            collection_list = get_outliner_collections(context)
+            if self.outliner_collection_names:
+                names = [n for n in self.outliner_collection_names.split(',') if n]
+                collection_list = [bpy.data.collections.get(n) for n in names]
+                collection_list = [c for c in collection_list if c]
+            else:
+                collection_list = get_outliner_collections(context)
         elif self.individual_collection:
             collection = bpy.data.collections.get(self.collection_name)
             collection_list = [collection] if collection else []
@@ -125,13 +145,12 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
 
                 # set exporter
                 set_active_layer_Collection(collection.name)
-                # When targeting a specific collection (individual or outliner) ignore the
-                # scene format filter — assign to the collection's own exporter regardless of
-                # what format is currently selected in the scene.
-                _fmt = None if (self.individual_collection or self.outliner) else scene.export_format
-                exporter = find_exporter(collection, format_filter=_fmt)
+                exporter = find_exporter(collection, format_filter=None)
                 if not exporter:
                     continue
+
+                exporter_op_type = str(type(exporter.export_properties))
+                exporter_format_key = ExportFormats.get_key_from_op_type(exporter_op_type) or scene.export_format
 
                 collection_name = collection.name
 
@@ -149,10 +168,10 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
 
                 # FILE: filename properties
                 filename = generate_base_name(collection_name, self.filename_prefix, self.filename_suffix,
-                                              self.filename_blend_prefix)
+                                              self.filename_blend_prefix, self.filename_separator)
 
                 # Generate final export path
-                export_path = generate_export_path(export_folder, filename, scene.export_format,
+                export_path = generate_export_path(export_folder, filename, exporter_format_key,
                                                    is_relative_path=is_relative_path)
 
                 try:

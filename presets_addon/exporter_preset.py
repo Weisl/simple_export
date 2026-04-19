@@ -49,6 +49,7 @@ class BaseExportPreset(AddPresetBase, Operator):
         # File name
         "scene.filename_prefix",
         "scene.filename_suffix",
+        "scene.filename_separator",
         "scene.filename_blend_prefix",
         # Format-specific export preset files
         "scene.simple_export_preset_file_fbx",
@@ -61,6 +62,7 @@ class BaseExportPreset(AddPresetBase, Operator):
         # Collection name
         "scene.collection_prefix",
         "scene.collection_suffix",
+        "scene.collection_separator",
         "scene.collection_blend_prefix",
         # Collection settings
         "scene.parent_collection",
@@ -84,6 +86,23 @@ class BaseExportPreset(AddPresetBase, Operator):
     preset_subdir = f"{folder_name}"
 
 
+def _sanitize_preset_file(preset_path):
+    import re
+    if not os.path.exists(preset_path):
+        return
+    with open(preset_path, 'r') as f:
+        content = f.read()
+    # Blender writes mathutils types (Euler, Vector, Color, Quaternion) as
+    # "<TypeName (key=val, ...) [extra]>" which is invalid Python — convert to tuple
+    def _to_tuple(match):
+        numbers = re.findall(r"[-+]?\d+\.?\d*(?:[eE][-+]?\d+)?", match.group(1))
+        return f"= ({', '.join(numbers)})"
+    fixed = re.sub(r"= (<\w+\s*\([^)]*\)[^>]*>)", _to_tuple, content)
+    if fixed != content:
+        with open(preset_path, 'w') as f:
+            f.write(fixed)
+
+
 class SceneExportPreset(BaseExportPreset):
     """Presets for scene export settings"""
     bl_idname = "simple_export.scene_preset"
@@ -95,6 +114,7 @@ class SceneExportPreset(BaseExportPreset):
         if not self.remove_active:
             preset_path = os.path.join(simple_export_presets_folder(), self.as_filename() + ".py")
             context.scene.simple_export_selected_preset = preset_path
+            _sanitize_preset_file(preset_path)
         else:
             if context.scene.simple_export_selected_preset:
                 context.scene.simple_export_selected_preset = ""
@@ -142,6 +162,7 @@ class SIMPLE_EXPORT_OT_SavePresetFromPreferences(bpy.types.Operator):
             # File name
             "filename_prefix",
             "filename_suffix",
+            "filename_separator",
             "filename_blend_prefix",
             # Format-specific export preset files
             "simple_export_preset_file_fbx",
@@ -154,6 +175,7 @@ class SIMPLE_EXPORT_OT_SavePresetFromPreferences(bpy.types.Operator):
             # Collection name
             "collection_prefix",
             "collection_suffix",
+            "collection_separator",
             "collection_blend_prefix",
             # Collection settings
             "parent_collection",
@@ -212,6 +234,63 @@ class SIMPLE_EXPORT_OT_set_default_preset(bpy.types.Operator):
         return {'FINISHED'}
 
 
+_PRESET_PROP_NAMES = [
+    "export_format",
+    "export_folder_mode",
+    "folder_path_absolute",
+    "folder_path_relative",
+    "folder_path_search",
+    "folder_path_replace",
+    "filename_prefix",
+    "filename_suffix",
+    "filename_blend_prefix",
+    "simple_export_preset_file_fbx",
+    "simple_export_preset_file_obj",
+    "simple_export_preset_file_gltf",
+    "simple_export_preset_file_usd",
+    "simple_export_preset_file_abc",
+    "simple_export_preset_file_ply",
+    "simple_export_preset_file_stl",
+    "collection_prefix",
+    "collection_suffix",
+    "collection_blend_prefix",
+    "parent_collection",
+    "collection_color",
+    "use_root_object",
+    "collection_instance_offset",
+    "set_export_path",
+    "assign_preset",
+    "move_by_collection_offset",
+    "triangulate_before_export",
+    "triangulate_keep_normals",
+    "apply_scale_before_export",
+    "apply_rotation_before_export",
+    "apply_transform_before_export",
+    "pre_rotate_objects",
+    "pre_rotate_euler",
+]
+
+
+def _sync_scene_to_prefs(context):
+    """Copy preset-relevant scene properties into addon preferences."""
+    try:
+        prefs = context.preferences.addons[ADDON_NAME].preferences
+        scene = context.scene
+        for prop in _PRESET_PROP_NAMES:
+            if not hasattr(scene, prop) or not hasattr(prefs, prop):
+                continue
+            try:
+                val = getattr(scene, prop)
+                if hasattr(val, '__len__') and not isinstance(val, str):
+                    setattr(prefs, prop, tuple(val))
+                else:
+                    setattr(prefs, prop, val)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
 class SIMPLE_EXPORT_OT_ApplyPreset(bpy.types.Operator):
     """Apply an export format preset and track it as the currently selected preset"""
     bl_idname = "simple_export.apply_preset"
@@ -222,11 +301,59 @@ class SIMPLE_EXPORT_OT_ApplyPreset(bpy.types.Operator):
     menu_idname: bpy.props.StringProperty()
 
     def execute(self, context):
-        bpy.ops.script.execute_preset(
-            filepath=self.filepath,
-            menu_idname=EXPORT_MT_scene_presets.__name__,
-        )
+        _sanitize_preset_file(self.filepath)
+        try:
+            bpy.ops.script.execute_preset(
+                filepath=self.filepath,
+                menu_idname=EXPORT_MT_scene_presets.__name__,
+            )
+        except Exception as e:
+            self.report({'ERROR'}, f"Could not apply preset: {e}")
+            return {'CANCELLED'}
         context.scene.simple_export_selected_preset = self.filepath
+        _sync_scene_to_prefs(context)
+        return {'FINISHED'}
+
+
+class SIMPLE_EXPORT_OT_DuplicatePreset(bpy.types.Operator):
+    """Duplicate the currently selected preset as a starting point for a new one"""
+    bl_idname = "simple_export.duplicate_preset"
+    bl_label = "Duplicate Preset"
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    name: bpy.props.StringProperty(name="New Preset Name", default="")
+    source_path: bpy.props.StringProperty(options={'HIDDEN', 'SKIP_SAVE'})
+
+    def invoke(self, context, event):
+        selected = context.scene.simple_export_selected_preset
+        if not selected or not os.path.exists(selected):
+            self.report({'WARNING'}, "No preset selected. Apply a preset first.")
+            return {'CANCELLED'}
+        self.source_path = selected
+        base = os.path.splitext(os.path.basename(selected))[0]
+        self.name = f"Copy of {base}"
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        self.layout.prop(self, "name")
+
+    def execute(self, context):
+        name = self.name.strip()
+        if not name:
+            self.report({'WARNING'}, "Preset name cannot be empty.")
+            return {'CANCELLED'}
+        if not self.source_path or not os.path.exists(self.source_path):
+            self.report({'WARNING'}, "Source preset not found.")
+            return {'CANCELLED'}
+
+        import shutil
+        preset_dir = simple_export_presets_folder()
+        filename = name.replace(" ", "_") + ".py"
+        filepath = os.path.join(preset_dir, filename)
+        shutil.copy2(self.source_path, filepath)
+
+        bpy.ops.simple_export.apply_preset(filepath=filepath, menu_idname=EXPORT_MT_scene_presets.__name__)
+        self.report({'INFO'}, f"Preset duplicated as: {filename}")
         return {'FINISHED'}
 
 
@@ -258,6 +385,7 @@ class EXPORT_MT_scene_presets(Menu):
 classes = (
     SceneExportPreset,
     SIMPLE_EXPORT_OT_ApplyPreset,
+    SIMPLE_EXPORT_OT_DuplicatePreset,
     SIMPLE_EXPORT_OT_set_default_preset,
     SIMPLE_EXPORT_OT_SavePresetFromPreferences,
     EXPORT_MT_scene_presets,

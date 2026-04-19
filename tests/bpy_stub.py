@@ -76,7 +76,7 @@ def _make_bpy_mock(blender_version=(5, 1, 0), user_path="/tmp/blender_user"):
 
 def install(blender_version=(5, 1, 0), user_path="/tmp/blender_user"):
     """Install bpy stubs into sys.modules. Safe to call multiple times."""
-    if "bpy" in sys.modules:
+    if "bpy" in sys.modules and isinstance(sys.modules["bpy"], MagicMock):
         # Update version on existing mock
         sys.modules["bpy"].app.version = blender_version
         sys.modules["bpy"].utils.resource_path.return_value = user_path

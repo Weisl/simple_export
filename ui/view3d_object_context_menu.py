@@ -14,7 +14,6 @@ def add_export_collections_to_menu(self, context):
     # op.only_selection = True
     op.collection_naming_overwrite = False
     op.collection_name_new = ""
-    op.use_numbering = False
 
 
 def register():

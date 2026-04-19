@@ -5,8 +5,6 @@ import bpy
 from .. import __package__ as base_package
 from ..core.export_formats import get_export_format_items
 from ..core.info import ADDON_NAME
-from ..functions.exporter_funcs import find_exporter
-from ..functions.path_utils import clean_relative_path
 
 
 def draw_pre_export_operations(layout, target):
@@ -18,28 +16,24 @@ def draw_pre_export_operations(layout, target):
 
     # Triangulate
     col.prop(target, 'triangulate_before_export')
-    if target.triangulate_before_export:
-        sub = col.column(align=True)
-        sub.use_property_split = True
-        sub.prop(target, 'triangulate_keep_normals')
 
-    col.separator(factor=0.5)
+    # col.separator(factor=0.5)
 
     # Apply Transformation (subsumes scale + rotation when enabled)
-    col.prop(target, 'apply_transform_before_export')
-    sub = col.column(align=True)
-    sub.enabled = not target.apply_transform_before_export
-    sub.prop(target, 'apply_scale_before_export')
-    sub.prop(target, 'apply_rotation_before_export')
+    # col.prop(target, 'apply_transform_before_export')
+    # sub = col.column(align=True)
+    # sub.enabled = not target.apply_transform_before_export
+    # sub.prop(target, 'apply_scale_before_export')
+    # sub.prop(target, 'apply_rotation_before_export')
 
-    col.separator(factor=0.5)
+    # col.separator(factor=0.5)
 
     # Pre-rotate with configurable offset
-    col.prop(target, 'pre_rotate_objects')
-    if target.pre_rotate_objects:
-        sub = col.column(align=True)
-        sub.use_property_split = True
-        sub.prop(target, 'pre_rotate_euler', text="Rotation Offset")
+    # col.prop(target, 'pre_rotate_objects')
+    # if target.pre_rotate_objects:
+    #     sub = col.column(align=True)
+    #     sub.use_property_split = True
+    #     sub.prop(target, 'pre_rotate_euler', text="Rotation Offset")
 
 
 def draw_simple_export_header(layout, text="Simple Export"):
@@ -68,8 +62,6 @@ def draw_active_list_element(layout, context, scene):
         header.label(text=f"Active Collection:", icon='OUTLINER_COLLECTION')
 
         if body:
-            exporter = find_exporter(selected_collection, format_filter=scene.export_format)
-
             box = body.box()
 
             # Collection name and icon
@@ -79,13 +71,13 @@ def draw_active_list_element(layout, context, scene):
                               icon='PROPERTIES')
             op.collection_name = selected_collection.name
 
+            # User Group
             row = box.row(align=True)
-            split = row.split(factor=0.4, align=True)
-            split.label(text="User Group")
-            current_group = selected_collection.export_group_name or "None"
-            split.menu("SIMPLE_EXPORT_MT_CollectionGroupMenu", text=current_group)
+            row.label(text="", icon='GROUP')
+            group_name = getattr(selected_collection, 'export_group_name', '') or "No User Groups"
+            row.menu("SIMPLE_EXPORT_MT_CollectionGroupMenu", text=group_name)
 
-            if exporter:
+            if len(selected_collection.exporters) > 0:
                 # Filepath
                 row = box.row(align=True)
                 row.prop(selected_collection, "simple_export_filepath_proxy", text="", expand=True)
@@ -105,7 +97,7 @@ def draw_active_list_element(layout, context, scene):
                     row.prop(selected_collection, "use_root_object", text="", icon=icon, toggle=True)
                 else:
                     row.prop(selected_collection, "use_root_object", text='', icon=icon, toggle=True)
-                row.label(text='Rooth Object')
+                row.label(text='Root Object')
 
                 # root selection
                 row = root_box.row(align=True)
@@ -121,27 +113,27 @@ def draw_active_list_element(layout, context, scene):
                 op = col.operator("object.set_collection_offset_object", text="Set Offset from Object")
                 op.collection_name = selected_collection.name
 
-                    
+                # Per-collection pre-export operations
+                if hasattr(selected_collection, 'pre_export_ops'):
+                    ops_header, ops_body = box.panel(idname="COL_PRE_EXPORT_OPS", default_closed=True)
+                    ops_header.label(text="Pre-Export Operations")
+                    if ops_body:
+                        draw_pre_export_operations(ops_body, selected_collection.pre_export_ops)
+
+                    box.separator()
+
+                    ops_header, ops_body = box.panel(idname="COL_EXPORT_SETTINGS", default_closed=True)
+                    ops_header.label(text="Exporter Settings")
+                    if ops_body:
+                        from .shared_operator_call import call_assign_preset_op
+                        call_assign_preset_op(context, ops_body, individual_collection=True,
+                                             collection_name=selected_collection.name)
+                        ops_body.template_collection_exporters()
+
             else:
                 box.label(text='No exporter configured', icon='INFO')
-
-            
-            # Per-collection pre-export operations (always shown)
-            if hasattr(selected_collection, 'pre_export_ops'):
-                ops_header, ops_body = box.panel(idname="COL_PRE_EXPORT_OPS", default_closed=True)
-                ops_header.label(text="Pre-Export Operations")
-                if ops_body:
-                    draw_pre_export_operations(ops_body, selected_collection.pre_export_ops)
-
-                box.separator()
-                
-                ops_header, ops_body = box.panel(idname="COL_EXPORT_SETTINGS", default_closed=True)
-                ops_header.label(text="Exporter Settings")
-                if ops_body:
-                    from .shared_operator_call import call_assign_preset_op
-                    call_assign_preset_op(context, ops_body, individual_collection=True,
-                                         collection_name=selected_collection.name)
-                    ops_body.template_collection_exporters()
+                from .shared_operator_call import call_simple_add_exporter_to_collection
+                call_simple_add_exporter_to_collection(context, selected_collection, box)
 
 
 
@@ -195,7 +187,7 @@ def draw_custom_collection_ui(self, context):
         row.prop(collection, "use_root_object", text="", icon=icon, toggle=True)
     else: 
         row.prop(collection, "use_root_object", text='', icon=icon, toggle=True)
-    row.label(text='Rooth Object')
+    row.label(text='Root Object')
 
     row.prop(collection, "root_object", text="")
 
@@ -313,11 +305,20 @@ class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
         row = layout.row()
         row.label(text="Exporter Operations")
         row = layout.row()
-        op = row.operator("scene.select_all_collections", text="Select All", icon="CHECKBOX_HLT")
+        op = row.operator("scene.select_all_collections", text="Select All")
         op.deselect = False
         row = layout.row()
-        op = row.operator("scene.select_all_collections", text="Unselect All", icon="CHECKBOX_DEHLT")
+        op = row.operator("scene.select_all_collections", text="Unselect All")
         op.deselect = True
+
+        row = layout.row()
+        op = row.operator("scene.expand_minimize_all_collections", text='Expand All')
+        op.minimize = False
+        row = layout.row()
+        op = row.operator("scene.expand_minimize_all_collections", text='Minimize All',)
+        op.minimize = True
+
+
 
         row = layout.row()
         from .shared_operator_call import call_assign_preset_op
@@ -346,29 +347,10 @@ def set_default_exportlist_properties(dummy):
     if hasattr(scene, 'exportlist_nPanel_properties'):
         scene.exportlist_nPanel_properties.list_visibility_settings = {'FILEPATH', 'ORIGIN', 'PRESET'}
     if hasattr(scene, 'exportlist_popup_properties'):
-        scene.exportlist_popup_properties.list_visibility_settings = {'FILEPATH', 'ORIGIN', 'FORMAT'}
+        scene.exportlist_popup_properties.list_visibility_settings = {'FILEPATH', 'ORIGIN', 'OPERATIONS'}
     if hasattr(scene, 'exportlist_scene_properties'):
         scene.exportlist_scene_properties.list_visibility_settings = {'FILEPATH', 'ORIGIN', 'PRESET'}
 
-
-def get_filter_directory_items(self, context):
-    """Dynamic enum items: all distinct output directories across export collections."""
-    dirs = []
-    seen = set()
-    for col in bpy.data.collections:
-        if col.exporters:
-            try:
-                exp = find_exporter(col)
-                d = os.path.dirname(clean_relative_path(exp.export_properties.filepath))
-                if d and d not in seen:
-                    seen.add(d)
-                    dirs.append(d)
-            except Exception:
-                pass
-    items = [('ALL', "All Directories", ""), ('NO_PATH', "No Directory", "")]
-    for d in sorted(dirs):
-        items.append((d, d, ""))
-    return items
 
 
 def get_filter_addon_preset_items(self, context):
@@ -402,7 +384,7 @@ def get_filter_custom_group_items(self, context):
             if name and name not in seen:
                 seen.add(name)
                 groups.append(name)
-    items = [('ALL', "All User Groups", ""), ('NONE', "No Group", "")]
+    items = [('ALL', "All User Groups", ""), ('NONE', "No User Groups", "")]
     for g in sorted(groups):
         items.append((g, g, ""))
     return items
@@ -493,10 +475,10 @@ def register():
         default='ALL',
     )
 
-    bpy.types.Scene.filter_directory = bpy.props.EnumProperty(
+    bpy.types.Scene.filter_directory = bpy.props.StringProperty(
         name="Directory",
         description="Filter by output directory",
-        items=get_filter_directory_items,
+        default='ALL',
     )
 
     bpy.types.Scene.filter_preset_addon_preset = bpy.props.EnumProperty(

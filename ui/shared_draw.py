@@ -68,6 +68,7 @@ def draw_collection_settings_properties(layout, element):
 def draw_collection_name_properties(layout, element):
     layout.label(text="Collection Name")
     layout.prop(element, "collection_prefix")
+    layout.prop(element, "collection_separator")
     layout.prop(element, "collection_suffix")
     layout.prop(element, "collection_blend_prefix")
 
@@ -77,6 +78,7 @@ def draw_export_filename_properties(layout, element):
     layout.label(text="File Name")
 
     layout.prop(element, "filename_prefix")
+    layout.prop(element, "filename_separator")
     layout.prop(element, "filename_suffix")
     layout.prop(element, "filename_blend_prefix")
 
@@ -214,6 +216,12 @@ def draw_full_exporer_settings(layout, props):
 
 
 def draw_export_list(layout, list_id, scene):
+    # === PROMINENT ADD BUTTON ===
+    from .shared_operator_call import call_create_export_collection_op
+    row = layout.row(align=True)
+    row.scale_y = 1.5
+    call_create_export_collection_op(scene, row, icon='ADD', text="Create Export Collection")
+
     # === EXPORT TARGET (filters — above the list) ===
     box = layout.box()
     header_row = box.row(align=True)
@@ -237,11 +245,20 @@ def draw_export_list(layout, list_id, scene):
     if current == 'ALL':
         label = "All User Groups"
     elif current == 'NONE':
-        label = "No User Group"
+        label = "No User Groups"
     else:
         label = current
 
-    filter_row(col, "Directory", "filter_directory", icon='FILE_FOLDER')
+    dir_split = col.split(factor=0.35, align=True)
+    dir_split.label(text="Directory")
+    current_dir = scene.filter_directory
+    if current_dir == 'ALL':
+        dir_label = "All Directories"
+    elif current_dir == 'NO_PATH':
+        dir_label = "No Directory"
+    else:
+        dir_label = current_dir
+    dir_split.menu("SIMPLE_EXPORT_MT_FilterDirectoryMenu", text=dir_label)
 
     row = col.row(align=True)
     row.prop(scene, "filter_selected_only", text="", icon='CHECKBOX_HLT', toggle=True)
@@ -285,7 +302,6 @@ def draw_export_list(layout, list_id, scene):
 
     narrow_column = split.column(align=True)
     col = narrow_column
-    from .shared_operator_call import call_create_export_collection_op
     call_create_export_collection_op(scene, col, icon='ADD', text="")
 
     col.separator()
@@ -303,9 +319,9 @@ def draw_export_list(layout, list_id, scene):
     row = layout.row(align=True)
     row.operator("scene.select_all_collections", text='All', icon='CHECKBOX_HLT').deselect = False
     row.operator("scene.select_all_collections", text='None', icon='CHECKBOX_DEHLT').deselect = True
-    op = row.operator("scene.expand_minimize_all_collections", text='Expand', icon='CHECKBOX_HLT')
+    op = row.operator("scene.expand_minimize_all_collections", text='Expand', icon='TRIA_DOWN')
     op.minimize = False
-    op = row.operator("scene.expand_minimize_all_collections", text='Mnimize', icon='CHECKBOX_DEHLT')  
+    op = row.operator("scene.expand_minimize_all_collections", text='Mnimize', icon='TRIA_UP')
     op.minimize = True
 
 

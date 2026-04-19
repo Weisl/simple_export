@@ -55,7 +55,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
                             setattr(self, prop_name, preset_path)
                         except Exception:
                             pass
-                        return context.window_manager.invoke_props_dialog(self, width=400)
+                        return self._invoke_dialog(context)
 
         # Fall back to scene's current preset for the active format
         scene = context.scene
@@ -72,7 +72,24 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
             except Exception:
                 pass
 
-        return context.window_manager.invoke_props_dialog(self, width=400)
+        return self._invoke_dialog(context)
+
+    def _invoke_dialog(self, context):
+        """Open invoke_props_dialog, falling back to the main window when context has no area.
+
+        Popup panels (bl_region_type='WINDOW') have no context.area, which causes
+        invoke_props_dialog to silently fail. We find a real area in this case.
+        """
+        wm = context.window_manager
+        if context.area is not None:
+            return wm.invoke_props_dialog(self, width=400)
+        for window in wm.windows:
+            for area in window.screen.areas:
+                for region in area.regions:
+                    if region.type == 'WINDOW':
+                        with context.temp_override(window=window, area=area, region=region):
+                            return wm.invoke_props_dialog(self, width=400)
+        return wm.invoke_props_dialog(self, width=400)
 
     def _get_reference_collection(self, context):
         """Return the first relevant collection to use as a reference for prefilling."""
@@ -139,10 +156,15 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
 
                 set_active_layer_Collection(collection.name)
 
-                # Find the appropriate exporter
-                exporter = find_exporter(collection, format_filter= export_format)
+                # Find the appropriate exporter, creating one of the selected format if needed
+                exporter = find_exporter(collection, format_filter=export_format)
                 if not exporter:
-                    continue
+                    from ..functions.exporter_funcs import create_collection_exporter, remove_all_collection_exporters
+                    remove_all_collection_exporters(collection)
+                    exporter = create_collection_exporter(self, context, collection)
+                    if not exporter:
+                        results.append({'name': collection.name, 'success': False, 'message': "Failed to create exporter."})
+                        continue
 
                 result = self.apply_preset_to_collections(collection, preset_path, exporter)
                 results.append(result)

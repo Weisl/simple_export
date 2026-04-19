@@ -51,7 +51,7 @@ class SIMPLEEXPORT_OT_RelativeFolderPicker(bpy.types.Operator, ImportHelper):
 
         if self.use_relative_path:
             if not bpy.data.filepath:
-                self.report({'ERROR'}, "Save your blend file first to use a relative path!")
+                self.report({'ERROR'}, "Save your .blend file first — relative paths are computed from the file's location on disk.")
                 return {'CANCELLED'}
 
             blend_dir = os.path.dirname(bpy.data.filepath)
@@ -82,7 +82,6 @@ class SIMPLEEXPORT_OT_CollectionFilepathPicker(bpy.types.Operator, ImportHelper)
     filter_glob: StringProperty(default="", options={'HIDDEN'})
 
     collection_name: StringProperty(default="", options={'HIDDEN'})
-    directory: StringProperty(subtype='DIR_PATH', options={'HIDDEN'})
     use_relative_path: BoolProperty(
         name="Relative Path",
         description="Store the path relative to the .blend file. "
@@ -100,11 +99,9 @@ class SIMPLEEXPORT_OT_CollectionFilepathPicker(bpy.types.Operator, ImportHelper)
             if exporter and exporter.export_properties.filepath:
                 raw_path = exporter.export_properties.filepath
                 self.use_relative_path = raw_path.startswith("//")
-                abs_path = bpy.path.abspath(raw_path)
-                self.filepath = abs_path
-                dir_path = os.path.dirname(abs_path)
-                if os.path.isdir(dir_path):
-                    self.directory = dir_path
+                abs_path = os.path.normpath(bpy.path.abspath(raw_path))
+                if os.path.isdir(os.path.dirname(abs_path)):
+                    self.filepath = abs_path
         return super().invoke(context, event)
 
     def draw(self, context):
@@ -118,7 +115,7 @@ class SIMPLEEXPORT_OT_CollectionFilepathPicker(bpy.types.Operator, ImportHelper)
 
         if self.use_relative_path:
             if not bpy.data.filepath:
-                self.report({'ERROR'}, "Save your blend file first to use a relative path!")
+                self.report({'ERROR'}, "Save your .blend file first — relative paths are computed from the file's location on disk.")
                 return {'CANCELLED'}
             blend_dir = os.path.dirname(bpy.data.filepath)
             try:

@@ -1,4 +1,14 @@
 import os
+import re
+
+
+def _sanitize_value_str(value_str):
+    """Convert invalid mathutils repr like <Euler (x=...) ...> to a tuple before eval."""
+    return re.sub(
+        r"<\w+\s*\([^)]*\)[^>]*>",
+        lambda m: "({})".format(", ".join(re.findall(r"[-+]?\d+\.?\d*(?:[eE][-+]?\d+)?", m.group(0)))),
+        value_str
+    )
 
 
 def parse_preset_file(preset_path):
@@ -20,7 +30,7 @@ def parse_preset_file(preset_path):
                     if prop_value.startswith(("'", '"')):
                         properties[prop_name] = prop_value.strip("'\"")
                     else:
-                        properties[prop_name] = eval(prop_value)
+                        properties[prop_name] = eval(_sanitize_value_str(prop_value))
                 except Exception as e:
                     print(f"Error parsing line: {line} -> {e}")
     return properties
@@ -41,7 +51,7 @@ def _parse_prefix_preset_file(preset_path, prefix):
                     if prop_value.startswith(("'", '"')):
                         properties[prop_name] = prop_value.strip("'\"")
                     else:
-                        properties[prop_name] = eval(prop_value)
+                        properties[prop_name] = eval(_sanitize_value_str(prop_value))
                 except Exception:
                     pass
     return properties
