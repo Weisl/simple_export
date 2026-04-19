@@ -278,8 +278,10 @@ class EXPORT_OT_CreateExportCollections(
             box.label(text="Sets the export format, paths and appearance of the export collection.", icon='INFO')
         row = layout.row(align=True)
         row.prop(self, "addon_preset_selection", text="")
-        op = row.operator("preferences.addon_show", text="", icon='ADD')
-        op.module = base_package
+        from ..core.info import ADDON_NAME
+        op = row.operator("simple_export.open_preferences", text="", icon='ADD')
+        op.addon_name = ADDON_NAME
+        op.prefs_tabs = 'SETTINGS'
 
         layout.separator()
         layout.prop(self, "selection_mode", expand=True)
