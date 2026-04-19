@@ -28,12 +28,18 @@ def setup_collection_properties(prop, collection, base_object=None):
                 obj for obj in collection.objects
                 if obj.parent is None or obj.parent not in collection_objects_set
             ]
-            create_root_empty_for_collection(
-                collection, location, top_level_objects,
-                display_type=_prefs.root_empty_display_type,
-                display_size=_prefs.root_empty_display_size,
-                suffix=getattr(prop, 'root_empty_suffix', '_root'),
-            )
+            # If there is exactly one top-level object and it is an empty, treat it
+            # as the intentional root rather than creating a duplicate.
+            if len(top_level_objects) == 1 and top_level_objects[0].type == 'EMPTY':
+                collection.use_root_object = True
+                collection.root_object = top_level_objects[0]
+            else:
+                create_root_empty_for_collection(
+                    collection, location, top_level_objects,
+                    display_type=_prefs.root_empty_display_type,
+                    display_size=_prefs.root_empty_display_size,
+                    suffix=getattr(prop, 'root_empty_suffix', '_root'),
+                )
     elif prop.use_root_object and hasattr(collection, 'use_root_object'):
         collection.use_root_object = prop.use_root_object
         if base_object:
