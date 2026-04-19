@@ -15,6 +15,11 @@ class CollectionPreExportOps(bpy.types.PropertyGroup):
         description="Add a Triangulate modifier to all meshes before export",
         default=False,
     )
+    triangulate_keep_normals: BoolProperty(
+        name="Keep Normals",
+        description="Preserve custom normals when triangulating meshes before export",
+        default=True,
+    )
     apply_scale_before_export: BoolProperty(
         name="Apply Scale",
         description="Bake object scale into mesh data before export",
@@ -63,6 +68,7 @@ def update_collection_offset(depsgraph):
 _PRE_EXPORT_BOOL_DEFAULTS = {
     'move_by_collection_offset': False,
     'triangulate_before_export': False,
+    'triangulate_keep_normals': True,
     'apply_scale_before_export': False,
     'apply_rotation_before_export': False,
     'apply_transform_before_export': False,
