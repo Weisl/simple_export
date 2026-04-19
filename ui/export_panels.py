@@ -44,7 +44,7 @@ def draw_simple_export_header(layout, text="Simple Export"):
     addon_name = ADDON_NAME
     op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
     op.addon_name = addon_name
-    op.prefs_tabs = 'SETTINGS'
+    op.prefs_tabs = 'GENERAL'
     # Open Export Popup
     op = row.operator("wm.call_panel", text="", icon="WINDOW")
     op.name = "SIMPLE_EXPORT_PT_simple_export_popup"

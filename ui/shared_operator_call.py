@@ -8,7 +8,7 @@ def set_operator_preset_property(op, scene):
 
 
 def call_simple_add_exporter_to_collection(context, collection, layout):
-    op = layout.operator('simple_export.add_settings_to_collections', icon='COLLECTION_COLOR_01')
+    op = layout.operator('simple_export.add_settings_to_collections')
     op.collection_name = collection.name
 
     # Get and set properties from preferences/scene
