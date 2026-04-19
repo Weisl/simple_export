@@ -257,9 +257,8 @@ def draw_export_list(layout, list_id, scene):
     elif current_dir == 'NO_PATH':
         dir_label = "No Directory"
     else:
-        import os
-        dir_label = os.path.basename(current_dir) or current_dir
-    dir_split.menu("SIMPLE_EXPORT_MT_FilterDirectoryMenu", text=dir_label, icon='FILE_FOLDER')
+        dir_label = current_dir
+    dir_split.menu("SIMPLE_EXPORT_MT_FilterDirectoryMenu", text=dir_label)
 
     row = col.row(align=True)
     row.prop(scene, "filter_selected_only", text="", icon='CHECKBOX_HLT', toggle=True)

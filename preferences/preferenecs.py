@@ -83,12 +83,12 @@ PROPERTY_METADATA = {
 
     "filename_prefix": {
         "name": "Prefix",
-        "description": "Custom prefix added when to the export filename.",
+        "description": "Custom prefix added to the export filename.",
         "default": "",
     },
     "filename_suffix": {
         "name": "Suffix",
-        "description": "Custom suffix added when to the export filename.",
+        "description": "Custom suffix added to the export filename.",
         "default": "",
     },
     "filename_separator": {
@@ -135,7 +135,7 @@ PROPERTY_METADATA = {
             ('COLOR_02', "Color 2", "Orange tag", 'COLLECTION_COLOR_02', 2),
             ('COLOR_03', "Color 3", "Yellow tag", 'COLLECTION_COLOR_03', 3),
             ('COLOR_04', "Color 4", "Green tag", 'COLLECTION_COLOR_04', 4),
-            ('COLOR_05', "Color 5", "Blue tag", 'COLLECTION_COLOR_05', 5),
+            ('COLOR_05', "Color 5", "Teal tag", 'COLLECTION_COLOR_05', 5),
             ('COLOR_06', "Color 6", "Purple tag", 'COLLECTION_COLOR_06', 6),
             ('COLOR_07', "Color 7", "Pink tag", 'COLLECTION_COLOR_07', 7),
             ('COLOR_08', "Color 8", "Gray tag", 'COLLECTION_COLOR_08', 8),
@@ -145,13 +145,13 @@ PROPERTY_METADATA = {
 
     "collection_instance_offset": {
         "name": "Set Collection Center Location",
-        "description": "Use active object as Collection Instance Offset.",
+        "description": "Set the collection's center point using the active object's location.",
         "default": False,
     },
 
     "use_root_object": {
         "name": "Assign Root Object",
-        "description": "Use active object as Collection Instance Offset and link it.",
+        "description": "Pin the collection's origin to a designated root object instead of using the geometric center.",
         "default": True,
     },
     "move_by_collection_offset": {

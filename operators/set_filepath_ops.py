@@ -22,7 +22,7 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
     """Assign Exporter Pathss for selected collections."""
     bl_idname = "simple_export.set_export_paths"
     bl_label = "Assign Exporter Paths"
-    bl_description = "Assign Exporter Pathss for selected collections based on the current naming conventions and folder settings."
+    bl_description = "Assign Exporter Paths for selected collections based on the current naming conventions and folder settings."
     bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
     # Internal Properties

@@ -31,7 +31,7 @@ def apply_triangulate_modifiers(collection):
 def remove_triangulate_modifiers(collection, backup):
     """Restore original mesh data after a triangulated export."""
     for obj in collection.all_objects:
-        if obj.name not in backup:
+        if obj is None or obj.name not in backup:
             continue
         temp_mesh = obj.data
         obj.data = backup[obj.name]

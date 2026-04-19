@@ -35,10 +35,14 @@ def make_folder_path_absolute(path):
 
 def export_dir_raw(raw_filepath):
     """Return the directory portion of a raw filepath, preserving the Blender // prefix."""
-    # Normalize Windows backslashes so dirname works correctly on Linux
     path = raw_filepath.replace('\\', '/')
     if path.endswith('/'):
         return path.rstrip('/') or '//'
+    if path.startswith('//'):
+        # On Windows, os.path.dirname treats //server/share as a UNC root and
+        # returns the whole path unchanged. Strip // first to avoid this.
+        inner_dir = os.path.dirname(path[2:])
+        return '//' + inner_dir if inner_dir else '//'
     return os.path.dirname(path)
 
 

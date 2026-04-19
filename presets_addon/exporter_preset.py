@@ -322,14 +322,14 @@ class SIMPLE_EXPORT_OT_DuplicatePreset(bpy.types.Operator):
     bl_options = {'REGISTER', 'INTERNAL'}
 
     name: bpy.props.StringProperty(name="New Preset Name", default="")
-    _source_path: bpy.props.StringProperty(options={'HIDDEN', 'SKIP_SAVE'})
+    source_path: bpy.props.StringProperty(options={'HIDDEN', 'SKIP_SAVE'})
 
     def invoke(self, context, event):
         selected = context.scene.simple_export_selected_preset
         if not selected or not os.path.exists(selected):
             self.report({'WARNING'}, "No preset selected. Apply a preset first.")
             return {'CANCELLED'}
-        self._source_path = selected
+        self.source_path = selected
         base = os.path.splitext(os.path.basename(selected))[0]
         self.name = f"Copy of {base}"
         return context.window_manager.invoke_props_dialog(self)
@@ -342,7 +342,7 @@ class SIMPLE_EXPORT_OT_DuplicatePreset(bpy.types.Operator):
         if not name:
             self.report({'WARNING'}, "Preset name cannot be empty.")
             return {'CANCELLED'}
-        if not self._source_path or not os.path.exists(self._source_path):
+        if not self.source_path or not os.path.exists(self.source_path):
             self.report({'WARNING'}, "Source preset not found.")
             return {'CANCELLED'}
 
@@ -350,7 +350,7 @@ class SIMPLE_EXPORT_OT_DuplicatePreset(bpy.types.Operator):
         preset_dir = simple_export_presets_folder()
         filename = name.replace(" ", "_") + ".py"
         filepath = os.path.join(preset_dir, filename)
-        shutil.copy2(self._source_path, filepath)
+        shutil.copy2(self.source_path, filepath)
 
         bpy.ops.simple_export.apply_preset(filepath=filepath, menu_idname=EXPORT_MT_scene_presets.__name__)
         self.report({'INFO'}, f"Preset duplicated as: {filename}")

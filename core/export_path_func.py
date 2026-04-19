@@ -1,4 +1,5 @@
 import os
+import warnings
 
 import bpy
 
@@ -20,7 +21,9 @@ def assign_exporter_path(properties, collection_name, exporter):
                                        is_relative_path=is_relative_path)
 
     if export_path:
-        exporter.export_properties.filepath = export_path
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message=".*does not support blend relative.*", category=RuntimeWarning)
+            exporter.export_properties.filepath = export_path
 
 
 def generate_export_path(export_dir, base_name, export_format_key, is_relative_path=False):
@@ -94,7 +97,9 @@ def assign_collection_exporter_path(exporter, export_path, is_relative_path):
     # Raw Blender-relative path (starts with "//") without a saved blend file:
     # store it as-is without trying to resolve or create folders now.
     if export_path.startswith("//") and not bpy.data.filepath:
-        exporter.export_properties.filepath = export_path
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message=".*does not support blend relative.*", category=RuntimeWarning)
+            exporter.export_properties.filepath = export_path
         return True, None
 
     # Convert relative path to absolute only for directory creation
@@ -112,7 +117,9 @@ def assign_collection_exporter_path(exporter, export_path, is_relative_path):
     final_export_path = export_path if is_relative_path else folder_path_absolute
 
     # Assign the correct path format to the exporter
-    exporter.export_properties.filepath = final_export_path
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=".*does not support blend relative.*", category=RuntimeWarning)
+        exporter.export_properties.filepath = final_export_path
 
     return True, None
 

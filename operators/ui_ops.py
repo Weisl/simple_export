@@ -387,8 +387,8 @@ class SIMPLE_EXPORT_MT_FilterDirectoryMenu(bpy.types.Menu):
         for abs_d in sorted(dirs):
             raw_d = dirs[abs_d]
             op = layout.operator("simple_export.set_filter_directory",
-                                 text=raw_d or abs_d, icon='FILE_FOLDER')
-            op.directory = abs_d
+                                 text=raw_d or abs_d)
+            op.directory = raw_d or abs_d
 
 
 class SIMPLE_EXPORT_OT_EditPreExportOps(bpy.types.Operator):
