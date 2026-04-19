@@ -21,18 +21,21 @@ jobs:
         id: vars
         run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
-      - name: Zip addon
+      - name: Prepare add-on folder
         run: |
-          zip -r simple_export_v${{ steps.version.outputs.manifest_version }}_${{ steps.vars.outputs.short_sha }}.zip \
-            simple_export \
-            -x "simple_export/.git*" \
-            -x "simple_export/.*/*" \
-            -x "simple_export/tests/*" \
-            -x "simple_export/venv/*"
+          mkdir -p staging/simple_export
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.*' \
+            --exclude='tests' \
+            --exclude='venv' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            simple_export/ staging/simple_export/
 
       - name: Upload zip as artifact
         uses: actions/upload-artifact@v4
         with:
           name: simple_export_v${{ steps.version.outputs.manifest_version }}_${{ steps.vars.outputs.short_sha }}
-          path: simple_export_v${{ steps.version.outputs.manifest_version }}_${{ steps.vars.outputs.short_sha }}.zip
+          path: staging/
           retention-days: 7
