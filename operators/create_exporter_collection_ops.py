@@ -271,7 +271,11 @@ class EXPORT_OT_CreateExportCollections(
     def draw(self, context):
         from .. import __package__ as base_package
         layout = self.layout
+        prefs = context.preferences.addons[base_package].preferences
 
+        if prefs.show_hints:
+            box = layout.box()
+            box.label(text="Sets the export format, paths and appearance of the export collection.", icon='INFO')
         row = layout.row(align=True)
         row.prop(self, "addon_preset_selection", text="")
         op = row.operator("preferences.addon_show", text="", icon='ADD')
@@ -284,9 +288,11 @@ class EXPORT_OT_CreateExportCollections(
             row.alert = not self.collection_name_new
             row.prop(self, "collection_name_new", text="Collection Name")
         layout.separator()
+        if prefs.show_hints:
+            box = layout.box()
+            box.label(text="Controls the Collection Offset to export on the origin. (optional)", icon='INFO')
         layout.prop(self, "create_empty_root")
         if self.create_empty_root:
-            prefs = context.preferences.addons[base_package].preferences
             col = layout.column(align=True)
             col.use_property_split = True
             col.prop(prefs, "root_empty_display_type", text="Shape")
@@ -294,10 +300,18 @@ class EXPORT_OT_CreateExportCollections(
             col.prop(self, "root_empty_suffix", text="Suffix")
 
         layout.separator()
+        if prefs.show_hints:
+            box = layout.box()
+            box.label(text="Overwrite the export path defined by the preset. (optional)", icon='INFO')
         layout.prop(self, "set_export_path")
         if self.set_export_path:
             from ..ui.shared_draw import draw_export_folderpath_properties
             draw_export_folderpath_properties(layout, self)
+
+        if prefs.show_hints:
+            layout.separator()
+            layout.prop(prefs, "show_hints")
+
 
 
 

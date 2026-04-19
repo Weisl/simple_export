@@ -701,6 +701,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=False,
     )
 
+    show_hints: bpy.props.BoolProperty(
+        name="Show Hints",
+        description="Show onboarding hints in the Create Export Collections dialog.",
+        default=True,
+    )
+
     ########################################
     # Presets
 
@@ -851,6 +857,10 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box = layout.box()
             box.label(text="Warnings")
             box.prop(self, "report_errors_only")
+
+            box = layout.box()
+            box.label(text="Onboarding")
+            box.prop(self, "show_hints")
 
             box = layout.box()
             box.label(text="Behavior")

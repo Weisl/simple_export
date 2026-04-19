@@ -178,7 +178,7 @@ class EXPORT_MT_root_object_menu(bpy.types.Menu):
         # Exporter actions
         from .shared_operator_call import call_simple_export_path_ops
         op = call_simple_export_path_ops(context, layout, outliner=False,
-                                         individual_collection=False, collection_name=collection_name)
+                                         individual_collection=True, collection_name=collection_name)
 
         from .shared_operator_call import call_assign_preset_op
         call_assign_preset_op(context, layout, individual_collection=True, collection_name=collection_name)
