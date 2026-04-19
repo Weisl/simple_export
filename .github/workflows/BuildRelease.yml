@@ -12,12 +12,18 @@ jobs:
         with:
           path: ${{ github.event.repository.name }}
 
-      - name: Zip Repository (excludes .git*)
+      - name: Zip Repository
         run: |
           version_with_underscores=$(echo ${{ github.ref_name }} | tr '.' '_')
           zip -r simple_export_${version_with_underscores}.zip \
             ${{ github.event.repository.name }} \
-            -x "${{ github.event.repository.name }}/.git*"
+            -x "${{ github.event.repository.name }}/.git*" \
+            -x "${{ github.event.repository.name }}/.*/*" \
+            -x "${{ github.event.repository.name }}/tests/*" \
+            -x "${{ github.event.repository.name }}/__pycache__/*" \
+            -x "${{ github.event.repository.name }}/*/__pycache__/*" \
+            -x "${{ github.event.repository.name }}/*.pyc" \
+            -x "${{ github.event.repository.name }}/*/*.pyc"
 
       - name: Create versioned build with filtered zip file
         run: |
