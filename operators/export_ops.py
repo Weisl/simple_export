@@ -20,6 +20,8 @@ from ..ui.uilist import collection_passes_uilist_filters
 
 def call_export_popup(export_results, context):
     """Handle cancellation with results."""
+    if bpy.app.background:
+        return {'CANCELLED'}
     # Store results in WindowManager
     context.window_manager.export_data_info = str(export_results)
 
