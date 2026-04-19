@@ -284,7 +284,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
             call_export_popup(export_results, context)
             return {'CANCELLED'}
         else:
-            self.report({'ERROR'}, f"Export failed — 0/{total} collections exported")
+            self.report({'WARNING'}, f"Export failed — 0/{total} collections exported")
             call_export_popup(export_results, context)
             return {'CANCELLED'}
 
