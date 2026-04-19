@@ -454,20 +454,23 @@ class TestCreateRootEmptyHelper(unittest.TestCase):
         finally:
             _h.remove_object(obj)
 
-    def test_already_parented_object_not_reparented(self):
-        """An object that already has a parent must be skipped."""
-        parent_obj = _h.make_mesh_object("ExistingParent", location=(0, 0, 0))
-        child_obj = _h.make_mesh_object("AlreadyParented", location=(1, 0, 0))
+    def test_object_parented_inside_collection_not_reparented(self):
+        """An object whose parent is already inside the collection must be skipped."""
+        parent_obj = _h.make_mesh_object("InternalParent", location=(0, 0, 0))
+        child_obj = _h.make_mesh_object("InternalChild", location=(1, 0, 0))
+        self.col.objects.link(parent_obj)
+        self.col.objects.link(child_obj)
         child_obj.parent = parent_obj
         try:
             fn = _get_create_root_empty_fn()
             fn(self.col, Vector((0, 0, 0)), objects_to_parent=[child_obj])
             self.assertIs(child_obj.parent, parent_obj,
-                          "Already-parented object must not be re-parented")
+                          "Object parented to an in-collection object must not be re-parented")
         finally:
             child_obj.parent = None
             _h.remove_object(child_obj)
             _h.remove_object(parent_obj)
+
 
     def test_display_type_applied(self):
         fn = _get_create_root_empty_fn()
