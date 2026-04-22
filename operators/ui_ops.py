@@ -416,6 +416,71 @@ class SIMPLE_EXPORT_OT_EditPreExportOps(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class SIMPLE_EXPORT_OT_BatchAssignPreExportOps(bpy.types.Operator):
+    """Assign pre-export operations to all selected collections"""
+    bl_idname = "simple_export.batch_assign_pre_export_ops"
+    bl_label = "Batch Assign Pre-Export Operations"
+    bl_description = "Set pre-export operations for all selected collections"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    move_by_collection_offset: bpy.props.BoolProperty(
+        name="Move to Origin",
+        description="Move collection objects to the world origin before exporting",
+        default=False,
+    )
+    triangulate_before_export: bpy.props.BoolProperty(
+        name="Triangulate Meshes",
+        description="Add a triangulate modifier before exporting",
+        default=False,
+    )
+
+    def invoke(self, context, event):
+        # Pre-fill from the first selected collection
+        for col in bpy.data.collections:
+            if getattr(col, 'simple_export_selected', False) and hasattr(col, 'pre_export_ops'):
+                self.move_by_collection_offset = col.pre_export_ops.move_by_collection_offset
+                self.triangulate_before_export = col.pre_export_ops.triangulate_before_export
+                break
+
+        wm = context.window_manager
+        if context.area is not None:
+            return wm.invoke_props_dialog(self, width=300)
+        for window in wm.windows:
+            for area in window.screen.areas:
+                for region in area.regions:
+                    if region.type == 'WINDOW':
+                        with context.temp_override(window=window, area=area, region=region):
+                            return wm.invoke_props_dialog(self, width=300)
+        return wm.invoke_props_dialog(self, width=300)
+
+    def draw(self, context):
+        layout = self.layout
+        selected = [c for c in bpy.data.collections if getattr(c, 'simple_export_selected', False)]
+        count = len(selected)
+        col = layout.column(align=True)
+        col.label(text=f"Apply to {count} selected collection{'s' if count != 1 else ''}:", icon='INFO')
+        col.separator(factor=0.5)
+        col.prop(self, 'move_by_collection_offset')
+        col.prop(self, 'triangulate_before_export')
+
+    def execute(self, context):
+        selected = [c for c in bpy.data.collections if getattr(c, 'simple_export_selected', False)]
+        if not selected:
+            self.report({'WARNING'}, "No selected collections found.")
+            return {'CANCELLED'}
+
+        updated = 0
+        for collection in selected:
+            if not hasattr(collection, 'pre_export_ops'):
+                continue
+            collection.pre_export_ops.move_by_collection_offset = self.move_by_collection_offset
+            collection.pre_export_ops.triangulate_before_export = self.triangulate_before_export
+            updated += 1
+
+        self.report({'INFO'}, f"Pre-export operations updated for {updated} collection{'s' if updated != 1 else ''}.")
+        return {'FINISHED'}
+
+
 classes = (
     SCENE_OT_SelectAllCollections,
     SCENE_OT_ExpandAllCollections,
@@ -431,6 +496,7 @@ classes = (
     SIMPLE_EXPORT_OT_SetFilterDirectory,
     SIMPLE_EXPORT_MT_FilterDirectoryMenu,
     SIMPLE_EXPORT_OT_EditPreExportOps,
+    SIMPLE_EXPORT_OT_BatchAssignPreExportOps,
 )
 
 

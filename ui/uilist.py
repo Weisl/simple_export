@@ -211,6 +211,20 @@ class EXPORT_MT_root_object_menu(bpy.types.Menu):
         op.action = "unhide_content"
         op.collection_name = collection_name
 
+        # Convert Filepath
+        layout.separator()
+        op = layout.operator("simple_export.convert_filepath", text="Convert Path to Relative",
+                             icon='FOLDER_REDIRECT')
+        op.individual_collection = True
+        op.collection_name = collection_name
+        op.to_relative = True
+
+        op = layout.operator("simple_export.convert_filepath", text="Convert Path to Absolute",
+                             icon='FOLDER_REDIRECT')
+        op.individual_collection = True
+        op.collection_name = collection_name
+        op.to_relative = False
+
         # Open Exporter in Properties
         layout.separator()
         op = layout.operator("simple_export.open_exporter_in_properties", icon='PROPERTIES')

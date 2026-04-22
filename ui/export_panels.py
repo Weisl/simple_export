@@ -329,6 +329,23 @@ class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
         row = layout.row()
         from .shared_operator_call import call_create_export_collection_op
         op = call_create_export_collection_op(context.scene, row)
+
+        layout.separator()
+        row = layout.row()
+        row.operator("simple_export.batch_assign_pre_export_ops", icon='MODIFIER')
+
+        layout.separator()
+        row = layout.row()
+        op = row.operator("simple_export.convert_filepath", text="Convert Paths to Relative",
+                          icon='FOLDER_REDIRECT')
+        op.individual_collection = False
+        op.to_relative = True
+
+        row = layout.row()
+        op = row.operator("simple_export.convert_filepath", text="Convert Paths to Absolute",
+                          icon='FOLDER_REDIRECT')
+        op.individual_collection = False
+        op.to_relative = False
         
 
 
