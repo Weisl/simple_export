@@ -98,6 +98,27 @@ def _sanitize_preset_file(preset_path):
         numbers = re.findall(r"[-+]?\d+\.?\d*(?:[eE][-+]?\d+)?", match.group(1))
         return f"= ({', '.join(numbers)})"
     fixed = re.sub(r"= (<\w+\s*\([^)]*\)[^>]*>)", _to_tuple, content)
+
+    # Fix stale Blender-version-specific preset paths (e.g. blender/5.0/... → blender/5.1/...)
+    # These are stored as enum values and must match the paths in the current Blender install.
+    import bpy
+    current_op_folder = os.path.join(bpy.utils.resource_path('USER'), "scripts", "presets", "operator")
+    _OPERATOR_MARKER = "/scripts/presets/operator/"
+
+    def _fix_preset_path(match):
+        old_path = match.group(2)
+        norm = old_path.replace("\\", "/")
+        idx = norm.find(_OPERATOR_MARKER)
+        if idx == -1:
+            return match.group(0)
+        rel = norm[idx + len(_OPERATOR_MARKER):]
+        new_path = os.path.join(current_op_folder, *rel.split("/"))
+        if os.path.exists(new_path) and new_path != old_path:
+            return f"= {repr(new_path)}"
+        return match.group(0)
+
+    fixed = re.sub(r"= (['\"])(.+?/scripts/presets/operator/.+?)\1", _fix_preset_path, fixed)
+
     if fixed != content:
         with open(preset_path, 'w') as f:
             f.write(fixed)
