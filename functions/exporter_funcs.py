@@ -9,7 +9,7 @@ def add_extension(exporter):
     export_format_key = ExportFormats.get_key_from_op_type(op_type)
     export_format = ExportFormats.get(export_format_key)
 
-    if export_format_key is not "GLTF":
+    if export_format_key != "GLTF":
         file_extension = export_format.file_extension
 
     else:  # exporter is gltf
