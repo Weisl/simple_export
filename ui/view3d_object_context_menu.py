@@ -16,9 +16,20 @@ def add_export_collections_to_menu(self, context):
     op.collection_name_new = ""
 
 
+def add_instance_collection_to_menu(self, context):
+    self.layout.operator_context = 'INVOKE_DEFAULT'
+    self.layout.operator(
+        "simple_export.create_instance_collection",
+        text="Create Instance Collection",
+        icon='OUTLINER_OB_GROUP_INSTANCE',
+    )
+
+
 def register():
     bpy.types.VIEW3D_MT_object_context_menu.append(add_export_collections_to_menu)
+    bpy.types.VIEW3D_MT_object_context_menu.append(add_instance_collection_to_menu)
 
 
 def unregister():
     bpy.types.VIEW3D_MT_object_context_menu.remove(add_export_collections_to_menu)
+    bpy.types.VIEW3D_MT_object_context_menu.remove(add_instance_collection_to_menu)
