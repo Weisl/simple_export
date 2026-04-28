@@ -4,7 +4,6 @@ from mathutils import Vector
 from .collection_offset_ops import create_root_empty_for_collection
 from ..functions.exporter_funcs import get_all_children_and_descendants
 from ..functions.collection_layer import set_active_layer_Collection
-from .create_exporter_collection_ops import determine_parent_collection
 
 
 def _move_objects_to_collection(objects, collection):
@@ -14,6 +13,14 @@ def _move_objects_to_collection(objects, collection):
         collection.objects.link(obj)
         for col in current_collections:
             col.objects.unlink(obj)
+
+
+def _parent_collection_items(_, context):
+    items = [('SCENE_ROOT', context.scene.collection.name, "Top-level scene collection")]
+    for col in bpy.data.collections:
+        items.append((col.name, col.name, ""))
+    items.append(('__NEW__', "+ New Collection", "Create a new parent collection"))
+    return items
 
 
 class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
@@ -44,10 +51,27 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
         description="Mark the new collection as a Blender asset so it appears in the Asset Browser",
         default=False,
     )
+    parent_collection_name: bpy.props.EnumProperty(
+        name="Parent Collection",
+        description="Collection to create the new collection inside. Choose '+ New Collection' to create one.",
+        items=_parent_collection_items,
+    )
+    new_parent_collection: bpy.props.StringProperty(
+        name="New Collection Name",
+        description="Name for the new parent collection to create",
+        default="",
+    )
 
     def invoke(self, context, event):
         if context.active_object:
             self.collection_name = context.active_object.name
+        active_col = context.view_layer.active_layer_collection.collection
+        if active_col == context.scene.collection:
+            self.parent_collection_name = 'SCENE_ROOT'
+        elif active_col.name in bpy.data.collections:
+            self.parent_collection_name = active_col.name
+        else:
+            self.parent_collection_name = 'SCENE_ROOT'
         return context.window_manager.invoke_props_dialog(self, width=350)
 
     def draw(self, context):
@@ -60,7 +84,29 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
             row.prop(self, "collection_name", text="Collection Name")
         layout.prop(self, "root_empty_suffix")
         layout.separator()
+        layout.prop(self, "parent_collection_name", text="Parent Collection")
+        if self.parent_collection_name == '__NEW__':
+            row = layout.row()
+            row.alert = not self.new_parent_collection.strip()
+            row.prop(self, "new_parent_collection", text="New Name")
+        layout.separator()
         layout.prop(self, "mark_as_asset")
+
+    def _resolve_parent(self, context):
+        """Return the collection object to use as parent, creating a new one if requested."""
+        if self.parent_collection_name == 'SCENE_ROOT':
+            return context.scene.collection
+        if self.parent_collection_name == '__NEW__':
+            name = self.new_parent_collection.strip()
+            if not name:
+                return context.scene.collection
+            if name in bpy.data.collections:
+                return bpy.data.collections[name]
+            new_col = bpy.data.collections.new(name)
+            context.scene.collection.children.link(new_col)
+            return new_col
+        col = bpy.data.collections.get(self.parent_collection_name)
+        return col if col else context.scene.collection
 
     def execute(self, context):
         from .. import __package__ as base_package
@@ -75,6 +121,10 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
             self.report({'ERROR'}, "Collection name is required for Single mode.")
             return {'CANCELLED'}
 
+        if self.parent_collection_name == '__NEW__' and not self.new_parent_collection.strip():
+            self.report({'ERROR'}, "New parent collection name cannot be empty.")
+            return {'CANCELLED'}
+
         top_objects = [o for o in selected if o.parent is None or o.parent not in selected]
 
         if self.selection_mode == 'SINGLE':
@@ -87,7 +137,7 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
 
     def _create_single(self, context, top_objects, all_selected, prefs):
         collection = bpy.data.collections.new(self.collection_name)
-        parent = determine_parent_collection(context, top_object=top_objects[0])
+        parent = self._resolve_parent(context)
         parent.children.link(collection)
         set_active_layer_Collection(collection.name)
 
@@ -108,12 +158,14 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
 
         if self.mark_as_asset:
             collection.asset_mark()
+            with context.temp_override(id=collection):
+                bpy.ops.ed.lib_id_generate_preview()
 
         self.report({'INFO'}, f"Instance collection '{collection.name}' created.")
 
     def _create_for_hierarchy(self, context, top_obj, prefs):
         collection = bpy.data.collections.new(top_obj.name)
-        parent = determine_parent_collection(context, top_object=top_obj)
+        parent = self._resolve_parent(context)
         parent.children.link(collection)
         set_active_layer_Collection(collection.name)
 
