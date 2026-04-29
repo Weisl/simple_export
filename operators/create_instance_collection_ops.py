@@ -162,8 +162,7 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
 
         if self.mark_as_asset:
             collection.asset_mark()
-            with context.temp_override(id=collection):
-                bpy.ops.ed.lib_id_generate_preview()
+            collection.asset_generate_preview()
 
         self.report({'INFO'}, f"Instance collection '{collection.name}' created.")
 
@@ -190,6 +189,7 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
 
         if self.mark_as_asset:
             collection.asset_mark()
+            collection.asset_generate_preview()
 
 
 classes = (OBJECT_OT_CreateInstanceCollection,)
