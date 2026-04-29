@@ -1,4 +1,4 @@
-from . import export_panels, result_popups, ui_helpers, uilist, outliner, view3d_object_context_menu, popup_list
+from . import export_panels, result_popups, ui_helpers, uilist, outliner, view3d_object_context_menu, popup_list, asset_browser_panel
 
 files = [
     export_panels,
@@ -8,6 +8,7 @@ files = [
     outliner,
     view3d_object_context_menu,
     popup_list,
+    asset_browser_panel,
 ]
 
 

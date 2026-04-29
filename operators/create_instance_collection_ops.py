@@ -136,8 +136,8 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
         return {'FINISHED'}
 
     def _create_single(self, context, top_objects, all_selected, prefs):
-        collection = bpy.data.collections.new(self.collection_name)
         parent = self._resolve_parent(context)
+        collection = bpy.data.collections.new(self.collection_name)
         parent.children.link(collection)
         set_active_layer_Collection(collection.name)
 
@@ -147,14 +147,18 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
 
         _move_objects_to_collection(all_objects, collection)
 
-        location = sum((o.location for o in top_objects), Vector()) / len(top_objects)
-        create_root_empty_for_collection(
-            collection, location,
-            objects_to_parent=top_objects,
-            display_type=prefs.root_empty_display_type,
-            display_size=prefs.root_empty_display_size,
-            suffix=self.root_empty_suffix,
-        )
+        if len(top_objects) == 1 and top_objects[0].type == 'EMPTY':
+            collection.use_root_object = True
+            collection.root_object = top_objects[0]
+        else:
+            location = sum((o.location for o in top_objects), Vector()) / len(top_objects)
+            create_root_empty_for_collection(
+                collection, location,
+                objects_to_parent=top_objects,
+                display_type=prefs.root_empty_display_type,
+                display_size=prefs.root_empty_display_size,
+                suffix=self.root_empty_suffix,
+            )
 
         if self.mark_as_asset:
             collection.asset_mark()
@@ -164,21 +168,25 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
         self.report({'INFO'}, f"Instance collection '{collection.name}' created.")
 
     def _create_for_hierarchy(self, context, top_obj, prefs):
-        collection = bpy.data.collections.new(top_obj.name)
         parent = self._resolve_parent(context)
+        collection = bpy.data.collections.new(top_obj.name)
         parent.children.link(collection)
         set_active_layer_Collection(collection.name)
 
         hierarchy = get_all_children_and_descendants(top_obj, include_top=True)
         _move_objects_to_collection(hierarchy, collection)
 
-        create_root_empty_for_collection(
-            collection, top_obj.location.copy(),
-            objects_to_parent=[top_obj],
-            display_type=prefs.root_empty_display_type,
-            display_size=prefs.root_empty_display_size,
-            suffix=self.root_empty_suffix,
-        )
+        if top_obj.type == 'EMPTY':
+            collection.use_root_object = True
+            collection.root_object = top_obj
+        else:
+            create_root_empty_for_collection(
+                collection, top_obj.location.copy(),
+                objects_to_parent=[top_obj],
+                display_type=prefs.root_empty_display_type,
+                display_size=prefs.root_empty_display_size,
+                suffix=self.root_empty_suffix,
+            )
 
         if self.mark_as_asset:
             collection.asset_mark()
