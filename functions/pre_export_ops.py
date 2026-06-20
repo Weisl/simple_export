@@ -19,10 +19,12 @@ def apply_triangulate_modifiers(collection):
             continue
         mod = obj.modifiers.new(name=TRIANGULATE_MOD_NAME, type='TRIANGULATE')
         mod.keep_custom_normals = True
-        depsgraph.update()
-        eval_obj = obj.evaluated_get(depsgraph)
-        triangulated_mesh = bpy.data.meshes.new_from_object(eval_obj)
-        obj.modifiers.remove(mod)
+        try:
+            depsgraph.update()
+            eval_obj = obj.evaluated_get(depsgraph)
+            triangulated_mesh = bpy.data.meshes.new_from_object(eval_obj)
+        finally:
+            obj.modifiers.remove(mod)
         # All modifiers are now baked into triangulated_mesh. Suppress them so
         # the exporter doesn't apply them a second time on the already-evaluated mesh.
         # Both flags are disabled to cover exporters that use either depsgraph type.
