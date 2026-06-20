@@ -81,15 +81,18 @@ def create_collection_exporter(operator, context, collection):
         operator.report({'ERROR'}, f"Invalid export format: {export_format}")
         return None
 
-    exporters_before = get_all_exporters(collection)
+    count_before = len(collection.exporters)
 
     export_data = ExportFormats.get(export_format)
     operator_name = export_data.op_name
 
     bpy.ops.collection.exporter_add(name=operator_name)
-    exporters_after = get_all_exporters(collection)
 
-    exporter = list(set(exporters_after) - set(exporters_before))[0]
+    if len(collection.exporters) != count_before + 1:
+        operator.report({'ERROR'}, "Failed to add exporter to collection.")
+        return None
+
+    exporter = collection.exporters[-1]
 
     return exporter
 

@@ -224,8 +224,8 @@ class EXPORT_OT_CreateExportCollections(
             export_collection = bpy.data.collections[collection_name]
             self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Using existing collection.")
         else:
-            export_collection = bpy.data.collections.new(collection_name)
             parent_collection = determine_parent_collection(context, self.parent_collection, None)
+            export_collection = bpy.data.collections.new(collection_name)
             parent_collection.children.link(export_collection)
 
         for top_object in top_objects:
@@ -246,13 +246,12 @@ class EXPORT_OT_CreateExportCollections(
 
     def create_and_setup_collection(self, context, collection_name, top_object):
         """Create a new collection and set it up with the given name and objects."""
-        export_collection = bpy.data.collections.new(collection_name)
         parent_collection = determine_parent_collection(context, self.parent_collection, top_object)
-        if parent_collection:
-            parent_collection.children.link(export_collection)
-        else:
+        if not parent_collection:
             self.report({'ERROR'}, "Failed to determine parent collection.")
             return None
+        export_collection = bpy.data.collections.new(collection_name)
+        parent_collection.children.link(export_collection)
 
         # objects = context.selected_objects if self.only_selection else bpy.data.objects
         # hierarchy_objects = get_all_children_and_descendants(top_object, objects)

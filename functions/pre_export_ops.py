@@ -9,8 +9,8 @@ TRIANGULATE_MOD_NAME = "_SimpleExport_Triangulate"
 def apply_triangulate_modifiers(collection):
     """Bake triangulation into mesh data before export (non-destructive).
 
-    Returns a backup dict {obj.name: original_mesh} so the caller can restore
-    with remove_triangulate_modifiers.  Consistent with the other bake helpers.
+    Returns a backup dict {obj.name: (original_mesh, suppressed)} so the caller
+    can restore with remove_triangulate_modifiers.
     """
     backup = {}
     depsgraph = bpy.context.evaluated_depsgraph_get()
@@ -19,22 +19,35 @@ def apply_triangulate_modifiers(collection):
             continue
         mod = obj.modifiers.new(name=TRIANGULATE_MOD_NAME, type='TRIANGULATE')
         mod.keep_custom_normals = True
-        depsgraph.update()
-        eval_obj = obj.evaluated_get(depsgraph)
-        triangulated_mesh = bpy.data.meshes.new_from_object(eval_obj)
-        obj.modifiers.remove(mod)
-        backup[obj.name] = obj.data
+        try:
+            depsgraph.update()
+            eval_obj = obj.evaluated_get(depsgraph)
+            triangulated_mesh = bpy.data.meshes.new_from_object(eval_obj)
+        finally:
+            obj.modifiers.remove(mod)
+        # All modifiers are now baked into triangulated_mesh. Suppress them so
+        # the exporter doesn't apply them a second time on the already-evaluated mesh.
+        # Both flags are disabled to cover exporters that use either depsgraph type.
+        suppressed = {m.name: (m.show_render, m.show_viewport) for m in obj.modifiers}
+        for m in obj.modifiers:
+            m.show_render = False
+            m.show_viewport = False
+        backup[obj.name] = (obj.data, suppressed)
         obj.data = triangulated_mesh
     return backup
 
 
 def remove_triangulate_modifiers(collection, backup):
-    """Restore original mesh data after a triangulated export."""
+    """Restore original mesh data and modifier visibility after a triangulated export."""
     for obj in collection.all_objects:
         if obj is None or obj.name not in backup:
             continue
+        original_mesh, suppressed = backup[obj.name]
         temp_mesh = obj.data
-        obj.data = backup[obj.name]
+        obj.data = original_mesh
+        for mod in obj.modifiers:
+            if mod.name in suppressed:
+                mod.show_render, mod.show_viewport = suppressed[mod.name]
         bpy.data.meshes.remove(temp_mesh)
 
 

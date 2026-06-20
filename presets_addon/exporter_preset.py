@@ -342,7 +342,7 @@ class SIMPLE_EXPORT_OT_DuplicatePreset(bpy.types.Operator):
     bl_label = "Duplicate Preset"
     bl_options = {'REGISTER', 'INTERNAL'}
 
-    name: bpy.props.StringProperty(name="New Preset Name", default="")
+    name: bpy.props.StringProperty(name="New Preset Name", default="", description="Name for the duplicated preset")
     source_path: bpy.props.StringProperty(options={'HIDDEN', 'SKIP_SAVE'})
 
     def invoke(self, context, event):
