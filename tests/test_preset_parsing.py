@@ -459,13 +459,13 @@ class TestPropsEqual(unittest.TestCase):
 
     # -- Error tolerance -------------------------------------------------------
 
-    def test_exception_during_comparison_assumes_equal(self):
-        """When comparison raises, _props_equal returns True (safe / no false alerts)."""
+    def test_exception_during_comparison_assumes_different(self):
+        """When comparison raises, _props_equal returns False so drift is visible."""
         class Uncomparable:
             def __eq__(self, other): raise RuntimeError("cannot compare")
             def __iter__(self): raise RuntimeError("cannot iterate")
             def __len__(self): raise RuntimeError("no length")
-        self.assertTrue(_props_equal(Uncomparable(), 1))
+        self.assertFalse(_props_equal(Uncomparable(), 1))
 
 
 # ---------------------------------------------------------------------------
