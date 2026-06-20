@@ -108,7 +108,7 @@ class SCENE_OT_SelectAllCollections(bpy.types.Operator):
     bl_description = "Select or deselect all collections for export."
     bl_options = {'REGISTER', 'UNDO'}
 
-    deselect: bpy.props.BoolProperty(name="Invert", default=False, )
+    deselect: bpy.props.BoolProperty(name="Invert", default=False, description="When enabled, deselects all collections instead of selecting them")
 
     def execute(self, context):
         for collection in bpy.data.collections:
@@ -122,8 +122,8 @@ class SCENE_OT_ExpandAllCollections(bpy.types.Operator):
     bl_description = "Expand or minimize all collections for export."
     bl_options = {'REGISTER', 'UNDO'}
 
-    minimize: bpy.props.BoolProperty(name="Invert", default=False)
-    list_id: bpy.props.StringProperty()
+    minimize: bpy.props.BoolProperty(name="Invert", default=False, description="When enabled, collapses all collection rows instead of expanding them")
+    list_id: bpy.props.StringProperty(options={'HIDDEN'})
 
 
     def execute(self, context):
@@ -209,7 +209,7 @@ class SIMPLE_EXPORT_OT_AddNewCollectionGroup(bpy.types.Operator):
     bl_label = "Add New Group"
     bl_options = {'REGISTER', 'UNDO'}
 
-    group_name: bpy.props.StringProperty(name="Group Name", default="")
+    group_name: bpy.props.StringProperty(name="Group Name", default="", description="Name for the new group to assign to the collection")
     collection_name: bpy.props.StringProperty(options={'HIDDEN'}, default="")
     update_filter: bpy.props.BoolProperty(options={'HIDDEN'}, default=False)
 
