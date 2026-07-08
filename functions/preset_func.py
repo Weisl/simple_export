@@ -68,7 +68,7 @@ def _props_equal(blender_val, preset_val):
             return tuple(blender_val) == tuple(preset_val)
         return blender_val == preset_val
     except Exception:
-        return True  # assume equal if comparison is not possible
+        return False  # assume different if comparison fails so drift is visible
 
 
 def format_preset_has_changes(collection, exporter):

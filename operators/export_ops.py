@@ -138,7 +138,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 if not collection:
                     continue
 
-                if not collection.objects:
+                if not collection.all_objects:
                     export_results.append(
                         {'name': collection.name, 'success': False, 'filepath': '',
                          'message': "Collection is empty. Nothing to export.", 'warnings': []})

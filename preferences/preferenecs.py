@@ -658,18 +658,22 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
     simple_export_panel_type: bpy.props.StringProperty(
         name="Export Popup Menu", default="E",
+        description="Key used to open the export popup panel",
         update=update_simple_export_panel_key)
 
     simple_export_panel_ctrl: bpy.props.BoolProperty(
-        name="Ctrl", default=False, update=update_simple_export_panel_key)
+        name="Ctrl", default=False, description="Require Ctrl as part of the export popup shortcut",
+        update=update_simple_export_panel_key)
 
     simple_export_panel_shift: bpy.props.BoolProperty(
-        name="Shift", default=True, update=update_simple_export_panel_key)
+        name="Shift", default=True, description="Require Shift as part of the export popup shortcut",
+        update=update_simple_export_panel_key)
     simple_export_panel_alt: bpy.props.BoolProperty(
-        name="Alt", default=True, update=update_simple_export_panel_key)
+        name="Alt", default=True, description="Require Alt as part of the export popup shortcut",
+        update=update_simple_export_panel_key)
 
     simple_export_panel_active: bpy.props.BoolProperty(
-        name="Active", default=True,
+        name="Active", default=True, description="Enable or disable the export popup panel keyboard shortcut",
         update=update_simple_export_panel_key)
 
     ########################################

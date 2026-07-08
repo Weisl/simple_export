@@ -16,7 +16,6 @@ files = [
     fix_filename,
     fix_multiple_exporters,
     relative_folder_picker,
-    reload_addon,
     convert_filepath_ops,
     create_instance_collection_ops,
 ]
