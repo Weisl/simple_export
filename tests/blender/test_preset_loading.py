@@ -1,5 +1,15 @@
 """
-Tests for the preset loading system.
+Headless Blender tests for the preset loading system.
+
+Run with:
+    blender --background --python tests/blender/test_preset_loading.py
+
+Replaces the MagicMock-based test_preset_loading.py. This module's logic
+(version routing, file generation, dict validation) doesn't touch Blender
+types at all — it only needed a working `import simple_export` chain, which
+a real Blender process gives for free. patch.object() is used the same way
+it already is in test_preset_application.py: to redirect the addon's preset
+folder lookups to a temp directory, not to stand in for a Blender type.
 
 Covers:
   - Version routing (get_versioned_module selects the right subpackage)
@@ -9,6 +19,7 @@ Covers:
   - initialize_presets writes the expected files for each Blender version
   - Addon preset data (preset_data_exporters) is importable and valid
   - Addon preset file writing (save_addon_presets)
+  - Version-specific preset structural guards
 """
 
 import ast
@@ -20,24 +31,20 @@ import unittest
 from unittest.mock import patch
 
 # ---------------------------------------------------------------------------
-# Bootstrap: install bpy stubs and the simple_export package stub so that
-# relative imports inside the addon resolve without a real Blender process.
+# Bootstrap
 # ---------------------------------------------------------------------------
 
-_ADDON_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_FILE_DIR = os.path.dirname(os.path.abspath(__file__))
+_TESTS_DIR = os.path.dirname(_FILE_DIR)
+_ADDON_ROOT = os.path.dirname(_TESTS_DIR)
 _EXTENSIONS_ROOT = os.path.dirname(_ADDON_ROOT)
 
 if _EXTENSIONS_ROOT not in sys.path:
     sys.path.insert(0, _EXTENSIONS_ROOT)
+if _ADDON_ROOT not in sys.path:
+    sys.path.insert(0, _ADDON_ROOT)
 
-# bpy_stub must be imported (and install() called) before any addon module.
-from tests.bpy_stub import install as _install_bpy, make_simple_export_package
-
-_install_bpy(blender_version=(5, 1, 0))
-make_simple_export_package()
-
-# Now we can safely import the preset subpackages.
-import simple_export.presets_export as _pe
+import simple_export.presets_export as _pe  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -65,16 +72,6 @@ _REQUIRED_ADDON_KEYS = {
     "assign_preset",
 }
 
-# (module_path, variable_name) for all version-specific preset modules.
-_PRESET_MODULES = [
-    ("simple_export.presets_export.blender_4x.preset_data_fbx", "presets_fbx"),
-    ("simple_export.presets_export.blender_4x.preset_data_gltf", "presets_gltf"),
-    ("simple_export.presets_export.blender_5_0.preset_data_fbx", "presets_fbx"),
-    ("simple_export.presets_export.blender_5_0.preset_data_gltf", "presets_gltf"),
-    ("simple_export.presets_export.blender_5_1.preset_data_fbx", "presets_fbx"),
-    ("simple_export.presets_export.blender_5_1.preset_data_gltf", "presets_gltf"),
-]
-
 _EXPECTED_FBX_PRESETS = {"UE-fbx", "Unity-fbx", "Lowpoly-fbx", "Highpoly-fbx"}
 _EXPECTED_GLTF_PRESETS = {"Godot-gltf"}
 _EXPECTED_ADDON_PRESETS = {
@@ -92,15 +89,25 @@ class TestVersionRouting(unittest.TestCase):
     def _route(self, version, preset_type="fbx"):
         return _pe.get_versioned_module(version, preset_type)
 
-    # -- Blender 4.x --
-    def test_4_2_routes_to_4x_fbx(self):
-        self.assertEqual(self._route((4, 2, 0)), ".blender_4x.preset_data_fbx")
+    # -- Blender 4.2 LTS line (4.2 up to, but not including, 4.5) --
+    def test_4_2_routes_to_4_2_fbx(self):
+        self.assertEqual(self._route((4, 2, 0)), ".blender_4_2.preset_data_fbx")
 
-    def test_4_9_routes_to_4x_fbx(self):
-        self.assertEqual(self._route((4, 9, 0)), ".blender_4x.preset_data_fbx")
+    def test_4_4_routes_to_4_2_fbx(self):
+        self.assertEqual(self._route((4, 4, 3)), ".blender_4_2.preset_data_fbx")
 
-    def test_4_2_routes_to_4x_gltf(self):
-        self.assertEqual(self._route((4, 2, 0), "gltf"), ".blender_4x.preset_data_gltf")
+    def test_4_2_routes_to_4_2_gltf(self):
+        self.assertEqual(self._route((4, 2, 0), "gltf"), ".blender_4_2.preset_data_gltf")
+
+    # -- Blender 4.5 LTS line (4.5 through 4.9) --
+    def test_4_5_routes_to_4_5_fbx(self):
+        self.assertEqual(self._route((4, 5, 0)), ".blender_4_5.preset_data_fbx")
+
+    def test_4_9_routes_to_4_5_fbx(self):
+        self.assertEqual(self._route((4, 9, 0)), ".blender_4_5.preset_data_fbx")
+
+    def test_4_5_routes_to_4_5_gltf(self):
+        self.assertEqual(self._route((4, 5, 0), "gltf"), ".blender_4_5.preset_data_gltf")
 
     # -- Blender 5.0 --
     def test_5_0_routes_to_5_0_fbx(self):
@@ -116,12 +123,16 @@ class TestVersionRouting(unittest.TestCase):
     def test_5_1_routes_to_5_1_gltf(self):
         self.assertEqual(self._route((5, 1, 0), "gltf"), ".blender_5_1.preset_data_gltf")
 
-    # -- Future Blender 5.x falls through to latest known (5.1) --
-    def test_5_2_routes_to_5_1_fbx(self):
-        self.assertEqual(self._route((5, 2, 0)), ".blender_5_1.preset_data_fbx")
+    # -- Blender 5.2 --
+    def test_5_2_routes_to_5_2_fbx(self):
+        self.assertEqual(self._route((5, 2, 0)), ".blender_5_2.preset_data_fbx")
 
-    def test_5_9_routes_to_5_1_gltf(self):
-        self.assertEqual(self._route((5, 9, 0), "gltf"), ".blender_5_1.preset_data_gltf")
+    def test_5_2_routes_to_5_2_gltf(self):
+        self.assertEqual(self._route((5, 2, 0), "gltf"), ".blender_5_2.preset_data_gltf")
+
+    # -- Future Blender 5.x falls through to latest known (5.2) --
+    def test_5_9_routes_to_5_2_gltf(self):
+        self.assertEqual(self._route((5, 9, 0), "gltf"), ".blender_5_2.preset_data_gltf")
 
 
 # ---------------------------------------------------------------------------
@@ -141,11 +152,17 @@ class TestPresetModuleImports(unittest.TestCase):
         self.assertIsInstance(data, dict, f"{module_path}.{var_name} must be a dict")
         return data
 
-    def test_blender_4x_fbx_importable(self):
-        self._load("simple_export.presets_export.blender_4x.preset_data_fbx", "presets_fbx")
+    def test_blender_4_2_fbx_importable(self):
+        self._load("simple_export.presets_export.blender_4_2.preset_data_fbx", "presets_fbx")
 
-    def test_blender_4x_gltf_importable(self):
-        self._load("simple_export.presets_export.blender_4x.preset_data_gltf", "presets_gltf")
+    def test_blender_4_2_gltf_importable(self):
+        self._load("simple_export.presets_export.blender_4_2.preset_data_gltf", "presets_gltf")
+
+    def test_blender_4_5_fbx_importable(self):
+        self._load("simple_export.presets_export.blender_4_5.preset_data_fbx", "presets_fbx")
+
+    def test_blender_4_5_gltf_importable(self):
+        self._load("simple_export.presets_export.blender_4_5.preset_data_gltf", "presets_gltf")
 
     def test_blender_5_0_fbx_importable(self):
         self._load("simple_export.presets_export.blender_5_0.preset_data_fbx", "presets_fbx")
@@ -158,6 +175,12 @@ class TestPresetModuleImports(unittest.TestCase):
 
     def test_blender_5_1_gltf_importable(self):
         self._load("simple_export.presets_export.blender_5_1.preset_data_gltf", "presets_gltf")
+
+    def test_blender_5_2_fbx_importable(self):
+        self._load("simple_export.presets_export.blender_5_2.preset_data_fbx", "presets_fbx")
+
+    def test_blender_5_2_gltf_importable(self):
+        self._load("simple_export.presets_export.blender_5_2.preset_data_gltf", "presets_gltf")
 
 
 # ---------------------------------------------------------------------------
@@ -217,11 +240,17 @@ class TestPresetDataCompleteness(unittest.TestCase):
                 f"{version_folder}/{preset_name}: missing keys: {missing_keys}",
             )
 
-    def test_blender_4x_fbx_complete(self):
-        self._assert_fbx_presets_valid(self._fbx_data("blender_4x"), "blender_4x")
+    def test_blender_4_2_fbx_complete(self):
+        self._assert_fbx_presets_valid(self._fbx_data("blender_4_2"), "blender_4_2")
 
-    def test_blender_4x_gltf_complete(self):
-        self._assert_gltf_presets_valid(self._gltf_data("blender_4x"), "blender_4x")
+    def test_blender_4_2_gltf_complete(self):
+        self._assert_gltf_presets_valid(self._gltf_data("blender_4_2"), "blender_4_2")
+
+    def test_blender_4_5_fbx_complete(self):
+        self._assert_fbx_presets_valid(self._fbx_data("blender_4_5"), "blender_4_5")
+
+    def test_blender_4_5_gltf_complete(self):
+        self._assert_gltf_presets_valid(self._gltf_data("blender_4_5"), "blender_4_5")
 
     def test_blender_5_0_fbx_complete(self):
         self._assert_fbx_presets_valid(self._fbx_data("blender_5_0"), "blender_5_0")
@@ -234,6 +263,12 @@ class TestPresetDataCompleteness(unittest.TestCase):
 
     def test_blender_5_1_gltf_complete(self):
         self._assert_gltf_presets_valid(self._gltf_data("blender_5_1"), "blender_5_1")
+
+    def test_blender_5_2_fbx_complete(self):
+        self._assert_fbx_presets_valid(self._fbx_data("blender_5_2"), "blender_5_2")
+
+    def test_blender_5_2_gltf_complete(self):
+        self._assert_gltf_presets_valid(self._gltf_data("blender_5_2"), "blender_5_2")
 
 
 # ---------------------------------------------------------------------------
@@ -308,6 +343,15 @@ class TestGeneratedPresetFiles(unittest.TestCase):
     def test_blender_5_1_highpoly_fbx_valid(self):
         self._test_fbx_preset("blender_5_1", "Highpoly-fbx")
 
+    def test_blender_5_2_ue_fbx_valid(self):
+        self._test_fbx_preset("blender_5_2", "UE-fbx")
+
+    def test_blender_5_2_lowpoly_fbx_valid(self):
+        self._test_fbx_preset("blender_5_2", "Lowpoly-fbx")
+
+    def test_blender_5_2_highpoly_fbx_valid(self):
+        self._test_fbx_preset("blender_5_2", "Highpoly-fbx")
+
     # -- GLTF --
     def test_blender_4x_godot_gltf_valid(self):
         self._test_gltf_preset("blender_4x", "Godot-gltf")
@@ -317,6 +361,9 @@ class TestGeneratedPresetFiles(unittest.TestCase):
 
     def test_blender_5_1_godot_gltf_valid(self):
         self._test_gltf_preset("blender_5_1", "Godot-gltf")
+
+    def test_blender_5_2_godot_gltf_valid(self):
+        self._test_gltf_preset("blender_5_2", "Godot-gltf")
 
     def test_set_values_are_valid_python_literals(self):
         """object_types (a set) must round-trip through the generated file."""
@@ -381,6 +428,10 @@ class TestInitializePresets(unittest.TestCase):
         fbx, gltf = self._run_initialize((5, 1, 0))
         self._assert_preset_files(fbx, gltf, "Blender 5.1")
 
+    def test_blender_5_2_creates_all_preset_files(self):
+        fbx, gltf = self._run_initialize((5, 2, 0))
+        self._assert_preset_files(fbx, gltf, "Blender 5.2")
+
     def test_existing_files_are_not_overwritten(self):
         """Preset files that already exist must not be re-written."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -441,7 +492,6 @@ class TestAddonPresetData(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Import the addon preset data (requires bpy stubs already installed)
         cls.mod = importlib.import_module(
             "simple_export.presets_addon.preset_data_exporters"
         )
@@ -555,22 +605,50 @@ class TestVersionSpecificPresetValues(unittest.TestCase):
     """
     Structural guards for version-specific preset data.
 
-    As of writing, the active FBX and GLTF preset dictionaries are identical
-    across blender_4x, blender_5_0, and blender_5_1 (the API parameters have
-    not changed yet). These tests therefore focus on structural invariants —
-    presence of required keys and consistent preset names — rather than
-    value-diff assertions. When a future Blender version introduces API
+    The FBX preset dictionaries are identical across blender_4x, blender_5_0,
+    blender_5_1, and blender_5_2 (the FBX exporter's operator properties have
+    not changed since 4.2). The GLTF exporter gained two new properties in
+    Blender 5.2 (export_meshopt_compression_enable, export_meshopt_extension
+    — meshopt mesh compression support), so blender_5_2's Godot-gltf preset
+    carries two extra keys not present in earlier version folders. These
+    tests focus on structural invariants — presence of required keys and
+    consistent preset names — plus explicit value assertions for the 5.2
+    divergence. When a future Blender version introduces further API
     differences, update the relevant preset module AND add value assertions here.
     """
 
-    _VERSION_FOLDERS = ["blender_4x", "blender_5_0", "blender_5_1"]
+    _VERSION_FOLDERS = ["blender_4x", "blender_5_0", "blender_5_1", "blender_5_2"]
 
     def _load_fbx(self, version_folder):
-        import importlib
         mod = importlib.import_module(
             f"simple_export.presets_export.{version_folder}.preset_data_fbx"
         )
         return mod.presets_fbx
+
+    def _load_gltf(self, version_folder):
+        mod = importlib.import_module(
+            f"simple_export.presets_export.{version_folder}.preset_data_gltf"
+        )
+        return mod.presets_gltf
+
+    def test_meshopt_keys_present_only_from_5_2_onward(self):
+        """
+        export_meshopt_compression_enable / export_meshopt_extension were added
+        to the GLTF exporter operator in Blender 5.2. blender_5_2's Godot-gltf
+        preset must define them explicitly (disabled, matching the operator's
+        own default); earlier version folders must not reference them, since
+        the property does not exist on those Blender versions' operator.
+        """
+        pre_5_2 = ["blender_4x", "blender_5_0", "blender_5_1"]
+        for version_folder in pre_5_2:
+            with self.subTest(version_folder=version_folder):
+                preset = self._load_gltf(version_folder)["Godot-gltf"]
+                self.assertNotIn("export_meshopt_compression_enable", preset)
+                self.assertNotIn("export_meshopt_extension", preset)
+
+        preset_5_2 = self._load_gltf("blender_5_2")["Godot-gltf"]
+        self.assertEqual(preset_5_2["export_meshopt_compression_enable"], False)
+        self.assertEqual(preset_5_2["export_meshopt_extension"], "EXT_meshopt_compression")
 
     def test_all_versions_have_same_fbx_preset_names(self):
         """All three version folders must expose the same set of FBX preset names."""
@@ -623,7 +701,6 @@ class TestVersionSpecificPresetValues(unittest.TestCase):
         Importing a version module and mutating the returned dict must not affect
         subsequent imports (guards against shared module-level mutable state).
         """
-        import importlib
         mod1 = importlib.import_module(
             "simple_export.presets_export.blender_5_1.preset_data_fbx"
         )
@@ -648,5 +725,11 @@ class TestVersionSpecificPresetValues(unittest.TestCase):
         self.assertEqual(set(mod2.presets_fbx.keys()), original_keys)
 
 
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+
 if __name__ == "__main__":
-    unittest.main()
+    suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
+    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    sys.exit(0 if result.wasSuccessful() else 1)

@@ -27,6 +27,10 @@ Covers:
     - 'use_selection' is never overwritten
     - Partial / old-version preset (missing some keys) does not crash
     - Preset without 'filepath' line does not raise KeyError (bug regression)
+    - Set-valued (ENUM_FLAG) property such as object_types round-trips
+    - Unknown preset key with no matching property is skipped, not fatal
+    - Real setattr type-mismatch (e.g. string into a float property) is caught
+    - A corrupt mathutils-repr line does not block a valid property alongside it
 
   TestPresetRoundTrip
     - Write a preset via save_export_presets → parse → apply → verify values
@@ -261,6 +265,92 @@ class TestAssignPresetToRealExporter(_PresetTestBase):
         self.assertEqual(
             exporter.export_properties.export_format, "GLB",
             "export_format was not set to GLB by assign_preset",
+        )
+
+    def test_object_types_set_applied(self):
+        """A set-valued (ENUM_FLAG) property round-trips through assign_preset."""
+        exporter = self._add_exporter("IO_FH_fbx")
+        if not hasattr(exporter.export_properties, "object_types"):
+            self.skipTest("FBX exporter has no object_types in this build")
+
+        path = _write_preset_file(self.tmpdir, "test-object-types", """
+            import bpy
+            op = bpy.context.active_operator
+            op.filepath = ''
+            op.object_types = {'MESH', 'EMPTY'}
+        """)
+
+        from simple_export.functions.preset_func import assign_preset
+        ok, msg = assign_preset(exporter, path)
+        self.assertTrue(ok, f"assign_preset failed: {msg}")
+        self.assertEqual(
+            set(exporter.export_properties.object_types), {"MESH", "EMPTY"},
+            "object_types was not set by assign_preset",
+        )
+
+    def test_unknown_property_on_exporter_does_not_crash(self):
+        """A preset key with no matching property on the exporter is logged and skipped."""
+        exporter = self._add_exporter("IO_FH_fbx")
+
+        path = _write_preset_file(self.tmpdir, "test-unknown-prop", """
+            import bpy
+            op = bpy.context.active_operator
+            op.filepath = ''
+            op.definitely_not_a_real_fbx_property_xyz = 42
+            op.global_scale = 3.0
+        """)
+
+        from simple_export.functions.preset_func import assign_preset
+        ok, msg = assign_preset(exporter, path)
+        self.assertTrue(ok, f"assign_preset failed: {msg}")
+        if hasattr(exporter.export_properties, "global_scale"):
+            self.assertAlmostEqual(
+                exporter.export_properties.global_scale, 3.0, places=4,
+                msg="global_scale was not applied alongside the unknown property",
+            )
+
+    def test_type_mismatch_setattr_does_not_crash(self):
+        """If setattr raises (real type mismatch), assign_preset catches it and continues."""
+        exporter = self._add_exporter("IO_FH_fbx")
+        if not hasattr(exporter.export_properties, "global_scale"):
+            self.skipTest("FBX exporter has no global_scale in this build")
+        original = exporter.export_properties.global_scale
+
+        path = _write_preset_file(self.tmpdir, "test-type-mismatch", """
+            import bpy
+            op = bpy.context.active_operator
+            op.filepath = ''
+            op.global_scale = 'not_a_float'
+        """)
+
+        from simple_export.functions.preset_func import assign_preset
+        ok, msg = assign_preset(exporter, path)
+        self.assertTrue(ok, f"assign_preset raised instead of catching the type mismatch: {msg}")
+        self.assertAlmostEqual(
+            exporter.export_properties.global_scale, original, places=4,
+            msg="global_scale changed even though the assignment should have raised TypeError",
+        )
+
+    def test_mixed_valid_and_corrupt_line_does_not_crash(self):
+        """A real property is still applied when the preset also has a corrupt mathutils line."""
+        exporter = self._add_exporter("IO_FH_fbx")
+        if not hasattr(exporter.export_properties, "global_scale"):
+            self.skipTest("FBX exporter has no global_scale in this build")
+
+        path = _write_preset_file(self.tmpdir, "test-mixed-corrupt", """
+            import bpy
+            op = bpy.context.active_operator
+            op.filepath = ''
+            op.global_scale = 4.0
+            op.some_corrupt_vector_prop = <Euler (x=0.0000, y=0.0000, z=0.0000), order='XYZ'>
+        """)
+
+        from simple_export.functions.preset_func import assign_preset
+        ok, msg = assign_preset(exporter, path)
+        self.assertTrue(ok, f"assign_preset failed: {msg}")
+        self.assertAlmostEqual(
+            exporter.export_properties.global_scale, 4.0, places=4,
+            msg="global_scale was not applied alongside the corrupt line",
         )
 
 

@@ -1,5 +1,18 @@
 """
-Unit tests for the preset parsing and assignment utilities.
+Headless Blender tests for the preset parsing/assignment utility functions.
+
+Run with:
+    blender --background --python tests/blender/test_preset_parsing.py
+
+Replaces the MagicMock-based test_preset_parsing.py. parse_preset_file,
+_parse_prefix_preset_file and _props_equal are pure Python (no Blender types
+involved), so these tests exercise them directly with no stand-ins at all —
+they only need to run inside Blender's Python so that `import simple_export`
+(and its bpy imports) succeeds. The remaining assign_preset() coverage against
+real exporter property groups (unknown property, type-mismatch setattr,
+set-valued property, corrupt+valid line mix) lives in
+test_preset_application.py's TestAssignPresetToRealExporter, next to the rest
+of the real-exporter assign_preset tests.
 
 Covers:
   parse_preset_file
@@ -14,24 +27,19 @@ Covers:
     - Extra unknown properties are returned as-is
     - Quoted strings are stripped of surrounding quotes
 
-  assign_preset
+  assign_preset guard clauses
     - None exporter returns (False, error message)
     - Empty or None preset path returns (False, error message)
     - Non-existent file returns (True, None) — nothing applied, no crash
     - Preset that lacks 'filepath' key does NOT raise KeyError (bug regression)
-    - Properties on the exporter are set from the preset file
-    - Properties absent on the exporter are skipped (no AttributeError)
-    - 'filepath' and 'use_selection' lines are always skipped
-    - Setting a property with a wrong type is caught and does not crash
 
   _props_equal
     - Equal sets → True
     - Unequal sets → False
-    - Equal Blender-like array (has __len__, not a string) → True
-    - Unequal array → False
-    - Simple equal scalar → True
-    - Simple unequal scalar → False
-    - Exception during comparison assumes equal → True
+    - Blender-like frozenset vs Python set → True
+    - Equal / unequal array-like values → True / False
+    - Equal / unequal scalars → True / False
+    - Exception during comparison assumes different → False
 
   _parse_prefix_preset_file (scene-prefix parser used by addon_preset_has_changes)
     - Lines beginning with 'scene.' are parsed
@@ -39,6 +47,10 @@ Covers:
     - simple_export_preset_file_* keys are returned (caller decides to skip them)
     - Malformed lines are silently skipped
     - Missing file returns empty dict
+
+  Corrupt preset sanitization (_sanitize_value_str applied via parse functions)
+    - Euler/Vector/Color mathutils repr strings are converted to numeric tuples
+    - Negative and mixed valid/corrupt lines are handled correctly
 """
 
 import os
@@ -46,21 +58,20 @@ import sys
 import tempfile
 import textwrap
 import unittest
-from unittest.mock import MagicMock, patch
 
 # ---------------------------------------------------------------------------
-# Bootstrap — bpy stub must be installed before any addon import
+# Bootstrap
 # ---------------------------------------------------------------------------
 
-_ADDON_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_FILE_DIR = os.path.dirname(os.path.abspath(__file__))
+_TESTS_DIR = os.path.dirname(_FILE_DIR)
+_ADDON_ROOT = os.path.dirname(_TESTS_DIR)
 _EXTENSIONS_ROOT = os.path.dirname(_ADDON_ROOT)
 
 if _EXTENSIONS_ROOT not in sys.path:
     sys.path.insert(0, _EXTENSIONS_ROOT)
-
-from tests.bpy_stub import install as _install_bpy, make_simple_export_package  # noqa: E402
-_install_bpy(blender_version=(5, 1, 0))
-make_simple_export_package()
+if _ADDON_ROOT not in sys.path:
+    sys.path.insert(0, _ADDON_ROOT)
 
 from simple_export.functions.preset_func import (  # noqa: E402
     parse_preset_file,
@@ -80,19 +91,6 @@ def _write_preset(content, suffix=".py"):
     with os.fdopen(fd, "w", encoding="utf-8") as fh:
         fh.write(textwrap.dedent(content))
     return path
-
-
-def _make_exporter(**props):
-    """Return a mock exporter whose export_properties has the given attributes."""
-    ep = MagicMock()
-    for name, value in props.items():
-        setattr(ep, name, value)
-    # hasattr on a MagicMock always returns True by default, which lets setattr
-    # tests run without raising.  For tests that need a property to be *absent*,
-    # configure spec or delete the attribute explicitly.
-    exporter = MagicMock()
-    exporter.export_properties = ep
-    return exporter
 
 
 # ---------------------------------------------------------------------------
@@ -256,12 +254,17 @@ class TestParsePresetFile(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# 2. assign_preset
+# 2. assign_preset guard clauses
 # ---------------------------------------------------------------------------
 
-class TestAssignPreset(unittest.TestCase):
-
-    # -- Guard conditions -----------------------------------------------------
+class TestAssignPresetGuards(unittest.TestCase):
+    """
+    Guard-clause behaviour that short-circuits before touching
+    exporter.export_properties at all. A plain truthy placeholder is enough
+    here — these paths never read or write any attribute on it, so a real
+    Blender exporter would exercise nothing extra. Real-exporter coverage of
+    the property-assignment path itself lives in test_preset_application.py.
+    """
 
     def test_none_exporter_returns_false(self):
         ok, msg = assign_preset(None, "/some/path.py")
@@ -269,24 +272,20 @@ class TestAssignPreset(unittest.TestCase):
         self.assertIsNotNone(msg)
 
     def test_empty_preset_path_returns_false(self):
-        ok, msg = assign_preset(_make_exporter(), "")
+        ok, msg = assign_preset(object(), "")
         self.assertFalse(ok)
         self.assertIsNotNone(msg)
 
     def test_none_preset_path_returns_false(self):
-        ok, msg = assign_preset(_make_exporter(), None)
+        ok, msg = assign_preset(object(), None)
         self.assertFalse(ok)
         self.assertIsNotNone(msg)
 
-    # -- File not found --------------------------------------------------------
-
     def test_nonexistent_file_returns_true_no_crash(self):
         """Missing preset file → nothing applied but function does not raise."""
-        ok, msg = assign_preset(_make_exporter(), "/tmp/__no_such_preset__.py")
+        ok, msg = assign_preset(object(), "/tmp/__no_such_preset__.py")
         self.assertTrue(ok)
         self.assertIsNone(msg)
-
-    # -- Bug regression: preset without 'filepath' key should not raise -------
 
     def test_preset_missing_filepath_key_does_not_raise(self):
         """Regression: a preset file with no filepath line must not raise KeyError."""
@@ -296,114 +295,9 @@ class TestAssignPreset(unittest.TestCase):
             # 'filepath' intentionally absent (old or hand-crafted preset)
         )
         try:
-            exporter = _make_exporter(global_scale=2.0, bake_anim=True)
-            ok, msg = assign_preset(exporter, path)
+            ok, msg = assign_preset(object(), path)
             self.assertTrue(ok)
             self.assertIsNone(msg)
-        finally:
-            os.unlink(path)
-
-    # -- Properties are applied -----------------------------------------------
-
-    def test_properties_applied_to_exporter(self):
-        path = _write_preset(
-            "op.filepath = ''\n"
-            "op.global_scale = 2.0\n"
-            "op.bake_anim = False\n"
-        )
-        try:
-            exporter = _make_exporter(global_scale=1.0, bake_anim=True)
-            assign_preset(exporter, path)
-            self.assertAlmostEqual(exporter.export_properties.global_scale, 2.0)
-            self.assertIs(exporter.export_properties.bake_anim, False)
-        finally:
-            os.unlink(path)
-
-    def test_filepath_line_is_always_skipped(self):
-        """assign_preset must never overwrite the exporter's filepath."""
-        path = _write_preset("op.filepath = '/injected/path.fbx'\n")
-        try:
-            exporter = _make_exporter(filepath="/original/path.fbx")
-            assign_preset(exporter, path)
-            # The filepath attribute must not have been touched by setattr.
-            # Because MagicMock auto-creates attributes on access, we verify
-            # that setattr was NOT called with 'filepath'.
-            calls = [
-                call for call in exporter.export_properties.mock_calls
-                if "filepath" in str(call)
-            ]
-            # setattr shows as __setattr__ in mock call list
-            setattr_calls = [c for c in calls if "__setattr__" in str(c) and "filepath" in str(c)]
-            self.assertEqual(len(setattr_calls), 0, "filepath was written by assign_preset")
-        finally:
-            os.unlink(path)
-
-    def test_use_selection_line_is_always_skipped(self):
-        path = _write_preset(
-            "op.filepath = ''\n"
-            "op.use_selection = True\n"
-            "op.global_scale = 1.0\n"
-        )
-        try:
-            exporter = _make_exporter(global_scale=0.0, use_selection=False)
-            assign_preset(exporter, path)
-            # global_scale should be updated, use_selection should not.
-            self.assertAlmostEqual(exporter.export_properties.global_scale, 1.0)
-            # use_selection must NOT have been set to True.
-            setattr_calls = [
-                c for c in exporter.export_properties.mock_calls
-                if "__setattr__" in str(c) and "use_selection" in str(c)
-            ]
-            self.assertEqual(len(setattr_calls), 0, "use_selection was touched by assign_preset")
-        finally:
-            os.unlink(path)
-
-    def test_unknown_property_on_exporter_does_not_crash(self):
-        """Properties not present on the exporter are logged and skipped."""
-        path = _write_preset(
-            "op.filepath = ''\n"
-            "op.nonexistent_prop = 42\n"
-        )
-        try:
-            # Configure the MagicMock so hasattr returns False for the unknown prop.
-            ep = MagicMock(spec=[])  # spec=[] → no attributes defined → hasattr always False
-            exporter = MagicMock()
-            exporter.export_properties = ep
-            ok, msg = assign_preset(exporter, path)
-            self.assertTrue(ok)
-        finally:
-            os.unlink(path)
-
-    def test_type_error_on_setattr_does_not_crash(self):
-        """If setattr raises (type mismatch), the function catches it and continues."""
-        path = _write_preset(
-            "op.filepath = ''\n"
-            "op.global_scale = 'not_a_float'\n"
-        )
-        try:
-            # Use a real class so __setattr__ can be overridden properly.
-            class _RaisingProps:
-                global_scale = 1.0  # so hasattr() returns True
-
-                def __setattr__(self, name, value):
-                    raise TypeError("type mismatch on assignment")
-
-            exporter = MagicMock()
-            exporter.export_properties = _RaisingProps()
-            ok, msg = assign_preset(exporter, path)
-            self.assertTrue(ok)
-        finally:
-            os.unlink(path)
-
-    def test_set_value_applied_correctly(self):
-        path = _write_preset(
-            "op.filepath = ''\n"
-            "op.object_types = {'MESH', 'EMPTY'}\n"
-        )
-        try:
-            exporter = _make_exporter(object_types=set())
-            assign_preset(exporter, path)
-            self.assertEqual(exporter.export_properties.object_types, {"MESH", "EMPTY"})
         finally:
             os.unlink(path)
 
@@ -472,7 +366,7 @@ class TestPropsEqual(unittest.TestCase):
 # 4. _parse_prefix_preset_file  (used by addon_preset_has_changes)
 # ---------------------------------------------------------------------------
 
-class TestParseAddonPresetFile(unittest.TestCase):
+class TestParsePrefixPresetFile(unittest.TestCase):
 
     def test_missing_file_returns_empty_dict(self):
         result = _parse_prefix_preset_file("/tmp/__no_such_addon_preset__.py", "scene")
@@ -550,8 +444,6 @@ class TestCorruptPresetSanitization(unittest.TestCase):
     """Presets with invalid mathutils repr (as written by Blender's AddPresetBase)
     must be parsed without error and yield the correct numeric tuple."""
 
-    # -- parse_preset_file (op. prefix) ----------------------------------------
-
     def test_euler_repr_in_op_preset_parsed_as_tuple(self):
         """<Euler (x=..., y=..., z=...), order='XYZ'> is converted to a tuple."""
         path = _write_preset(
@@ -618,23 +510,6 @@ class TestCorruptPresetSanitization(unittest.TestCase):
         finally:
             os.unlink(path)
 
-    def test_corrupt_euler_applied_via_assign_preset(self):
-        """assign_preset correctly sets a property whose value was a corrupt Euler."""
-        path = _write_preset(
-            "op.filepath = ''\n"
-            "op.global_scale = 2.0\n"
-            "op.rotation = <Euler (x=0.0000, y=0.0000, z=1.5708), order='XYZ'>\n"
-        )
-        try:
-            exporter = _make_exporter(global_scale=1.0, rotation=(0.0, 0.0, 0.0))
-            ok, _ = assign_preset(exporter, path)
-            self.assertTrue(ok)
-            self.assertAlmostEqual(exporter.export_properties.global_scale, 2.0)
-        finally:
-            os.unlink(path)
-
-    # -- _parse_prefix_preset_file (scene. prefix) ------------------------------
-
     def test_euler_repr_in_scene_preset_parsed_as_tuple(self):
         """scene.pre_rotate_euler = <Euler ...> is parsed correctly for change detection."""
         path = _write_preset(
@@ -663,5 +538,11 @@ class TestCorruptPresetSanitization(unittest.TestCase):
             os.unlink(path)
 
 
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+
 if __name__ == "__main__":
-    unittest.main()
+    suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
+    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    sys.exit(0 if result.wasSuccessful() else 1)
