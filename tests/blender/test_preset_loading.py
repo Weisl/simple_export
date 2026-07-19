@@ -683,7 +683,7 @@ class TestVersionSpecificPresetValues(unittest.TestCase):
         for version_folder, keys in zip(self._VERSION_FOLDERS[1:], key_sets[1:]):
             self.assertEqual(
                 keys, reference,
-                f"{version_folder} FBX preset names differ from blender_4x: "
+                f"{version_folder} FBX preset names differ from {self._VERSION_FOLDERS[0]}: "
                 f"added={keys - reference}, removed={reference - keys}",
             )
 
@@ -708,18 +708,44 @@ class TestVersionSpecificPresetValues(unittest.TestCase):
                     f"{version_folder}/UE-fbx: unexpected axis_forward value",
                 )
 
-    def test_blender_4x_fbx_has_exactly_four_presets(self):
+    def test_blender_4_2_fbx_has_exactly_four_presets(self):
         """
-        blender_4x defines exactly 4 active FBX presets.
+        blender_4_2 defines exactly 4 active FBX presets.
 
         A commented-out 'Northlight-fbx' entry exists in that module. This test
         guards against accidentally uncommenting it without bumping the expected count.
         """
-        presets = self._load_fbx("blender_4x")
+        presets = self._load_fbx("blender_4_2")
         self.assertEqual(
             len(presets), 4,
-            f"blender_4x has {len(presets)} FBX presets; expected 4. "
+            f"blender_4_2 has {len(presets)} FBX presets; expected 4. "
             "If you intentionally added or removed a preset, update this count.",
+        )
+
+    def test_blender_4_2_gltf_defers_version_gated_keys_to_the_end(self):
+        """
+        blender_4_2's Godot-gltf preset must keep export_gltfpack_kn,
+        export_merge_animation, export_sampling_interpolation_fallback, and
+        export_vertex_color_name as the last four keys in the dict.
+
+        These properties don't exist on the glTF exporter operator for some
+        or all of 4.2/4.3/4.4. Blender's native preset loader execs the
+        generated file top to bottom and aborts on the first unrecognized
+        property, so keeping them last ensures every other (universally
+        supported) property is still applied before that happens — instead
+        of an early unrecognized property truncating the whole preset.
+        """
+        version_gated = [
+            "export_gltfpack_kn",
+            "export_merge_animation",
+            "export_sampling_interpolation_fallback",
+            "export_vertex_color_name",
+        ]
+        keys = list(self._load_gltf("blender_4_2")["Godot-gltf"].keys())
+        self.assertEqual(
+            keys[-4:], version_gated,
+            "blender_4_2/Godot-gltf: version-gated keys must be the last four entries "
+            f"(in this order) so a native Blender preset load doesn't truncate early; got {keys[-4:]}",
         )
 
     def test_preset_dicts_are_independent_objects(self):
