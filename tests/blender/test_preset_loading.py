@@ -325,11 +325,17 @@ class TestGeneratedPresetFiles(unittest.TestCase):
         self._assert_has_assignments(source, _REQUIRED_GLTF_KEYS - {"filepath"}, label)
 
     # -- FBX --
-    def test_blender_4x_ue_fbx_valid(self):
-        self._test_fbx_preset("blender_4x", "UE-fbx")
+    def test_blender_4_2_ue_fbx_valid(self):
+        self._test_fbx_preset("blender_4_2", "UE-fbx")
 
-    def test_blender_4x_unity_fbx_valid(self):
-        self._test_fbx_preset("blender_4x", "Unity-fbx")
+    def test_blender_4_2_unity_fbx_valid(self):
+        self._test_fbx_preset("blender_4_2", "Unity-fbx")
+
+    def test_blender_4_5_ue_fbx_valid(self):
+        self._test_fbx_preset("blender_4_5", "UE-fbx")
+
+    def test_blender_4_5_unity_fbx_valid(self):
+        self._test_fbx_preset("blender_4_5", "Unity-fbx")
 
     def test_blender_5_0_ue_fbx_valid(self):
         self._test_fbx_preset("blender_5_0", "UE-fbx")
@@ -353,8 +359,11 @@ class TestGeneratedPresetFiles(unittest.TestCase):
         self._test_fbx_preset("blender_5_2", "Highpoly-fbx")
 
     # -- GLTF --
-    def test_blender_4x_godot_gltf_valid(self):
-        self._test_gltf_preset("blender_4x", "Godot-gltf")
+    def test_blender_4_2_godot_gltf_valid(self):
+        self._test_gltf_preset("blender_4_2", "Godot-gltf")
+
+    def test_blender_4_5_godot_gltf_valid(self):
+        self._test_gltf_preset("blender_4_5", "Godot-gltf")
 
     def test_blender_5_0_godot_gltf_valid(self):
         self._test_gltf_preset("blender_5_0", "Godot-gltf")
@@ -416,9 +425,13 @@ class TestInitializePresets(unittest.TestCase):
         self.assertFalse(missing_fbx, f"{label}: FBX preset files not created: {missing_fbx}")
         self.assertFalse(missing_gltf, f"{label}: GLTF preset files not created: {missing_gltf}")
 
-    def test_blender_4x_creates_all_preset_files(self):
+    def test_blender_4_2_creates_all_preset_files(self):
         fbx, gltf = self._run_initialize((4, 2, 0))
         self._assert_preset_files(fbx, gltf, "Blender 4.2")
+
+    def test_blender_4_5_creates_all_preset_files(self):
+        fbx, gltf = self._run_initialize((4, 5, 0))
+        self._assert_preset_files(fbx, gltf, "Blender 4.5")
 
     def test_blender_5_0_creates_all_preset_files(self):
         fbx, gltf = self._run_initialize((5, 0, 0))
@@ -605,19 +618,32 @@ class TestVersionSpecificPresetValues(unittest.TestCase):
     """
     Structural guards for version-specific preset data.
 
-    The FBX preset dictionaries are identical across blender_4x, blender_5_0,
-    blender_5_1, and blender_5_2 (the FBX exporter's operator properties have
-    not changed since 4.2). The GLTF exporter gained two new properties in
-    Blender 5.2 (export_meshopt_compression_enable, export_meshopt_extension
-    — meshopt mesh compression support), so blender_5_2's Godot-gltf preset
-    carries two extra keys not present in earlier version folders. These
-    tests focus on structural invariants — presence of required keys and
-    consistent preset names — plus explicit value assertions for the 5.2
-    divergence. When a future Blender version introduces further API
-    differences, update the relevant preset module AND add value assertions here.
+    The FBX preset dictionaries are identical across blender_4_2, blender_4_5,
+    blender_5_0, blender_5_1, and blender_5_2 (the FBX exporter's operator
+    properties have not changed since 4.2). The GLTF exporter gained several
+    properties over the 4.x line — export_gltfpack_kn, export_merge_animation,
+    export_sampling_interpolation_fallback (4.4+), export_vertex_color_name
+    (4.5+) — which is why blender_4x was split into blender_4_2 (covers 4.2
+    through 4.4, the pre-4.5-LTS releases) and blender_4_5 (covers the 4.5 LTS
+    line, 4.5–4.9, where the operator has every property). blender_4_2's
+    Godot-gltf preset keeps those version-gated keys as the last entries in
+    the dict: Blender's native preset loader (script.execute_preset) execs
+    the generated file top to bottom and aborts on the first unrecognized
+    property, so ordering them last means every earlier (universally
+    supported) property still gets applied on 4.2/4.3/4.4 instead of the
+    whole preset being silently truncated partway through.
+
+    Blender 5.2 separately gained export_meshopt_compression_enable and
+    export_meshopt_extension (meshopt mesh compression support), so
+    blender_5_2's Godot-gltf preset carries two extra keys not present in
+    earlier version folders. These tests focus on structural invariants —
+    presence of required keys and consistent preset names — plus explicit
+    value/ordering assertions for the known divergences. When a future
+    Blender version introduces further API differences, update the relevant
+    preset module AND add assertions here.
     """
 
-    _VERSION_FOLDERS = ["blender_4x", "blender_5_0", "blender_5_1", "blender_5_2"]
+    _VERSION_FOLDERS = ["blender_4_2", "blender_4_5", "blender_5_0", "blender_5_1", "blender_5_2"]
 
     def _load_fbx(self, version_folder):
         mod = importlib.import_module(
@@ -639,7 +665,7 @@ class TestVersionSpecificPresetValues(unittest.TestCase):
         own default); earlier version folders must not reference them, since
         the property does not exist on those Blender versions' operator.
         """
-        pre_5_2 = ["blender_4x", "blender_5_0", "blender_5_1"]
+        pre_5_2 = ["blender_4_2", "blender_4_5", "blender_5_0", "blender_5_1"]
         for version_folder in pre_5_2:
             with self.subTest(version_folder=version_folder):
                 preset = self._load_gltf(version_folder)["Godot-gltf"]
