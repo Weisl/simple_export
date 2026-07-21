@@ -106,8 +106,10 @@ class EXPORT_OT_AddSettingsToCollections(
         from .. import __package__ as base_package
         layout = self.layout
         layout.prop(self, "addon_preset_selection", text="")
-        op = layout.operator("preferences.addon_show", text="New Preset", icon='PREFERENCES')
-        op.module = base_package
+        from ..core.info import ADDON_NAME
+        op = layout.operator("simple_export.open_preferences", text="New Preset", icon='PREFERENCES')
+        op.addon_name = ADDON_NAME
+        op.prefs_tabs = 'SETTINGS'
 
         layout.separator()
         layout.prop(self, "set_export_path")

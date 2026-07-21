@@ -16,12 +16,16 @@ def get_blender_version():
 
 def get_versioned_module(version, preset_type):
     major, minor, _ = version
-    if major == 5 and minor >= 1:
+    if major == 5 and minor >= 2:
+        return f".blender_5_2.preset_data_{preset_type}"
+    elif major == 5 and minor >= 1:
         return f".blender_5_1.preset_data_{preset_type}"
     elif major == 5 and minor >= 0:
         return f".blender_5_0.preset_data_{preset_type}"
+    elif major == 4 and minor >= 5:
+        return f".blender_4_5.preset_data_{preset_type}"
     else:
-        return f".blender_4x.preset_data_{preset_type}"
+        return f".blender_4_2.preset_data_{preset_type}"
 
 
 def save_export_presets(preset_name, preset_folder, preset_data):
