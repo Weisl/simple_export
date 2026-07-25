@@ -29,6 +29,11 @@ class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Pa
         op.outliner = False
         op.individual_collection = False
 
+        row = col.row()
+        row.alignment = 'RIGHT'
+        op = row.operator("simple_export.validate_collections", text="Validate Selected", icon='CHECKMARK')
+        op.scope = 'SELECTED'
+
 
 classes = (
     SIMPLE_EXPORT_PT_simple_export_popup,

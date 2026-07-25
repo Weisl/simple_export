@@ -427,6 +427,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         items=(('GENERAL', "General", "General addon settings"),
                ('SETTINGS', "Presets", "Manage and edit export presets"),
                ('KEYMAP', "Keymap", "Change the hotkeys for tools associated with this addon."),
+               ('VALIDATION', "Validation", "Settings for the export collection validation checks."),
                ('SUPPORT', "Support", "Get support and help with the addon and help improve it"),
                ),
         default='GENERAL',
@@ -770,6 +771,160 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         items=lambda self, context: get_py_files_for_stl(self, context),
     )
 
+    ###################################################################
+    # VALIDATION
+
+    validate_check_missing_material_slot: bpy.props.BoolProperty(
+        name="Missing Material Slot",
+        description="Flag mesh objects with one or more faces that have no material assigned",
+        default=True)
+
+    validate_check_negative_scale: bpy.props.BoolProperty(
+        name="Negative Scale",
+        description="Flag objects with un-applied negative scale, which flips face winding on export",
+        default=True)
+
+    validate_check_missing_library_reference: bpy.props.BoolProperty(
+        name="Missing Library Reference",
+        description="Flag linked objects whose source .blend file no longer exists on disk",
+        default=True)
+
+    validate_check_all_objects_hidden_from_render: bpy.props.BoolProperty(
+        name="All Objects Hidden From Render",
+        description="Flag a collection where every object is excluded from render",
+        default=True)
+
+    validate_check_no_mesh_objects: bpy.props.BoolProperty(
+        name="No Mesh Objects",
+        description="Flag an export collection with no mesh objects",
+        default=True)
+
+    validate_check_missing_uv_map: bpy.props.BoolProperty(
+        name="Missing UV Map",
+        description="Flag mesh objects with no UV layer",
+        default=True)
+
+    validate_check_too_many_uv_maps: bpy.props.BoolProperty(
+        name="Too Many UV Maps",
+        description="Flag mesh objects with more UV maps than the limit below. Extra UV channels (e.g. a "
+                    "second baked-lightmap UV) are often intentional",
+        default=True)
+
+    validate_check_triangle_count: bpy.props.BoolProperty(
+        name="Triangle Count",
+        description="Flag a collection whose combined triangle count exceeds the limit below",
+        default=True)
+
+    validate_check_ngons_present: bpy.props.BoolProperty(
+        name="N-Gons Present",
+        description="Flag mesh objects with n-gon faces (5+ sides), which triangulate unpredictably on export",
+        default=True)
+
+    validate_check_non_manifold_geometry: bpy.props.BoolProperty(
+        name="Non-Manifold Geometry",
+        description="Flag mesh objects with edges that aren't shared by exactly two faces",
+        default=True)
+
+    validate_check_loose_geometry: bpy.props.BoolProperty(
+        name="Loose Geometry",
+        description="Flag mesh objects with loose vertices or edges not part of any face",
+        default=True)
+
+    validate_check_numeric_suffix_name: bpy.props.BoolProperty(
+        name="Numeric Suffix Name",
+        description="Flag objects with a Blender-generated '.001'-style duplicate suffix in their name",
+        default=True)
+
+    validate_check_invalid_characters_in_name: bpy.props.BoolProperty(
+        name="Invalid Characters in Name",
+        description="Flag collection/object names containing spaces or special characters. Letters, numbers, "
+                    "underscores, hyphens and dots are allowed - many target engines disallow or silently "
+                    "sanitize anything else",
+        default=True)
+
+    validate_check_missing_textures: bpy.props.BoolProperty(
+        name="Missing Textures",
+        description="Flag missing (non-packed, file-sourced) image textures. Only checked for glTF/USD exports",
+        default=True)
+
+    validate_check_unused_material_slot: bpy.props.BoolProperty(
+        name="Unused Material Slot",
+        description="Flag material slots that no face references",
+        default=True)
+
+    validate_check_uv_out_of_bounds: bpy.props.BoolProperty(
+        name="UVs Out of Bounds",
+        description="Flag UVs outside the 0-1 range. Often intentional (tiling/trim-sheets) - off by default",
+        default=False)
+
+    validate_check_non_uniform_scale: bpy.props.BoolProperty(
+        name="Non-Uniform Scale",
+        description="Flag non-uniform scale. Often harmless since exporters bake the world transform - off by default",
+        default=False)
+
+    validate_check_uniform_scale_not_applied: bpy.props.BoolProperty(
+        name="Uniform Scale Not Applied",
+        description="Flag uniform (but not 1.0) scale. Usually harmless - off by default",
+        default=False)
+
+    validation_max_triangle_count: bpy.props.IntProperty(
+        name="Max Triangle Count",
+        description="Maximum combined triangle count an export collection can have before it is flagged",
+        default=50000,
+        min=1)
+
+    validation_max_uv_maps: bpy.props.IntProperty(
+        name="Max UV Maps",
+        description="Maximum number of UV maps a mesh object can have before it is flagged",
+        default=1,
+        min=0)
+
+    props_validation_checks = [
+        "validate_check_missing_material_slot",
+        "validate_check_negative_scale",
+        "validate_check_missing_library_reference",
+        "validate_check_all_objects_hidden_from_render",
+        "validate_check_no_mesh_objects",
+        "validate_check_missing_uv_map",
+        "validate_check_too_many_uv_maps",
+        "validate_check_triangle_count",
+        "validate_check_ngons_present",
+        "validate_check_non_manifold_geometry",
+        "validate_check_loose_geometry",
+        "validate_check_numeric_suffix_name",
+        "validate_check_invalid_characters_in_name",
+        "validate_check_missing_textures",
+        "validate_check_unused_material_slot",
+        "validate_check_uv_out_of_bounds",
+        "validate_check_non_uniform_scale",
+        "validate_check_uniform_scale_not_applied",
+    ]
+
+    props_validation_thresholds = [
+        "validation_max_triangle_count",
+        "validation_max_uv_maps",
+    ]
+
+    def draw_validation_panel(self, layout):
+        """Draw the validation panel"""
+        box = layout.box()
+        box.label(text="Export collection validation is in BETA - checks, defaults and behavior may still change.",
+                  icon='INFO')
+
+        box = layout.box()
+        row = box.row()
+        row.label(text='Checks')
+        for propName in self.props_validation_checks:
+            row = box.row()
+            row.prop(self, propName)
+
+        box = layout.box()
+        row = box.row()
+        row.label(text='Thresholds')
+        for propName in self.props_validation_thresholds:
+            row = box.row()
+            row.prop(self, propName)
+
     def keymap_ui(self, layout, title, property_prefix, id_name, properties_name):
         box = layout.box()
         split = box.split(align=True, factor=0.5)
@@ -880,6 +1035,9 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         elif self.prefs_tabs == 'KEYMAP':
             self.keymap_ui(layout, 'Export Popup', 'simple_export_panel', 'wm.call_panel',
                            "SIMPLE_EXPORT_PT_simple_export_popup")
+
+        elif self.prefs_tabs == 'VALIDATION':
+            self.draw_validation_panel(layout)
 
         elif self.prefs_tabs == 'SUPPORT':
             # Cross Promotion

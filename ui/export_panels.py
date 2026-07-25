@@ -228,6 +228,10 @@ class SIMPLE_EXPORT_menu_base:
         op.outliner = False
         op.individual_collection = False
 
+        row = col.row()
+        op = row.operator("simple_export.validate_collections", text="Validate Selected", icon='CHECKMARK')
+        op.scope = 'SELECTED'
+
 
 
 
@@ -329,6 +333,10 @@ class SIMPLE_EXPORT_MT_context_menu(bpy.types.Menu):
         row = layout.row()
         from .shared_operator_call import call_create_export_collection_op
         op = call_create_export_collection_op(context.scene, row)
+
+        row = layout.row()
+        op = row.operator("simple_export.validate_collections", text="Validate Selected", icon='CHECKMARK')
+        op.scope = 'SELECTED'
 
         layout.separator()
         row = layout.row()

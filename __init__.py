@@ -8,6 +8,7 @@ if "bpy" in locals():
     importlib.reload(core)
     importlib.reload(presets_export)
     importlib.reload(presets_addon)
+    importlib.reload(validation)
 
 else:
     from . import operators
@@ -16,6 +17,7 @@ else:
     from . import core
     from . import presets_export
     from . import presets_addon
+    from . import validation
 
 
 def register():
@@ -26,10 +28,12 @@ def register():
     core.register()
     presets_export.register()
     presets_addon.register()
+    validation.register()
 
 
 def unregister():
     # call unregister function of the submodules.
+    validation.unregister()
     presets_addon.unregister()
     presets_export.unregister()
     core.unregister()

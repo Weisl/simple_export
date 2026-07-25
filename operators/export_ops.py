@@ -12,10 +12,9 @@ from ..functions.pre_export_ops import (
     apply_pre_rotation, restore_pre_rotation,
 )
 from ..functions.exporter_funcs import find_exporter, get_exporter_id, add_extension
-from ..functions.outliner_func import get_outliner_collections
+from ..functions.collection_selection import get_export_collection_list
 from ..functions.path_utils import clean_relative_path, ensure_export_folder_exists, make_folder_path_absolute
 from ..functions.vallidate_func import validate_collection, post_export_checks, pre_export_checks, check_collection_warnings
-from ..ui.uilist import collection_passes_uilist_filters
 
 
 def call_export_popup(export_results, context):
@@ -55,17 +54,12 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
         scene = context.scene
 
         # Get Export Collections
-        if self.outliner:
-            collection_list = get_outliner_collections(context)
-        elif self.individual_collection:  # Retrieve collection by name
-            collection = bpy.data.collections.get(self.collection_name)
-            collection_list = [collection] if collection else []
-        else:
-            collection_list = [
-                col for col in bpy.data.collections
-                if getattr(col, "simple_export_selected", False)
-                and collection_passes_uilist_filters(col, scene)
-            ]
+        collection_list = get_export_collection_list(
+            context,
+            outliner=self.outliner,
+            individual_collection=self.individual_collection,
+            collection_name=self.collection_name,
+        )
 
         if not collection_list:
             self.report({'WARNING'}, "No valid collections found for export.")
