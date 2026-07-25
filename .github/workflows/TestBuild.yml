@@ -31,6 +31,7 @@ jobs:
             --exclude='venv' \
             --exclude='__pycache__' \
             --exclude='*.pyc' \
+            --exclude='CHANGELOG.md' \
             simple_export/ staging/simple_export/
 
       - name: Upload zip as artifact
