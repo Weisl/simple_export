@@ -2,7 +2,7 @@ from . import assign_exporter_ops, export_ops, set_filepath_ops, assign_preset_o
     create_exporter_collection_ops, collection_offset_ops, remove_exporters_ops, fix_filename, \
     fix_multiple_exporters, relative_folder_picker, reload_addon, convert_filepath_ops, \
     create_instance_collection_ops
-from .version_check import start_version_check
+from .version_check import start_version_check, stop_version_check
 
 files = [
     assign_exporter_ops,
@@ -58,6 +58,7 @@ def register():
 
 
 def unregister():
+    stop_version_check()
     for file in reversed(files):
         file.unregister()
     unregister_scene_properties()

@@ -9,8 +9,9 @@ TRIANGULATE_MOD_NAME = "_SimpleExport_Triangulate"
 def apply_triangulate_modifiers(collection):
     """Bake triangulation into mesh data before export (non-destructive).
 
-    Returns a backup dict {obj.name: (original_mesh, suppressed)} so the caller
-    can restore with remove_triangulate_modifiers.
+    Returns a backup dict {obj.as_pointer(): (original_mesh, suppressed)} so the
+    caller can restore with remove_triangulate_modifiers. Keyed by pointer (not
+    obj.name) because names are mutable and can change between apply and restore.
     """
     backup = {}
     depsgraph = bpy.context.evaluated_depsgraph_get()
@@ -32,7 +33,7 @@ def apply_triangulate_modifiers(collection):
         for m in obj.modifiers:
             m.show_render = False
             m.show_viewport = False
-        backup[obj.name] = (obj.data, suppressed)
+        backup[obj.as_pointer()] = (obj.data, suppressed)
         obj.data = triangulated_mesh
     return backup
 
@@ -40,9 +41,9 @@ def apply_triangulate_modifiers(collection):
 def remove_triangulate_modifiers(collection, backup):
     """Restore original mesh data and modifier visibility after a triangulated export."""
     for obj in collection.all_objects:
-        if obj is None or obj.name not in backup:
+        if obj is None or obj.as_pointer() not in backup:
             continue
-        original_mesh, suppressed = backup[obj.name]
+        original_mesh, suppressed = backup[obj.as_pointer()]
         temp_mesh = obj.data
         obj.data = original_mesh
         for mod in obj.modifiers:
@@ -57,7 +58,9 @@ def apply_scale_for_export(collection):
     """
     Bake object scale into mesh data before export.
     Makes a single-user copy of the mesh to avoid affecting shared data blocks.
-    Returns a backup dict: {obj.name: (original_mesh, scale)}.
+    Returns a backup dict: {obj.as_pointer(): (original_mesh, scale)}. Keyed by
+    pointer (not obj.name) because names are mutable and can change between
+    apply and restore.
     """
     backup = {}
     for obj in collection.objects:
@@ -65,19 +68,27 @@ def apply_scale_for_export(collection):
             continue
         original_mesh = obj.data
         scale = obj.scale.copy()
-        obj.data = obj.data.copy()
-        obj.data.transform(Matrix.Diagonal((*scale, 1.0)))
+        new_mesh = original_mesh.copy()
+        try:
+            new_mesh.transform(Matrix.Diagonal((*scale, 1.0)))
+        except Exception:
+            bpy.data.meshes.remove(new_mesh)
+            raise
+        # Backup is recorded only after the copy is fully transformed, and
+        # obj.data is only reassigned afterwards, so a failure above leaves
+        # obj untouched instead of orphaning original_mesh mid-mutation.
+        backup[obj.as_pointer()] = (original_mesh, scale)
+        obj.data = new_mesh
         obj.scale = (1.0, 1.0, 1.0)
-        backup[obj.name] = (original_mesh, scale)
     return backup
 
 
 def restore_scale_after_export(collection, backup):
     """Restore original mesh data and scale from backup."""
     for obj in collection.objects:
-        if obj.name not in backup:
+        if obj.as_pointer() not in backup:
             continue
-        original_mesh, scale = backup[obj.name]
+        original_mesh, scale = backup[obj.as_pointer()]
         temp_mesh = obj.data
         obj.data = original_mesh
         obj.scale = scale
@@ -90,7 +101,9 @@ def apply_rotation_for_export(collection):
     """
     Bake object rotation into mesh data before export.
     Makes a single-user copy of the mesh to avoid affecting shared data blocks.
-    Returns a backup dict: {obj.name: (original_mesh, rotation_euler)}.
+    Returns a backup dict: {obj.as_pointer(): (original_mesh, rotation_euler)}.
+    Keyed by pointer (not obj.name) because names are mutable and can change
+    between apply and restore.
     """
     backup = {}
     for obj in collection.objects:
@@ -98,19 +111,24 @@ def apply_rotation_for_export(collection):
             continue
         original_mesh = obj.data
         rotation = obj.rotation_euler.copy()
-        obj.data = obj.data.copy()
-        obj.data.transform(rotation.to_matrix().to_4x4())
+        new_mesh = original_mesh.copy()
+        try:
+            new_mesh.transform(rotation.to_matrix().to_4x4())
+        except Exception:
+            bpy.data.meshes.remove(new_mesh)
+            raise
+        backup[obj.as_pointer()] = (original_mesh, rotation)
+        obj.data = new_mesh
         obj.rotation_euler = (0.0, 0.0, 0.0)
-        backup[obj.name] = (original_mesh, rotation)
     return backup
 
 
 def restore_rotation_after_export(collection, backup):
     """Restore original mesh data and rotation from backup."""
     for obj in collection.objects:
-        if obj.name not in backup:
+        if obj.as_pointer() not in backup:
             continue
-        original_mesh, rotation = backup[obj.name]
+        original_mesh, rotation = backup[obj.as_pointer()]
         temp_mesh = obj.data
         obj.data = original_mesh
         obj.rotation_euler = rotation
@@ -123,7 +141,9 @@ def apply_transform_for_export(collection):
     """
     Bake the full matrix_world (location, rotation, scale) into mesh data before export.
     Makes a single-user copy of the mesh to avoid affecting shared data blocks.
-    Returns a backup dict: {obj.name: (original_mesh, matrix_world)}.
+    Returns a backup dict: {obj.as_pointer(): (original_mesh, matrix_world)}.
+    Keyed by pointer (not obj.name) because names are mutable and can change
+    between apply and restore.
     """
     backup = {}
     for obj in collection.objects:
@@ -131,19 +151,24 @@ def apply_transform_for_export(collection):
             continue
         original_mesh = obj.data
         matrix = obj.matrix_world.copy()
-        obj.data = obj.data.copy()
-        obj.data.transform(matrix)
+        new_mesh = original_mesh.copy()
+        try:
+            new_mesh.transform(matrix)
+        except Exception:
+            bpy.data.meshes.remove(new_mesh)
+            raise
+        backup[obj.as_pointer()] = (original_mesh, matrix)
+        obj.data = new_mesh
         obj.matrix_world = Matrix.Identity(4)
-        backup[obj.name] = (original_mesh, matrix)
     return backup
 
 
 def restore_transform_after_export(collection, backup):
     """Restore original mesh data and matrix_world from backup."""
     for obj in collection.objects:
-        if obj.name not in backup:
+        if obj.as_pointer() not in backup:
             continue
-        original_mesh, matrix = backup[obj.name]
+        original_mesh, matrix = backup[obj.as_pointer()]
         temp_mesh = obj.data
         obj.data = original_mesh
         obj.matrix_world = matrix
@@ -155,7 +180,9 @@ def restore_transform_after_export(collection, backup):
 def apply_pre_rotation(collection, euler_offset):
     """
     Apply a rotation offset (Euler XYZ) to all top-level objects before export.
-    Returns a backup dict: {obj.name: original_rotation_euler}.
+    Returns a backup dict: {obj.as_pointer(): original_rotation_euler}. Keyed by
+    pointer (not obj.name) because names are mutable and can change between
+    apply and restore.
     Applies to all object types (not just meshes) since rotation is object-level.
     """
     backup = {}
@@ -163,7 +190,7 @@ def apply_pre_rotation(collection, euler_offset):
     for obj in collection.objects:
         if obj.parent is not None:
             continue
-        backup[obj.name] = obj.rotation_euler.copy()
+        backup[obj.as_pointer()] = obj.rotation_euler.copy()
         obj.rotation_euler.rotate(rot)
     return backup
 
@@ -171,6 +198,6 @@ def apply_pre_rotation(collection, euler_offset):
 def restore_pre_rotation(collection, backup):
     """Restore original rotation from backup."""
     for obj in collection.objects:
-        if obj.name not in backup:
+        if obj.as_pointer() not in backup:
             continue
-        obj.rotation_euler = backup[obj.name]
+        obj.rotation_euler = backup[obj.as_pointer()]

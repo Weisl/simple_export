@@ -9,13 +9,17 @@ latest_version_str = ""
 
 _RELEASES_URL = "https://api.github.com/repos/Weisl/simple_export/releases/latest"
 
+# Set by unregister() so an in-flight background thread stops writing to the
+# module globals above once the addon has been torn down.
+_cancel_event = threading.Event()
+
 
 def _parse_version(version_str):
     """Convert '2.1.4' or 'v2.1.4' to (2, 1, 4)."""
     return tuple(int(x) for x in version_str.lstrip("v").split("."))
 
 
-def _fetch():
+def _fetch(cancel_event):
     global update_available, latest_version_str
     try:
         req = urllib.request.Request(
@@ -24,6 +28,9 @@ def _fetch():
         )
         with urllib.request.urlopen(req, timeout=5) as response:
             data = json.loads(response.read().decode())
+
+        if cancel_event.is_set():
+            return
 
         tag = data.get("tag_name", "")
         if not tag:
@@ -46,6 +53,9 @@ def _fetch():
 
         current = _parse_version(current_str)
 
+        if cancel_event.is_set():
+            return
+
         if latest > current:
             update_available = True
             latest_version_str = tag.lstrip("v")
@@ -58,5 +68,12 @@ def _fetch():
 
 def start_version_check():
     """Fire a background thread to check for a newer release on GitHub."""
-    t = threading.Thread(target=_fetch, daemon=True)
+    global _cancel_event
+    _cancel_event = threading.Event()
+    t = threading.Thread(target=_fetch, args=(_cancel_event,), daemon=True)
     t.start()
+
+
+def stop_version_check():
+    """Signal any in-flight background thread to stop writing module globals."""
+    _cancel_event.set()
