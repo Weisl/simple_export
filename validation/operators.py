@@ -17,11 +17,13 @@ class SIMPLEEXPORT_UL_validation_results(bpy.types.UIList):
     collection-level issue); the message itself is a plain, non-interactive
     label. Supports filtering by severity (three-tier: Error/Warning/Info) and
     a free-text search across the collection/object name/message.
-    """
 
-    show_errors: bpy.props.BoolProperty(name="Errors", default=True, description="Show error-level issues")
-    show_warnings: bpy.props.BoolProperty(name="Warnings", default=True, description="Show warning-level issues")
-    show_info: bpy.props.BoolProperty(name="Info", default=True, description="Show info-level issues")
+    The severity toggles themselves live on WindowManager, not here - they're
+    drawn above the list (with per-severity counts) by the operator's draw(),
+    not tucked away behind the UIList's own collapsible filter icon. This
+    class only reads them (`data.simple_export_validation_show_*`, where
+    `data` is the WindowManager passed into template_list/filter_items).
+    """
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         results = data.simple_export_validation_results
@@ -61,11 +63,11 @@ class SIMPLEEXPORT_UL_validation_results(bpy.types.UIList):
 
         filter_text = self.filter_name.lower()
         for idx, item in enumerate(results):
-            if item.severity == 'ERROR' and not self.show_errors:
+            if item.severity == 'ERROR' and not data.simple_export_validation_show_errors:
                 flt_flags[idx] = 0
-            elif item.severity == 'WARNING' and not self.show_warnings:
+            elif item.severity == 'WARNING' and not data.simple_export_validation_show_warnings:
                 flt_flags[idx] = 0
-            elif item.severity == 'INFO' and not self.show_info:
+            elif item.severity == 'INFO' and not data.simple_export_validation_show_info:
                 flt_flags[idx] = 0
             elif filter_text and (
                 filter_text not in item.collection_name.lower()
@@ -82,10 +84,6 @@ class SIMPLEEXPORT_UL_validation_results(bpy.types.UIList):
     def draw_filter(self, context, layout):
         row = layout.row(align=True)
         row.prop(self, 'filter_name', text='', icon='VIEWZOOM')
-        row = layout.row(align=True)
-        row.prop(self, 'show_errors', toggle=True, icon=_SEVERITY_ICON['ERROR'])
-        row.prop(self, 'show_warnings', toggle=True, icon=_SEVERITY_ICON['WARNING'])
-        row.prop(self, 'show_info', toggle=True, icon=_SEVERITY_ICON['INFO'])
 
 
 def _frame_selected(context):
@@ -265,10 +263,19 @@ class SCENE_OT_ValidateExportCollections(bpy.types.Operator):
         row.prop(self, 'scope', expand=True)
 
         results = wm.simple_export_validation_results
-        count = len(results)
         error_count = sum(1 for r in results if r.severity == 'ERROR')
-        icon = 'CANCEL' if error_count else ('ERROR' if count else 'CHECKMARK')
-        layout.label(text=f"{count} issue(s) found", icon=icon)
+        warning_count = sum(1 for r in results if r.severity == 'WARNING')
+        info_count = sum(1 for r in results if r.severity == 'INFO')
+
+        # Severity filter, always visible above the list (not tucked away
+        # behind the UIList's own collapsible filter icon).
+        row = layout.row(align=True)
+        row.prop(wm, 'simple_export_validation_show_errors', toggle=True,
+                 icon=_SEVERITY_ICON['ERROR'], text=f"Errors ({error_count})")
+        row.prop(wm, 'simple_export_validation_show_warnings', toggle=True,
+                 icon=_SEVERITY_ICON['WARNING'], text=f"Warnings ({warning_count})")
+        row.prop(wm, 'simple_export_validation_show_info', toggle=True,
+                 icon=_SEVERITY_ICON['INFO'], text=f"Info ({info_count})")
 
         layout.template_list(
             'SIMPLEEXPORT_UL_validation_results', '',

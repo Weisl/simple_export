@@ -33,6 +33,14 @@ def register():
     wm.simple_export_validation_results = bpy.props.CollectionProperty(type=properties.ValidationIssueItem)
     wm.simple_export_validation_index = bpy.props.IntProperty()
 
+    # Severity filter state. Lives on WindowManager (not the UIList) so the
+    # toggle buttons can be drawn above the list, in the operator's draw(),
+    # while still being readable from the UIList's filter_items(). Only
+    # Errors are shown by default - Warnings/Info are opt-in.
+    wm.simple_export_validation_show_errors = bpy.props.BoolProperty(default=True)
+    wm.simple_export_validation_show_warnings = bpy.props.BoolProperty(default=False)
+    wm.simple_export_validation_show_info = bpy.props.BoolProperty(default=False)
+
     bpy.app.handlers.load_post.append(_clear_results_on_load)
 
 
@@ -43,10 +51,15 @@ def unregister():
         bpy.app.handlers.load_post.remove(_clear_results_on_load)
 
     wm = bpy.types.WindowManager
-    if hasattr(wm, 'simple_export_validation_index'):
-        del wm.simple_export_validation_index
-    if hasattr(wm, 'simple_export_validation_results'):
-        del wm.simple_export_validation_results
+    for attr in (
+        'simple_export_validation_show_info',
+        'simple_export_validation_show_warnings',
+        'simple_export_validation_show_errors',
+        'simple_export_validation_index',
+        'simple_export_validation_results',
+    ):
+        if hasattr(wm, attr):
+            delattr(wm, attr)
 
     for cls in reversed(classes):
         if 'bl_rna' in cls.__dict__:
