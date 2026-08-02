@@ -39,7 +39,7 @@ def draw_pre_export_operations(layout, target):
 def draw_simple_export_header(layout, text="Simple Export"):
     row = layout.row(align=True)
     # Open documentation
-    row.operator("wm.url_open", text="", icon="HELP").url = "https://weisl.github.io/exporter_overview/"
+    row.operator("wm.url_open", text="", icon="HELP").url = "https://weisl.github.io/simple_export/exporter_overview/"
     # Open Preferences
     addon_name = ADDON_NAME
     op = row.operator("simple_export.open_preferences", text="", icon="PREFERENCES")
