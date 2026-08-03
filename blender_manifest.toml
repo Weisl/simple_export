@@ -23,6 +23,7 @@ copyright = [
 ]
 
 [permissions]
+network = "Checks GitHub for a newer release"
 files = "Reads/writes export preset files to disk"
 
 

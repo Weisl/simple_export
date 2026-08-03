@@ -247,8 +247,7 @@ class SimpleExportMainPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
 
         if update_available:
             row = layout.row(align=True)
-            row.alert = True
-            row.label(text=f"Update available: v{latest_version_str}", icon='ERROR')
+            row.label(text=f"Update available: v{latest_version_str}", icon='WARNING_LARGE')
 
 
         from .shared_draw import draw_exporter_presets
