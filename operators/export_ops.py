@@ -17,6 +17,39 @@ from ..functions.path_utils import clean_relative_path, ensure_export_folder_exi
 from ..functions.vallidate_func import validate_collection, post_export_checks, pre_export_checks, check_collection_warnings
 
 
+def _maybe_auto_verify_after_export(context, prefs, collection, export_results):
+    """Auto-triggers engine verification for a single-collection export, if
+    enabled in preferences and the collection's preset names a
+    currently-supported, enabled engine. Deliberately scoped to
+    single-collection exports only - batch exports rely on the manual
+    "Verify in Engine" button instead of spawning N concurrent verifications
+    against what is very likely a single-connection local MCP server."""
+    if not prefs.engine_verify_auto_trigger:
+        return
+
+    result = next((r for r in export_results if r['name'] == collection.name), None)
+    if not result or not result.get('success'):
+        return
+
+    from ..engine_bridge import available_engine_ids, guess_engine_for_collection
+    engine_id = guess_engine_for_collection(collection)
+    if engine_id is None or engine_id not in available_engine_ids():
+        return
+
+    settings = getattr(prefs, f"engine_mcp_{engine_id.lower()}", None)
+    if settings is None or not settings.enabled:
+        return
+    if engine_id == 'UNREAL' and not prefs.engine_mcp_unreal_experimental_ack:
+        return
+
+    bpy.ops.simple_export.verify_in_engine(
+        'INVOKE_DEFAULT',
+        collection_name=collection.name,
+        engine_id=engine_id,
+        filepath=result.get('filepath', ''),
+    )
+
+
 def call_export_popup(export_results, context):
     """Handle cancellation with results."""
     if bpy.app.background:
@@ -265,6 +298,9 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                             restore_rotation_after_export(collection, rotation_backup)
                         if ops.apply_scale_before_export:
                             restore_scale_after_export(collection, scale_backup)
+
+        if len(collection_list) == 1:
+            _maybe_auto_verify_after_export(context, prefs, collection_list[0], export_results)
 
         if error_count == 0:
             self.report({'INFO'}, f"Exported {success_count}/{total} collections")

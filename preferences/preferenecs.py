@@ -7,6 +7,7 @@ from ..core.export_formats import ExportFormats
 from ..core.export_formats import get_export_format_items
 from ..core.info import DEFAULT_ABSOLUTE_PATH as _DEFAULT_ABSOLUTE_PATH
 from ..ui.export_panels import VIEW3D_PT_SimpleExportMain
+from .engine_connections import EngineConnectionSettings
 
 
 def label_multiline(context, text, parent):
@@ -428,6 +429,7 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                ('SETTINGS', "Presets", "Manage and edit export presets"),
                ('KEYMAP', "Keymap", "Change the hotkeys for tools associated with this addon."),
                ('VALIDATION', "Validation", "Settings for the export collection validation checks."),
+               ('ENGINE', "Engine", "Connect to a running game engine's MCP server to verify exports."),
                ('SUPPORT', "Support", "Get support and help with the addon and help improve it"),
                ),
         default='GENERAL',
@@ -905,6 +907,24 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         "validation_max_uv_maps",
     ]
 
+    ###################################################################
+    # ENGINE (post-export MCP verification)
+
+    engine_mcp_unity: bpy.props.PointerProperty(type=EngineConnectionSettings)
+    engine_mcp_godot: bpy.props.PointerProperty(type=EngineConnectionSettings)
+    engine_mcp_unreal: bpy.props.PointerProperty(type=EngineConnectionSettings)
+
+    engine_verify_auto_trigger: bpy.props.BoolProperty(
+        name="Auto-Verify After Export",
+        description="Automatically run engine verification after exporting a single collection",
+        default=False,
+    )
+
+    engine_mcp_unreal_experimental_ack: bpy.props.BoolProperty(
+        name="I understand this uses Unreal's experimental MCP plugin",
+        default=False,
+    )
+
     def draw_validation_panel(self, layout):
         """Draw the validation panel"""
         box = layout.box()
@@ -1038,6 +1058,10 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
         elif self.prefs_tabs == 'VALIDATION':
             self.draw_validation_panel(layout)
+
+        elif self.prefs_tabs == 'ENGINE':
+            from .engine_connections import draw_engine_verify_panel
+            draw_engine_verify_panel(context, layout, self)
 
         elif self.prefs_tabs == 'SUPPORT':
             # Cross Promotion

@@ -52,6 +52,38 @@ def draw_simple_export_header(layout, text="Simple Export"):
 
 
 
+def _draw_verify_in_engine_entry(context, layout, collection):
+    """Manual "Verify in Engine" entry point for the active collection - works
+    anytime a filepath is set, not only right after a fresh export."""
+    from ..engine_bridge import available_engine_ids, guess_engine_for_collection
+    prefs = context.preferences.addons[base_package].preferences
+
+    enabled_engines = []
+    for engine_id in available_engine_ids():
+        settings = getattr(prefs, f"engine_mcp_{engine_id.lower()}", None)
+        if settings is None or not settings.enabled:
+            continue
+        if engine_id == 'UNREAL' and not prefs.engine_mcp_unreal_experimental_ack:
+            continue
+        enabled_engines.append(engine_id)
+
+    if not enabled_engines:
+        return
+
+    filepath = collection.simple_export_filepath_proxy
+    guessed = guess_engine_for_collection(collection)
+
+    if guessed and guessed in enabled_engines:
+        op = layout.operator("simple_export.verify_in_engine", text='', icon='RENDER_STILL')
+        op.collection_name = collection.name
+        op.engine_id = guessed
+        op.filepath = filepath
+    else:
+        context.window_manager.simple_export_engine_verify_pending_collection = collection.name
+        context.window_manager.simple_export_engine_verify_pending_filepath = filepath
+        layout.menu("SIMPLEEXPORT_MT_verify_in_engine_menu", text='', icon='RENDER_STILL')
+
+
 def draw_active_list_element(layout, context, scene):
     # Ensure valid selection before showing details
     if 0 <= scene.collection_index < len(bpy.data.collections):
@@ -87,6 +119,8 @@ def draw_active_list_element(layout, context, scene):
                 from .shared_operator_call import call_simple_export_path_ops
                 op = call_simple_export_path_ops(context, row, text='', outliner=False,
                                                  individual_collection=True, collection_name=selected_collection.name)
+
+                _draw_verify_in_engine_entry(context, row, selected_collection)
 
                 # Collection offset object
                 root_box = box.box()

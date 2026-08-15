@@ -1,7 +1,7 @@
 from . import assign_exporter_ops, export_ops, set_filepath_ops, assign_preset_ops, ui_ops, \
     create_exporter_collection_ops, collection_offset_ops, remove_exporters_ops, fix_filename, \
     fix_multiple_exporters, relative_folder_picker, reload_addon, convert_filepath_ops, \
-    create_instance_collection_ops
+    create_instance_collection_ops, engine_verify_ops
 from .version_check import start_version_check, stop_version_check
 
 files = [
@@ -18,6 +18,7 @@ files = [
     relative_folder_picker,
     convert_filepath_ops,
     create_instance_collection_ops,
+    engine_verify_ops,
 ]
 
 # Register scene properties here so they're only registered once
