@@ -9,6 +9,18 @@ TRIANGULATE_MOD_NAME = "_SimpleExport_Triangulate"
 def apply_triangulate_modifiers(collection):
     """Bake triangulation into mesh data before export (non-destructive).
 
+    Armature-deformed meshes are triangulated in their rest/bind pose, not
+    their currently-posed shape: evaluating with an Armature modifier active
+    would bake the CURRENT pose into static vertex data, and Blender's FBX
+    exporter still builds skin-cluster/bind-pose data from an Armature
+    modifier regardless of its show_viewport/show_render suppression below -
+    it detects the modifier and the matching vertex groups directly, not via
+    the depsgraph-evaluated mesh. Without this, the already-posed baked mesh
+    gets deformed a second time by the exporter, with error proportional to
+    how far each bone sits from rest at export time - most visible on
+    extremities (fingers) that are typically posed far from rest, while
+    barely noticeable on bones close to rest (torso/spine).
+
     Returns a backup dict {obj.as_pointer(): (original_mesh, suppressed)} so the
     caller can restore with remove_triangulate_modifiers. Keyed by pointer (not
     obj.name) because names are mutable and can change between apply and restore.
@@ -18,6 +30,16 @@ def apply_triangulate_modifiers(collection):
     for obj in collection.all_objects:
         if obj.type != 'MESH':
             continue
+
+        # Temporarily hide armature modifiers for the bake only, so
+        # triangulation is the only thing baked into the evaluated mesh.
+        armature_mod_states = {}
+        for armature_mod in obj.modifiers:
+            if armature_mod.type == 'ARMATURE':
+                armature_mod_states[armature_mod.name] = (armature_mod.show_viewport, armature_mod.show_render)
+                armature_mod.show_viewport = False
+                armature_mod.show_render = False
+
         mod = obj.modifiers.new(name=TRIANGULATE_MOD_NAME, type='TRIANGULATE')
         mod.keep_custom_normals = True
         try:
@@ -26,6 +48,12 @@ def apply_triangulate_modifiers(collection):
             triangulated_mesh = bpy.data.meshes.new_from_object(eval_obj)
         finally:
             obj.modifiers.remove(mod)
+            for mod_name, (show_viewport, show_render) in armature_mod_states.items():
+                armature_mod = obj.modifiers.get(mod_name)
+                if armature_mod is not None:
+                    armature_mod.show_viewport = show_viewport
+                    armature_mod.show_render = show_render
+
         # All modifiers are now baked into triangulated_mesh. Suppress them so
         # the exporter doesn't apply them a second time on the already-evaluated mesh.
         # Both flags are disabled to cover exporters that use either depsgraph type.

@@ -19,9 +19,29 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
   Instance Collection** — new operator (also available from the 3D viewport
   object context menu) that groups the current selection into a new
   collection with a root empty, ready to be used as a Collection Instance.
+- New animated-character presets for all three engines, alongside their
+  existing static-mesh-only presets: `Unity-animation` / `Unity-animation-fbx`,
+  `UE-animation` / `UE-animation-fbx`, and `Godot-animation` /
+  `Godot-animation-gltf`. Each bakes every Action as its own take/clip
+  instead of exporting a static pose (FBX: `bake_anim: True`,
+  `bake_anim_use_all_actions: True`, `bake_anim_use_nla_strips: False`;
+  glTF: `export_animations: True` with the already-correct
+  `export_animation_mode: 'ACTIONS'`).
 
 ### Bug Fixes
 
+- Fixed `apply_triangulate_modifiers` (pre-export triangulation) baking an
+  armature-deformed mesh at its *currently posed* shape instead of its rest
+  pose, then getting deformed a second time by the FBX exporter's own
+  skin-cluster handling — which ignores the modifier-visibility suppression
+  this step relies on for every other modifier. Visible as body parts
+  (fingers worst, since they're typically posed far from rest) rendering up
+  to ~0.9m from their own skeleton once imported into a game engine.
+  Armature modifiers are now disabled specifically during the triangulation
+  bake so only triangulation gets baked. See
+  `docs/animated-character-export-notes.md` for the full investigation,
+  including a residual, not-yet-root-caused ~0.4m gap on some limbs that
+  predates this fix and isn't introduced by the addon.
 - [#310](https://github.com/Weisl/simple_export/issues/310): Fixed the
   `Godot-gltf` export preset breaking Blender's native preset loader on
   Blender 4.2–4.4 — four version-gated glTF properties aborted the loader's
@@ -39,6 +59,11 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
 
 ### Known limitations
 
+- Animated character exports can still show a real, unexplained skin-binding
+  gap (bone-to-vertex offset up to ~0.4m) on some limbs, independent of any
+  `simple_export` setting — reproduced even by a raw FBX export bypassing
+  the addon entirely. Not yet root-caused. See
+  `docs/animated-character-export-notes.md`.
 - [#311](https://github.com/Weisl/simple_export/issues/311): `Lowpoly-fbx`
   and `Highpoly-fbx` still embed Blender-calculated tangent space
   (`use_tspace: True`), which can produce incorrect baked normal maps when
