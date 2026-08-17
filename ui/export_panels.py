@@ -36,7 +36,7 @@ def draw_pre_export_operations(layout, target):
     #     sub.prop(target, 'pre_rotate_euler', text="Rotation Offset")
 
 
-def draw_simple_export_header(layout, text="Simple Export"):
+def draw_simple_export_header(layout, text="Simple Export", context=None):
     row = layout.row(align=True)
     # Open documentation
     row.operator("wm.url_open", text="", icon="HELP").url = "https://weisl.github.io/exporter_overview/"
@@ -48,6 +48,13 @@ def draw_simple_export_header(layout, text="Simple Export"):
     # Open Export Popup
     op = row.operator("wm.call_panel", text="", icon="WINDOW")
     op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
+
+    # Reload Addon (only shown with Developer Extras enabled)
+    if context is None:
+        context = bpy.context
+    if context.preferences.view.show_developer_ui:
+        row.operator("simple_export.reload_addon", text="", icon='FILE_REFRESH')
+
     row.label(text=text)
 
 
@@ -247,7 +254,7 @@ class SIMPLE_EXPORT_menu_base:
 
     def draw_header(self, context):
         layout = self.layout
-        draw_simple_export_header(layout)
+        draw_simple_export_header(layout, context=context)
 
     def draw(self, context):
         layout = self.layout
@@ -275,7 +282,7 @@ class SimpleExportMainPanel(SIMPLE_EXPORT_menu_base, bpy.types.Panel):
         scene = context.scene
         layout = self.layout
 
-        draw_simple_export_header(layout)
+        draw_simple_export_header(layout, context=context)
 
     def draw(self, context):
         scene = context.scene
@@ -311,11 +318,6 @@ class VIEW3D_PT_SimpleExportMain(SimpleExportMainPanel):
     bl_label = ""
 
     list_id = "npanel"
-
-    def draw(self, context):
-        super().draw(context)
-        self.layout.separator()
-        self.layout.operator("simple_export.reload_addon", text="Reload Addon", icon='FILE_REFRESH')
 
 
 

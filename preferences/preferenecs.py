@@ -319,7 +319,7 @@ def compute_mirror_preview(settings):
 
 def get_relative_path_prefs(self):
     """Getter for AddonPreferences: Ensure the stored path is always relative to the .blend file."""
-    stored_path = getattr(self, "_folder_path_relative", "")
+    stored_path = self.folder_path_relative_raw
     if stored_path:
         return bpy.path.relpath(stored_path)
     return ""
@@ -328,15 +328,15 @@ def set_relative_path_prefs(self, value):
     """Setter for AddonPreferences: Convert any assigned path to a direct relative path."""
     blend_dir = bpy.path.abspath("//")
     if not blend_dir:
-        setattr(self, "_folder_path_relative", value)
+        self.folder_path_relative_raw = value
         return
     absolute_path = bpy.path.abspath(value)
     try:
         relative_path = os.path.relpath(absolute_path, blend_dir)
         formatted_path = f"//{relative_path.replace(os.sep, '/')}"
-        setattr(self, "_folder_path_relative", formatted_path)
+        self.folder_path_relative_raw = formatted_path
     except ValueError:
-        setattr(self, "_folder_path_relative", "")
+        self.folder_path_relative_raw = ""
 
 
 
@@ -364,7 +364,7 @@ def set_relative_path_scene(self, value):
 
 def get_absolute_path_prefs(self):
     """Getter for AddonPreferences: Ensure the stored path is always an absolute path."""
-    stored_path = getattr(self, "_folder_path_absolute", "")
+    stored_path = self.folder_path_absolute_raw
     if stored_path:
         return bpy.path.abspath(stored_path)
     return _DEFAULT_ABSOLUTE_PATH
@@ -372,7 +372,7 @@ def get_absolute_path_prefs(self):
 def set_absolute_path_prefs(self, value):
     """Setter for AddonPreferences: Store the path as an absolute path."""
     absolute_path = bpy.path.abspath(value)
-    setattr(self, "_folder_path_absolute", absolute_path)
+    self.folder_path_absolute_raw = absolute_path
 
 
 def get_absolute_path_scene(self):
@@ -501,6 +501,16 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         items=PROPERTY_METADATA["export_folder_mode"]["items"],
         default=PROPERTY_METADATA["export_folder_mode"]["default"],
     )
+
+    # Backing storage for folder_path_absolute/folder_path_relative below.
+    # AddonPreferences instances are re-wrapped by Blender on every access
+    # (context.preferences.addons[...].preferences returns a new Python object
+    # each time) and don't support id-properties (self["key"] = ...), so a plain
+    # setattr/self[...] in the get/set functions would silently fail to persist.
+    # A genuine registered property is backed by the underlying RNA data and
+    # survives across those re-wraps.
+    folder_path_absolute_raw: bpy.props.StringProperty(default="", options={'HIDDEN'})
+    folder_path_relative_raw: bpy.props.StringProperty(default="", options={'HIDDEN'})
 
     folder_path_absolute: bpy.props.StringProperty(
         name=PROPERTY_METADATA["folder_path_absolute"]["name"],
