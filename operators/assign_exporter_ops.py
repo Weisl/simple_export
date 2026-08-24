@@ -7,6 +7,7 @@ from .shared_properties import (
     CollectionOriginProps, CollectionSettingsProps, SharedFormatProps
 )
 from ..core.export_path_func import assign_exporter_path
+from ..functions.outliner_func import get_outliner_collections
 from ..functions.preset_func import assign_preset
 
 
@@ -48,6 +49,11 @@ class EXPORT_OT_AddSettingsToCollections(
         default="",
         options={'HIDDEN'}
     )
+
+    outliner: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
+    # Stores outliner-selected collection names captured at invoke time,
+    # because context.selected_ids is unavailable after the dialog opens.
+    outliner_collection_names: bpy.props.StringProperty(default='', options={'HIDDEN'})
 
     addon_preset_selection: bpy.props.EnumProperty(
         name="Preset",
@@ -92,6 +98,10 @@ class EXPORT_OT_AddSettingsToCollections(
         return True
 
     def invoke(self, context, event):
+        if self.outliner:
+            cols = get_outliner_collections(context)
+            self.outliner_collection_names = ','.join(c.name for c in cols)
+
         self.applied_preset_tracker = ""
         selected = context.scene.simple_export_selected_preset
         if selected:
@@ -105,6 +115,12 @@ class EXPORT_OT_AddSettingsToCollections(
     def draw(self, context):
         from .. import __package__ as base_package
         layout = self.layout
+
+        if self.outliner:
+            names = [n for n in self.outliner_collection_names.split(',') if n]
+            if len(names) > 1:
+                layout.label(text=f"Applies to {len(names)} selected collections", icon='INFO')
+
         layout.prop(self, "addon_preset_selection", text="")
         from ..core.info import ADDON_NAME
         op = layout.operator("simple_export.open_preferences", text="New Preset", icon='PREFERENCES')
@@ -118,6 +134,9 @@ class EXPORT_OT_AddSettingsToCollections(
             draw_export_folderpath_properties(layout, self)
 
     def execute(self, context):
+        if self.outliner:
+            return self._execute_batch(context)
+
         collection = bpy.data.collections.get(self.collection_name)
 
         if not collection:
@@ -128,6 +147,40 @@ class EXPORT_OT_AddSettingsToCollections(
         if self.collection_naming_overwrite and self.collection_name_new:
             collection.name = self.collection_name_new
 
+        result = self._apply_settings(context, collection)
+        self.report({'INFO'}, result['message'])
+        return {'FINISHED'}
+
+    def _execute_batch(self, context):
+        """Apply settings to every collection selected in the Outliner."""
+        if self.outliner_collection_names:
+            names = [n for n in self.outliner_collection_names.split(',') if n]
+            collection_list = [bpy.data.collections.get(n) for n in names]
+            collection_list = [c for c in collection_list if c]
+        else:
+            collection_list = get_outliner_collections(context)
+
+        if not collection_list:
+            self.report({'WARNING'}, "No collections selected in the Outliner.")
+            return {'CANCELLED'}
+
+        results = []
+        for collection in collection_list:
+            try:
+                results.append(self._apply_settings(context, collection))
+            except Exception as e:
+                results.append({'name': collection.name, 'success': False, 'message': str(e)})
+
+        success_count = sum(1 for r in results if r['success'])
+        self.report({'INFO'}, f"Added exporter to {success_count}/{len(results)} collection(s).")
+
+        context.window_manager.add_exporter_result_info = str(results)
+        bpy.ops.wm.call_panel(name="SIMPLEEXPORTER_PT_AddExporterResultsPanel")
+
+        return {'FINISHED'}
+
+    def _apply_settings(self, context, collection):
+        """Add/replace the exporter and apply settings on a single collection. Returns a result dict."""
         from ..functions.collections_setup import setup_collection_properties
         setup_collection_properties(self, collection, base_object=None)
 
@@ -137,8 +190,8 @@ class EXPORT_OT_AddSettingsToCollections(
         exporter = create_collection_exporter(self, context, collection)
 
         if not exporter:
-            self.report({'INFO'}, f"Exporter was not added to '{collection.name}'.")
-            return {'FINISHED'}
+            return {'name': collection.name, 'success': False,
+                    'message': f"Exporter was not added to '{collection.name}'."}
 
         # Set preset
         if self.assign_preset:
@@ -151,11 +204,11 @@ class EXPORT_OT_AddSettingsToCollections(
             collection.simple_export_addon_preset = self.addon_preset_selection
 
         # Assign filepath to exporter
-        if self.set_export_path and exporter and hasattr(exporter, 'export_properties'):
+        if self.set_export_path and hasattr(exporter, 'export_properties'):
             assign_exporter_path(self, collection.name, exporter)
 
-        self.report({'INFO'}, f"Settings applied to collection '{collection.name}'.")
-        return {'FINISHED'}
+        return {'name': collection.name, 'success': True,
+                'message': f"Settings applied to collection '{collection.name}'."}
 
 
 classes = (

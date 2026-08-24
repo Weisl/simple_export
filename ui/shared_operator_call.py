@@ -7,9 +7,11 @@ def set_operator_preset_property(op, scene):
     setattr(op, prop_name, getattr(scene, prop_name))
 
 
-def call_simple_add_exporter_to_collection(context, collection, layout):
-    op = layout.operator('simple_export.add_settings_to_collections')
+
+def call_simple_add_exporter_to_collection(context, collection, layout, outliner=False):
+    op = layout.operator('simple_export.add_settings_to_collections', icon='COLLECTION_COLOR_01')
     op.collection_name = collection.name
+    op.outliner = outliner
 
     # Get and set properties from preferences/scene
     prefs = context.preferences.addons[base_package].preferences

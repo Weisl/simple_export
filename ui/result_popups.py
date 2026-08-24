@@ -184,6 +184,53 @@ class SIMPLEEXPORTER_PT_PresetResultsPanel(bpy.types.Panel):
             col_message.label(text=result['message'])
 
 
+class SIMPLEEXPORTER_PT_AddExporterResultsPanel(bpy.types.Panel):
+    """Panel to display the results of adding exporters to collections."""
+    bl_idname = "SIMPLEEXPORTER_PT_AddExporterResultsPanel"
+    bl_label = "Add Exporter Results"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "WINDOW"
+    bl_ui_units_x = 30
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="Add Exporter to Collection:")
+
+        # Get results from WindowManager
+        results_str = context.window_manager.add_exporter_result_info
+        results = eval(results_str) if results_str else []  # Parse results string into a list
+
+        # Header row with column titles
+        split = layout.split(factor=0.1)
+        col_icon = split.column()  # Icon column
+        col_name = split.column()  # Collection name column
+        col_message = split.column()  # Info message column
+
+        col_icon.label(text="")
+        col_name.label(text="Collection")
+        col_message.label(text="Info")
+
+        # Iterate over results and populate the table
+        for result in results:
+            split = layout.split(factor=0.05)  # Split for each row
+            col_icon = split.column()
+            col_name = split.column()
+            col_message = split.column()
+
+            # Icon Column
+            col_icon.label(icon='CHECKMARK' if result['success'] else 'CANCEL')
+
+            # Collection Name Column
+            collection_name = result['name']
+            collection = bpy.data.collections.get(collection_name)
+            color_tag = collection.color_tag if collection else 'NONE'
+            icon = COLOR_TAG_ICONS.get(color_tag, 'NONE')
+            col_name.label(text=result['name'], icon=icon)
+
+            # Info Message Column
+            col_message.label(text=result['message'])
+
+
 class SIMPLEEXPORTER_PT_FilePathResultsPanel(bpy.types.Panel):
     """Panel to display the results of applying the filepath."""
     bl_idname = "SIMPLEEXPORTER_PT_FilePathResultsPanel"
@@ -324,6 +371,7 @@ classes = (
     SIMPLEEXPORTER_OT_CopyExportReport,
     SIMPLEEXPORTER_OT_CopyToClipboard,
     SIMPLEEXPORTER_PT_PresetResultsPanel,
+    SIMPLEEXPORTER_PT_AddExporterResultsPanel,
     SIMPLEEXPORTER_PT_FilePathResultsPanel,
     SIMPLEEXPORTER_PT_ExportResultsPanel,
 )
@@ -333,6 +381,7 @@ def register():
     bpy.types.WindowManager.export_data_info = bpy.props.StringProperty(default="[]")
     bpy.types.WindowManager.assign_filepath_result_info = bpy.props.StringProperty(default="[]")
     bpy.types.WindowManager.assign_preset_info_data = bpy.props.StringProperty(default="[]")
+    bpy.types.WindowManager.add_exporter_result_info = bpy.props.StringProperty(default="[]")
 
     from bpy.utils import register_class
     for cls in classes:
@@ -348,3 +397,4 @@ def unregister():
     del bpy.types.WindowManager.export_data_info
     del bpy.types.WindowManager.assign_filepath_result_info
     del bpy.types.WindowManager.assign_preset_info_data
+    del bpy.types.WindowManager.add_exporter_result_info

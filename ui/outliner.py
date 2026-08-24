@@ -24,11 +24,12 @@ def draw_custom_outliner_menu(self, context):
             call_assign_preset_op(context, layout, outliner=True, icon='NONE', collection_name=collection.name)
 
             op = layout.operator("simple_export.remove_exporters", icon='TRASH')
+            op.outliner = True
             op.collection_name = collection.name
         else:
             # No exporter assigned: show assign exporter first
             from .shared_operator_call import call_simple_add_exporter_to_collection
-            call_simple_add_exporter_to_collection(context, collection, layout)
+            call_simple_add_exporter_to_collection(context, collection, layout, outliner=True)
 
     elif isinstance(selected_element, bpy.types.Object):
         scene = context.scene
