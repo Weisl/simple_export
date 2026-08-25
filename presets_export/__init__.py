@@ -75,6 +75,11 @@ def get_gltf_presets_folder():
     return export_format.preset_folder
 
 
+def get_usd_presets_folder():
+    export_format = ExportFormats.get("USD")
+    return export_format.preset_folder
+
+
 def create_export_preset_files(preset_data, preset_folder, saved_preset_files):
     if not preset_folder or not os.path.isdir(preset_folder):
         return
@@ -86,7 +91,7 @@ def create_export_preset_files(preset_data, preset_folder, saved_preset_files):
 
 def initialize_presets():
     version = get_blender_version()
-    for preset_type in ["fbx", "gltf"]:
+    for preset_type in ["fbx", "gltf", "usd"]:
         module_name = get_versioned_module(version, preset_type)
         try:
             presets_module = import_module(module_name, package=__package__)
