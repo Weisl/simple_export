@@ -5,14 +5,22 @@ def draw_custom_outliner_menu(self, context):
     layout = self.layout
     layout.separator()
 
-    selected_element = context.id  # This determines what is selected in the Outliner
+    selected_element = context.id  # The active item; may be part of a larger Outliner selection
 
     if isinstance(selected_element, bpy.types.Collection):
         collection = selected_element
         layout.operator_context = 'INVOKE_DEFAULT'
 
-        if len(collection.exporters) > 0:
-            # Collection has exporter: export first, then filepath and preset
+        from ..functions.outliner_func import get_outliner_collections
+        outliner_collections = get_outliner_collections(context)
+        if collection not in outliner_collections:
+            outliner_collections = [collection]
+
+        has_exporter = any(len(c.exporters) > 0 for c in outliner_collections)
+        missing_exporter = any(len(c.exporters) == 0 for c in outliner_collections)
+
+        if has_exporter:
+            # At least one selected collection already has an exporter: export, filepath and preset
             op = layout.operator("simple_export.export_collections", icon='EXPORT')
             op.outliner = True
             op.individual_collection = False
@@ -26,8 +34,9 @@ def draw_custom_outliner_menu(self, context):
             op = layout.operator("simple_export.remove_exporters", icon='TRASH')
             op.outliner = True
             op.collection_name = collection.name
-        else:
-            # No exporter assigned: show assign exporter first
+
+        if missing_exporter:
+            # At least one selected collection has no exporter yet: offer to add one to the whole selection
             from .shared_operator_call import call_simple_add_exporter_to_collection
             call_simple_add_exporter_to_collection(context, collection, layout, outliner=True)
 
