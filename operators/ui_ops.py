@@ -54,6 +54,37 @@ class SIMPLE_EXPORT_OT_ReloadAddon(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class SIMPLE_EXPORT_OT_CreateFormatPreset(bpy.types.Operator):
+    """Open Blender's native export dialog for this format so a new preset can be saved"""
+    bl_idname = "simple_export.create_format_preset"
+    bl_label = "Create Export Preset"
+    bl_description = ("Open Blender's export dialog for this format. Configure the settings you "
+                      "want, then use the preset '+' button at the top of the dialog to save them "
+                      "as a new preset.")
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    export_format: bpy.props.StringProperty(options={'HIDDEN'})
+
+    def execute(self, context):
+        from ..core.export_formats import ExportFormats
+
+        export_format = ExportFormats.get(self.export_format)
+        if not export_format:
+            self.report({'ERROR'}, f"Unknown export format: {self.export_format}")
+            return {'CANCELLED'}
+
+        op_category, op_name = export_format.preset_subfolder.split(".", 1)
+        try:
+            operator = getattr(getattr(bpy.ops, op_category), op_name)
+        except AttributeError:
+            self.report({'ERROR'}, f"Export operator not available for {self.export_format}.")
+            return {'CANCELLED'}
+
+        operator('INVOKE_DEFAULT')
+        self.report({'INFO'}, "Configure export settings, then use the preset '+' button to save it.")
+        return {'FINISHED'}
+
+
 class SIMPLE_OT_OpenCollectionExporterProperties(bpy.types.Operator):
     """Go to the selected collection's properties and focus on the exporter"""
     bl_idname = "simple_export.open_exporter_in_properties"
@@ -485,6 +516,7 @@ classes = (
     SCENE_OT_SelectAllCollections,
     SCENE_OT_ExpandAllCollections,
     SCENE_OT_OpenExportDirectory,
+    SIMPLE_EXPORT_OT_CreateFormatPreset,
     SIMPLE_OT_OpenCollectionExporterProperties,
     SIMPLE_EXPORT_OT_ReloadAddon,
     SIMPLE_EXPORT_OT_ClearFilters,

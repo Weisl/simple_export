@@ -65,6 +65,13 @@ _REQUIRED_GLTF_KEYS = {
     "export_yup", "export_apply",
 }
 
+# Keys every USD preset must contain.
+_REQUIRED_USD_KEYS = {
+    "filepath", "selected_objects_only", "collection", "export_animation",
+    "export_materials", "export_armatures", "export_meshes",
+    "evaluation_mode", "root_prim_path",
+}
+
 # Keys every addon workflow preset must contain.
 _REQUIRED_ADDON_KEYS = {
     "export_format", "export_folder_mode", "folder_path_relative",
@@ -74,8 +81,10 @@ _REQUIRED_ADDON_KEYS = {
 
 _EXPECTED_FBX_PRESETS = {"UE-fbx", "Unity-fbx", "Lowpoly-fbx", "Highpoly-fbx"}
 _EXPECTED_GLTF_PRESETS = {"Godot-gltf"}
+_EXPECTED_USD_PRESETS = {"Default-usd", "Default-animation-usd"}
 _EXPECTED_ADDON_PRESETS = {
-    "UE-default", "Unity-default", "Godot-default", "Lowpoly-default", "Highpoly-default"
+    "UE-default", "Unity-default", "Godot-default", "Lowpoly-default", "Highpoly-default",
+    "USD-default",
 }
 
 
@@ -134,6 +143,13 @@ class TestVersionRouting(unittest.TestCase):
     def test_5_9_routes_to_5_2_gltf(self):
         self.assertEqual(self._route((5, 9, 0), "gltf"), ".blender_5_2.preset_data_gltf")
 
+    # -- USD routes the same way as fbx/gltf --
+    def test_4_2_routes_to_4_2_usd(self):
+        self.assertEqual(self._route((4, 2, 0), "usd"), ".blender_4_2.preset_data_usd")
+
+    def test_5_2_routes_to_5_2_usd(self):
+        self.assertEqual(self._route((5, 2, 0), "usd"), ".blender_5_2.preset_data_usd")
+
 
 # ---------------------------------------------------------------------------
 # 2. Preset module importability
@@ -182,6 +198,21 @@ class TestPresetModuleImports(unittest.TestCase):
     def test_blender_5_2_gltf_importable(self):
         self._load("simple_export.presets_export.blender_5_2.preset_data_gltf", "presets_gltf")
 
+    def test_blender_4_2_usd_importable(self):
+        self._load("simple_export.presets_export.blender_4_2.preset_data_usd", "presets_usd")
+
+    def test_blender_4_5_usd_importable(self):
+        self._load("simple_export.presets_export.blender_4_5.preset_data_usd", "presets_usd")
+
+    def test_blender_5_0_usd_importable(self):
+        self._load("simple_export.presets_export.blender_5_0.preset_data_usd", "presets_usd")
+
+    def test_blender_5_1_usd_importable(self):
+        self._load("simple_export.presets_export.blender_5_1.preset_data_usd", "presets_usd")
+
+    def test_blender_5_2_usd_importable(self):
+        self._load("simple_export.presets_export.blender_5_2.preset_data_usd", "presets_usd")
+
 
 # ---------------------------------------------------------------------------
 # 3. Preset data completeness
@@ -201,6 +232,12 @@ class TestPresetDataCompleteness(unittest.TestCase):
             f"simple_export.presets_export.{version_folder}.preset_data_gltf"
         )
         return mod.presets_gltf
+
+    def _usd_data(self, version_folder):
+        mod = importlib.import_module(
+            f"simple_export.presets_export.{version_folder}.preset_data_usd"
+        )
+        return mod.presets_usd
 
     def _assert_fbx_presets_valid(self, data, version_folder):
         missing_presets = _EXPECTED_FBX_PRESETS - data.keys()
@@ -240,6 +277,31 @@ class TestPresetDataCompleteness(unittest.TestCase):
                 f"{version_folder}/{preset_name}: missing keys: {missing_keys}",
             )
 
+    def _assert_usd_presets_valid(self, data, version_folder):
+        missing_presets = _EXPECTED_USD_PRESETS - data.keys()
+        self.assertFalse(
+            missing_presets,
+            f"{version_folder}: missing USD presets: {missing_presets}",
+        )
+        for preset_name, preset in data.items():
+            missing_keys = _REQUIRED_USD_KEYS - preset.keys()
+            self.assertFalse(
+                missing_keys,
+                f"{version_folder}/{preset_name}: missing keys: {missing_keys}",
+            )
+            self.assertIsInstance(
+                preset["export_animation"], bool,
+                f"{version_folder}/{preset_name}: 'export_animation' must be a bool",
+            )
+        self.assertFalse(
+            data["Default-usd"]["export_animation"],
+            f"{version_folder}/Default-usd: expected export_animation=False",
+        )
+        self.assertTrue(
+            data["Default-animation-usd"]["export_animation"],
+            f"{version_folder}/Default-animation-usd: expected export_animation=True",
+        )
+
     def test_blender_4_2_fbx_complete(self):
         self._assert_fbx_presets_valid(self._fbx_data("blender_4_2"), "blender_4_2")
 
@@ -269,6 +331,21 @@ class TestPresetDataCompleteness(unittest.TestCase):
 
     def test_blender_5_2_gltf_complete(self):
         self._assert_gltf_presets_valid(self._gltf_data("blender_5_2"), "blender_5_2")
+
+    def test_blender_4_2_usd_complete(self):
+        self._assert_usd_presets_valid(self._usd_data("blender_4_2"), "blender_4_2")
+
+    def test_blender_4_5_usd_complete(self):
+        self._assert_usd_presets_valid(self._usd_data("blender_4_5"), "blender_4_5")
+
+    def test_blender_5_0_usd_complete(self):
+        self._assert_usd_presets_valid(self._usd_data("blender_5_0"), "blender_5_0")
+
+    def test_blender_5_1_usd_complete(self):
+        self._assert_usd_presets_valid(self._usd_data("blender_5_1"), "blender_5_1")
+
+    def test_blender_5_2_usd_complete(self):
+        self._assert_usd_presets_valid(self._usd_data("blender_5_2"), "blender_5_2")
 
 
 # ---------------------------------------------------------------------------
@@ -358,6 +435,26 @@ class TestGeneratedPresetFiles(unittest.TestCase):
     def test_blender_5_2_highpoly_fbx_valid(self):
         self._test_fbx_preset("blender_5_2", "Highpoly-fbx")
 
+    def _test_usd_preset(self, version_folder, preset_name):
+        mod = importlib.import_module(
+            f"simple_export.presets_export.{version_folder}.preset_data_usd"
+        )
+        preset = mod.presets_usd[preset_name]
+        source = self._write_and_read(preset_name, preset)
+        label = f"{version_folder}/{preset_name}"
+        self._assert_valid_python(source, label)
+        self._assert_has_assignments(source, _REQUIRED_USD_KEYS - {"filepath"}, label)
+
+    # -- USD --
+    def test_blender_4_2_default_usd_valid(self):
+        self._test_usd_preset("blender_4_2", "Default-usd")
+
+    def test_blender_5_2_default_usd_valid(self):
+        self._test_usd_preset("blender_5_2", "Default-usd")
+
+    def test_blender_5_2_default_animation_usd_valid(self):
+        self._test_usd_preset("blender_5_2", "Default-animation-usd")
+
     # -- GLTF --
     def test_blender_4_2_godot_gltf_valid(self):
         self._test_gltf_preset("blender_4_2", "Godot-gltf")
@@ -404,54 +501,62 @@ class TestInitializePresets(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             fbx_dir = os.path.join(tmpdir, "export_scene.fbx")
             gltf_dir = os.path.join(tmpdir, "export_scene.gltf")
+            usd_dir = os.path.join(tmpdir, "wm.usd_export")
             os.makedirs(fbx_dir)
             os.makedirs(gltf_dir)
+            os.makedirs(usd_dir)
 
             with (
                 patch.object(_pe, "get_fbx_presets_folder", return_value=fbx_dir),
                 patch.object(_pe, "get_gltf_presets_folder", return_value=gltf_dir),
+                patch.object(_pe, "get_usd_presets_folder", return_value=usd_dir),
                 patch.object(_pe, "get_blender_version", return_value=blender_version),
             ):
                 _pe.initialize_presets()
 
-            return set(os.listdir(fbx_dir)), set(os.listdir(gltf_dir))
+            return set(os.listdir(fbx_dir)), set(os.listdir(gltf_dir)), set(os.listdir(usd_dir))
 
-    def _assert_preset_files(self, fbx_files, gltf_files, label):
+    def _assert_preset_files(self, fbx_files, gltf_files, usd_files, label):
         expected_fbx = {f"{n}.py" for n in _EXPECTED_FBX_PRESETS}
         expected_gltf = {f"{n}.py" for n in _EXPECTED_GLTF_PRESETS}
+        expected_usd = {f"{n}.py" for n in _EXPECTED_USD_PRESETS}
 
         missing_fbx = expected_fbx - fbx_files
         missing_gltf = expected_gltf - gltf_files
+        missing_usd = expected_usd - usd_files
         self.assertFalse(missing_fbx, f"{label}: FBX preset files not created: {missing_fbx}")
         self.assertFalse(missing_gltf, f"{label}: GLTF preset files not created: {missing_gltf}")
+        self.assertFalse(missing_usd, f"{label}: USD preset files not created: {missing_usd}")
 
     def test_blender_4_2_creates_all_preset_files(self):
-        fbx, gltf = self._run_initialize((4, 2, 0))
-        self._assert_preset_files(fbx, gltf, "Blender 4.2")
+        fbx, gltf, usd = self._run_initialize((4, 2, 0))
+        self._assert_preset_files(fbx, gltf, usd, "Blender 4.2")
 
     def test_blender_4_5_creates_all_preset_files(self):
-        fbx, gltf = self._run_initialize((4, 5, 0))
-        self._assert_preset_files(fbx, gltf, "Blender 4.5")
+        fbx, gltf, usd = self._run_initialize((4, 5, 0))
+        self._assert_preset_files(fbx, gltf, usd, "Blender 4.5")
 
     def test_blender_5_0_creates_all_preset_files(self):
-        fbx, gltf = self._run_initialize((5, 0, 0))
-        self._assert_preset_files(fbx, gltf, "Blender 5.0")
+        fbx, gltf, usd = self._run_initialize((5, 0, 0))
+        self._assert_preset_files(fbx, gltf, usd, "Blender 5.0")
 
     def test_blender_5_1_creates_all_preset_files(self):
-        fbx, gltf = self._run_initialize((5, 1, 0))
-        self._assert_preset_files(fbx, gltf, "Blender 5.1")
+        fbx, gltf, usd = self._run_initialize((5, 1, 0))
+        self._assert_preset_files(fbx, gltf, usd, "Blender 5.1")
 
     def test_blender_5_2_creates_all_preset_files(self):
-        fbx, gltf = self._run_initialize((5, 2, 0))
-        self._assert_preset_files(fbx, gltf, "Blender 5.2")
+        fbx, gltf, usd = self._run_initialize((5, 2, 0))
+        self._assert_preset_files(fbx, gltf, usd, "Blender 5.2")
 
     def test_existing_files_are_not_overwritten(self):
         """Preset files that already exist must not be re-written."""
         with tempfile.TemporaryDirectory() as tmpdir:
             fbx_dir = os.path.join(tmpdir, "export_scene.fbx")
             gltf_dir = os.path.join(tmpdir, "export_scene.gltf")
+            usd_dir = os.path.join(tmpdir, "wm.usd_export")
             os.makedirs(fbx_dir)
             os.makedirs(gltf_dir)
+            os.makedirs(usd_dir)
 
             # Pre-populate UE-fbx.py with sentinel content
             sentinel = "# sentinel\n"
@@ -462,6 +567,7 @@ class TestInitializePresets(unittest.TestCase):
             with (
                 patch.object(_pe, "get_fbx_presets_folder", return_value=fbx_dir),
                 patch.object(_pe, "get_gltf_presets_folder", return_value=gltf_dir),
+                patch.object(_pe, "get_usd_presets_folder", return_value=usd_dir),
                 patch.object(_pe, "get_blender_version", return_value=(5, 1, 0)),
             ):
                 _pe.initialize_presets()
@@ -475,17 +581,20 @@ class TestInitializePresets(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             fbx_dir = os.path.join(tmpdir, "export_scene.fbx")
             gltf_dir = os.path.join(tmpdir, "export_scene.gltf")
+            usd_dir = os.path.join(tmpdir, "wm.usd_export")
             os.makedirs(fbx_dir)
             os.makedirs(gltf_dir)
+            os.makedirs(usd_dir)
 
             with (
                 patch.object(_pe, "get_fbx_presets_folder", return_value=fbx_dir),
                 patch.object(_pe, "get_gltf_presets_folder", return_value=gltf_dir),
+                patch.object(_pe, "get_usd_presets_folder", return_value=usd_dir),
                 patch.object(_pe, "get_blender_version", return_value=(5, 1, 0)),
             ):
                 _pe.initialize_presets()
 
-            for folder in (fbx_dir, gltf_dir):
+            for folder in (fbx_dir, gltf_dir, usd_dir):
                 for fname in os.listdir(folder):
                     fpath = os.path.join(folder, fname)
                     with open(fpath) as fh:
@@ -557,6 +666,30 @@ class TestAddonPresetData(unittest.TestCase):
             self.assertIn(
                 filename, known_gltf,
                 f"'{name}' references unknown GLTF preset '{filename}'",
+            )
+
+    def test_usd_presets_reference_existing_usd_preset_names(self):
+        """USD workflow presets must reference a USD exporter preset that exists."""
+        from simple_export.presets_export.blender_5_1.preset_data_usd import presets_usd
+        known_usd = {f"{n}.py" for n in presets_usd}
+        for name, preset in self.data.items():
+            if preset.get("export_format") != "USD":
+                continue
+            ref = preset.get("simple_export_preset_file_usd", "")
+            filename = os.path.basename(ref)
+            self.assertIn(
+                filename, known_usd,
+                f"'{name}' references unknown USD preset '{filename}'",
+            )
+
+    def test_usd_presets_default_to_relative_export_folder(self):
+        """USD workflow presets must default to a relative (not absolute) export location."""
+        for name, preset in self.data.items():
+            if preset.get("export_format") != "USD":
+                continue
+            self.assertEqual(
+                preset.get("export_folder_mode"), "RELATIVE",
+                f"'{name}' should default export_folder_mode to RELATIVE",
             )
 
 

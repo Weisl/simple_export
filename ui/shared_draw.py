@@ -40,6 +40,9 @@ def draw_export_preset_properties(layout, element):
     if hasattr(element, prop_name):
         row.prop(element, prop_name, text='Preset')
 
+    create_op = row.operator("simple_export.create_format_preset", text="", icon='ADD')
+    create_op.export_format = export_format
+
     from ..presets_export.preset_format_functions import get_preset_format_folder
     folder_op = row.operator("wm.path_open", text='', icon='FILE_FOLDER')
     folder_op.filepath = get_preset_format_folder()
