@@ -26,7 +26,10 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
   instead of exporting a static pose (FBX: `bake_anim: True`,
   `bake_anim_use_all_actions: True`, `bake_anim_use_nla_strips: False`;
   glTF: `export_animations: True` with the already-correct
-  `export_animation_mode: 'ACTIONS'`).
+  `export_animation_mode: 'ACTIONS'`). All three presets were validated
+  end-to-end (export → import → numeric skeleton/skin/animation checks
+  against a real Unity/Godot/Unreal project, not just "it imported without
+  erroring").
 
 ### Bug Fixes
 
@@ -59,11 +62,25 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
 
 ### Known limitations
 
-- Animated character exports can still show a real, unexplained skin-binding
-  gap (bone-to-vertex offset up to ~0.4m) on some limbs, independent of any
-  `simple_export` setting — reproduced even by a raw FBX export bypassing
-  the addon entirely. Not yet root-caused. See
+- FBX exports via Unity specifically can still show a real, unexplained
+  skin-binding gap (bone-to-vertex offset up to ~0.4m) on some limbs,
+  independent of any `simple_export` setting — reproduced even by a raw FBX
+  export bypassing the addon entirely. Not yet root-caused, but now believed
+  to be Unity-importer/Avatar-system-specific rather than a general FBX or
+  rig issue: both the equivalent glTF/Godot path (<0.14m) and a follow-up
+  Unreal/FBX validation (<0.05m, same file format as the Unity case) show
+  the same rig without the large gap. See
   `docs/animated-character-export-notes.md`.
+- Unreal's plain FBX skeletal-mesh importer defaults **Convert Scene Unit**
+  to off, which imports a Blender-exported animated character at 1/100th
+  its intended scale unless enabled manually during import. Confirmed to be
+  an Unreal import-default issue, not a `simple_export` export bug (the
+  exported FBX re-imports into Blender at the correct scale) — see the
+  Import steps in `exporter_guide_unreal.md` and
+  `docs/animated-character-export-notes.md` for the full investigation,
+  including why baking the scale on the Blender export side
+  (`bake_space_transform`) was tried and rejected (it drops all but one
+  Action from the export).
 - [#311](https://github.com/Weisl/simple_export/issues/311): `Lowpoly-fbx`
   and `Highpoly-fbx` still embed Blender-calculated tangent space
   (`use_tspace: True`), which can produce incorrect baked normal maps when
