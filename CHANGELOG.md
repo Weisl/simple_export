@@ -3,14 +3,19 @@
 All notable changes to Simple Export are documented here. Dates are set when
 a version is actually tagged/released.
 
-Each new release is added as a new section above the previous one — existing
-entries are never overwritten, so this file accumulates the full release
-history over time.
+Each version below mirrors the structure used on the
+[documentation site's release notes page](https://weisl.github.io/simple_export/exporter_release_notes/):
+a short summary of the release, followed by "Features & Improvements" and
+"Bug Fixes" lists whose entries link back to their GitHub issue. New releases
+are added as a new section above the previous one — existing entries are
+never overwritten, so this file (like the docs page) accumulates the full
+release history over time.
 
 ## Simple Export v0.8.2 (Unreleased)
 
 This release adds a "Create Instance Collection" tool for grouping objects
-for instancing, fixes an export-preset regression on Blender 4.2–4.4, and
+for instancing, fixes an export-preset regression on Blender 4.2–4.4, adds
+Blender 5.2 export preset support, restructures the test suite, and
 hardens the pre-export transform-baking pipeline against mesh corruption.
 
 ### Features & Improvements
@@ -30,6 +35,8 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
   end-to-end (export → import → numeric skeleton/skin/animation checks
   against a real Unity/Godot/Unreal project, not just "it imported without
   erroring").
+- Added a dedicated `blender_5_2` export preset folder alongside the
+  existing 4.2/4.5 folders, ensuring correct defaults on Blender 5.2.
 
 ### Bug Fixes
 
@@ -46,7 +53,7 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
   including a residual, not-yet-root-caused ~0.4m gap on some limbs that
   predates this fix and isn't introduced by the addon.
 - [#310](https://github.com/Weisl/simple_export/issues/310): Fixed the
-  `Godot-gltf` export preset breaking Blender's native preset loader on
+  **Godot-gltf** export preset breaking Blender's native preset loader on
   Blender 4.2–4.4 — four version-gated glTF properties aborted the loader's
   `exec()` partway through, silently dropping ~90 subsequent properties.
   Export presets are now split per Blender line (`blender_4_2`,
@@ -59,6 +66,12 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
   the object's (mutable) name, so a rename between apply and restore could
   restore the wrong object; and the background "update available" check
   could keep writing its result after the addon had been unregistered.
+
+### Internal
+
+- Restructured the test suite — Blender-dependent tests moved into
+  `tests/blender/`, the magic-mock-based `bpy` stub was removed, and a
+  dedicated preset-application test module was added.
 
 ### Known limitations
 
@@ -85,3 +98,4 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
   and `Highpoly-fbx` still embed Blender-calculated tangent space
   (`use_tspace: True`), which can produce incorrect baked normal maps when
   the high-poly source has ngons. Not yet fixed.
+

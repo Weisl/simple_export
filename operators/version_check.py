@@ -68,9 +68,13 @@ def _fetch(cancel_event):
 
 def start_version_check():
     """Fire a background thread to check for a newer release on GitHub."""
-    global _cancel_event
-    _cancel_event = threading.Event()
-    t = threading.Thread(target=_fetch, args=(_cancel_event,), daemon=True)
+import bpy
+if not bpy.app.online_access:
+    return
+global _cancel_event
+_cancel_event = threading.Event()
+t = threading.Thread(target=_fetch, args=(_cancel_event,), daemon=True)
+
     t.start()
 
 
