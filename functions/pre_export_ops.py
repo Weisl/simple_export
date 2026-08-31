@@ -91,7 +91,7 @@ def apply_scale_for_export(collection):
     apply and restore.
     """
     backup = {}
-    for obj in collection.objects:
+    for obj in collection.all_objects:
         if obj.parent is not None or obj.type != 'MESH':
             continue
         original_mesh = obj.data
@@ -113,7 +113,7 @@ def apply_scale_for_export(collection):
 
 def restore_scale_after_export(collection, backup):
     """Restore original mesh data and scale from backup."""
-    for obj in collection.objects:
+    for obj in collection.all_objects:
         if obj.as_pointer() not in backup:
             continue
         original_mesh, scale = backup[obj.as_pointer()]
@@ -134,7 +134,7 @@ def apply_rotation_for_export(collection):
     between apply and restore.
     """
     backup = {}
-    for obj in collection.objects:
+    for obj in collection.all_objects:
         if obj.parent is not None or obj.type != 'MESH':
             continue
         original_mesh = obj.data
@@ -153,7 +153,7 @@ def apply_rotation_for_export(collection):
 
 def restore_rotation_after_export(collection, backup):
     """Restore original mesh data and rotation from backup."""
-    for obj in collection.objects:
+    for obj in collection.all_objects:
         if obj.as_pointer() not in backup:
             continue
         original_mesh, rotation = backup[obj.as_pointer()]
@@ -174,7 +174,7 @@ def apply_transform_for_export(collection):
     between apply and restore.
     """
     backup = {}
-    for obj in collection.objects:
+    for obj in collection.all_objects:
         if obj.parent is not None or obj.type != 'MESH':
             continue
         original_mesh = obj.data
@@ -193,7 +193,7 @@ def apply_transform_for_export(collection):
 
 def restore_transform_after_export(collection, backup):
     """Restore original mesh data and matrix_world from backup."""
-    for obj in collection.objects:
+    for obj in collection.all_objects:
         if obj.as_pointer() not in backup:
             continue
         original_mesh, matrix = backup[obj.as_pointer()]
@@ -215,7 +215,7 @@ def apply_pre_rotation(collection, euler_offset):
     """
     backup = {}
     rot = Euler(euler_offset, 'XYZ')
-    for obj in collection.objects:
+    for obj in collection.all_objects:
         if obj.parent is not None:
             continue
         backup[obj.as_pointer()] = obj.rotation_euler.copy()
@@ -225,7 +225,7 @@ def apply_pre_rotation(collection, euler_offset):
 
 def restore_pre_rotation(collection, backup):
     """Restore original rotation from backup."""
-    for obj in collection.objects:
+    for obj in collection.all_objects:
         if obj.as_pointer() not in backup:
             continue
         obj.rotation_euler = backup[obj.as_pointer()]

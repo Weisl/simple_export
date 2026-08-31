@@ -40,6 +40,33 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
 
 ### Bug Fixes
 
+- [#318](https://github.com/Weisl/simple_export/issues/318): Export collections
+  that keep their geometry in **sub-collections** (only a
+  root empty, or nothing, linked directly) are now handled correctly
+  everywhere. Previously several code paths looked only at objects linked
+  *directly* to the collection (`collection.objects`) instead of the whole
+  hierarchy (`collection.all_objects`), so such a collection got a bogus
+  "No mesh objects (types present: EMPTY)" warning, had its nested meshes
+  skipped by every per-object validation check and by the triangle-count
+  budget, and had the "Apply Scale/Rotation/Transform", "Pre-Rotate Objects"
+  and "Collection Offset" pre-export operations silently do nothing to the
+  nested meshes. Validation, warnings, and all pre-export operations now walk
+  the full collection hierarchy.
+- [#319](https://github.com/Weisl/simple_export/issues/319): A collection that is
+  **excluded from the view layer** (its Outliner checkbox
+  unticked — which also stops it rendering) no longer fails to export.
+  Blender's collection exporters only see view-layer collections, so the
+  export silently wrote nothing (or, worse, fell through to whichever
+  collection happened to be active and exported *that* one to the excluded
+  collection's path). The collection (and any excluded ancestor) is now
+  temporarily re-included for the duration of the export, restored afterwards,
+  and the export succeeds with a warning. A guard also now aborts loudly if
+  the target collection can't be made active, instead of exporting the wrong
+  one.
+- "All objects are excluded from render" is now a **warning**, not an error:
+  the FBX/glTF/USD exporters still write render-hidden objects, so the export
+  proceeds and produces a valid file. It was already non-blocking at export
+  time; this just stops it showing as a red error in the Validate panel.
 - Fixed `apply_triangulate_modifiers` (pre-export triangulation) baking an
   armature-deformed mesh at its *currently posed* shape instead of its rest
   pose, then getting deformed a second time by the FBX exporter's own

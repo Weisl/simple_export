@@ -19,11 +19,16 @@ def apply_location_offset(obj, collection_offset, inverse=False):
 
 def apply_collection_offset(collection, offset, inverse=False):
     """
-    Applies or removes the collection's instance offset to all top-level objects in the collection.
+    Applies or removes the collection's instance offset to all top-level objects
+    in the collection hierarchy.
+
+    Iterates collection.all_objects (not collection.objects) so objects kept in
+    sub-collections of an export collection are offset too, and includes hidden
+    objects. Only unparented ("top-level") objects are moved - a child follows
+    its parent.
     """
 
-    for obj in collection.objects:  # Use collection.objects to include hidden objects
-        print(f"OBJECT: {obj.name}")
+    for obj in collection.all_objects:
         if obj.parent is None:  # Only apply to top-level objects
             apply_location_offset(obj, offset, inverse)
 

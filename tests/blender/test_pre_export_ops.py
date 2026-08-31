@@ -310,6 +310,55 @@ class TestNoLeakedMeshesAfterFullCycle(_PreExportOpsTestBase):
 
 
 # ---------------------------------------------------------------------------
+# Nested sub-collections — apply_* must reach geometry kept in child collections
+# ---------------------------------------------------------------------------
+
+class TestNestedSubCollections(_PreExportOpsTestBase):
+    """An export collection frequently organises its geometry into
+    sub-collections and keeps only a root empty (or nothing) directly linked.
+    The apply_*/restore_* pairs must operate on the whole hierarchy."""
+
+    def setUp(self):
+        super().setUp()
+        self.child = _h.make_collection("PreExportOps_Test_Child")
+        self.col.children.link(self.child)
+        self.nested = _make_object_in_collection("NestedMesh", self.child)
+
+    def tearDown(self):
+        _remove_object(self.nested)
+        try:
+            self.col.children.unlink(self.child)
+        except Exception:
+            pass
+        _h.remove_collection(self.child)
+        super().tearDown()
+
+    def test_scale_baked_and_restored_for_nested_object(self):
+        self.nested.scale = (2.0, 3.0, 4.0)
+        original_mesh = self.nested.data
+
+        backup = apply_scale_for_export(self.col)
+        self.assertIn(self.nested.as_pointer(), backup,
+                      "nested object was not picked up by apply_scale_for_export")
+        self.assertEqual(tuple(self.nested.scale), (1.0, 1.0, 1.0))
+
+        restore_scale_after_export(self.col, backup)
+        self.assertEqual(tuple(self.nested.scale), (2.0, 3.0, 4.0))
+        self.assertIs(self.nested.data, original_mesh)
+
+    def test_pre_rotation_applied_and_restored_for_nested_object(self):
+        self.nested.rotation_euler = (0.0, 0.0, 0.0)
+
+        backup = apply_pre_rotation(self.col, (0.5, 0.0, 0.0))
+        self.assertIn(self.nested.as_pointer(), backup)
+        self.assertNotEqual(tuple(self.nested.rotation_euler), (0.0, 0.0, 0.0))
+
+        restore_pre_rotation(self.col, backup)
+        for a in self.nested.rotation_euler:
+            self.assertAlmostEqual(a, 0.0, places=5)
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 

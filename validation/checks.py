@@ -219,17 +219,26 @@ def check_uniform_scale_not_applied(collection, obj):
 
 def check_all_objects_hidden_from_render(collection):
     """Flag a collection where every object is excluded from render - the
-    export would produce nothing visible."""
-    if collection.objects and not any(not obj.hide_render for obj in collection.objects):
-        return _issue('all_objects_hidden_from_render', collection, None, 'ERROR',
+    export would produce nothing visible. Non-blocking: the FBX/glTF/USD
+    exporters still write render-hidden objects, so this is a warning, not
+    an error. Considers the whole collection hierarchy (all_objects), not
+    just objects linked directly to this collection - export collections
+    frequently keep their geometry in sub-collections."""
+    objects = collection.all_objects
+    if objects and not any(not obj.hide_render for obj in objects):
+        return _issue('all_objects_hidden_from_render', collection, None, 'WARNING',
                       "All objects are excluded from render.")
     return None
 
 
 def check_no_mesh_objects(collection):
-    """Flag an export collection with no MESH objects - usually a mistake."""
-    if collection.objects and not any(obj.type == 'MESH' for obj in collection.objects):
-        types = sorted({obj.type for obj in collection.objects})
+    """Flag an export collection with no MESH objects - usually a mistake.
+    Considers the whole collection hierarchy (all_objects): a collection whose
+    only direct object is a root empty but whose sub-collections are full of
+    meshes is fine."""
+    objects = collection.all_objects
+    if objects and not any(obj.type == 'MESH' for obj in objects):
+        types = sorted({obj.type for obj in objects})
         return _issue('no_mesh_objects', collection, None, 'ERROR',
                       f"No mesh objects (types present: {', '.join(types)}).")
     return None
@@ -268,7 +277,7 @@ def check_triangle_count(collection, max_triangles, depsgraph):
     """Flag a collection whose combined evaluated triangle count exceeds the
     budget. A tris budget is naturally per export-collection, not per object."""
     total_tris = 0
-    for obj in collection.objects:
+    for obj in collection.all_objects:
         if obj.type != 'MESH':
             continue
         obj_eval = obj.evaluated_get(depsgraph)
@@ -352,7 +361,7 @@ def _collect_collection_issues(collection, prefs, depsgraph):
             if issue:
                 issues.append(issue)
 
-    for obj in collection.objects:
+    for obj in collection.all_objects:
         try:
             issues.extend(_collect_object_issues(collection, obj, prefs, depsgraph))
         except Exception as exc:

@@ -12,10 +12,14 @@ def validate_collection(collection_name):
 
 
 def _get_missing_textures(collection):
-    """Return names of missing (non-packed, file-sourced) image textures used by mesh objects."""
+    """Return names of missing (non-packed, file-sourced) image textures used by mesh objects.
+
+    Walks the whole collection hierarchy (all_objects) so meshes kept in
+    sub-collections of an export collection are checked too.
+    """
     missing = []
     seen = set()
-    for obj in collection.objects:
+    for obj in collection.all_objects:
         if obj.type != 'MESH':
             continue
         for slot in obj.material_slots:
@@ -55,7 +59,7 @@ def check_collection_warnings(collection, exporter):
     )
 
     issues = []
-    for obj in collection.objects:
+    for obj in collection.all_objects:
         issue = check_missing_library_reference(collection, obj)
         if issue:
             issues.append(issue)

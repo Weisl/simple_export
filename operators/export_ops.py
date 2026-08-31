@@ -2,7 +2,7 @@ import bpy
 import os
 
 from .. import __package__ as base_package
-from ..functions.collection_layer import set_active_layer_Collection
+from ..functions.collection_layer import set_active_layer_Collection, ensure_layer_collection_included
 from ..functions.collection_offset import apply_collection_offset
 from ..functions.pre_export_ops import (
     apply_triangulate_modifiers, remove_triangulate_modifiers,
@@ -152,6 +152,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
             triangulate_backup = {}
             pre_rotate_backup = {}
             ops = None  # per-collection pre-export ops; set inside try after validation
+            restore_layer_exclusion = None  # set inside try; re-applies view-layer exclude state
 
             try:
                 # Skip collections already flagged by the duplicate-path pre-pass
@@ -173,7 +174,25 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                     error_count += 1
                     continue
 
+                # An excluded collection (Outliner checkbox unticked) is invisible
+                # to Blender's collection exporters, which then silently write
+                # nothing. Temporarily re-include it (and any excluded ancestor)
+                # so its geometry exports; a warning is surfaced below.
+                layer_excluded, restore_layer_exclusion = ensure_layer_collection_included(collection.name)
+
                 set_active_layer_Collection(collection.name)
+
+                # bpy.ops.collection.exporter_export() runs against the active
+                # layer collection by index - if the switch above did not take
+                # (e.g. the collection is still not in the view layer), the
+                # export would silently write to whatever collection *is* active.
+                # Fail loudly instead.
+                active_lc = context.view_layer.active_layer_collection
+                if active_lc is None or active_lc.collection != collection:
+                    raise ValueError(
+                        f"Could not activate '{collection.name}' for export - it may not be "
+                        "linked to the current view layer. Link it to the scene and try again."
+                    )
 
                 # Find and validate exporter
                 exporter = find_exporter(collection)
@@ -209,6 +228,12 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
                 # Non-blocking pre-export warnings (hidden objects, missing libraries, textures…)
                 pre_export_warnings = check_collection_warnings(collection, exporter)
+
+                if layer_excluded:
+                    pre_export_warnings.append(
+                        "Collection was excluded from the view layer (Outliner checkbox); "
+                        "it was temporarily re-enabled so its objects could be exported."
+                    )
 
                 # Overwrite settings:
                 # Having use_selection causes unpredictable behavior and is not exposed to the UI.
@@ -298,6 +323,11 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                             restore_rotation_after_export(collection, rotation_backup)
                         if ops.apply_scale_before_export:
                             restore_scale_after_export(collection, scale_backup)
+
+                # Re-apply the collection's original view-layer exclude state
+                # (done last, after any object/mesh restoration above).
+                if restore_layer_exclusion is not None:
+                    restore_layer_exclusion()
 
         if len(collection_list) == 1:
             _maybe_auto_verify_after_export(context, prefs, collection_list[0], export_results)

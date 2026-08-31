@@ -540,13 +540,34 @@ class TestCheckAllObjectsHiddenFromRender(unittest.TestCase):
         self.obj.hide_render = True
         issue = _checks.check_all_objects_hidden_from_render(self.col)
         self.assertIsNotNone(issue)
-        self.assertEqual(issue.severity, 'ERROR')
+        # Non-blocking: the exporters still write render-hidden objects.
+        self.assertEqual(issue.severity, 'WARNING')
         self.assertIn("excluded from render", issue.message)
 
     def test_passes_when_one_visible(self):
         self.obj.hide_render = False
         issue = _checks.check_all_objects_hidden_from_render(self.col)
         self.assertIsNone(issue)
+
+    def test_considers_nested_subcollections(self):
+        """Geometry kept in a sub-collection counts: a visible nested mesh
+        means the collection is not 'all hidden', and an all-hidden nested
+        mesh is flagged even with no direct objects."""
+        self.obj.hide_render = True
+        child = _h.make_collection("Hidden_Test_Child")
+        self.col.children.link(child)
+        nested = _make_triangle_object(child, name="NestedTri")
+        try:
+            nested.hide_render = False
+            self.assertIsNone(_checks.check_all_objects_hidden_from_render(self.col))
+            nested.hide_render = True
+            issue = _checks.check_all_objects_hidden_from_render(self.col)
+            self.assertIsNotNone(issue)
+            self.assertEqual(issue.severity, 'WARNING')
+        finally:
+            _remove_object(nested)
+            self.col.children.unlink(child)
+            _h.remove_collection(child)
 
 
 class TestCheckNoMeshObjects(unittest.TestCase):
@@ -576,6 +597,19 @@ class TestCheckNoMeshObjects(unittest.TestCase):
             self.assertIsNone(issue)
         finally:
             _remove_object(mesh_obj)
+
+    def test_passes_when_mesh_only_in_subcollection(self):
+        """A collection whose only direct object is a non-mesh (e.g. a root
+        empty / light) but whose sub-collection holds meshes is fine."""
+        child = _h.make_collection("NoMesh_Test_Child")
+        self.col.children.link(child)
+        nested = _make_triangle_object(child, name="NestedMesh")
+        try:
+            self.assertIsNone(_checks.check_no_mesh_objects(self.col))
+        finally:
+            _remove_object(nested)
+            self.col.children.unlink(child)
+            _h.remove_collection(child)
 
 
 class TestCheckMissingTextures(unittest.TestCase):
