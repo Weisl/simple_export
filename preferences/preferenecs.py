@@ -701,6 +701,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                                                description="Show the result panel only when errors occur.",
                                                default=False)
 
+    show_export_statistics: bpy.props.BoolProperty(
+        name="Show Export Statistics",
+        description="Include an object/material/UV-set breakdown for each collection "
+                    "in the Export Results popup",
+        default=False)
+
     panel_category: bpy.props.StringProperty(name="Category Tab",
                                              description="The category name used to organize the addon in the properties panel for all the addons",
                                              default='Simple Export',
@@ -732,6 +738,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         description="Select a default preset",
         items=lambda self, context: get_simple_export_preset_files(self, context),
         default=setdefaultpreset()
+    )
+
+    preset_manager_filter: bpy.props.StringProperty(
+        name="Search Presets",
+        description="Filter the presets listed below by name",
+        default="",
     )
 
     ########################################
@@ -999,15 +1011,16 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
         if self.prefs_tabs == 'SETTINGS':
             from ..presets_addon.exporter_preset import (
-                EXPORT_MT_scene_presets,
                 SceneExportPreset,
                 simple_export_presets_folder,
+                list_addon_presets_by_format,
             )
+            from ..core.export_formats import ExportFormats
 
-            # Preset row: menu + add (from prefs) + remove + duplicate + pin + folder
+            # Selected-preset row: add (from prefs) + remove + duplicate + pin + folder
             box = layout.box()
             row = box.row(align=True)
-            row.menu(EXPORT_MT_scene_presets.__name__, text=EXPORT_MT_scene_presets.bl_label)
+            row.label(text="Selected Preset")
             row.operator("simple_export.save_preset_from_preferences", text="", icon='ADD')
             remove_op = row.operator(SceneExportPreset.bl_idname, text="", icon='REMOVE')
             remove_op.remove_active = True
@@ -1022,7 +1035,46 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                 pass
             row.operator("wm.path_open", text='', icon='FILE_FOLDER').filepath = simple_export_presets_folder()
 
+            row = box.row(align=True)
+            row.prop(self, "preset_manager_filter", text="", icon='VIEWZOOM')
+
+            # Presets grouped by export format
+            search = self.preset_manager_filter.strip().lower()
+            grouped = list_addon_presets_by_format()
+            selected_path = bpy.context.scene.simple_export_selected_preset
+
+            for fmt in ExportFormats.all():
+                entries = grouped.get(fmt.key, [])
+                if search:
+                    entries = [entry for entry in entries if search in entry[0].lower()]
+                    if not entries:
+                        continue
+
+                panel_header, panel_body = layout.panel(
+                    idname=f"EXPORT_PRESETS_{fmt.key}",
+                    default_closed=not entries,
+                )
+                panel_header.label(text=f"{fmt.label} ({len(entries)})")
+                if panel_body:
+                    if entries:
+                        col = panel_body.column(align=True)
+                        for name, filepath, is_builtin in entries:
+                            icon = 'LOCKED' if is_builtin else 'NONE'
+                            row = col.row(align=True)
+                            apply_op = row.operator("simple_export.apply_preset", text=name, icon=icon)
+                            apply_op.filepath = filepath
+                            apply_op.menu_idname = "EXPORT_MT_scene_presets"
+                            if filepath == selected_path:
+                                row.label(text="", icon='CHECKMARK')
+                    else:
+                        panel_body.label(text=f"No presets yet for {fmt.label}", icon='INFO')
+
+                    new_op = panel_body.operator(SceneExportPreset.bl_idname,
+                                                 text=f"New {fmt.label} Preset...", icon='ADD')
+                    new_op.export_format = fmt.key
+
             # Full export defaults
+            layout.separator()
             from ..ui.shared_draw import draw_full_exporer_settings
             draw_full_exporer_settings(layout, self)
 
@@ -1046,6 +1098,10 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             box = layout.box()
             box.label(text="Warnings")
             box.prop(self, "report_errors_only")
+
+            box = layout.box()
+            box.label(text="Statistics")
+            box.prop(self, "show_export_statistics")
 
             box = layout.box()
             box.label(text="Onboarding")

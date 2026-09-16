@@ -24,3 +24,31 @@ COLOR_TAG_ICONS = {
     'COLOR_07': 'COLLECTION_COLOR_07',
     'COLOR_08': 'COLLECTION_COLOR_08',
 }
+
+# Severity -> icon convention shared by the validation popup (validation/operators.py)
+# and the export-results popup (ui/result_popups.py). CANCEL = hard failure,
+# ERROR = warning (yellow triangle), INFO = informational.
+SEVERITY_ICONS = {'ERROR': 'CANCEL', 'WARNING': 'ERROR', 'INFO': 'INFO'}
+
+# Display order and label for obj.type values, used by the optional per-collection
+# export statistics breakdown (functions/vallidate_func.get_collection_export_statistics,
+# ui/result_popups.py). Only types actually present in a collection are shown; any
+# type not listed here still shows up, labelled with its raw Blender type string.
+OBJECT_TYPE_LABELS = {
+    'MESH': 'Meshes',
+    'LIGHT': 'Lights',
+    'CAMERA': 'Cameras',
+    'EMPTY': 'Empties',
+    'ARMATURE': 'Armatures',
+    'CURVE': 'Curves',
+    'SURFACE': 'Surfaces',
+    'META': 'Metaballs',
+    'FONT': 'Text',
+    'LATTICE': 'Lattices',
+    'GPENCIL': 'Grease Pencil',
+    'GREASEPENCIL': 'Grease Pencil',
+    'VOLUME': 'Volumes',
+    'SPEAKER': 'Speakers',
+    'LIGHT_PROBE': 'Light Probes',
+}
+OBJECT_TYPE_ORDER = list(OBJECT_TYPE_LABELS.keys())

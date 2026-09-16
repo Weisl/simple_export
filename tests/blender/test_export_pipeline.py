@@ -565,6 +565,74 @@ class TestExportViaAddonSetup(_ExportTestBase):
 
 
 # ---------------------------------------------------------------------------
+# 5. Linked (library) collections must be excluded — regression test for #320
+# ---------------------------------------------------------------------------
+
+class TestLinkedCollectionExclusion(_ExportTestBase):
+    """
+    simple_export_selected and exporters are stored on the Collection ID itself,
+    so a collection configured for export in its source .blend file carries that
+    state into every other file it gets linked into. Those linked collections
+    must not show up in the exporter list or be treated as export collections.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.lib_path = os.path.join(self.tmpdir, "linked_source.blend")
+        self.linked_col = None
+
+    def tearDown(self):
+        if self.linked_col is not None:
+            try:
+                bpy.context.scene.collection.children.unlink(self.linked_col)
+            except Exception:
+                pass
+            try:
+                bpy.data.collections.remove(self.linked_col)
+            except Exception:
+                pass
+        super().tearDown()
+
+    def _link_col_as_library(self):
+        """Configure self.col for export, write it to a standalone library file,
+        then link it back in as a fresh, library-owned collection."""
+        self.col.simple_export_selected = True
+        exporter = self._add_exporter("IO_FH_fbx")
+        exporter.export_properties.filepath = os.path.join(self.tmpdir, f"{self.col.name}.fbx")
+
+        bpy.data.libraries.write(self.lib_path, {self.col}, fake_user=True)
+
+        with bpy.data.libraries.load(self.lib_path, link=True) as (data_from, data_to):
+            data_to.collections = data_from.collections
+
+        for col in data_to.collections:
+            if col is not None and col.library is not None:
+                self.linked_col = col
+                break
+
+        self.assertIsNotNone(self.linked_col, "Failed to link the collection back in as a library")
+        bpy.context.scene.collection.children.link(self.linked_col)
+        return self.linked_col
+
+    def test_linked_collection_carries_export_settings(self):
+        """Sanity check: the addon's export properties do travel with linked data."""
+        linked = self._link_col_as_library()
+        self.assertTrue(getattr(linked, "simple_export_selected", False))
+        self.assertGreater(len(linked.exporters), 0)
+
+    def test_linked_collection_fails_uilist_filter(self):
+        linked = self._link_col_as_library()
+        from simple_export.ui.uilist import collection_passes_uilist_filters
+        self.assertFalse(collection_passes_uilist_filters(linked, bpy.context.scene))
+
+    def test_linked_collection_excluded_from_export_list(self):
+        linked = self._link_col_as_library()
+        from simple_export.functions.collection_selection import get_export_collection_list
+        export_list = get_export_collection_list(bpy.context)
+        self.assertNotIn(linked, export_list)
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 

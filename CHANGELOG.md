@@ -52,6 +52,10 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
   and "Collection Offset" pre-export operations silently do nothing to the
   nested meshes. Validation, warnings, and all pre-export operations now walk
   the full collection hierarchy.
+- Export collections whose only objects are **collection-instance empties**
+  (Object > Instancing > Collection) no longer get a bogus "No mesh objects
+  (types present: EMPTY)" error - the check now also resolves mesh content
+  through instanced collections, not just direct/nested objects.
 - [#319](https://github.com/Weisl/simple_export/issues/319): A collection that is
   **excluded from the view layer** (its Outliner checkbox
   unticked — which also stops it rendering) no longer fails to export.

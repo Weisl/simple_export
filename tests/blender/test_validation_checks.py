@@ -611,6 +611,24 @@ class TestCheckNoMeshObjects(unittest.TestCase):
             self.col.children.unlink(child)
             _h.remove_collection(child)
 
+    def test_passes_when_mesh_only_via_collection_instance(self):
+        """A collection whose only objects are collection-instance empties
+        (Object > Instancing > Collection) is fine as long as the instanced
+        collection itself contains meshes - the exporter still writes that
+        geometry, it's not "no mesh objects"."""
+        source = _h.make_collection("NoMesh_Test_InstanceSource")
+        mesh_obj = _make_triangle_object(source, name="InstancedMesh")
+        instance_empty = bpy.data.objects.new("NoMesh_Instance", None)
+        instance_empty.instance_type = 'COLLECTION'
+        instance_empty.instance_collection = source
+        self.col.objects.link(instance_empty)
+        try:
+            self.assertIsNone(_checks.check_no_mesh_objects(self.col))
+        finally:
+            _remove_object(instance_empty)
+            _remove_object(mesh_obj)
+            _h.remove_collection(source)
+
 
 class TestCheckMissingTextures(unittest.TestCase):
     def setUp(self):

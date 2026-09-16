@@ -3,11 +3,33 @@ import os
 import textwrap
 
 from .. import __package__ as base_package
-from ..core.info import COLOR_TAG_ICONS
+from ..core.info import COLOR_TAG_ICONS, SEVERITY_ICONS
+
+# Per-box, per-severity "is this section expanded" state for the export
+# results popup. Keyed by collection name (unique within one export batch).
+# Not a bpy.props.BoolProperty because export_data_info has no PropertyGroup
+# backing it - see _sync_expand_state_with_results().
+# Shape: {collection_name: {'ERROR': bool, 'WARNING': bool, 'INFO': bool, 'STATS': bool}}
+_result_expand_state = {}
+_last_export_data_info = None
+_DEFAULT_EXPAND = {'ERROR': True, 'WARNING': False, 'INFO': False, 'STATS': True}
+
+
+def _sync_expand_state_with_results(results_str):
+    """Reset per-box expand state whenever a fresh export overwrote the
+    results, so boxes don't inherit stale toggles from a previous run."""
+    global _last_export_data_info
+    if results_str != _last_export_data_info:
+        _result_expand_state.clear()
+        _last_export_data_info = results_str
+
+
+def _get_box_state(collection_name):
+    return _result_expand_state.setdefault(collection_name, dict(_DEFAULT_EXPAND))
 
 
 def _build_clipboard_text(message, warnings):
-    parts = [message] + [f"! {w}" for w in warnings]
+    parts = [message] + [f"! [{w['severity']}] {w['message']}" for w in warnings]
     return "\n".join(filter(None, parts))
 
 
@@ -15,8 +37,35 @@ def _draw_messages(col, message, warnings, width=55):
     for line in textwrap.wrap(message, width=width) or [message]:
         col.label(text=line)
     for w in warnings:
-        for line in textwrap.wrap(w, width=width - 2) or [w]:
-            col.label(text=f"! {line}")
+        lines = textwrap.wrap(w, width=width - 2) or [w]
+        for i, line in enumerate(lines):
+            # Icon only on the first wrapped line of each warning, not repeated per line.
+            col.label(text=line, icon='ERROR' if i == 0 else 'NONE')
+
+
+def _draw_stats_sublist(col, collection_name, state, key, label, icon, names):
+    """One row: 'Label (N)' that expands into an indented list of names.
+    Mirrors the ERROR/WARNING/INFO severity toggle pattern, keyed under its
+    own state key so it can be expanded independently of the parent
+    Statistics section."""
+    row = col.row(align=True)
+    if names:
+        toggle = row.operator(
+            SIMPLEEXPORTER_OT_ToggleResultSeverity.bl_idname,
+            text=f"{label} ({len(names)})", icon=icon,
+            depress=state.get(key, False),
+        )
+        toggle.collection_name = collection_name
+        toggle.severity = key
+    else:
+        row.label(text=f"{label}: 0", icon=icon)
+
+    if names and state.get(key, False):
+        indented = col.row()
+        indented.separator(factor=2.0)
+        sub_col = indented.column(align=True)
+        for n in names:
+            sub_col.label(text=n)
 
 
 def _draw_verify_in_engine_button(context, layout, result):
@@ -67,7 +116,9 @@ class SIMPLEEXPORTER_OT_ShowCollectionError(bpy.types.Operator):
         for r in results:
             if r['name'] == self.collection_name and not r['success']:
                 self.message = r.get('message', '')
-                self.warnings = "\n".join(r.get('warnings', []))
+                self.warnings = "\n".join(
+                    f"! [{w['severity']}] {w['message']}" for w in r.get('warnings', [])
+                )
                 break
         else:
             self.message = "No error record found for this collection."
@@ -82,7 +133,8 @@ class SIMPLEEXPORTER_OT_ShowCollectionError(bpy.types.Operator):
         _draw_messages(layout.column(align=True), self.message, warnings)
         layout.separator()
         op = layout.operator("simple_export.copy_to_clipboard", text="Copy Error", icon='COPYDOWN')
-        op.text = _build_clipboard_text(self.message, warnings)
+        # self.warnings already has "! [SEVERITY] ..." baked in from invoke() - plain join, no re-formatting.
+        op.text = "\n".join(filter(None, [self.message, self.warnings]))
 
     def execute(self, context):
         return {'FINISHED'}
@@ -284,83 +336,194 @@ class SIMPLEEXPORTER_PT_FilePathResultsPanel(bpy.types.Panel):
                 col_message.label(text=result['message'])
 
 
+class SIMPLEEXPORTER_OT_ToggleResultSeverity(bpy.types.Operator):
+    """Expand/collapse one severity's message list for one export result box."""
+    bl_idname = "simple_export.toggle_result_severity"
+    bl_label = "Toggle Severity Section"
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    collection_name: bpy.props.StringProperty()
+    severity: bpy.props.StringProperty()
+
+    def execute(self, context):
+        state = _get_box_state(self.collection_name)
+        state[self.severity] = not state.get(self.severity, False)
+        return {'FINISHED'}
+
+
+class SIMPLEEXPORTER_OT_SetAllResultSeverityExpand(bpy.types.Operator):
+    """Force every non-empty severity section, in every result box, open or closed."""
+    bl_idname = "simple_export.set_all_result_severity_expand"
+    bl_label = "Expand/Collapse All Result Sections"
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    expand: bpy.props.BoolProperty()
+
+    def execute(self, context):
+        results_str = context.window_manager.export_data_info
+        results = eval(results_str) if results_str else []
+        for r in results:
+            counts = {'ERROR': 0, 'WARNING': 0, 'INFO': 0}
+            for w in r.get('warnings', []):
+                counts[w.get('severity', 'INFO')] = counts.get(w.get('severity', 'INFO'), 0) + 1
+            state = _get_box_state(r['name'])
+            state['OPEN'] = self.expand
+            for sev in ('ERROR', 'WARNING', 'INFO'):
+                if counts.get(sev, 0) > 0:
+                    state[sev] = self.expand
+            stats = r.get('statistics')
+            if stats:
+                state['STATS'] = self.expand
+                if stats.get('materials'):
+                    state['STATS_MATERIALS'] = self.expand
+                if stats.get('uv_sets'):
+                    state['STATS_UVSETS'] = self.expand
+        return {'FINISHED'}
+
+
 # Popup to show export results
 class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
-    """Panel to display the export results in a table format."""
+    """Panel to display the export results, one box per collection."""
     bl_idname = "SIMPLEEXPORTER_PT_ExportResultsPanel"
     bl_label = "Export Results"
     bl_space_type = "VIEW_3D"
     bl_region_type = "WINDOW"
-    bl_ui_units_x = 45
+    bl_ui_units_x = 48
 
     def draw(self, context):
         layout = self.layout
         layout.label(text="Export Results:")
 
-        # Column Sizes
-        col1_split_fac = 0.04  # icon
-        col2_split_fac = 0.20  # collection name
-        col3_split_fac = 0.38  # filepath
-        # remaining ~38% goes to info + copy button
-
-        # Get results from WindowManager
         results_str = context.window_manager.export_data_info
-        results = eval(results_str) if results_str else []  # Parse results string into a list
+        _sync_expand_state_with_results(results_str)
+        results = eval(results_str) if results_str else []
 
-        # Header row with column titles
-        split = layout.split(factor=col1_split_fac)
-        col_icon = split.column()
-        split = split.split(factor=col2_split_fac / (1.0 - col1_split_fac))
-        col_name = split.column()
-        split = split.split(factor=col3_split_fac / (1.0 - col2_split_fac))
-        col_filepath = split.column()
-        col_info = split.column()
+        if results:
+            row = layout.row(align=True)
+            op = row.operator(SIMPLEEXPORTER_OT_SetAllResultSeverityExpand.bl_idname, text="Expand All")
+            op.expand = True
+            op = row.operator(SIMPLEEXPORTER_OT_SetAllResultSeverityExpand.bl_idname, text="Collapse All")
+            op.expand = False
 
-        col_icon.label(text="")
-        col_name.label(text="Collection")
-        col_filepath.label(text="Filepath")
-        col_info.label(text="Info")
-
-        # Iterate over results and populate the table
         for result in results:
-            split = layout.split(factor=col1_split_fac)
-            col_icon = split.column()
-            split = split.split(factor=col2_split_fac / (1.0 - col1_split_fac))
-            col_name = split.column()
-            split = split.split(factor=col3_split_fac / (1.0 - col2_split_fac))
-            col_filepath = split.column()
-            col_info = split.column()
-
-            # Icon Column
+            name = result['name']
+            success = result['success']
             warnings = result.get('warnings', [])
-            if not result['success']:
+            message = result.get('message', '')
+            filepath = result.get('filepath') or "-"
+            state = _get_box_state(name)
+
+            statistics = result.get('statistics')
+
+            by_severity = {'ERROR': [], 'WARNING': [], 'INFO': []}
+            for w in warnings:
+                by_severity.setdefault(w.get('severity', 'INFO'), []).append(w)
+
+            box = layout.box()
+
+            # One-line collapsed header: chevron + status icon + name, buttons right-aligned.
+            # Everything else (filepath, message, severity details) only draws when open.
+            is_open = state.setdefault('OPEN', not success or bool(warnings) or bool(statistics))
+
+            if not success:
                 status_icon = 'CANCEL'
             elif warnings:
-                status_icon = 'ERROR'  # yellow triangle — succeeded with warnings
+                status_icon = 'ERROR'  # succeeded, but flag that it has notes worth a look
             else:
                 status_icon = 'CHECKMARK'
-            col_icon.label(icon=status_icon)
 
-            # Collection Name Column
-            col_name.label(text=result['name'])
+            header = box.row(align=True)
+            header.label(text=name, icon=status_icon)
 
-            # Filepath Column
-            col_filepath.label(text=result['filepath'] if 'filepath' in result else "-")
+            # Filepath, always visible even while collapsed.
+            header.label(text=filepath)
 
-            # Info Message Column — main message + per-warning lines + copy button
-            message = result.get('message', '')
-            msg_row = col_info.row(align=True)
-            _draw_messages(msg_row.column(align=True), message, warnings, width=40)
+            # Severity counts + the expand/collapse toggle, grouped together and
+            # always visible even while collapsed.
+            counts_text = (
+                f"Errors: {len(by_severity['ERROR'])}   "
+                f"Warnings: {len(by_severity['WARNING'])}   "
+                f"Infos: {len(by_severity['INFO'])}"
+            )
+            counts_row = header.row(align=True)
+            counts_row.label(text=counts_text)
+            chevron = counts_row.operator(
+                SIMPLEEXPORTER_OT_ToggleResultSeverity.bl_idname,
+                text="", icon='DISCLOSURE_TRI_DOWN' if is_open else 'DISCLOSURE_TRI_RIGHT',
+            )
+            chevron.collection_name = name
+            chevron.severity = 'OPEN'
 
-            btn_col = msg_row.column(align=True)
-            if not result['success']:
-                copy_op = btn_col.operator("simple_export.copy_to_clipboard", text='', icon='COPYDOWN')
+            btns = header.row(align=True)
+            btns.alignment = 'RIGHT'
+            if success and result.get('filepath'):
+                export_dir = os.path.dirname(result['filepath'])
+                btns.operator("wm.path_open", text='', icon='FILE_FOLDER').filepath = export_dir
+                _draw_verify_in_engine_button(context, btns, result)
+            if not success:
+                copy_op = btns.operator("simple_export.copy_to_clipboard", text='', icon='COPYDOWN')
                 copy_op.text = _build_clipboard_text(message, warnings)
 
-            if result['success'] and result.get('filepath'):
-                export_dir = os.path.dirname(result['filepath'])
-                btn_col.operator("wm.path_open", text='', icon='FILE_FOLDER').filepath = export_dir
-                _draw_verify_in_engine_button(context, btn_col, result)
+            if not is_open:
+                continue
+
+            # Full-width filepath + message lines
+            body = box.column(align=True)
+            for line in textwrap.wrap(filepath, width=90) or [filepath]:
+                body.label(text=line)
+            for line in textwrap.wrap(message, width=90) or [message]:
+                body.label(text=line)
+
+            # Severity toggle row — only severities with items get a button
+            sev_row = box.row(align=True)
+            for sev in ('ERROR', 'WARNING', 'INFO'):
+                items = by_severity[sev]
+                if not items:
+                    continue
+                toggle = sev_row.operator(
+                    SIMPLEEXPORTER_OT_ToggleResultSeverity.bl_idname,
+                    text=f"{sev.title()} ({len(items)})",
+                    icon=SEVERITY_ICONS[sev],
+                    depress=state[sev],
+                )
+                toggle.collection_name = name
+                toggle.severity = sev
+
+            if statistics:
+                stats_toggle = sev_row.operator(
+                    SIMPLEEXPORTER_OT_ToggleResultSeverity.bl_idname,
+                    text="Statistics", icon='MESH_DATA',
+                    depress=state['STATS'],
+                )
+                stats_toggle.collection_name = name
+                stats_toggle.severity = 'STATS'
+
+            # Expanded per-severity message lists
+            for sev in ('ERROR', 'WARNING', 'INFO'):
+                items = by_severity[sev]
+                if not items or not state[sev]:
+                    continue
+                indented = box.row()
+                indented.separator(factor=2.0)
+                col = indented.column(align=True)
+                for w in items:
+                    lines = textwrap.wrap(w['message'], width=85) or [w['message']]
+                    for i, line in enumerate(lines):
+                        col.label(text=line, icon=SEVERITY_ICONS[sev] if i == 0 else 'NONE')
+
+            # Expanded statistics breakdown
+            if statistics and state['STATS']:
+                from ..core.info import OBJECT_TYPE_LABELS
+                indented = box.row()
+                indented.separator(factor=2.0)
+                col = indented.column(align=True)
+                object_parts = [
+                    f"{OBJECT_TYPE_LABELS.get(obj_type, obj_type)}: {count}"
+                    for obj_type, count in statistics['object_counts']
+                ]
+                col.label(text="Objects: " + (", ".join(object_parts) if object_parts else "-"), icon='OBJECT_DATA')
+                _draw_stats_sublist(col, name, state, 'STATS_MATERIALS', "Materials", 'MATERIAL', statistics['materials'])
+                _draw_stats_sublist(col, name, state, 'STATS_UVSETS', "UV Sets", 'UV', statistics['uv_sets'])
 
         layout.separator()
         layout.operator("simple_export.copy_export_report", text="Copy Full Report", icon='COPYDOWN')
@@ -370,6 +533,8 @@ classes = (
     SIMPLEEXPORTER_OT_ShowCollectionError,
     SIMPLEEXPORTER_OT_CopyExportReport,
     SIMPLEEXPORTER_OT_CopyToClipboard,
+    SIMPLEEXPORTER_OT_ToggleResultSeverity,
+    SIMPLEEXPORTER_OT_SetAllResultSeverityExpand,
     SIMPLEEXPORTER_PT_PresetResultsPanel,
     SIMPLEEXPORTER_PT_AddExporterResultsPanel,
     SIMPLEEXPORTER_PT_FilePathResultsPanel,
@@ -398,3 +563,7 @@ def unregister():
     del bpy.types.WindowManager.assign_filepath_result_info
     del bpy.types.WindowManager.assign_preset_info_data
     del bpy.types.WindowManager.add_exporter_result_info
+
+    global _last_export_data_info
+    _result_expand_state.clear()
+    _last_export_data_info = None

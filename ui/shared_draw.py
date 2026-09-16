@@ -29,8 +29,8 @@ def draw_parent_collection(context, layout):
     layout.prop(scene, "parent_collection", text="Parent Collection")
 
 
-def draw_export_preset_properties(layout, element):
-    export_format = element.export_format  # Get the currently selected export format
+def draw_export_preset_properties(layout, element, format_key=None):
+    export_format = format_key or element.export_format  # Get the currently selected export format
 
     layout.label(text="Export Format Preset")
     # Find the property for the current export format

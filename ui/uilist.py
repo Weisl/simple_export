@@ -11,6 +11,11 @@ from ..functions.preset_func import collection_has_preset_changes
 
 def collection_passes_uilist_filters(collection, scene):
     """Return True if collection passes all active UIList filters."""
+    # Collections linked from another .blend file carry their source file's
+    # export settings as ID-properties. They aren't local data, so exclude them.
+    if collection.library is not None:
+        return False
+
     if not collection.exporters:
         return False
 

@@ -231,13 +231,34 @@ def check_all_objects_hidden_from_render(collection):
     return None
 
 
+def _has_mesh_content(collection, _visited=None):
+    """True if `collection` resolves to at least one mesh object, either
+    directly/in a sub-collection (all_objects) or through a collection-instance
+    empty (Object > Instancing > Collection) - the exporter still writes that
+    instanced geometry, so it counts as mesh content. `_visited` guards
+    against a collection instancing itself (directly or via a cycle)."""
+    if _visited is None:
+        _visited = set()
+    if collection.name in _visited:
+        return False
+    _visited.add(collection.name)
+    for obj in collection.all_objects:
+        if obj.type == 'MESH':
+            return True
+        if obj.type == 'EMPTY' and obj.instance_type == 'COLLECTION' and obj.instance_collection:
+            if _has_mesh_content(obj.instance_collection, _visited):
+                return True
+    return False
+
+
 def check_no_mesh_objects(collection):
     """Flag an export collection with no MESH objects - usually a mistake.
     Considers the whole collection hierarchy (all_objects): a collection whose
     only direct object is a root empty but whose sub-collections are full of
-    meshes is fine."""
+    meshes is fine. Collection-instance empties also count as mesh content
+    when the collection they instance contains meshes."""
     objects = collection.all_objects
-    if objects and not any(obj.type == 'MESH' for obj in objects):
+    if objects and not _has_mesh_content(collection):
         types = sorted({obj.type for obj in objects})
         return _issue('no_mesh_objects', collection, None, 'ERROR',
                       f"No mesh objects (types present: {', '.join(types)}).")

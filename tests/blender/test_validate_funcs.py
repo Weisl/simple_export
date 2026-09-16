@@ -156,7 +156,7 @@ class TestCheckCollectionWarningsHideRender(unittest.TestCase):
     def test_warning_when_all_objects_excluded_from_render(self):
         warnings = check_collection_warnings(self.col, self.exporter)
         self.assertTrue(
-            any("excluded from render" in w for w in warnings),
+            any("excluded from render" in w['message'] for w in warnings),
             f"Expected render-exclusion warning, got: {warnings}",
         )
 
@@ -166,7 +166,7 @@ class TestCheckCollectionWarningsHideRender(unittest.TestCase):
         try:
             warnings = check_collection_warnings(self.col, self.exporter)
             self.assertFalse(
-                any("excluded from render" in w for w in warnings),
+                any("excluded from render" in w['message'] for w in warnings),
                 f"Unexpected render-exclusion warning: {warnings}",
             )
         finally:
@@ -199,15 +199,15 @@ class TestCheckCollectionWarningsNoMesh(unittest.TestCase):
     def test_warning_when_no_mesh_objects(self):
         warnings = check_collection_warnings(self.col, self.exporter)
         self.assertTrue(
-            any("No mesh objects" in w for w in warnings),
+            any("No mesh objects" in w['message'] for w in warnings),
             f"Expected no-mesh warning, got: {warnings}",
         )
 
     def test_no_mesh_warning_mentions_present_types(self):
         warnings = check_collection_warnings(self.col, self.exporter)
-        mesh_warns = [w for w in warnings if "No mesh objects" in w]
+        mesh_warns = [w for w in warnings if "No mesh objects" in w['message']]
         self.assertTrue(mesh_warns)
-        self.assertIn("LIGHT", mesh_warns[0])
+        self.assertIn("LIGHT", mesh_warns[0]['message'])
 
 
 class TestCheckCollectionWarningsMeshPresent(unittest.TestCase):
@@ -225,7 +225,7 @@ class TestCheckCollectionWarningsMeshPresent(unittest.TestCase):
     def test_no_no_mesh_warning_when_mesh_present(self):
         warnings = check_collection_warnings(self.col, self.exporter)
         self.assertFalse(
-            any("No mesh objects" in w for w in warnings),
+            any("No mesh objects" in w['message'] for w in warnings),
             f"Unexpected no-mesh warning: {warnings}",
         )
 
@@ -269,7 +269,7 @@ class TestCheckCollectionWarningsMissingTextures(unittest.TestCase):
         exporter = _make_exporter_for_format("GLTF")
         warnings = check_collection_warnings(self.col, exporter)
         self.assertTrue(
-            any("Missing textures" in w for w in warnings),
+            any("Missing textures" in w['message'] for w in warnings),
             f"Expected missing-texture warning for GLTF, got: {warnings}",
         )
 
@@ -277,7 +277,7 @@ class TestCheckCollectionWarningsMissingTextures(unittest.TestCase):
         exporter = _make_exporter_for_format("USD")
         warnings = check_collection_warnings(self.col, exporter)
         self.assertTrue(
-            any("Missing textures" in w for w in warnings),
+            any("Missing textures" in w['message'] for w in warnings),
             f"Expected missing-texture warning for USD, got: {warnings}",
         )
 
@@ -285,16 +285,16 @@ class TestCheckCollectionWarningsMissingTextures(unittest.TestCase):
         exporter = _make_exporter_for_format("FBX")
         warnings = check_collection_warnings(self.col, exporter)
         self.assertFalse(
-            any("Missing textures" in w for w in warnings),
+            any("Missing textures" in w['message'] for w in warnings),
             f"Unexpected texture warning for FBX: {warnings}",
         )
 
     def test_missing_texture_warning_names_the_image(self):
         exporter = _make_exporter_for_format("GLTF")
         warnings = check_collection_warnings(self.col, exporter)
-        tex_warns = [w for w in warnings if "Missing textures" in w]
+        tex_warns = [w for w in warnings if "Missing textures" in w['message']]
         self.assertTrue(tex_warns)
-        self.assertIn("missing_tex.png", tex_warns[0])
+        self.assertIn("missing_tex.png", tex_warns[0]['message'])
 
     def test_packed_image_not_flagged_as_missing(self):
         """Packed images are always available — they must not trigger a warning."""
@@ -318,7 +318,7 @@ class TestCheckCollectionWarningsMissingTextures(unittest.TestCase):
             exporter = _make_exporter_for_format("GLTF")
             warnings = check_collection_warnings(self.col, exporter)
             self.assertFalse(
-                any("Missing textures" in w for w in warnings),
+                any("Missing textures" in w['message'] for w in warnings),
                 f"Packed texture should not produce a warning: {warnings}",
             )
         finally:

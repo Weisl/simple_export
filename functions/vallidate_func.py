@@ -41,7 +41,8 @@ def _get_missing_textures(collection):
 
 
 def check_collection_warnings(collection, exporter):
-    """Return a list of non-blocking warning strings for this collection.
+    """Return a list of non-blocking issues for this collection, as
+    {'severity': 'ERROR'|'WARNING'|'INFO', 'message': str} dicts.
 
     These do not block the export but are surfaced in the results popup.
 
@@ -74,9 +75,49 @@ def check_collection_warnings(collection, exporter):
         issues.append(issue)
 
     return [
-        f"Object '{issue.object_name}' {issue.message}" if issue.object_name else issue.message
+        {
+            'severity': issue.severity,
+            'message': (f"Object '{issue.object_name}' {issue.message}"
+                        if issue.object_name else issue.message),
+        }
         for issue in issues
     ]
+
+
+def get_collection_export_statistics(collection):
+    """Return an optional object/material/UV-set breakdown for this collection,
+    surfaced in the export results popup when enabled in preferences.
+
+    Walks collection.all_objects, same traversal as check_collection_warnings,
+    so sub-collection contents are counted too.
+    """
+    from ..core.info import OBJECT_TYPE_ORDER
+
+    type_counts = {}
+    materials = set()
+    uv_set_names = set()
+
+    for obj in collection.all_objects:
+        type_counts[obj.type] = type_counts.get(obj.type, 0) + 1
+        # material_slots is populated for any object type that can carry a
+        # material (mesh, curve, surface, text, metaball, …), empty otherwise.
+        for slot in obj.material_slots:
+            if slot.material:
+                materials.add(slot.material.name)
+        if obj.type == 'MESH':
+            for uv in obj.data.uv_layers:
+                uv_set_names.add(uv.name)
+
+    ordered_types = sorted(
+        type_counts.items(),
+        key=lambda item: (OBJECT_TYPE_ORDER.index(item[0]) if item[0] in OBJECT_TYPE_ORDER else len(OBJECT_TYPE_ORDER), item[0]),
+    )
+
+    return {
+        'object_counts': ordered_types,
+        'materials': sorted(materials),
+        'uv_sets': sorted(uv_set_names),
+    }
 
 
 def pre_export_checks(export_path):

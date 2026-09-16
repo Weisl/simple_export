@@ -14,7 +14,10 @@ from ..functions.pre_export_ops import (
 from ..functions.exporter_funcs import find_exporter, get_exporter_id, add_extension
 from ..functions.collection_selection import get_export_collection_list
 from ..functions.path_utils import clean_relative_path, ensure_export_folder_exists, make_folder_path_absolute
-from ..functions.vallidate_func import validate_collection, post_export_checks, pre_export_checks, check_collection_warnings
+from ..functions.vallidate_func import (
+    validate_collection, post_export_checks, pre_export_checks, check_collection_warnings,
+    get_collection_export_statistics,
+)
 
 
 def _maybe_auto_verify_after_export(context, prefs, collection, export_results):
@@ -229,11 +232,18 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 # Non-blocking pre-export warnings (hidden objects, missing libraries, textures…)
                 pre_export_warnings = check_collection_warnings(collection, exporter)
 
+                # Optional object/material/UV-set breakdown, gated behind preferences
+                # since it walks all_objects again and most users don't want it.
+                statistics = get_collection_export_statistics(collection) if prefs.show_export_statistics else None
+
                 if layer_excluded:
-                    pre_export_warnings.append(
-                        "Collection was excluded from the view layer (Outliner checkbox); "
-                        "it was temporarily re-enabled so its objects could be exported."
-                    )
+                    pre_export_warnings.append({
+                        'severity': 'INFO',
+                        'message': (
+                            "Collection was excluded from the view layer (Outliner checkbox); "
+                            "it was temporarily re-enabled so its objects could be exported."
+                        ),
+                    })
 
                 # Overwrite settings:
                 # Having use_selection causes unpredictable behavior and is not exposed to the UI.
@@ -289,7 +299,7 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                 success, message = post_export_checks(export_path, file_exists_before, file_timestamp_before)
                 export_results.append({
                     'name': collection.name, 'success': success, 'filepath': export_path,
-                    'message': message, 'warnings': pre_export_warnings,
+                    'message': message, 'warnings': pre_export_warnings, 'statistics': statistics,
                 })
                 collection.last_export_failed = not success
                 if not success:

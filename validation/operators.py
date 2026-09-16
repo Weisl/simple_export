@@ -1,10 +1,6 @@
 import bpy
 
-from ..core.info import COLOR_TAG_ICONS
-
-# Reuses the icon convention already established in ui/result_popups.py:
-# CANCEL = hard failure, ERROR = warning (yellow triangle), INFO = informational.
-_SEVERITY_ICON = {'ERROR': 'CANCEL', 'WARNING': 'ERROR', 'INFO': 'INFO'}
+from ..core.info import COLOR_TAG_ICONS, SEVERITY_ICONS
 
 
 class SIMPLEEXPORT_UL_validation_results(bpy.types.UIList):
@@ -55,7 +51,7 @@ class SIMPLEEXPORT_UL_validation_results(bpy.types.UIList):
         select_op.object_name = item.object_name
 
         text = f"{item.object_name}: {item.message}" if item.object_name else item.message
-        row.label(text=text, icon=_SEVERITY_ICON.get(item.severity, 'INFO'))
+        row.label(text=text, icon=SEVERITY_ICONS.get(item.severity, 'INFO'))
 
     def filter_items(self, context, data, propname):
         results = getattr(data, propname)
@@ -271,11 +267,11 @@ class SCENE_OT_ValidateExportCollections(bpy.types.Operator):
         # behind the UIList's own collapsible filter icon).
         row = layout.row(align=True)
         row.prop(wm, 'simple_export_validation_show_errors', toggle=True,
-                 icon=_SEVERITY_ICON['ERROR'], text=f"Errors ({error_count})")
+                 icon=SEVERITY_ICONS['ERROR'], text=f"Errors ({error_count})")
         row.prop(wm, 'simple_export_validation_show_warnings', toggle=True,
-                 icon=_SEVERITY_ICON['WARNING'], text=f"Warnings ({warning_count})")
+                 icon=SEVERITY_ICONS['WARNING'], text=f"Warnings ({warning_count})")
         row.prop(wm, 'simple_export_validation_show_info', toggle=True,
-                 icon=_SEVERITY_ICON['INFO'], text=f"Info ({info_count})")
+                 icon=SEVERITY_ICONS['INFO'], text=f"Info ({info_count})")
 
         layout.template_list(
             'SIMPLEEXPORT_UL_validation_results', '',
