@@ -227,55 +227,55 @@ def draw_export_list(layout, list_id, scene):
 
     # === EXPORT TARGET (filters — above the list) ===
     box = layout.box()
-    header_row = box.row(align=True)
+    header_row, filters_body = box.panel(idname="EXPORT_TARGET_FILTERS", default_closed=True)
     header_row.label(text="Export Target", icon='FILTER')
     header_row.operator("simple_export.clear_filters", text="Clear Filters")
 
-    col = box.column(align=True)
+    if filters_body:
+        col = filters_body.column(align=True)
 
-    def filter_row(parent, label, prop, **kwargs):
-        split = parent.split(factor=0.35, align=True)
-        split.label(text=label)
-        split.prop(scene, prop, text="", **kwargs)
+        def filter_row(parent, label, prop, **kwargs):
+            split = parent.split(factor=0.35, align=True)
+            split.label(text=label)
+            split.prop(scene, prop, text="", **kwargs)
 
-    filter_row(col, "Addon Preset", "filter_preset_addon_preset")
-    filter_row(col, "Format", "filter_format")
-    
-    # User Group: menu with inline "Add New Group..." entry
-    split = col.split(factor=0.35, align=True)
-    split.label(text="User Group")
-    current = scene.filter_custom_group
-    if current == 'ALL':
-        label = "All User Groups"
-    elif current == 'NONE':
-        label = "No User Groups"
-    else:
-        label = current
+        filter_row(col, "Addon Preset", "filter_preset_addon_preset")
+        filter_row(col, "Format", "filter_format")
 
-    dir_split = col.split(factor=0.35, align=True)
-    dir_split.label(text="Directory")
-    current_dir = scene.filter_directory
-    if current_dir == 'ALL':
-        dir_label = "All Directories"
-    elif current_dir == 'NO_PATH':
-        dir_label = "No Directory"
-    else:
-        dir_label = current_dir
-    dir_split.menu("SIMPLE_EXPORT_MT_FilterDirectoryMenu", text=dir_label)
+        # User Group: menu with inline "Add New Group..." entry
+        split = col.split(factor=0.35, align=True)
+        split.label(text="User Group")
+        current = scene.filter_custom_group
+        if current == 'ALL':
+            label = "All User Groups"
+        elif current == 'NONE':
+            label = "No User Groups"
+        else:
+            label = current
 
-    row = col.row(align=True)
-    row.prop(scene, "filter_selected_only", text="", icon='CHECKBOX_HLT', toggle=True)
-    row.prop(scene, "filter_name", text="", icon='VIEWZOOM')
-    split.menu("SIMPLE_EXPORT_MT_FilterGroupMenu", text=label)
+        dir_split = col.split(factor=0.35, align=True)
+        dir_split.label(text="Directory")
+        current_dir = scene.filter_directory
+        if current_dir == 'ALL':
+            dir_label = "All Directories"
+        elif current_dir == 'NO_PATH':
+            dir_label = "No Directory"
+        else:
+            dir_label = current_dir
+        dir_split.menu("SIMPLE_EXPORT_MT_FilterDirectoryMenu", text=dir_label)
 
+        row = col.row(align=True)
+        row.prop(scene, "filter_selected_only", text="", icon='CHECKBOX_HLT', toggle=True)
+        row.prop(scene, "filter_name", text="", icon='VIEWZOOM')
+        split.menu("SIMPLE_EXPORT_MT_FilterGroupMenu", text=label)
 
-    more_header, more_body = col.panel(idname="EXPORT_TARGET_MORE_FILTERS", default_closed=True)
-    more_header.label(text="More")
-    if more_body:
-        col= more_body.column(align=True)
-        filter_row(col, "Color", "filter_color_tag")
-        filter_row(col, "Status", "filter_file_status")
-        filter_row(col, "Export Format Preset", "filter_preset_export_preset")
+        more_header, more_body = col.panel(idname="EXPORT_TARGET_MORE_FILTERS", default_closed=True)
+        more_header.label(text="More")
+        if more_body:
+            col = more_body.column(align=True)
+            filter_row(col, "Color", "filter_color_tag")
+            filter_row(col, "Status", "filter_file_status")
+            filter_row(col, "Export Format Preset", "filter_preset_export_preset")
 
 
     # === COLLECTION LIST ===

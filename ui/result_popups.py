@@ -12,7 +12,7 @@ from ..core.info import COLOR_TAG_ICONS, SEVERITY_ICONS
 # Shape: {collection_name: {'ERROR': bool, 'WARNING': bool, 'INFO': bool, 'STATS': bool}}
 _result_expand_state = {}
 _last_export_data_info = None
-_DEFAULT_EXPAND = {'ERROR': True, 'WARNING': False, 'INFO': False, 'STATS': True}
+_DEFAULT_EXPAND = {'ERROR': True, 'WARNING': False, 'INFO': False, 'STATS': False}
 
 
 def _sync_expand_state_with_results(results_str):
@@ -423,7 +423,9 @@ class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
 
             # One-line collapsed header: chevron + status icon + name, buttons right-aligned.
             # Everything else (filepath, message, severity details) only draws when open.
-            is_open = state.setdefault('OPEN', not success or bool(warnings) or bool(statistics))
+            # Statistics alone (a clean, successful export) does not force the box open -
+            # only an actual problem (failure or warnings) does.
+            is_open = state.setdefault('OPEN', not success or bool(warnings))
 
             if not success:
                 status_icon = 'CANCEL'
@@ -438,15 +440,35 @@ class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
             # Filepath, always visible even while collapsed.
             header.label(text=filepath)
 
-            # Severity counts + the expand/collapse toggle, grouped together and
-            # always visible even while collapsed.
-            counts_text = (
-                f"Errors: {len(by_severity['ERROR'])}   "
-                f"Warnings: {len(by_severity['WARNING'])}   "
-                f"Infos: {len(by_severity['INFO'])}"
-            )
+            # Severity counts as expand/collapse toggle buttons, the statistics
+            # toggle alongside them, and the overall open/collapse chevron -
+            # grouped together and always visible even while collapsed.
             counts_row = header.row(align=True)
-            counts_row.label(text=counts_text)
+            for sev in ('ERROR', 'WARNING', 'INFO'):
+                items = by_severity[sev]
+                if not items:
+                    continue
+                toggle = counts_row.operator(
+                    SIMPLEEXPORTER_OT_ToggleResultSeverity.bl_idname,
+                    text=f"{sev.title()}: {len(items)}",
+                    icon=SEVERITY_ICONS[sev],
+                    depress=state[sev],
+                )
+                toggle.collection_name = name
+                toggle.severity = sev
+
+            if statistics:
+                obj_count = sum(count for _, count in statistics['object_counts'])
+                mat_count = len(statistics['materials'])
+                uv_count = len(statistics['uv_sets'])
+                stats_toggle = counts_row.operator(
+                    SIMPLEEXPORTER_OT_ToggleResultSeverity.bl_idname,
+                    text=f"Statistics: {obj_count} Obj, {mat_count} Mat, {uv_count} UV", icon='MESH_DATA',
+                    depress=state['STATS'],
+                )
+                stats_toggle.collection_name = name
+                stats_toggle.severity = 'STATS'
+
             chevron = counts_row.operator(
                 SIMPLEEXPORTER_OT_ToggleResultSeverity.bl_idname,
                 text="", icon='DISCLOSURE_TRI_DOWN' if is_open else 'DISCLOSURE_TRI_RIGHT',
@@ -473,30 +495,6 @@ class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
                 body.label(text=line)
             for line in textwrap.wrap(message, width=90) or [message]:
                 body.label(text=line)
-
-            # Severity toggle row — only severities with items get a button
-            sev_row = box.row(align=True)
-            for sev in ('ERROR', 'WARNING', 'INFO'):
-                items = by_severity[sev]
-                if not items:
-                    continue
-                toggle = sev_row.operator(
-                    SIMPLEEXPORTER_OT_ToggleResultSeverity.bl_idname,
-                    text=f"{sev.title()} ({len(items)})",
-                    icon=SEVERITY_ICONS[sev],
-                    depress=state[sev],
-                )
-                toggle.collection_name = name
-                toggle.severity = sev
-
-            if statistics:
-                stats_toggle = sev_row.operator(
-                    SIMPLEEXPORTER_OT_ToggleResultSeverity.bl_idname,
-                    text="Statistics", icon='MESH_DATA',
-                    depress=state['STATS'],
-                )
-                stats_toggle.collection_name = name
-                stats_toggle.severity = 'STATS'
 
             # Expanded per-severity message lists
             for sev in ('ERROR', 'WARNING', 'INFO'):
