@@ -328,14 +328,12 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             else:
                 row.label(text='', icon=icon)
 
-            # Active pre-export operation indicator icons (only when enabled)
+            # Pre-export operation toggles - clickable so they can be
+            # enabled/disabled directly from the popup, not just viewed.
             col_ops = collection.pre_export_ops
-            if col_ops.move_by_collection_offset or col_ops.triangulate_before_export:
-                row.separator(factor=0.5)
-                if col_ops.move_by_collection_offset:
-                    row.label(text='', icon='OBJECT_ORIGIN')
-                if col_ops.triangulate_before_export:
-                    row.label(text='', icon='MOD_TRIANGULATE')
+            row.separator(factor=0.5)
+            row.prop(col_ops, 'move_by_collection_offset', text='', icon='OBJECT_ORIGIN', toggle=True)
+            row.prop(col_ops, 'triangulate_before_export', text='', icon='MOD_TRIANGULATE', toggle=True)
 
             ########## Name
             row = col_02.row(align=True)
