@@ -21,15 +21,28 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
     individual_collection: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
     collection_name: bpy.props.StringProperty(name="Collection Name", default='',
                                               description="Name of the collection to process", options={'HIDDEN'})
+    # Stores outliner-selected collection names captured at invoke time,
+    # because context.selected_ids is unavailable after the dialog opens.
+    outliner_collection_names: bpy.props.StringProperty(default='', options={'HIDDEN'})
 
     def draw(self, context):
         """Draw the UI for the operator."""
         layout = self.layout
+
+        if self.outliner:
+            names = [n for n in self.outliner_collection_names.split(',') if n]
+            if len(names) > 1:
+                layout.label(text=f"Applies to {len(names)} selected collections", icon='INFO')
+
         layout.prop(self, 'export_format')
         from ..ui.shared_draw import draw_export_preset_properties
         draw_export_preset_properties(layout, self)
 
     def invoke(self, context, event):
+        if self.outliner:
+            cols = get_outliner_collections(context)
+            self.outliner_collection_names = ','.join(c.name for c in cols)
+
         ref_col = self._get_reference_collection(context)
 
         if ref_col:
@@ -96,6 +109,9 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
         if self.individual_collection and self.collection_name:
             return bpy.data.collections.get(self.collection_name)
         if self.outliner:
+            if self.outliner_collection_names:
+                first_name = self.outliner_collection_names.split(',')[0]
+                return bpy.data.collections.get(first_name)
             cols = get_outliner_collections(context)
             return cols[0] if cols else None
         for col in bpy.data.collections:
@@ -116,7 +132,12 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
 
         # Get Export Collections
         if self.outliner:
-            collection_list = get_outliner_collections(context)
+            if self.outliner_collection_names:
+                names = [n for n in self.outliner_collection_names.split(',') if n]
+                collection_list = [bpy.data.collections.get(n) for n in names]
+                collection_list = [c for c in collection_list if c]
+            else:
+                collection_list = get_outliner_collections(context)
             if not collection_list and self.collection_name:
                 col = bpy.data.collections.get(self.collection_name)
                 collection_list = [col] if col else []
@@ -144,7 +165,7 @@ class SIMPLEEXPORTER_OT_ApplyPresetSelection(bpy.types.Operator, SharedPresetAss
         for collection in collection_list:
             try:
 
-                if not collection.simple_export_selected and not self.individual_collection:  # Don't check selected for individual collection
+                if not collection.simple_export_selected and not self.individual_collection and not self.outliner:  # Don't check selected for individual/outliner collections
                     continue
 
                 if not collection.exporters:
