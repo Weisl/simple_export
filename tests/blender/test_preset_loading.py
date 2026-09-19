@@ -79,12 +79,13 @@ _REQUIRED_ADDON_KEYS = {
     "assign_preset",
 }
 
-_EXPECTED_FBX_PRESETS = {"UE-fbx", "Unity-fbx", "Lowpoly-fbx", "Highpoly-fbx"}
+_EXPECTED_FBX_PRESETS = {"UE-fbx", "Unity-fbx", "Lowpoly-fbx", "Highpoly-fbx", "Default-fbx"}
 _EXPECTED_GLTF_PRESETS = {"Godot-gltf"}
 _EXPECTED_USD_PRESETS = {"Default-usd", "Default-animation-usd"}
+_EXPECTED_ABC_PRESETS = {"Default-abc"}
 _EXPECTED_ADDON_PRESETS = {
     "UE-default", "Unity-default", "Godot-default", "Lowpoly-default", "Highpoly-default",
-    "USD-default",
+    "USD-default", "Basic-fbx-default", "Basic-usd-default", "Basic-abc-default",
 }
 
 
@@ -502,51 +503,60 @@ class TestInitializePresets(unittest.TestCase):
             fbx_dir = os.path.join(tmpdir, "export_scene.fbx")
             gltf_dir = os.path.join(tmpdir, "export_scene.gltf")
             usd_dir = os.path.join(tmpdir, "wm.usd_export")
+            abc_dir = os.path.join(tmpdir, "wm.alembic_export")
             os.makedirs(fbx_dir)
             os.makedirs(gltf_dir)
             os.makedirs(usd_dir)
+            os.makedirs(abc_dir)
 
             with (
                 patch.object(_pe, "get_fbx_presets_folder", return_value=fbx_dir),
                 patch.object(_pe, "get_gltf_presets_folder", return_value=gltf_dir),
                 patch.object(_pe, "get_usd_presets_folder", return_value=usd_dir),
+                patch.object(_pe, "get_abc_presets_folder", return_value=abc_dir),
                 patch.object(_pe, "get_blender_version", return_value=blender_version),
             ):
                 _pe.initialize_presets()
 
-            return set(os.listdir(fbx_dir)), set(os.listdir(gltf_dir)), set(os.listdir(usd_dir))
+            return (
+                set(os.listdir(fbx_dir)), set(os.listdir(gltf_dir)),
+                set(os.listdir(usd_dir)), set(os.listdir(abc_dir)),
+            )
 
-    def _assert_preset_files(self, fbx_files, gltf_files, usd_files, label):
+    def _assert_preset_files(self, fbx_files, gltf_files, usd_files, abc_files, label):
         expected_fbx = {f"{n}.py" for n in _EXPECTED_FBX_PRESETS}
         expected_gltf = {f"{n}.py" for n in _EXPECTED_GLTF_PRESETS}
         expected_usd = {f"{n}.py" for n in _EXPECTED_USD_PRESETS}
+        expected_abc = {f"{n}.py" for n in _EXPECTED_ABC_PRESETS}
 
         missing_fbx = expected_fbx - fbx_files
         missing_gltf = expected_gltf - gltf_files
         missing_usd = expected_usd - usd_files
+        missing_abc = expected_abc - abc_files
         self.assertFalse(missing_fbx, f"{label}: FBX preset files not created: {missing_fbx}")
         self.assertFalse(missing_gltf, f"{label}: GLTF preset files not created: {missing_gltf}")
         self.assertFalse(missing_usd, f"{label}: USD preset files not created: {missing_usd}")
+        self.assertFalse(missing_abc, f"{label}: Alembic preset files not created: {missing_abc}")
 
     def test_blender_4_2_creates_all_preset_files(self):
-        fbx, gltf, usd = self._run_initialize((4, 2, 0))
-        self._assert_preset_files(fbx, gltf, usd, "Blender 4.2")
+        fbx, gltf, usd, abc = self._run_initialize((4, 2, 0))
+        self._assert_preset_files(fbx, gltf, usd, abc, "Blender 4.2")
 
     def test_blender_4_5_creates_all_preset_files(self):
-        fbx, gltf, usd = self._run_initialize((4, 5, 0))
-        self._assert_preset_files(fbx, gltf, usd, "Blender 4.5")
+        fbx, gltf, usd, abc = self._run_initialize((4, 5, 0))
+        self._assert_preset_files(fbx, gltf, usd, abc, "Blender 4.5")
 
     def test_blender_5_0_creates_all_preset_files(self):
-        fbx, gltf, usd = self._run_initialize((5, 0, 0))
-        self._assert_preset_files(fbx, gltf, usd, "Blender 5.0")
+        fbx, gltf, usd, abc = self._run_initialize((5, 0, 0))
+        self._assert_preset_files(fbx, gltf, usd, abc, "Blender 5.0")
 
     def test_blender_5_1_creates_all_preset_files(self):
-        fbx, gltf, usd = self._run_initialize((5, 1, 0))
-        self._assert_preset_files(fbx, gltf, usd, "Blender 5.1")
+        fbx, gltf, usd, abc = self._run_initialize((5, 1, 0))
+        self._assert_preset_files(fbx, gltf, usd, abc, "Blender 5.1")
 
     def test_blender_5_2_creates_all_preset_files(self):
-        fbx, gltf, usd = self._run_initialize((5, 2, 0))
-        self._assert_preset_files(fbx, gltf, usd, "Blender 5.2")
+        fbx, gltf, usd, abc = self._run_initialize((5, 2, 0))
+        self._assert_preset_files(fbx, gltf, usd, abc, "Blender 5.2")
 
     def test_existing_files_are_not_overwritten(self):
         """Preset files that already exist must not be re-written."""
@@ -554,9 +564,11 @@ class TestInitializePresets(unittest.TestCase):
             fbx_dir = os.path.join(tmpdir, "export_scene.fbx")
             gltf_dir = os.path.join(tmpdir, "export_scene.gltf")
             usd_dir = os.path.join(tmpdir, "wm.usd_export")
+            abc_dir = os.path.join(tmpdir, "wm.alembic_export")
             os.makedirs(fbx_dir)
             os.makedirs(gltf_dir)
             os.makedirs(usd_dir)
+            os.makedirs(abc_dir)
 
             # Pre-populate UE-fbx.py with sentinel content
             sentinel = "# sentinel\n"
@@ -568,6 +580,7 @@ class TestInitializePresets(unittest.TestCase):
                 patch.object(_pe, "get_fbx_presets_folder", return_value=fbx_dir),
                 patch.object(_pe, "get_gltf_presets_folder", return_value=gltf_dir),
                 patch.object(_pe, "get_usd_presets_folder", return_value=usd_dir),
+                patch.object(_pe, "get_abc_presets_folder", return_value=abc_dir),
                 patch.object(_pe, "get_blender_version", return_value=(5, 1, 0)),
             ):
                 _pe.initialize_presets()
@@ -582,19 +595,22 @@ class TestInitializePresets(unittest.TestCase):
             fbx_dir = os.path.join(tmpdir, "export_scene.fbx")
             gltf_dir = os.path.join(tmpdir, "export_scene.gltf")
             usd_dir = os.path.join(tmpdir, "wm.usd_export")
+            abc_dir = os.path.join(tmpdir, "wm.alembic_export")
             os.makedirs(fbx_dir)
             os.makedirs(gltf_dir)
             os.makedirs(usd_dir)
+            os.makedirs(abc_dir)
 
             with (
                 patch.object(_pe, "get_fbx_presets_folder", return_value=fbx_dir),
                 patch.object(_pe, "get_gltf_presets_folder", return_value=gltf_dir),
                 patch.object(_pe, "get_usd_presets_folder", return_value=usd_dir),
+                patch.object(_pe, "get_abc_presets_folder", return_value=abc_dir),
                 patch.object(_pe, "get_blender_version", return_value=(5, 1, 0)),
             ):
                 _pe.initialize_presets()
 
-            for folder in (fbx_dir, gltf_dir, usd_dir):
+            for folder in (fbx_dir, gltf_dir, usd_dir, abc_dir):
                 for fname in os.listdir(folder):
                     fpath = os.path.join(folder, fname)
                     with open(fpath) as fh:
@@ -841,17 +857,17 @@ class TestVersionSpecificPresetValues(unittest.TestCase):
                     f"{version_folder}/UE-fbx: unexpected axis_forward value",
                 )
 
-    def test_blender_4_2_fbx_has_exactly_four_presets(self):
+    def test_blender_4_2_fbx_has_exactly_seven_presets(self):
         """
-        blender_4_2 defines exactly 4 active FBX presets.
+        blender_4_2 defines exactly 7 active FBX presets.
 
         A commented-out 'Northlight-fbx' entry exists in that module. This test
         guards against accidentally uncommenting it without bumping the expected count.
         """
         presets = self._load_fbx("blender_4_2")
         self.assertEqual(
-            len(presets), 4,
-            f"blender_4_2 has {len(presets)} FBX presets; expected 4. "
+            len(presets), 7,
+            f"blender_4_2 has {len(presets)} FBX presets; expected 7. "
             "If you intentionally added or removed a preset, update this count.",
         )
 
