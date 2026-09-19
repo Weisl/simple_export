@@ -91,90 +91,98 @@ def _draw_verify_in_engine_entry(context, layout, collection):
         layout.menu("SIMPLEEXPORT_MT_verify_in_engine_menu", text='', icon='RENDER_STILL')
 
 
+def draw_collection_settings(layout, context, collection):
+    """Draw the full settings for a single collection: name, filepath, root object,
+    pre-export operations and exporter settings. Shared by the Active Collection
+    panel and the per-row edit popup."""
+    box = layout.box()
+
+    # Collection name and icon
+    row = box.row(align=True)
+    row.prop(collection, 'name', icon='OUTLINER_COLLECTION')
+    op = row.operator("simple_export.open_exporter_in_properties", text="",
+                      icon='PROPERTIES')
+    op.collection_name = collection.name
+
+    # User Group
+    row = box.row(align=True)
+    row.label(text="", icon='GROUP')
+    group_name = getattr(collection, 'export_group_name', '') or "No User Groups"
+    row.menu("SIMPLE_EXPORT_MT_CollectionGroupMenu", text=group_name)
+
+    if len(collection.exporters) > 0:
+        # Filepath
+        row = box.row(align=True)
+        row.prop(collection, "simple_export_filepath_proxy", text="", expand=True)
+        browse_op = row.operator("simple_export.collection_filepath_picker", text="", icon='FILE_FOLDER')
+        browse_op.collection_name = collection.name
+
+        from .shared_operator_call import call_simple_export_path_ops
+        op = call_simple_export_path_ops(context, row, text='', outliner=False,
+                                         individual_collection=True, collection_name=collection.name)
+
+        _draw_verify_in_engine_entry(context, row, collection)
+
+        # Collection offset object
+        root_box = box.box()
+
+        row = root_box.row(align=True)
+        icon = "LINKED" if collection.use_root_object else "UNLINKED"
+        if not collection.use_root_object:
+            row.prop(collection, "use_root_object", text="", icon=icon, toggle=True)
+        else:
+            row.prop(collection, "use_root_object", text='', icon=icon, toggle=True)
+        row.label(text='Root Object')
+
+        # root selection
+        row = root_box.row(align=True)
+        row.enabled = collection.use_root_object
+        row.prop(collection, "root_object", text="")
+
+        col = root_box.column(align=True)
+        col.enabled = not collection.use_root_object
+        row = col.row(align=True)
+        row.prop(collection, "instance_offset", text='Collection Center')
+        op = col.operator("object.set_collection_offset_cursor", text="Set Offset from Cursor")
+        op.collection_name = collection.name
+        op = col.operator("object.set_collection_offset_object", text="Set Offset from Object")
+        op.collection_name = collection.name
+
+        # Per-collection pre-export operations
+        if hasattr(collection, 'pre_export_ops'):
+            ops_header, ops_body = box.panel(idname="COL_PRE_EXPORT_OPS", default_closed=True)
+            ops_header.label(text="Pre-Export Operations")
+            if ops_body:
+                draw_pre_export_operations(ops_body, collection.pre_export_ops)
+
+            box.separator()
+
+            ops_header, ops_body = box.panel(idname="COL_EXPORT_SETTINGS", default_closed=True)
+            ops_header.label(text="Exporter Settings")
+            if ops_body:
+                from .shared_operator_call import call_assign_preset_op
+                call_assign_preset_op(context, ops_body, individual_collection=True,
+                                     collection_name=collection.name)
+                ops_body.template_collection_exporters()
+
+    else:
+        box.label(text='No exporter configured', icon='INFO')
+        from .shared_operator_call import call_simple_add_exporter_to_collection
+        call_simple_add_exporter_to_collection(context, collection, box)
+
+
 def draw_active_list_element(layout, context, scene):
     # Ensure valid selection before showing details
     if 0 <= scene.collection_index < len(bpy.data.collections):
         selected_collection = bpy.data.collections[scene.collection_index]
 
-        # Draw the panel header
-        header, body = layout.panel(idname="ACTIVE_COL_PANEL", default_closed=False)
+        # Draw the panel header — collapsed by default; use the per-row edit
+        # button (SIMPLE_EXPORT_OT_EditCollectionSettings) for quick access.
+        header, body = layout.panel(idname="ACTIVE_COL_PANEL", default_closed=True)
         header.label(text=f"Active Collection:", icon='OUTLINER_COLLECTION')
 
         if body:
-            box = body.box()
-
-            # Collection name and icon
-            row = box.row(align=True)
-            row.prop(selected_collection, 'name', icon='OUTLINER_COLLECTION')
-            op = row.operator("simple_export.open_exporter_in_properties", text="",
-                              icon='PROPERTIES')
-            op.collection_name = selected_collection.name
-
-            # User Group
-            row = box.row(align=True)
-            row.label(text="", icon='GROUP')
-            group_name = getattr(selected_collection, 'export_group_name', '') or "No User Groups"
-            row.menu("SIMPLE_EXPORT_MT_CollectionGroupMenu", text=group_name)
-
-            if len(selected_collection.exporters) > 0:
-                # Filepath
-                row = box.row(align=True)
-                row.prop(selected_collection, "simple_export_filepath_proxy", text="", expand=True)
-                browse_op = row.operator("simple_export.collection_filepath_picker", text="", icon='FILE_FOLDER')
-                browse_op.collection_name = selected_collection.name
-
-                from .shared_operator_call import call_simple_export_path_ops
-                op = call_simple_export_path_ops(context, row, text='', outliner=False,
-                                                 individual_collection=True, collection_name=selected_collection.name)
-
-                _draw_verify_in_engine_entry(context, row, selected_collection)
-
-                # Collection offset object
-                root_box = box.box()
-
-                row = root_box.row(align=True)
-                icon = "LINKED" if selected_collection.use_root_object else "UNLINKED"
-                if not selected_collection.use_root_object:
-                    row.prop(selected_collection, "use_root_object", text="", icon=icon, toggle=True)
-                else:
-                    row.prop(selected_collection, "use_root_object", text='', icon=icon, toggle=True)
-                row.label(text='Root Object')
-
-                # root selection
-                row = root_box.row(align=True)
-                row.enabled = selected_collection.use_root_object
-                row.prop(selected_collection, "root_object", text="")
-
-                col = root_box.column(align=True)
-                col.enabled = not selected_collection.use_root_object
-                row = col.row(align=True)
-                row.prop(selected_collection, "instance_offset", text='Collection Center')
-                op = col.operator("object.set_collection_offset_cursor", text="Set Offset from Cursor")
-                op.collection_name = selected_collection.name
-                op = col.operator("object.set_collection_offset_object", text="Set Offset from Object")
-                op.collection_name = selected_collection.name
-
-                # Per-collection pre-export operations
-                if hasattr(selected_collection, 'pre_export_ops'):
-                    ops_header, ops_body = box.panel(idname="COL_PRE_EXPORT_OPS", default_closed=True)
-                    ops_header.label(text="Pre-Export Operations")
-                    if ops_body:
-                        draw_pre_export_operations(ops_body, selected_collection.pre_export_ops)
-
-                    box.separator()
-
-                    ops_header, ops_body = box.panel(idname="COL_EXPORT_SETTINGS", default_closed=True)
-                    ops_header.label(text="Exporter Settings")
-                    if ops_body:
-                        from .shared_operator_call import call_assign_preset_op
-                        call_assign_preset_op(context, ops_body, individual_collection=True,
-                                             collection_name=selected_collection.name)
-                        ops_body.template_collection_exporters()
-
-            else:
-                box.label(text='No exporter configured', icon='INFO')
-                from .shared_operator_call import call_simple_add_exporter_to_collection
-                call_simple_add_exporter_to_collection(context, selected_collection, box)
+            draw_collection_settings(body, context, selected_collection)
 
 
 

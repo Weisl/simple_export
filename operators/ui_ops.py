@@ -447,6 +447,31 @@ class SIMPLE_EXPORT_OT_EditPreExportOps(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class SIMPLE_EXPORT_OT_EditCollectionSettings(bpy.types.Operator):
+    """Open the collection settings (filepath, root object, pre-export operations,
+    exporter settings) as a popup for a single list entry."""
+    bl_idname = "simple_export.edit_collection_settings"
+    bl_label = "Collection Settings"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    collection_name: bpy.props.StringProperty(options={'HIDDEN'})
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_popup(self, width=400)
+
+    def draw(self, context):
+        layout = self.layout
+        collection = bpy.data.collections.get(self.collection_name)
+        if not collection:
+            layout.label(text="Collection not found", icon='ERROR')
+            return
+        from ..ui.export_panels import draw_collection_settings
+        draw_collection_settings(layout, context, collection)
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+
 class SIMPLE_EXPORT_OT_BatchAssignPreExportOps(bpy.types.Operator):
     """Assign pre-export operations to all selected collections"""
     bl_idname = "simple_export.batch_assign_pre_export_ops"
@@ -528,6 +553,7 @@ classes = (
     SIMPLE_EXPORT_OT_SetFilterDirectory,
     SIMPLE_EXPORT_MT_FilterDirectoryMenu,
     SIMPLE_EXPORT_OT_EditPreExportOps,
+    SIMPLE_EXPORT_OT_EditCollectionSettings,
     SIMPLE_EXPORT_OT_BatchAssignPreExportOps,
 )
 

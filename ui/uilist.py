@@ -392,6 +392,10 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                 op.filename_blend_prefix = filename_settings.filename_blend_prefix
                 op.exporter_format = ExportFormats.get_key_from_op_type(str(type(exporter.export_properties))) or ""
 
+            # Edit button — opens the collection settings popup for this item
+            edit_op = row.operator("simple_export.edit_collection_settings", text="", icon='PREFERENCES')
+            edit_op.collection_name = collection.name
+
             # Add arrow button that sets the collection name and opens the menu
             arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
             arrow_op.collection_name = collection.name
@@ -426,6 +430,10 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             # Display the collection name with the color icon
             icon = self.get_collection_color_icon(collection)
             row.prop(collection, 'name',text='',icon=icon)
+
+            # Edit button — opens the collection settings popup for this item
+            edit_op = row.operator("simple_export.edit_collection_settings", text="", icon='PREFERENCES')
+            edit_op.collection_name = collection.name
 
             # Add arrow button that sets the collection name and opens the menu
             arrow_op = row.operator("object.set_menu_collection", text="", icon='TRIA_DOWN')
