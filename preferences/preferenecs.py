@@ -1013,9 +1013,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             from ..presets_addon.exporter_preset import (
                 SceneExportPreset,
                 simple_export_presets_folder,
-                list_addon_presets_by_format,
             )
-            from ..core.export_formats import ExportFormats
+            from ..functions.preset_func import (
+                list_addon_presets_by_category,
+                ADDON_PRESET_CATEGORY_ORDER,
+                USER_ADDON_PRESET_CATEGORY,
+            )
 
             # Selected-preset row: add (from prefs) + remove + duplicate + pin + folder
             box = layout.box()
@@ -1038,23 +1041,23 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             row = box.row(align=True)
             row.prop(self, "preset_manager_filter", text="", icon='VIEWZOOM')
 
-            # Presets grouped by export format
+            # Presets grouped by category (fixed built-in categories, "User" for anything else)
             search = self.preset_manager_filter.strip().lower()
-            grouped = list_addon_presets_by_format()
+            grouped = list_addon_presets_by_category()
             selected_path = bpy.context.scene.simple_export_selected_preset
 
-            for fmt in ExportFormats.all():
-                entries = grouped.get(fmt.key, [])
+            for category in [*ADDON_PRESET_CATEGORY_ORDER, USER_ADDON_PRESET_CATEGORY]:
+                entries = grouped.get(category, [])
                 if search:
                     entries = [entry for entry in entries if search in entry[0].lower()]
                     if not entries:
                         continue
 
                 panel_header, panel_body = layout.panel(
-                    idname=f"EXPORT_PRESETS_{fmt.key}",
+                    idname=f"EXPORT_PRESETS_{category}",
                     default_closed=not entries,
                 )
-                panel_header.label(text=f"{fmt.label} ({len(entries)})")
+                panel_header.label(text=f"{category} ({len(entries)})")
                 if panel_body:
                     if entries:
                         col = panel_body.column(align=True)
@@ -1067,11 +1070,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                             if filepath == selected_path:
                                 row.label(text="", icon='CHECKMARK')
                     else:
-                        panel_body.label(text=f"No presets yet for {fmt.label}", icon='INFO')
+                        panel_body.label(text=f"No presets yet for {category}", icon='INFO')
 
-                    new_op = panel_body.operator(SceneExportPreset.bl_idname,
-                                                 text=f"New {fmt.label} Preset...", icon='ADD')
-                    new_op.export_format = fmt.key
+                    if category == USER_ADDON_PRESET_CATEGORY:
+                        new_op = panel_body.operator(SceneExportPreset.bl_idname,
+                                                     text="New Preset...", icon='ADD')
+                        new_op.export_format = context.scene.export_format
 
             # Full export defaults
             layout.separator()

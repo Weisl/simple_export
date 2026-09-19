@@ -5,7 +5,12 @@ from bpy.types import Menu
 from bpy.types import Operator
 
 from .. import __package__ as base_package
-from ..core.export_formats import ExportFormats, get_export_format_items
+from ..core.export_formats import get_export_format_items
+from ..functions.preset_func import (
+    list_addon_presets_by_category,
+    ADDON_PRESET_CATEGORY_ORDER,
+    USER_ADDON_PRESET_CATEGORY,
+)
 
 ADDON_NAME = base_package if base_package else "simple_export"
 folder_name = 'simple_export'
@@ -123,43 +128,6 @@ def _sanitize_preset_file(preset_path):
     if fixed != content:
         with open(preset_path, 'w') as f:
             f.write(fixed)
-
-
-def list_addon_presets_by_format():
-    """Scan the addon presets folder and group every preset by its export format.
-
-    Returns:
-        dict: {format_key: [(name, filepath, is_builtin), ...]} with one entry for
-        every key in ExportFormats.FORMATS (possibly an empty list), each preset's
-        format read from the "scene.export_format = '...'" line already written into
-        every preset file (builtin or user-saved), without executing the script.
-    """
-    import re
-    from .preset_data_exporters import presets_simple_exporter
-    builtin_names = set(presets_simple_exporter.keys())
-
-    grouped = {key: [] for key in ExportFormats.FORMATS}
-
-    preset_dir = simple_export_presets_folder()
-    if not os.path.isdir(preset_dir):
-        return grouped
-
-    for fname in sorted(os.listdir(preset_dir)):
-        if not fname.endswith('.py'):
-            continue
-        name = os.path.splitext(fname)[0]
-        filepath = os.path.join(preset_dir, fname)
-        try:
-            with open(filepath, 'r') as f:
-                content = f.read()
-        except OSError:
-            continue
-        match = re.search(r"scene\.export_format\s*=\s*['\"](\w+)['\"]", content)
-        if not match or match.group(1) not in grouped:
-            continue
-        grouped[match.group(1)].append((name, filepath, name in builtin_names))
-
-    return grouped
 
 
 class SceneExportPreset(BaseExportPreset):
@@ -440,27 +408,27 @@ class EXPORT_MT_scene_presets(Menu):
 
     def draw(self, context):
         layout = self.layout
-        grouped = list_addon_presets_by_format()
+        grouped = list_addon_presets_by_category()
 
-        for fmt in ExportFormats.all():
-            entries = grouped.get(fmt.key, [])
-            layout.menu(f"EXPORT_MT_scene_presets_{fmt.key}", text=f"{fmt.label} ({len(entries)})")
+        for category in [*ADDON_PRESET_CATEGORY_ORDER, USER_ADDON_PRESET_CATEGORY]:
+            entries = grouped.get(category, [])
+            layout.menu(f"EXPORT_MT_scene_presets_{category}", text=f"{category} ({len(entries)})")
 
         layout.separator()
         op = layout.operator(SceneExportPreset.bl_idname, text="New Preset...", icon='ADD')
         op.export_format = context.scene.export_format
 
 
-def _make_format_preset_menu(fmt):
-    """Build a Menu subclass listing one export format's addon presets."""
+def _make_category_preset_menu(category):
+    """Build a Menu subclass listing one preset category's addon presets."""
 
-    class _FormatPresetsMenu(Menu):
-        bl_idname = f"EXPORT_MT_scene_presets_{fmt.key}"
-        bl_label = fmt.label
+    class _CategoryPresetsMenu(Menu):
+        bl_idname = f"EXPORT_MT_scene_presets_{category}"
+        bl_label = category
 
         def draw(self, context):
             layout = self.layout
-            entries = list_addon_presets_by_format().get(fmt.key, [])
+            entries = list_addon_presets_by_category().get(category, [])
 
             if entries:
                 for name, filepath, is_builtin in entries:
@@ -471,16 +439,15 @@ def _make_format_preset_menu(fmt):
             else:
                 layout.label(text="No presets yet", icon='INFO')
 
-            layout.separator()
-            new_op = layout.operator(SceneExportPreset.bl_idname, text=f"New {fmt.label} Preset...", icon='ADD')
-            new_op.export_format = fmt.key
-
-    _FormatPresetsMenu.__name__ = f"EXPORT_MT_scene_presets_{fmt.key}"
-    _FormatPresetsMenu.__qualname__ = _FormatPresetsMenu.__name__
-    return _FormatPresetsMenu
+    _CategoryPresetsMenu.__name__ = f"EXPORT_MT_scene_presets_{category}"
+    _CategoryPresetsMenu.__qualname__ = _CategoryPresetsMenu.__name__
+    return _CategoryPresetsMenu
 
 
-FORMAT_PRESET_MENU_CLASSES = tuple(_make_format_preset_menu(fmt) for fmt in ExportFormats.all())
+CATEGORY_PRESET_MENU_CLASSES = tuple(
+    _make_category_preset_menu(category)
+    for category in [*ADDON_PRESET_CATEGORY_ORDER, USER_ADDON_PRESET_CATEGORY]
+)
 
 
 classes = (
@@ -489,7 +456,7 @@ classes = (
     SIMPLE_EXPORT_OT_DuplicatePreset,
     SIMPLE_EXPORT_OT_set_default_preset,
     SIMPLE_EXPORT_OT_SavePresetFromPreferences,
-    *FORMAT_PRESET_MENU_CLASSES,
+    *CATEGORY_PRESET_MENU_CLASSES,
     EXPORT_MT_scene_presets,
 )
 

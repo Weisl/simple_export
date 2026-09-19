@@ -12,20 +12,13 @@ from ..core.export_path_func import assign_exporter_path
 from ..core.export_path_func import generate_base_name
 from ..functions.collections_setup import setup_collection_properties
 from ..functions.exporter_funcs import get_all_children_and_descendants
-from ..functions.preset_func import assign_preset
+from ..functions.preset_func import (
+    assign_preset,
+    addon_preset_category_for_name,
+    get_addon_preset_category_items,
+    get_addon_preset_items_for_category,
+)
 from ..ui.shared_draw import draw_export_folderpath_properties
-
-
-def get_addon_preset_items(self, context):
-    from ..presets_addon.exporter_preset import simple_export_presets_folder
-    folder = simple_export_presets_folder()
-    items = []
-    if os.path.isdir(folder):
-        for fname in sorted(os.listdir(folder)):
-            if fname.endswith('.py'):
-                name = os.path.splitext(fname)[0]
-                items.append((name, name, ""))
-    return items if items else [('NONE', "No Presets Available", "")]
 
 
 
@@ -62,12 +55,19 @@ class EXPORT_OT_CreateExportCollections(
     bl_options = {'REGISTER', 'UNDO'}
     # TODO: Add support for adding exporters without selected objects
 
+    addon_preset_category: bpy.props.EnumProperty(
+        name="Preset Category",
+        description="Engine/pipeline category to filter the presets below",
+        items=get_addon_preset_category_items,
+    )
+
     addon_preset_selection: bpy.props.EnumProperty(
         name="Preset",
         description="Simple Export addon preset to use for this collection",
-        items=get_addon_preset_items,
+        items=get_addon_preset_items_for_category,
     )
 
+    applied_preset_category_tracker: bpy.props.StringProperty(options={'HIDDEN', 'SKIP_SAVE'})
     applied_preset_tracker: bpy.props.StringProperty(options={'HIDDEN', 'SKIP_SAVE'})
 
     selection_mode: bpy.props.EnumProperty(
@@ -104,25 +104,38 @@ class EXPORT_OT_CreateExportCollections(
                     pass
 
     def check(self, context):
-        if self.addon_preset_selection == self.applied_preset_tracker:
-            return False
-        self.applied_preset_tracker = self.addon_preset_selection
-        if self.addon_preset_selection and self.addon_preset_selection != 'NONE':
-            from ..presets_addon.exporter_preset import simple_export_presets_folder
-            preset_path = os.path.join(
-                simple_export_presets_folder(),
-                self.addon_preset_selection + '.py'
-            )
-            self._apply_addon_preset_to_self(preset_path)
-        return True
+        changed = False
+
+        if self.addon_preset_category != self.applied_preset_category_tracker:
+            self.applied_preset_category_tracker = self.addon_preset_category
+            from ..functions.preset_func import list_addon_preset_names_by_category
+            names = list_addon_preset_names_by_category().get(self.addon_preset_category, [])
+            if names and self.addon_preset_selection not in names:
+                self.addon_preset_selection = names[0]
+            changed = True
+
+        if self.addon_preset_selection != self.applied_preset_tracker:
+            self.applied_preset_tracker = self.addon_preset_selection
+            if self.addon_preset_selection and self.addon_preset_selection != 'NONE':
+                from ..presets_addon.exporter_preset import simple_export_presets_folder
+                preset_path = os.path.join(
+                    simple_export_presets_folder(),
+                    self.addon_preset_selection + '.py'
+                )
+                self._apply_addon_preset_to_self(preset_path)
+            changed = True
+
+        return changed
 
     def invoke(self, context, event):
+        self.applied_preset_category_tracker = ""
         self.applied_preset_tracker = ""
 
         selected = context.scene.simple_export_selected_preset
         if selected:
             name = os.path.splitext(os.path.basename(selected))[0]
             try:
+                self.addon_preset_category = addon_preset_category_for_name(name)
                 self.addon_preset_selection = name
             except Exception:
                 pass
@@ -276,6 +289,7 @@ class EXPORT_OT_CreateExportCollections(
             box = layout.box()
             box.label(text="Sets the export format, paths and appearance of the export collection.", icon='INFO')
         row = layout.row(align=True)
+        row.prop(self, "addon_preset_category", text="")
         row.prop(self, "addon_preset_selection", text="")
         from ..core.info import ADDON_NAME
         op = row.operator("simple_export.open_preferences", text="", icon='ADD')

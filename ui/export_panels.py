@@ -422,19 +422,13 @@ def set_default_exportlist_properties(dummy):
 
 
 def get_filter_addon_preset_items(self, context):
-    """Dynamic enum items: format presets and addon presets, matching the PRESET column display."""
-    from ..presets_addon.exporter_preset import list_addon_presets_by_format
-    from ..core.export_formats import ExportFormats
+    """Dynamic enum items: every addon preset, matching the PRESET column display."""
+    from ..functions.preset_func import list_addon_preset_names_by_category
 
     items = [('ALL', "All Presets", ""), ('NONE', "Missing Preset", "")]
-    seen = set()
-
-    grouped = list_addon_presets_by_format()
-    for fmt in ExportFormats.all():
-        for name, filepath, is_builtin in grouped.get(fmt.key, []):
-            if name not in seen:
-                seen.add(name)
-                items.append((name, name, ""))
+    for names in list_addon_preset_names_by_category().values():
+        for name in names:
+            items.append((name, name, ""))
 
     return items
 
