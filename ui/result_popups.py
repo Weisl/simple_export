@@ -2,7 +2,6 @@ import bpy
 import os
 import textwrap
 
-from .. import __package__ as base_package
 from ..core.info import COLOR_TAG_ICONS, SEVERITY_ICONS
 
 # Per-box, per-severity "is this section expanded" state for the export
@@ -66,38 +65,6 @@ def _draw_stats_sublist(col, collection_name, state, key, label, icon, names):
         sub_col = indented.column(align=True)
         for n in names:
             sub_col.label(text=n)
-
-
-def _draw_verify_in_engine_button(context, layout, result):
-    """Adds a "Verify in Engine" button/menu for a successful export result,
-    if at least one engine is enabled in preferences."""
-    from ..engine_bridge import available_engine_ids, guess_engine_for_collection
-    prefs = context.preferences.addons[base_package].preferences
-
-    enabled_engines = []
-    for engine_id in available_engine_ids():
-        settings = getattr(prefs, f"engine_mcp_{engine_id.lower()}", None)
-        if settings is None or not settings.enabled:
-            continue
-        if engine_id == 'UNREAL' and not prefs.engine_mcp_unreal_experimental_ack:
-            continue
-        enabled_engines.append(engine_id)
-
-    if not enabled_engines:
-        return
-
-    collection = bpy.data.collections.get(result['name'])
-    guessed = guess_engine_for_collection(collection)
-
-    if guessed and guessed in enabled_engines:
-        op = layout.operator("simple_export.verify_in_engine", text='', icon='RENDER_STILL')
-        op.collection_name = result['name']
-        op.engine_id = guessed
-        op.filepath = result.get('filepath', '')
-    else:
-        context.window_manager.simple_export_engine_verify_pending_collection = result['name']
-        context.window_manager.simple_export_engine_verify_pending_filepath = result.get('filepath', '')
-        layout.menu("SIMPLEEXPORT_MT_verify_in_engine_menu", text='', icon='RENDER_STILL')
 
 
 class SIMPLEEXPORTER_OT_ShowCollectionError(bpy.types.Operator):
@@ -481,7 +448,6 @@ class SIMPLEEXPORTER_PT_ExportResultsPanel(bpy.types.Panel):
             if success and result.get('filepath'):
                 export_dir = os.path.dirname(result['filepath'])
                 btns.operator("wm.path_open", text='', icon='FILE_FOLDER').filepath = export_dir
-                _draw_verify_in_engine_button(context, btns, result)
             if not success:
                 copy_op = btns.operator("simple_export.copy_to_clipboard", text='', icon='COPYDOWN')
                 copy_op.text = _build_clipboard_text(message, warnings)
