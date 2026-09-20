@@ -312,12 +312,12 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
         ### POPUP UI ###
 
         if self.list_id == 'popup':
-            # Status Name Filepath
-            from .shared_draw import get_table_columns
-            col_01, col_02, col_03, col_04, col_05 = get_table_columns(layout)
+            # Status | Pre-export ops | Name | Filepath | Root | Actions
+            from .shared_draw import get_table_columns, POPUP_OPS_TOGGLE_SCALE_X
+            col_status, col_ops, col_name, col_path, col_root, col_actions = get_table_columns(layout)
 
             ########## Status
-            row = col_01.row(align=False)
+            row = col_status.row(align=False)
             # Checkbox
             row.prop(collection, "simple_export_selected", text="")
             # Status Icon — clickable when last export failed
@@ -328,20 +328,22 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             else:
                 row.label(text='', icon=icon)
 
-            # Pre-export operation toggles - clickable so they can be
-            # enabled/disabled directly from the popup, not just viewed.
-            col_ops = collection.pre_export_ops
-            row.separator(factor=0.5)
-            row.prop(col_ops, 'move_by_collection_offset', text='', icon='OBJECT_ORIGIN', toggle=True)
-            row.prop(col_ops, 'triangulate_before_export', text='', icon='MOD_TRIANGULATE', toggle=True)
+            ########## Pre-export operation toggles
+            # Clickable so they can be enabled/disabled directly from the popup,
+            # in their own column so each button gets a comfortable click target.
+            pre_ops = collection.pre_export_ops
+            row = col_ops.row(align=True)
+            row.scale_x = POPUP_OPS_TOGGLE_SCALE_X
+            row.prop(pre_ops, 'move_by_collection_offset', text='', icon='OBJECT_ORIGIN', toggle=True)
+            row.prop(pre_ops, 'triangulate_before_export', text='', icon='MOD_TRIANGULATE', toggle=True)
 
             ########## Name
-            row = col_02.row(align=True)
+            row = col_name.row(align=True)
             icon = self.get_collection_color_icon(collection)
             row.label(text=collection.name, icon=icon)
 
             ########## Filepath
-            row = col_03.row(align=True)
+            row = col_path.row(align=True)
             row.prop(collection, "simple_export_filepath_proxy", text="", expand=True)
             browse_op = row.operator("simple_export.collection_filepath_picker", text="", icon='FILE_FOLDER')
             browse_op.collection_name = collection.name
@@ -350,18 +352,18 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                                         individual_collection=True, collection_name=collection.name)
 
             ########## Root
-            row = col_04.row(align=True)
+            row = col_root.row(align=True)
             split_root = row.split(align=True)
-            col_root = split_root.column(align=True)
+            col_root_link = split_root.column(align=True)
             col_loc = split_root.column(align=True)
 
-            # Root Link
-            row = col_root.row(align=True)
+            # Root Link — the toggle stays clickable while off; only the object field is greyed out
+            row = col_root_link.row(align=True)
             icon = "LINKED" if collection.use_root_object else "UNLINKED"
-            row.prop(collection, "use_root_object", text='', icon=icon, emboss=False)
-            if not collection.use_root_object:
-                row.enabled = False
-            row.prop(collection, "root_object", text="")
+            row.prop(collection, "use_root_object", text='', icon=icon, toggle=True)
+            root_field = row.row(align=True)
+            root_field.enabled = collection.use_root_object
+            root_field.prop(collection, "root_object", text="")
 
             # Loc
             row = col_loc.row(align=True)
@@ -370,7 +372,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             row.prop(collection, "instance_offset", text="")
 
             # Operators
-            row = col_05.row(align=True)
+            row = col_actions.row(align=True)
 
             from ..core.export_path_func import generate_base_name
             filename_settings = scene

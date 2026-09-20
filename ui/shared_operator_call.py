@@ -8,8 +8,8 @@ def set_operator_preset_property(op, scene):
 
 
 
-def call_simple_add_exporter_to_collection(context, collection, layout, outliner=False):
-    op = layout.operator('simple_export.add_settings_to_collections', icon='COLLECTION_COLOR_01')
+def call_simple_add_exporter_to_collection(context, collection, layout, outliner=False, icon='COLLECTION_COLOR_01'):
+    op = layout.operator('simple_export.add_settings_to_collections', icon=icon)
     op.collection_name = collection.name
     op.outliner = outliner
 

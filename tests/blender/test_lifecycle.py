@@ -4,9 +4,8 @@ Headless Blender tests for addon register / unregister lifecycle.
 Run with:
     blender --background --python tests/blender/test_lifecycle.py
 
-Unlike the MagicMock lifecycle tests (which verify that __init__.py calls each
-submodule stub's register/unregister in the correct order), these tests verify
-the *real* effects of registration inside a live Blender session:
+These tests verify the *real* effects of registration inside a live Blender
+session:
 
   - After register(), the expected operator types are present in bpy.types
   - After register(), bpy.types.Collection carries the addon's custom properties

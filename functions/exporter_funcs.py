@@ -65,12 +65,13 @@ def get_all_exporters(collection):
     return list(collection.exporters)
 
 
-def create_collection_exporter(operator, context, collection):
+def create_collection_exporter(operator, context, collection, export_format=None):
     if collection is None:
         operator.report({'ERROR'}, "Collection is None in create_collection_exporter.")
         return None
 
-    export_format = operator.export_format
+    # An explicit format wins over the operator's own export_format property
+    export_format = export_format or operator.export_format
 
     scene = context.scene
     set_active_layer_Collection(collection.name)

@@ -7,21 +7,28 @@ from .. import __package__ as base_package
 from ..core.info import ADDON_NAME
 
 
-def get_table_columns(layout):
-    split = layout.split(factor=0.25, align=True)
-    split_left = split.column(align=True).split(factor=0.33, align=True)
-    # Status
-    col_01 = split_left.column(align=True)
-    # Name
-    col_02 = split_left.column(align=True)
-    split_right = split.column(align=True).split(factor=0.95, align=True)  # Split the right side into 90% and 10%
-    split_right_left = split_right.column(align=True).split(factor=0.5,
-                                                            align=True)  # Split the 90% into two equal parts
-    col_03 = split_right_left.column(align=True)
-    col_04 = split_right_left.column(align=True)
-    col_05 = split_right.column(align=True)  # This will be the very narrow column
+# Popup list column widths as fractions of the row: status, pre-export ops, name,
+# filepath, root, actions. Must sum to 1.0.
+POPUP_TABLE_COLUMN_WIDTHS = (0.06, 0.09, 0.15, 0.30, 0.30, 0.10)
 
-    return col_01, col_02, col_03, col_04, col_05
+# Icon-only buttons don't stretch to fill their column, so widen the pre-export
+# toggles (and the matching header icons) explicitly to make them easy to hit.
+POPUP_OPS_TOGGLE_SCALE_X = 1.6
+
+
+def get_table_columns(layout):
+    """Split `layout` into the popup list's columns (see POPUP_TABLE_COLUMN_WIDTHS)."""
+    columns = []
+    remaining = 1.0
+    parent = layout
+    for width in POPUP_TABLE_COLUMN_WIDTHS[:-1]:
+        split = parent.split(factor=width / remaining, align=True)
+        columns.append(split.column(align=True))
+        parent = split.column(align=True)
+        remaining -= width
+    columns.append(parent)
+
+    return tuple(columns)
 
 
 def draw_parent_collection(context, layout):
@@ -29,16 +36,17 @@ def draw_parent_collection(context, layout):
     layout.prop(scene, "parent_collection", text="Parent Collection")
 
 
-def draw_export_preset_properties(layout, element, format_key=None):
+def draw_export_preset_properties(layout, element, format_key=None, title="Export Format Preset", prop_text='Preset'):
     export_format = format_key or element.export_format  # Get the currently selected export format
 
-    layout.label(text="Export Format Preset")
+    if title:
+        layout.label(text=title)
     # Find the property for the current export format
     prop_name = f"simple_export_preset_file_{export_format.lower()}"
 
     row = layout.row(align=True)
     if hasattr(element, prop_name):
-        row.prop(element, prop_name, text='Preset')
+        row.prop(element, prop_name, text=prop_text)
 
     create_op = row.operator("simple_export.create_format_preset", text="", icon='ADD')
     create_op.export_format = export_format
@@ -63,9 +71,30 @@ def draw_collection_settings_properties(layout, element):
 
     # Handle different property names between scene and preferences
     # layout.prop(element, "collection_instance_offset") # Not used at the moment.
-    layout.prop(element, "use_root_object")
     layout.prop(element, "set_export_path")
     layout.prop(element, "assign_preset")
+
+
+def draw_root_object_properties(layout, element):
+    """Root object defaults for new export collections (look is stored per export preset)."""
+    from ..preferences.preferenecs import label_multiline
+
+    layout.label(text="Root Object (defaults for new collections)")
+    col = layout.column(align=True)
+    label_multiline(
+        context=bpy.context,
+        text="Pivot empty that sets the collection's origin on export. "
+             "Its look is stored with each export preset.",
+        parent=col,
+    )
+
+    layout.prop(element, "use_root_object")
+
+    col = layout.column(align=True)
+    col.use_property_split = True
+    col.prop(element, "root_empty_display_type", text="Shape")
+    col.prop(element, "root_empty_display_size", text="Size")
+    col.prop(element, "root_empty_show_name", text="Show Name")
 
 
 def draw_collection_name_properties(layout, element):
@@ -169,61 +198,49 @@ def draw_exporter_presets(layout, buttons=False):
         remove_op = row.operator(SceneExportPreset.bl_idname, text="", icon='REMOVE')
         remove_op.remove_active = True
 
-    # Pin button: shows PINNED when the current preset is the default, UNPINNED otherwise
-    try:
-        prefs = bpy.context.preferences.addons[base_package].preferences
-        selected = bpy.context.scene.simple_export_selected_preset
-        if selected and prefs.simple_export_default_preset == selected:
-            row.label(text="", icon='PINNED')
-        else:
-            row.operator("simple_export.set_default_preset", text="", icon='UNPINNED')
-    except Exception:
-        pass
-
     # Operator to open a folder
     from ..presets_addon.exporter_preset import simple_export_presets_folder
     row.operator("wm.path_open", text='', icon='FILE_FOLDER').filepath = simple_export_presets_folder()
 
 
 def draw_full_exporer_settings(layout, props):
-    from ..ui.shared_draw import draw_export_fomrat
+    """The settings of one export preset, one plain box per group of settings."""
+    from ..ui.export_panels import draw_pre_export_operations
 
-    # --- Export Format ---
-    draw_export_fomrat(layout, props)
-
-    # --- Collection Name ---
+    # --- Format and its native options file ---
     box = layout.box()
-    draw_collection_name_properties(box, props)
+    col = box.column(align=True)
+    draw_export_fomrat(col, props)
+    draw_export_preset_properties(col, props, title=None, prop_text="Format Options")
 
-    # --- File Path ---
+    # --- Export Folder ---
+    draw_export_folderpath_properties(layout.box(), props)
+
+    # --- Naming: file and collection names are the two sub-groups ---
     box = layout.box()
-    draw_export_folderpath_properties(box, props)
+    box.label(text="Naming")
+    draw_export_filename_properties(box.box(), props)
+    draw_collection_name_properties(box.box(), props)
 
-    # --- File Name ---
-    box = layout.box()
-    draw_export_filename_properties(box, props)
+    # --- Collection ---
+    draw_collection_settings_properties(layout.box(), props)
 
-    # --- Preset Section ---
-    box = layout.box()
-    draw_export_preset_properties(box, props)
+    # --- Root Object ---
+    draw_root_object_properties(layout.box(), props)
 
-    # --- Collection Section ---
-    box = layout.box()
-    draw_collection_settings_properties(box, props)
-
-    # --- Pre-Export Operations (defaults for new collections) ---
+    # --- Pre-Export Operations ---
     box = layout.box()
     box.label(text="Pre-Export Operations (defaults for new collections)")
-    from ..ui.export_panels import draw_pre_export_operations
     draw_pre_export_operations(box, props)
 
 
 def draw_export_list(layout, list_id, scene):
-    # === PROMINENT ADD BUTTON ===
+    # === PROMINENT ADD BUTTON (not needed in the export popup) ===
     from .shared_operator_call import call_create_export_collection_op
-    row = layout.row(align=True)
-    row.scale_y = 1.5
-    call_create_export_collection_op(scene, row, icon='ADD', text="Create Export Collection")
+    if list_id != 'popup':
+        row = layout.row(align=True)
+        row.scale_y = 1.5
+        call_create_export_collection_op(scene, row, icon='ADD', text="Create Export Collection")
 
     # === EXPORT TARGET (filters — above the list) ===
     box = layout.box()
@@ -288,12 +305,17 @@ def draw_export_list(layout, list_id, scene):
     main_column = split
     if list_id == 'popup':
         row = main_column.row(align=True)
-        col_01, col_02, col_03, col_04, col_05 = get_table_columns(row)
-        col_01.label(text="")
-        col_02.label(text="Name")
-        col_03.label(text="Filepath")
-        col_04.label(text="Root")
-        col_05.label(text="")
+        col_status, col_ops, col_name, col_path, col_root, col_actions = get_table_columns(row)
+        col_status.label(text="")
+        # Icons mirror the pre-export toggles in each row
+        ops_row = col_ops.row(align=True)
+        ops_row.scale_x = POPUP_OPS_TOGGLE_SCALE_X
+        ops_row.label(text="", icon='OBJECT_ORIGIN')
+        ops_row.label(text="", icon='MOD_TRIANGULATE')
+        col_name.label(text="Name")
+        col_path.label(text="Filepath")
+        col_root.label(text="Root")
+        col_actions.label(text="")
 
     # UIList
     factor = 0.97 if list_id == 'popup' else 0.9
@@ -305,9 +327,9 @@ def draw_export_list(layout, list_id, scene):
 
     narrow_column = split.column(align=True)
     col = narrow_column
-    call_create_export_collection_op(scene, col, icon='ADD', text="")
-
-    col.separator()
+    if list_id != 'popup':
+        call_create_export_collection_op(scene, col, icon='ADD', text="")
+        col.separator()
     col.menu("SIMPLE_EXPORT_MT_context_menu", icon='DOWNARROW_HLT', text="")
 
     col.separator()

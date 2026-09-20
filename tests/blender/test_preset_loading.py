@@ -4,10 +4,9 @@ Headless Blender tests for the preset loading system.
 Run with:
     blender --background --python tests/blender/test_preset_loading.py
 
-Replaces the MagicMock-based test_preset_loading.py. This module's logic
-(version routing, file generation, dict validation) doesn't touch Blender
-types at all — it only needed a working `import simple_export` chain, which
-a real Blender process gives for free. patch.object() is used the same way
+This module's logic (version routing, file generation, dict validation)
+doesn't touch Blender types at all — it only needs a working
+`import simple_export` chain, which a real Blender process gives for free. patch.object() is used the same way
 it already is in test_preset_application.py: to redirect the addon's preset
 folder lookups to a temp directory, not to stand in for a Blender type.
 

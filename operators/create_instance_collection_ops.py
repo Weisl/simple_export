@@ -1,9 +1,11 @@
 import bpy
 from mathutils import Vector
 
-from .collection_offset_ops import create_root_empty_for_collection
+from .collection_offset_ops import create_root_empty_for_collection, instance_root_empty_style
+from ..preferences.preferenecs import ROOT_EMPTY_DISPLAY_ITEMS
 from ..functions.exporter_funcs import get_all_children_and_descendants
 from ..functions.collection_layer import set_active_layer_Collection
+from ..functions.collection_offset import object_world_location
 
 
 def _move_objects_to_collection(objects, collection):
@@ -46,6 +48,29 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
         name="Root Empty Suffix",
         default="_root",
     )
+    # Root empty look. Seeded from the preferences when the dialog opens.
+    root_empty_display_type: bpy.props.EnumProperty(
+        name="Shape",
+        description="Viewport shape of the root object",
+        items=ROOT_EMPTY_DISPLAY_ITEMS,
+        default='CUBE',
+        options={'SKIP_SAVE'},
+    )
+    root_empty_display_size: bpy.props.FloatProperty(
+        name="Size",
+        description="Viewport size of the root object",
+        default=1.0,
+        min=0.001,
+        soft_max=10.0,
+        unit='LENGTH',
+        options={'SKIP_SAVE'},
+    )
+    root_empty_show_name: bpy.props.BoolProperty(
+        name="Show Name",
+        description="Display the name of the root object in the viewport",
+        default=False,
+        options={'SKIP_SAVE'},
+    )
     mark_as_asset: bpy.props.BoolProperty(
         name="Mark as Asset",
         description="Mark the new collection as a Blender asset so it appears in the Asset Browser",
@@ -63,6 +88,12 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
     )
 
     def invoke(self, context, event):
+        from .. import __package__ as base_package
+        style = instance_root_empty_style(context.preferences.addons[base_package].preferences)
+        self.root_empty_display_type = style['display_type']
+        self.root_empty_display_size = style['display_size']
+        self.root_empty_show_name = style['show_name']
+
         if context.active_object:
             self.collection_name = context.active_object.name
         active_col = context.view_layer.active_layer_collection.collection
@@ -82,7 +113,12 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
             row = layout.row()
             row.alert = not self.collection_name
             row.prop(self, "collection_name", text="Collection Name")
-        layout.prop(self, "root_empty_suffix")
+        col = layout.column(align=True)
+        col.use_property_split = True
+        col.prop(self, "root_empty_display_type")
+        col.prop(self, "root_empty_display_size")
+        col.prop(self, "root_empty_show_name")
+        col.prop(self, "root_empty_suffix", text="Suffix")
         layout.separator()
         layout.prop(self, "parent_collection_name", text="Parent Collection")
         if self.parent_collection_name == '__NEW__':
@@ -108,6 +144,18 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
         col = bpy.data.collections.get(self.parent_collection_name)
         return col if col else context.scene.collection
 
+    def _root_empty_style(self, prefs):
+        """Root empty look from the dialog, or from the preferences when run without the dialog."""
+        style = instance_root_empty_style(prefs)
+        for key, attr in (
+            ('display_type', 'root_empty_display_type'),
+            ('display_size', 'root_empty_display_size'),
+            ('show_name', 'root_empty_show_name'),
+        ):
+            if self.properties.is_property_set(attr):
+                style[key] = getattr(self, attr)
+        return style
+
     def execute(self, context):
         from .. import __package__ as base_package
         prefs = context.preferences.addons[base_package].preferences
@@ -127,15 +175,16 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
 
         top_objects = [o for o in selected if o.parent is None or o.parent not in selected]
 
+        root_style = self._root_empty_style(prefs)
         if self.selection_mode == 'SINGLE':
-            self._create_single(context, top_objects, selected, prefs)
+            self._create_single(context, top_objects, selected, root_style)
         else:
             for top_obj in top_objects:
-                self._create_for_hierarchy(context, top_obj, prefs)
+                self._create_for_hierarchy(context, top_obj, root_style)
 
         return {'FINISHED'}
 
-    def _create_single(self, context, top_objects, all_selected, prefs):
+    def _create_single(self, context, top_objects, all_selected, root_style):
         parent = self._resolve_parent(context)
         collection = bpy.data.collections.new(self.collection_name)
         parent.children.link(collection)
@@ -151,13 +200,12 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
             collection.use_root_object = True
             collection.root_object = top_objects[0]
         else:
-            location = sum((o.location for o in top_objects), Vector()) / len(top_objects)
+            location = sum((object_world_location(o) for o in top_objects), Vector()) / len(top_objects)
             create_root_empty_for_collection(
                 collection, location,
                 objects_to_parent=top_objects,
-                display_type=prefs.root_empty_display_type,
-                display_size=prefs.root_empty_display_size,
                 suffix=self.root_empty_suffix,
+                **root_style,
             )
 
         if self.mark_as_asset:
@@ -166,7 +214,7 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
 
         self.report({'INFO'}, f"Instance collection '{collection.name}' created.")
 
-    def _create_for_hierarchy(self, context, top_obj, prefs):
+    def _create_for_hierarchy(self, context, top_obj, root_style):
         parent = self._resolve_parent(context)
         collection = bpy.data.collections.new(top_obj.name)
         parent.children.link(collection)
@@ -180,11 +228,10 @@ class OBJECT_OT_CreateInstanceCollection(bpy.types.Operator):
             collection.root_object = top_obj
         else:
             create_root_empty_for_collection(
-                collection, top_obj.location.copy(),
+                collection, object_world_location(top_obj),
                 objects_to_parent=[top_obj],
-                display_type=prefs.root_empty_display_type,
-                display_size=prefs.root_empty_display_size,
                 suffix=self.root_empty_suffix,
+                **root_style,
             )
 
         if self.mark_as_asset:

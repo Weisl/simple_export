@@ -4,11 +4,10 @@ Headless Blender tests for the preset parsing/assignment utility functions.
 Run with:
     blender --background --python tests/blender/test_preset_parsing.py
 
-Replaces the MagicMock-based test_preset_parsing.py. parse_preset_file,
-_parse_prefix_preset_file and _props_equal are pure Python (no Blender types
-involved), so these tests exercise them directly with no stand-ins at all —
-they only need to run inside Blender's Python so that `import simple_export`
-(and its bpy imports) succeeds. The remaining assign_preset() coverage against
+parse_preset_file, _parse_prefix_preset_file and _props_equal are pure Python
+(no Blender types involved), so these tests exercise them directly with no
+stand-ins at all — they only need to run inside Blender's Python so that
+`import simple_export` (and its bpy imports) succeeds. The remaining assign_preset() coverage against
 real exporter property groups (unknown property, type-mismatch setattr,
 set-valued property, corrupt+valid line mix) lives in
 test_preset_application.py's TestAssignPresetToRealExporter, next to the rest

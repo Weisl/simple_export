@@ -1,6 +1,7 @@
 import os
 
 import bpy
+from mathutils import Vector
 
 from .shared_properties import (
     SharedPathProps, SharedFilenameProps,
@@ -10,6 +11,7 @@ from .shared_properties import (
 )
 from ..core.export_path_func import assign_exporter_path
 from ..core.export_path_func import generate_base_name
+from ..functions.collection_offset import object_world_location
 from ..functions.collections_setup import setup_collection_properties
 from ..functions.exporter_funcs import get_all_children_and_descendants
 from ..functions.preset_func import (
@@ -158,7 +160,10 @@ class EXPORT_OT_CreateExportCollections(
 
         from ..functions.exporter_funcs import create_collection_exporter, remove_all_collection_exporters
 
+        # A Single collection has no one base object, so its origin is the centre of the selection.
+        origin = None
         if self.selection_mode == 'SINGLE':
+            origin = sum((object_world_location(o) for o in top_objects), Vector()) / len(top_objects)
             exporter_collections = self.create_single_collection(context, top_objects)
         else:  # BY_HIERARCHY
             exporter_collections = self.create_individual_collections(context, top_objects)
@@ -171,7 +176,7 @@ class EXPORT_OT_CreateExportCollections(
                 top_object = None
 
             if export_collection is not None:
-                export_collection = setup_collection_properties(self, export_collection, top_object)
+                export_collection = setup_collection_properties(self, export_collection, top_object, origin=origin)
 
                 if export_collection.exporters:
                     remove_all_collection_exporters(export_collection)
@@ -213,11 +218,25 @@ class EXPORT_OT_CreateExportCollections(
             if collection_name in bpy.data.collections:
                 export_collection = bpy.data.collections[collection_name]
                 self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Using existing collection.")
+                self._ensure_in_scene(context, export_collection, top_object)
                 self._link_objects_to_collection(top_object, export_collection)
             else:
                 export_collection = self.create_and_setup_collection(context, collection_name, top_object)
             exporter_collections.append((export_collection, top_object))
         return exporter_collections
+
+    def _ensure_in_scene(self, context, export_collection, top_object=None):
+        """Link a reused export collection into the scene if it is not part of it.
+
+        A leftover collection with the same name (e.g. deleted in the outliner) can still exist in
+        bpy.data. Moving objects into it would make them, and their root empty, vanish from the scene.
+        """
+        if export_collection in context.scene.collection.children_recursive:
+            return
+        parent_collection = determine_parent_collection(context, self.parent_collection, top_object)
+        if parent_collection is None or parent_collection == export_collection:
+            parent_collection = context.scene.collection
+        parent_collection.children.link(export_collection)
 
     def _link_objects_to_collection(self, top_object, export_collection):
         """Link top_object and its hierarchy into export_collection, moving them out of other collections."""
@@ -236,6 +255,7 @@ class EXPORT_OT_CreateExportCollections(
         if collection_name in bpy.data.collections:
             export_collection = bpy.data.collections[collection_name]
             self.report({'WARNING'}, f"Collection '{collection_name}' already exists. Using existing collection.")
+            self._ensure_in_scene(context, export_collection)
         else:
             parent_collection = determine_parent_collection(context, self.parent_collection, None)
             export_collection = bpy.data.collections.new(collection_name)
@@ -310,8 +330,9 @@ class EXPORT_OT_CreateExportCollections(
         if self.create_empty_root:
             col = layout.column(align=True)
             col.use_property_split = True
-            col.prop(prefs, "root_empty_display_type", text="Shape")
-            col.prop(prefs, "root_empty_display_size", text="Size")
+            col.prop(context.scene, "root_empty_display_type", text="Shape")
+            col.prop(context.scene, "root_empty_display_size", text="Size")
+            col.prop(context.scene, "root_empty_show_name", text="Show Name")
             col.prop(self, "root_empty_suffix", text="Suffix")
 
         layout.separator()

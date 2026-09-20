@@ -37,6 +37,39 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
   erroring").
 - Added a dedicated `blender_5_2` export preset folder alongside the
   existing 4.2/4.5 folders, ensuring correct defaults on Blender 5.2.
+- Simple Export's right-click entries in the 3D viewport object context menu
+  and the Outliner collection/object context menus are now grouped under a
+  single **Simple Export** submenu instead of being mixed in with Blender's
+  own entries, so it is clear where they come from. The per-item icons inside
+  the submenu were dropped; only the submenu entry itself carries one.
+- Export popup overhaul: the "Create Export Collection" button and `+` are
+  gone (the popup is for exporting, not creating), **Validate Selected** now
+  sits next to **Export Selected**, the Move-to-Origin / Triangulate toggles
+  have their own wider column so they are easy to click, and the Root Object
+  link toggle stays clickable while off — only the object field is greyed out.
+- The default preset is now **Basic-fbx-default** (plain FBX export) instead of
+  `UE-default`. On a fresh install the default previously fell back to whichever
+  preset file the folder listing returned first, because the preset folder was
+  still empty when the preference's default was set; it is now selected once the
+  presets have been created, unless a default was already chosen. Existing
+  installs that picked a default keep it.
+- The **Presets tab** in the add-on preferences is now compact and built
+  around one loop: pick a preset, change it, keep the change. The preset list
+  is a single-row picker (grouped by category, the default is marked) instead
+  of five panels of full-width buttons, and the settings below it are grouped
+  into one plain box each (format, export folder, naming, collection, root
+  object, pre-export). Editing a preset now shows a **Modified** status with
+  **Revert** and **Update** (or **Save as Copy...** for built-in presets, which
+  stay locked). The name dialogs suggest a free name and explain a rejected one.
+  Editing in this tab never applies a preset to the scene.
+- **Copy Export Settings** — new Outliner entry (right-click > Simple Export)
+  that copies the export setup of one collection to the other selected
+  collections, like "Copy from Active" does for objects. Select the target
+  collections, then right-click the collection to copy from. It copies the
+  exporter settings, the pre-export operations and the user group (each can be
+  switched off in the dialog) but never the file path. A target that uses a
+  different export format, or has no exporter yet, is converted to the
+  source's format and keeps its folder and file name with the new extension.
 
 ### Bug Fixes
 
@@ -97,6 +130,14 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
   the object's (mutable) name, so a rename between apply and restore could
   restore the wrong object; and the background "update available" check
   could keep writing its result after the addon had been unregistered.
+- Creating an **Export Collection** or **Instance Collection** for an object
+  that has a parent (or a delta transform / constraint) put the root empty at
+  the object's parent-relative `location` instead of where the object actually
+  is, so the empty ended up somewhere else in the scene. The root empty (and
+  the export collection's instance offset) now use the object's world
+  position. **Export Collections** created in *Single* mode put the root empty
+  at the world origin; it now goes to the centre of the selection, as it
+  already did for Instance Collections.
 
 ### Internal
 

@@ -1,6 +1,15 @@
 from mathutils import Matrix
 
 
+def object_world_location(obj):
+    """World-space location of *obj*.
+
+    obj.location is relative to the parent (and ignores delta transforms and constraints),
+    so it only matches where the object appears when it has none of those.
+    """
+    return obj.matrix_world.translation.copy()
+
+
 def apply_location_offset(obj, collection_offset, inverse=False):
     """
     Adjusts the location of an object based on the collection's offset.

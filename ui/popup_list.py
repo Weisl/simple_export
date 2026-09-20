@@ -20,19 +20,15 @@ class SIMPLE_EXPORT_PT_simple_export_popup(SIMPLE_EXPORT_menu_base, bpy.types.Pa
         from .shared_draw import draw_export_list
         draw_export_list(layout, self.list_id, scene)
 
-        col = layout.column(align=True)
-        row = col.row()
+        row = layout.row(align=True)
         row.alignment = 'RIGHT'
-        row.scale_x = 2.5
+        row.scale_x = 2.0
         row.scale_y = 1.5
+        op = row.operator("simple_export.validate_collections", text="Validate Selected", icon='CHECKMARK')
+        op.scope = 'SELECTED'
         op = row.operator("simple_export.export_collections", text="Export Selected", icon='EXPORT')
         op.outliner = False
         op.individual_collection = False
-
-        row = col.row()
-        row.alignment = 'RIGHT'
-        op = row.operator("simple_export.validate_collections", text="Validate Selected", icon='CHECKMARK')
-        op.scope = 'SELECTED'
 
 
 classes = (

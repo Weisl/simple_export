@@ -4,12 +4,31 @@ from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.collection_offset import set_collection_offset
 
 
+def scene_root_empty_style(scene):
+    """Root empty look for export collections. Stored on the scene so export presets can set it."""
+    return {
+        'display_type': scene.root_empty_display_type,
+        'display_size': scene.root_empty_display_size,
+        'show_name': scene.root_empty_show_name,
+    }
+
+
+def instance_root_empty_style(prefs):
+    """Root empty look for instance collections. Global preference, not tied to export presets."""
+    return {
+        'display_type': prefs.instance_root_display_type,
+        'display_size': prefs.instance_root_display_size,
+        'show_name': prefs.instance_root_show_name,
+    }
+
+
 def create_root_empty_for_collection(
     collection, location,
     objects_to_parent=None,
     display_type='PLAIN_AXES',
     display_size=1.0,
     suffix="_root",
+    show_name=False,
 ):
     """Create an empty, link it to *collection*, optionally parent objects to it,
     and assign it as the collection's root object.
@@ -21,12 +40,15 @@ def create_root_empty_for_collection(
                            should be parented to the empty, preserving world transforms.
         display_type: Blender empty_display_type identifier (default 'PLAIN_AXES').
         display_size: empty_display_size in Blender units (default 1.0).
+        suffix: Suffix appended to the collection name to name the empty.
+        show_name: Display the empty's name in the viewport.
     Returns:
         The newly created EMPTY object.
     """
     empty = bpy.data.objects.new(name=collection.name + suffix, object_data=None)
     empty.empty_display_type = display_type
     empty.empty_display_size = display_size
+    empty.show_name = show_name
     empty.location = location
 
     collection.objects.link(empty)

@@ -6,6 +6,7 @@ from .. import __package__ as base_package
 from ..core.export_formats import ExportFormats
 from ..core.export_formats import get_export_format_items
 from ..core.info import DEFAULT_ABSOLUTE_PATH as _DEFAULT_ABSOLUTE_PATH
+from ..core.info import DEFAULT_ADDON_PRESET
 from ..ui.export_panels import VIEW3D_PT_SimpleExportMain
 
 
@@ -16,6 +17,16 @@ def label_multiline(context, text, parent):
     for text_line in text_lines:
         parent.label(text=text_line)
 
+
+ROOT_EMPTY_DISPLAY_ITEMS = [
+    ('PLAIN_AXES', "Plain Axes", ""),
+    ('ARROWS', "Arrows", ""),
+    ('SINGLE_ARROW', "Single Arrow", ""),
+    ('CIRCLE', "Circle", ""),
+    ('CUBE', "Cube", ""),
+    ('SPHERE', "Sphere", ""),
+    ('CONE', "Cone", ""),
+]
 
 PROPERTY_METADATA = {
 
@@ -154,6 +165,24 @@ PROPERTY_METADATA = {
         "description": "Pin the collection's origin to a designated root object instead of using the geometric center.",
         "default": True,
     },
+
+    # Root object appearance (empty created with new export collections, stored per export preset)
+    "root_empty_display_type": {
+        "name": "Root Empty Shape",
+        "description": "Viewport shape of the root object created with new export collections.",
+        "items": ROOT_EMPTY_DISPLAY_ITEMS,
+        "default": 'CUBE',
+    },
+    "root_empty_display_size": {
+        "name": "Root Empty Size",
+        "description": "Viewport size of the root object created with new export collections.",
+        "default": 1.0,
+    },
+    "root_empty_show_name": {
+        "name": "Root Empty Show Name",
+        "description": "Display the name of the root object in the viewport.",
+        "default": False,
+    },
     "move_by_collection_offset": {
         "name": "Move Collection to Origin",
         "description": "Objects are moved to the origin based on the Collection Center or root object before exporting.",
@@ -216,7 +245,7 @@ def setdefaultpreset():
     # Check if the user has specified a custom preset folder
     py_files = [f for f in os.listdir(preset_folder) if f.endswith('.py')]
     try:
-        return py_files.index('UE-default.py')
+        return py_files.index(f'{DEFAULT_ADDON_PRESET}.py')
     except ValueError:
         return 0  # Fallback to first item if not found
 
@@ -386,6 +415,58 @@ def set_absolute_path_scene(self, value):
     absolute_path = bpy.path.abspath(value)
     self["folder_path_absolute"] = absolute_path
 
+
+def draw_presets_tab(prefs, context, layout):
+    """Presets tab: a one-row picker with management buttons, the edit status of the selected
+    preset, and its settings. Nothing here applies a preset to the scene, it only edits preset
+    files. Which preset gets used is chosen in the N panel / Create Export Collections popup."""
+    from ..presets_addon.exporter_preset import (
+        LOCKED_PRESET_MESSAGE, SIMPLE_EXPORT_MT_edit_preset, editor_has_changes, simple_export_presets_folder,
+    )
+    from ..functions.preset_func import is_builtin_addon_preset
+    from ..ui.shared_draw import draw_full_exporer_settings
+
+    editing_path = context.window_manager.simple_export_editing_preset
+    if editing_path and not os.path.isfile(editing_path):
+        editing_path = ""  # deleted outside of Blender
+    editing_name = os.path.splitext(os.path.basename(editing_path))[0] if editing_path else ""
+    editing_locked = bool(editing_name) and is_builtin_addon_preset(editing_name)
+
+    box = layout.box()
+
+    # Picker + management: save as new, duplicate, remove, open folder
+    row = box.row(align=True)
+    row.menu(SIMPLE_EXPORT_MT_edit_preset.__name__, text=editing_name or "No preset selected",
+             icon='LOCKED' if editing_locked else 'PRESET')
+    row.operator("simple_export.save_preset_from_preferences", text="", icon='ADD')
+    row.operator("simple_export.duplicate_preset", text="", icon='COPYDOWN')
+    row.operator("simple_export.remove_preset", text="", icon='REMOVE')
+    row.operator("wm.path_open", text='', icon='FILE_FOLDER').filepath = simple_export_presets_folder()
+
+    # Edit status: unsaved edits get one obvious way out (Revert) and one obvious way to keep them.
+    # A built-in can't be overwritten, so its edits are kept as a copy instead.
+    if editing_path and editor_has_changes(prefs, editing_path):
+        row = box.row(align=True)
+        row.label(text="Modified", icon='DOT')
+        row.operator("simple_export.select_preset_for_editing", text="Revert",
+                     icon='LOOP_BACK').filepath = editing_path
+        if editing_locked:
+            row.operator("simple_export.save_preset_from_preferences", text="Save as Copy...", icon='DUPLICATE')
+        else:
+            row.operator("simple_export.update_preset", text="Update", icon='FILE_TICK')
+    elif editing_locked:
+        label_multiline(context=context, text=f"{LOCKED_PRESET_MESSAGE}.", parent=box.column(align=True))
+    elif not editing_path:
+        box.label(text="Pick a preset to edit, or save the settings below as a new one.", icon='INFO')
+
+    row = box.row(align=True)
+    row.label(text="Default Preset")
+    row.prop(prefs, "simple_export_default_preset", text="")
+
+    # Settings of the selected preset (the preferences' own copy of the preset properties)
+    layout.separator()
+    layout.label(text="Preset Settings")
+    draw_full_exporer_settings(layout, prefs)
 
 
 class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
@@ -616,28 +697,52 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         default=PROPERTY_METADATA["use_root_object"]["default"],
     )
 
+    # Root object appearance for new export collections. Mirrored on the Scene so
+    # export presets can store it (see BaseExportPreset.preset_values).
     root_empty_display_type: bpy.props.EnumProperty(
-        name="Root Empty Shape",
-        description="Display shape for root empties created by 'Create Root Empty'",
-        items=[
-            ('PLAIN_AXES', "Plain Axes", ""),
-            ('ARROWS', "Arrows", ""),
-            ('SINGLE_ARROW', "Single Arrow", ""),
-            ('CIRCLE', "Circle", ""),
-            ('CUBE', "Cube", ""),
-            ('SPHERE', "Sphere", ""),
-            ('CONE', "Cone", ""),
-        ],
-        default='CUBE',
+        name=PROPERTY_METADATA["root_empty_display_type"]["name"],
+        description=PROPERTY_METADATA["root_empty_display_type"]["description"],
+        items=PROPERTY_METADATA["root_empty_display_type"]["items"],
+        default=PROPERTY_METADATA["root_empty_display_type"]["default"],
     )
 
     root_empty_display_size: bpy.props.FloatProperty(
+        name=PROPERTY_METADATA["root_empty_display_size"]["name"],
+        description=PROPERTY_METADATA["root_empty_display_size"]["description"],
+        default=PROPERTY_METADATA["root_empty_display_size"]["default"],
+        min=0.001,
+        soft_max=10.0,
+        unit='LENGTH',
+    )
+
+    root_empty_show_name: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["root_empty_show_name"]["name"],
+        description=PROPERTY_METADATA["root_empty_show_name"]["description"],
+        default=PROPERTY_METADATA["root_empty_show_name"]["default"],
+    )
+
+    # Root object appearance for "Create Instance Collection". Not tied to export
+    # presets, so these live on the preferences only.
+    instance_root_display_type: bpy.props.EnumProperty(
+        name="Root Empty Shape",
+        description="Viewport shape of the root object created with new instance collections.",
+        items=ROOT_EMPTY_DISPLAY_ITEMS,
+        default='CUBE',
+    )
+
+    instance_root_display_size: bpy.props.FloatProperty(
         name="Root Empty Size",
-        description="Display size for root empties created by 'Create Root Empty'",
+        description="Viewport size of the root object created with new instance collections.",
         default=1.0,
         min=0.001,
         soft_max=10.0,
         unit='LENGTH',
+    )
+
+    instance_root_show_name: bpy.props.BoolProperty(
+        name="Root Empty Show Name",
+        description="Display the name of the root object in the viewport.",
+        default=False,
     )
 
     collection_color: bpy.props.EnumProperty(
@@ -695,29 +800,29 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
 
     ########################################
     # UI
-    report_errors_only: bpy.props.BoolProperty(name="Report Errors Only",
+    report_errors_only: bpy.props.BoolProperty(name="Show Errors Only",
                                                description="Show the result panel only when errors occur.",
                                                default=False)
 
     show_export_statistics: bpy.props.BoolProperty(
-        name="Show Export Statistics",
+        name="Show Statistics",
         description="Include an object/material/UV-set breakdown for each collection "
                     "in the Export Results popup",
         default=False)
 
-    panel_category: bpy.props.StringProperty(name="Category Tab",
-                                             description="The category name used to organize the addon in the properties panel for all the addons",
+    panel_category: bpy.props.StringProperty(name="N Panel Category",
+                                             description="The tab name the Simple Export panel is listed under in the N Panel",
                                              default='Simple Export',
                                              update=update_panel_category)  # update = update_panel_position,
 
     enable_n_panel: bpy.props.BoolProperty(
-        name="Enable Simple Export N-Panel",
+        name="Show N Panel",
         description="Toggle the N-Panel on and off.",
         default=True,
         update=update_panel_category)
 
     enable_output_panel: bpy.props.BoolProperty(
-        name="Enable Output Properties Panel",
+        name="Show Properties Panel",
         description="Show Simple Export panels in the Output Properties.",
         default=False,
     )
@@ -732,16 +837,10 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
     # Presets
 
     simple_export_default_preset: bpy.props.EnumProperty(
-        name="Simple Default Preset",
-        description="Select a default preset",
+        name="Default Preset",
+        description="Preset applied to the scene automatically when Blender starts or a file is opened",
         items=lambda self, context: get_simple_export_preset_files(self, context),
         default=setdefaultpreset()
-    )
-
-    preset_manager_filter: bpy.props.StringProperty(
-        name="Search Presets",
-        description="Filter the presets listed below by name",
-        default="",
     )
 
     ########################################
@@ -990,117 +1089,44 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         layout.separator()
 
         if self.prefs_tabs == 'SETTINGS':
-            from ..presets_addon.exporter_preset import (
-                SceneExportPreset,
-                simple_export_presets_folder,
-            )
-            from ..functions.preset_func import (
-                list_addon_presets_by_category,
-                ADDON_PRESET_CATEGORY_ORDER,
-                USER_ADDON_PRESET_CATEGORY,
-            )
-
-            # Selected-preset row: add (from prefs) + remove + duplicate + pin + folder
-            box = layout.box()
-            row = box.row(align=True)
-            row.label(text="Selected Preset")
-            row.operator("simple_export.save_preset_from_preferences", text="", icon='ADD')
-            remove_op = row.operator(SceneExportPreset.bl_idname, text="", icon='REMOVE')
-            remove_op.remove_active = True
-            row.operator("simple_export.duplicate_preset", text="", icon='COPYDOWN')
-            try:
-                selected = bpy.context.scene.simple_export_selected_preset
-                if selected and self.simple_export_default_preset == selected:
-                    row.label(text="", icon='PINNED')
-                else:
-                    row.operator("simple_export.set_default_preset", text="", icon='UNPINNED')
-            except Exception:
-                pass
-            row.operator("wm.path_open", text='', icon='FILE_FOLDER').filepath = simple_export_presets_folder()
-
-            row = box.row(align=True)
-            row.prop(self, "preset_manager_filter", text="", icon='VIEWZOOM')
-
-            # Presets grouped by category (fixed built-in categories, "User" for anything else)
-            search = self.preset_manager_filter.strip().lower()
-            grouped = list_addon_presets_by_category()
-            selected_path = bpy.context.scene.simple_export_selected_preset
-
-            for category in [*ADDON_PRESET_CATEGORY_ORDER, USER_ADDON_PRESET_CATEGORY]:
-                entries = grouped.get(category, [])
-                if search:
-                    entries = [entry for entry in entries if search in entry[0].lower()]
-                    if not entries:
-                        continue
-
-                panel_header, panel_body = layout.panel(
-                    idname=f"EXPORT_PRESETS_{category}",
-                    default_closed=not entries,
-                )
-                panel_header.label(text=f"{category} ({len(entries)})")
-                if panel_body:
-                    if entries:
-                        col = panel_body.column(align=True)
-                        for name, filepath, is_builtin in entries:
-                            icon = 'LOCKED' if is_builtin else 'NONE'
-                            row = col.row(align=True)
-                            apply_op = row.operator("simple_export.apply_preset", text=name, icon=icon)
-                            apply_op.filepath = filepath
-                            apply_op.menu_idname = "EXPORT_MT_scene_presets"
-                            if filepath == selected_path:
-                                row.label(text="", icon='CHECKMARK')
-                    else:
-                        panel_body.label(text=f"No presets yet for {category}", icon='INFO')
-
-                    if category == USER_ADDON_PRESET_CATEGORY:
-                        new_op = panel_body.operator(SceneExportPreset.bl_idname,
-                                                     text="New Preset...", icon='ADD')
-                        new_op.export_format = context.scene.export_format
-
-            # Full export defaults
-            layout.separator()
-            from ..ui.shared_draw import draw_full_exporer_settings
-            draw_full_exporer_settings(layout, self)
+            draw_presets_tab(self, context, layout)
 
         elif self.prefs_tabs == 'GENERAL':
 
             box = layout.box()
-            box.label(text="Presets")
-            row = box.row(align=True)
-            row.label(text="Auto-Apply on New File")
-            row.prop(self, "simple_export_default_preset", text="")
+            box.label(text="Panels")
+            col = box.column(align=True)
+            col.prop(self, "enable_output_panel")
+            col.prop(self, "enable_n_panel")
+            col.prop(self, "panel_category")
 
             box = layout.box()
-            box.label(text="N Panel")
-            box.prop(self, 'enable_n_panel')
-            box.prop(self, 'panel_category')
+            box.label(text="Popups")
+            col = box.column(align=True)
+            col.label(text="Warnings & Statistics Popup")
+            col.prop(self, "report_errors_only")
+            col.prop(self, "show_export_statistics")
+            col.separator()
+            col.label(text="Create Export Collections Popup")
+            col.prop(self, "show_hints")
 
             box = layout.box()
-            box.label(text="Output Properties")
-            box.prop(self, 'enable_output_panel')
-
-            box = layout.box()
-            box.label(text="Warnings")
-            box.prop(self, "report_errors_only")
-
-            box = layout.box()
-            box.label(text="Statistics")
-            box.prop(self, "show_export_statistics")
-
-            box = layout.box()
-            box.label(text="Onboarding")
-            box.prop(self, "show_hints")
+            box.label(text="Instance Collections")
+            col = box.column(align=True)
+            label_multiline(
+                context=context,
+                text="Root empty created by \"Create Instance Collection\". Sets the collection's instance origin.",
+                parent=col,
+            )
+            col = box.column(align=True)
+            col.use_property_split = True
+            col.prop(self, "instance_root_display_type", text="Shape")
+            col.prop(self, "instance_root_display_size", text="Size")
+            col.prop(self, "instance_root_show_name", text="Show Name")
 
             box = layout.box()
             box.label(text="Behavior")
             box.prop(self, "auto_update_path_on_rename")
-
-            box = layout.box()
-            box.label(text="Root Empty")
-            col = box.column(align=True)
-            col.use_property_split = True
-            col.prop(self, "root_empty_display_type", text="Shape")
-            col.prop(self, "root_empty_display_size", text="Size")
 
         elif self.prefs_tabs == 'KEYMAP':
             self.keymap_ui(layout, 'Export Popup', 'simple_export_panel', 'wm.call_panel',
@@ -1366,6 +1392,27 @@ def initialize_properties_collection_generation():
         default=prefs.collection_color
     )
 
+    # Root object appearance (stored by export presets, read when creating export collections)
+    bpy.types.Scene.root_empty_display_type = bpy.props.EnumProperty(
+        name=PROPERTY_METADATA["root_empty_display_type"]["name"],
+        description=PROPERTY_METADATA["root_empty_display_type"]["description"],
+        items=PROPERTY_METADATA["root_empty_display_type"]["items"],
+        default=prefs.root_empty_display_type
+    )
+    bpy.types.Scene.root_empty_display_size = bpy.props.FloatProperty(
+        name=PROPERTY_METADATA["root_empty_display_size"]["name"],
+        description=PROPERTY_METADATA["root_empty_display_size"]["description"],
+        default=prefs.root_empty_display_size,
+        min=0.001,
+        soft_max=10.0,
+        unit='LENGTH',
+    )
+    bpy.types.Scene.root_empty_show_name = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["root_empty_show_name"]["name"],
+        description=PROPERTY_METADATA["root_empty_show_name"]["description"],
+        default=prefs.root_empty_show_name
+    )
+
     # Pre Export operations
     bpy.types.Scene.move_by_collection_offset = bpy.props.BoolProperty(
         name=PROPERTY_METADATA["move_by_collection_offset"]["name"],
@@ -1580,6 +1627,9 @@ def unregister():
     del bpy.types.Scene.assign_preset
     del bpy.types.Scene.parent_collection
     del bpy.types.Scene.collection_color
+    del bpy.types.Scene.root_empty_display_type
+    del bpy.types.Scene.root_empty_display_size
+    del bpy.types.Scene.root_empty_show_name
 
     # filepath
     del bpy.types.Scene.folder_path_search

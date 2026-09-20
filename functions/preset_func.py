@@ -80,6 +80,18 @@ def _parse_prefix_preset_file(preset_path, prefix):
     return properties
 
 
+def parse_addon_preset_file(preset_path):
+    """Parse an addon (scene-level) preset file into {prop_name: value}."""
+    return _parse_prefix_preset_file(preset_path, "scene")
+
+
+def is_builtin_addon_preset(name):
+    """True for presets shipped with the addon: locked in the UI and rewritten from
+    preset_data_exporters.py on every startup."""
+    from ..presets_addon.preset_data_exporters import presets_simple_exporter
+    return name in presets_simple_exporter
+
+
 def _props_equal(blender_val, preset_val):
     """Compare a Blender property value with a parsed preset value."""
     try:

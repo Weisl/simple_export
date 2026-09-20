@@ -6,10 +6,22 @@ from bpy.app.handlers import persistent
 from . import exporter_preset
 from .preset_data_exporters import presets_simple_exporter
 from .. import __package__ as base_package
+from ..core.info import DEFAULT_ADDON_PRESET
 
 files = [
     exporter_preset,
 ]
+
+
+def _render_addon_preset(preset_data):
+    """Return the source text of an addon preset file for the given preset dict."""
+    lines = ["import bpy", "", "scene = bpy.context.scene", ""]
+    for key, value in preset_data.items():
+        if isinstance(value, str):
+            lines.append(f"scene.{key} = {repr(value)}")
+        else:
+            lines.append(f"scene.{key} = {value}")
+    return "\n".join(lines) + "\n"
 
 
 def save_addon_presets(preset_name, preset_folder, preset_data):
@@ -36,26 +48,45 @@ def save_addon_presets(preset_name, preset_folder, preset_data):
 
     try:
         with open(preset_file_path, 'w', encoding='utf-8') as preset_file:
-            preset_file.write("import bpy\n\n")
-            preset_file.write("scene = bpy.context.scene\n\n")
-
-            for key, value in preset_data.items():
-                if isinstance(value, str):
-                    preset_file.write(f"scene.{key} = {repr(value)}\n")
-                else:
-                    preset_file.write(f"scene.{key} = {value}\n")
-
+            preset_file.write(_render_addon_preset(preset_data))
     except IOError:
         pass  # Handle file write errors silently
 
 
-def create_addon_preset_files(preset_data, preset_folder, saved_preset_files):
+def create_addon_preset_files(preset_data, preset_folder):
+    """Write every built-in preset to preset_folder, replacing files that are missing or
+    differ from the shipped version. Built-ins are locked in the UI, so this is how an
+    addon update (or a hand-edited file) is brought back in line with the addon."""
     if not preset_folder or not os.path.isdir(preset_folder):
         return
 
     for preset_name, preset in preset_data.items():
-        if preset_name not in saved_preset_files:
+        if not isinstance(preset, dict):
+            continue
+        preset_file_path = os.path.join(preset_folder, f'{preset_name}.py')
+        try:
+            with open(preset_file_path, 'r', encoding='utf-8') as preset_file:
+                current = preset_file.read()
+        except (IOError, UnicodeDecodeError):
+            current = None
+        if current != _render_addon_preset(preset):
             save_addon_presets(preset_name, preset_folder, preset)
+
+
+def pin_default_preset_if_unset(addon_prefs):
+    """Select DEFAULT_ADDON_PRESET as the default preset unless the user already chose one.
+
+    The enum's built-in default is an index baked in at import time. On a fresh
+    install the preset folder is still empty then, so the index falls back to 0 and
+    points at whichever file the folder listing happens to return first.
+    """
+    if addon_prefs.is_property_set("simple_export_default_preset"):
+        return
+    from ..preferences.preferenecs import get_simple_export_preset_files
+    for filepath, filename, _description in get_simple_export_preset_files(addon_prefs, bpy.context):
+        if filename == f"{DEFAULT_ADDON_PRESET}.py":
+            addon_prefs.simple_export_default_preset = filepath
+            return
 
 
 def apply_default_preset():
@@ -64,6 +95,7 @@ def apply_default_preset():
         addon_prefs = bpy.context.preferences.addons[base_package].preferences
         if addon_prefs is None:
             return
+        pin_default_preset_if_unset(addon_prefs)
         default_preset = addon_prefs.simple_export_default_preset
         if not default_preset or not os.path.exists(default_preset):
             return
@@ -87,8 +119,7 @@ def initialize_addon_presets():
         return
     # print(f"Addon preset folder: {addon_preset_folder}")
     os.makedirs(addon_preset_folder, exist_ok=True)
-    addon_preset_saved_preset_files = os.listdir(addon_preset_folder) if os.path.isdir(addon_preset_folder) else []
-    create_addon_preset_files(presets_simple_exporter, addon_preset_folder, addon_preset_saved_preset_files)
+    create_addon_preset_files(presets_simple_exporter, addon_preset_folder)
 
     bpy.app.handlers.load_post.append(load_preset_on_scene_open)
 

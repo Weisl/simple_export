@@ -4,10 +4,9 @@ Headless Blender tests for Simple Export operators.
 Run with:
     blender --background --python tests/blender/test_operators.py
 
-Replaces the MagicMock-based test_operators.py with tests that register the
-real operator classes inside Blender and invoke them through bpy.ops — the
-same path Blender itself uses.  This exercises the full execute() logic on
-real bpy.data.collections and bpy.data.objects rather than MagicMock stand-ins.
+These tests register the real operator classes inside Blender and invoke them
+through bpy.ops — the same path Blender itself uses.  This exercises the full
+execute() logic on real bpy.data.collections and bpy.data.objects.
 
 Operator instances are created by calling bpy.ops.<namespace>.<name>(...).
 Properties are passed as keyword arguments; context overrides are applied with
@@ -43,12 +42,25 @@ Covers:
     - Top-level objects are parented to the empty
     - Objects already with a parent are not re-parented
     - display_type and display_size are applied
+    - show_name is applied, and the scene/prefs style builders map correctly
+  discard_unlinked_root_object (helper function)
+    - A root object that is not linked to any collection is removed
+    - A root object linked to a collection is kept
+
+  Root empty placement for an object that has a parent
+    - Export and instance collections put the root empty at the object's world
+      position (not its parent-relative .location) and leave the object in place
+    - The export collection's instance_offset is the world position too
+    - A Single collection (no base object) uses the passed origin, else the world origin
 
 """
 
+import math
 import os
 import sys
+import types
 import unittest
+import unittest.mock
 import bpy
 from mathutils import Vector
 
@@ -71,6 +83,7 @@ import tests.blender._helpers as _h  # noqa: E402
 _fix_mod = None
 _offset_mod = None
 _remove_mod = None
+_setup_mod = None
 
 
 # ---------------------------------------------------------------------------
@@ -85,6 +98,19 @@ def _load_operator_module(filename):
     spec = _ilu.spec_from_file_location(mod_name, path)
     mod = _ilu.module_from_spec(spec)
     mod.__package__ = "simple_export.operators"
+    sys.modules[mod_name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _load_functions_module(filename):
+    import importlib.util as _ilu
+    mod_name = f"simple_export.functions.{filename[:-3]}"
+    sys.modules.pop(mod_name, None)
+    path = os.path.join(_ADDON_ROOT, "functions", filename)
+    spec = _ilu.spec_from_file_location(mod_name, path)
+    mod = _ilu.module_from_spec(spec)
+    mod.__package__ = "simple_export.functions"
     sys.modules[mod_name] = mod
     spec.loader.exec_module(mod)
     return mod
@@ -108,7 +134,7 @@ class _MinimalPrefs(bpy.types.AddonPreferences):
 
 
 def setUpModule():
-    global _fix_mod, _offset_mod, _remove_mod
+    global _fix_mod, _offset_mod, _remove_mod, _setup_mod
 
     # Register the scene property that operators read.
     bpy.types.Scene.export_format = bpy.props.EnumProperty(
@@ -130,6 +156,7 @@ def setUpModule():
     _fix_mod = _load_operator_module("fix_filename.py")
     _offset_mod = _load_operator_module("collection_offset_ops.py")
     _remove_mod = _load_operator_module("remove_exporters_ops.py")
+    _setup_mod = _load_functions_module("collections_setup.py")
 
     for mod in (_fix_mod, _offset_mod, _remove_mod):
         mod.register()
@@ -494,6 +521,255 @@ class TestCreateRootEmptyHelper(unittest.TestCase):
         fn = _get_create_root_empty_fn()
         empty = fn(self.col, Vector((0, 0, 0)), objects_to_parent=None)
         self.assertIsNotNone(empty)
+
+    def test_show_name_applied(self):
+        fn = _get_create_root_empty_fn()
+        empty = fn(self.col, Vector((0, 0, 0)), show_name=True)
+        self.assertTrue(empty.show_name)
+
+    def test_show_name_off_by_default(self):
+        fn = _get_create_root_empty_fn()
+        empty = fn(self.col, Vector((0, 0, 0)))
+        self.assertFalse(empty.show_name)
+
+
+class TestRootEmptyStyleBuilders(unittest.TestCase):
+    """scene_root_empty_style / instance_root_empty_style feed create_root_empty_for_collection."""
+
+    def setUp(self):
+        self.col = _h.make_collection("RootEmpty_Style_Test")
+
+    def tearDown(self):
+        for obj in list(bpy.data.objects):
+            if obj.name.endswith("_root"):
+                try:
+                    bpy.data.objects.remove(obj)
+                except Exception:
+                    pass
+        _h.remove_collection(self.col)
+
+    def test_scene_style_reads_scene_properties(self):
+        scene = types.SimpleNamespace(
+            root_empty_display_type='ARROWS',
+            root_empty_display_size=2.0,
+            root_empty_show_name=True,
+        )
+        self.assertEqual(
+            _offset_mod.scene_root_empty_style(scene),
+            {'display_type': 'ARROWS', 'display_size': 2.0, 'show_name': True},
+        )
+
+    def test_instance_style_reads_instance_preferences_not_export_ones(self):
+        prefs = types.SimpleNamespace(
+            instance_root_display_type='SPHERE',
+            instance_root_display_size=0.5,
+            instance_root_show_name=True,
+            # Export-side values must be ignored.
+            root_empty_display_type='CUBE',
+        )
+        self.assertEqual(
+            _offset_mod.instance_root_empty_style(prefs),
+            {'display_type': 'SPHERE', 'display_size': 0.5, 'show_name': True},
+        )
+
+    def test_style_can_be_passed_straight_to_the_helper(self):
+        style = {'display_type': 'CONE', 'display_size': 3.0, 'show_name': True}
+        empty = _offset_mod.create_root_empty_for_collection(
+            self.col, Vector((0, 0, 0)), **style)
+        self.assertEqual(empty.empty_display_type, 'CONE')
+        self.assertAlmostEqual(empty.empty_display_size, 3.0, places=4)
+        self.assertTrue(empty.show_name)
+
+
+# ---------------------------------------------------------------------------
+# 6. discard_unlinked_root_object (helper function)
+# ---------------------------------------------------------------------------
+
+class TestDiscardUnlinkedRootObject(unittest.TestCase):
+    """A root object deleted in the viewport must not count as the collection's root."""
+
+    def setUp(self):
+        self.col = _h.make_collection("StaleRoot_Test")
+
+    def tearDown(self):
+        for obj in list(bpy.data.objects):
+            if obj.name.startswith("StaleRoot_"):
+                try:
+                    bpy.data.objects.remove(obj)
+                except Exception:
+                    pass
+        _h.remove_collection(self.col)
+
+    def test_root_not_linked_to_any_collection_is_removed(self):
+        stale = bpy.data.objects.new("StaleRoot_root", None)
+        self.col.root_object = stale
+        _setup_mod.discard_unlinked_root_object(self.col)
+        self.assertIsNone(self.col.root_object)
+        self.assertNotIn("StaleRoot_root", bpy.data.objects.keys())
+
+    def test_root_linked_to_a_collection_is_kept(self):
+        root = bpy.data.objects.new("StaleRoot_root", None)
+        self.col.objects.link(root)
+        self.col.root_object = root
+        _setup_mod.discard_unlinked_root_object(self.col)
+        self.assertIs(self.col.root_object, root)
+        self.assertIn("StaleRoot_root", bpy.data.objects.keys())
+
+    def test_collection_without_root_is_a_noop(self):
+        self.col.root_object = None
+        _setup_mod.discard_unlinked_root_object(self.col)
+        self.assertIsNone(self.col.root_object)
+
+
+# ---------------------------------------------------------------------------
+# 7. Root empty placement for objects that have a parent
+# ---------------------------------------------------------------------------
+
+class TestRootEmptyWorldLocation(unittest.TestCase):
+    """The root empty is created where the object appears, not at its parent-relative .location."""
+
+    # Child at local (1, 2, 3) under a parent at (5, 5, 5) turned 90 degrees around Z.
+    WORLD = (3.0, 6.0, 8.0)
+
+    @classmethod
+    def setUpClass(cls):
+        cls._offset_funcs = _load_functions_module("collection_offset.py")
+        cls._instance_mod = _load_operator_module("create_instance_collection_ops.py")
+        cls._added_selected_prop = not hasattr(bpy.types.Collection, "simple_export_selected")
+        if cls._added_selected_prop:
+            bpy.types.Collection.simple_export_selected = bpy.props.BoolProperty()
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls._added_selected_prop:
+            del bpy.types.Collection.simple_export_selected
+
+    def setUp(self):
+        scene = bpy.context.scene
+        self.parent = bpy.data.objects.new("WorldLoc_parent", None)
+        self.parent.location = (5, 5, 5)
+        self.parent.rotation_euler = (0, 0, math.radians(90))
+        scene.collection.objects.link(self.parent)
+        self.obj = _h.make_mesh_object("WorldLoc_child", location=(1, 2, 3))
+        self.obj.parent = self.parent
+        bpy.context.view_layer.update()
+        self.col = _h.make_collection("WorldLoc_col")
+        self.col.objects.link(self.obj)
+
+    def tearDown(self):
+        for obj in list(bpy.data.objects):
+            if obj.name.startswith("WorldLoc_"):
+                bpy.data.objects.remove(obj)
+        for col in list(bpy.data.collections):
+            if col.name.startswith("WorldLoc_"):
+                bpy.data.collections.remove(col)
+
+    def assertVectorAlmostEqual(self, vec, expected):
+        for got, want in zip(vec, expected):
+            self.assertAlmostEqual(got, want, places=4)
+
+    def root_world_location(self, collection):
+        # A new object has no evaluated matrix_world until the depsgraph runs.
+        bpy.context.view_layer.update()
+        return collection.root_object.matrix_world.translation
+
+    def test_fixture_local_and_world_locations_differ(self):
+        self.assertVectorAlmostEqual(self.obj.location, (1.0, 2.0, 3.0))
+        self.assertVectorAlmostEqual(self.obj.matrix_world.translation, self.WORLD)
+
+    def test_object_world_location_helper_returns_world_position(self):
+        self.assertVectorAlmostEqual(self._offset_funcs.object_world_location(self.obj), self.WORLD)
+
+    def test_object_world_location_helper_returns_a_copy(self):
+        loc = self._offset_funcs.object_world_location(self.obj)
+        loc.x += 100.0
+        self.assertVectorAlmostEqual(self.obj.matrix_world.translation, self.WORLD)
+
+    def _setup_props(self):
+        return types.SimpleNamespace(
+            collection_color='NONE',
+            collection_instance_offset=True,
+            create_empty_root=True,
+            root_empty_suffix='_root',
+            use_root_object=False,
+        )
+
+    def test_export_collection_root_empty_is_at_object_world_location(self):
+        style = {'display_type': 'PLAIN_AXES', 'display_size': 1.0, 'show_name': False}
+        with unittest.mock.patch.object(_offset_mod, "scene_root_empty_style", return_value=style):
+            _setup_mod.setup_collection_properties(self._setup_props(), self.col, self.obj)
+        self.assertVectorAlmostEqual(self.root_world_location(self.col), self.WORLD)
+
+    def test_export_collection_keeps_object_where_it_was(self):
+        style = {'display_type': 'PLAIN_AXES', 'display_size': 1.0, 'show_name': False}
+        with unittest.mock.patch.object(_offset_mod, "scene_root_empty_style", return_value=style):
+            _setup_mod.setup_collection_properties(self._setup_props(), self.col, self.obj)
+        bpy.context.view_layer.update()
+        self.assertVectorAlmostEqual(self.obj.matrix_world.translation, self.WORLD)
+        self.assertIs(self.obj.parent, self.col.root_object)
+
+    def test_export_collection_instance_offset_is_object_world_location(self):
+        with unittest.mock.patch.object(_offset_mod, "scene_root_empty_style",
+                                        return_value={'display_type': 'PLAIN_AXES',
+                                                      'display_size': 1.0, 'show_name': False}):
+            _setup_mod.setup_collection_properties(self._setup_props(), self.col, self.obj)
+        self.assertVectorAlmostEqual(self.col.instance_offset, self.WORLD)
+
+    def test_explicit_origin_places_root_empty_when_there_is_no_base_object(self):
+        """Single collections have no one base object; the caller passes the selection centre."""
+        style = {'display_type': 'PLAIN_AXES', 'display_size': 1.0, 'show_name': False}
+        with unittest.mock.patch.object(_offset_mod, "scene_root_empty_style", return_value=style):
+            _setup_mod.setup_collection_properties(
+                self._setup_props(), self.col, None, origin=Vector((4.0, 5.0, 6.0)))
+        self.assertVectorAlmostEqual(self.root_world_location(self.col), (4.0, 5.0, 6.0))
+        self.assertVectorAlmostEqual(self.col.instance_offset, (4.0, 5.0, 6.0))
+
+    def test_without_base_object_or_origin_root_empty_is_at_world_origin(self):
+        style = {'display_type': 'PLAIN_AXES', 'display_size': 1.0, 'show_name': False}
+        with unittest.mock.patch.object(_offset_mod, "scene_root_empty_style", return_value=style):
+            _setup_mod.setup_collection_properties(self._setup_props(), self.col, None)
+        self.assertVectorAlmostEqual(self.root_world_location(self.col), (0.0, 0.0, 0.0))
+
+    def test_origin_is_read_before_a_stale_root_is_discarded(self):
+        """Removing a leftover root empty must not change where the new one is placed."""
+        stale = bpy.data.objects.new("WorldLoc_stale_root", None)
+        stale.location = (20, 20, 20)
+        self.col.root_object = stale
+        style = {'display_type': 'PLAIN_AXES', 'display_size': 1.0, 'show_name': False}
+        with unittest.mock.patch.object(_offset_mod, "scene_root_empty_style", return_value=style):
+            _setup_mod.setup_collection_properties(self._setup_props(), self.col, self.obj)
+        self.assertVectorAlmostEqual(self.root_world_location(self.col), self.WORLD)
+
+    def _instance_operator_stub(self):
+        return types.SimpleNamespace(
+            _resolve_parent=lambda context: bpy.context.scene.collection,
+            root_empty_suffix='_root',
+            mark_as_asset=False,
+            collection_name="WorldLoc_single",
+            report=lambda *args, **kwargs: None,
+        )
+
+    def _instance_style(self):
+        return {'display_type': 'PLAIN_AXES', 'display_size': 1.0, 'show_name': False}
+
+    def test_instance_collection_root_empty_is_at_object_world_location(self):
+        op_cls = self._instance_mod.OBJECT_OT_CreateInstanceCollection
+        op_cls._create_for_hierarchy(
+            self._instance_operator_stub(), bpy.context, self.obj, self._instance_style())
+        collection = bpy.data.collections["WorldLoc_child"]
+        self.assertVectorAlmostEqual(self.root_world_location(collection), self.WORLD)
+        bpy.context.view_layer.update()
+        self.assertVectorAlmostEqual(self.obj.matrix_world.translation, self.WORLD)
+
+    def test_single_instance_collection_root_empty_is_at_object_world_location(self):
+        op_cls = self._instance_mod.OBJECT_OT_CreateInstanceCollection
+        op_cls._create_single(
+            self._instance_operator_stub(), bpy.context, [self.obj], [self.obj],
+            self._instance_style())
+        collection = bpy.data.collections["WorldLoc_single"]
+        self.assertVectorAlmostEqual(self.root_world_location(collection), self.WORLD)
+        bpy.context.view_layer.update()
+        self.assertVectorAlmostEqual(self.obj.matrix_world.translation, self.WORLD)
 
 
 # ---------------------------------------------------------------------------

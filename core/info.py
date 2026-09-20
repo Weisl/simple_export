@@ -5,6 +5,9 @@ from ..presets_export.preset_format_functions import get_preset_format_folder
 
 ADDON_NAME = "Simple Export"
 
+# Built-in addon preset applied by default (see presets_addon/preset_data_exporters.py)
+DEFAULT_ADDON_PRESET = "Basic-fbx-default"
+
 if sys.platform == "win32":
     DEFAULT_ABSOLUTE_PATH = "C:\\tmp\\"
 elif sys.platform == "darwin":

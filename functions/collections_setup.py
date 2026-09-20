@@ -1,3 +1,5 @@
+from .collection_offset import object_world_location
+
 _PRE_EXPORT_BOOL_PROPS = [
     'move_by_collection_offset',
     'triangulate_before_export',
@@ -9,20 +11,45 @@ _PRE_EXPORT_BOOL_PROPS = [
 ]
 
 
-def setup_collection_properties(prop, collection, base_object=None):
+def discard_unlinked_root_object(collection):
+    """Remove a root object that is no longer linked to any collection.
+
+    Deleting a root empty in the viewport leaves it in bpy.data, kept alive only by the
+    collection's root_object pointer. The collection then looks like it still has a root
+    although nothing is in the scene, so no new root empty would be created.
+    """
+    import bpy
+    root = collection.root_object
+    if root is not None and not root.users_collection:
+        bpy.data.objects.remove(root)
+
+
+def setup_collection_properties(prop, collection, base_object=None, origin=None):
+    """Apply the operator/preset settings to *collection*.
+
+    The collection origin (root empty and instance offset) is the world position of
+    *base_object*, or *origin* when given for a collection that has no single base object.
+    It is the world origin when neither is set.
+    """
+    from mathutils import Vector
+    # Read before anything is deleted or reparented below.
+    if origin is None:
+        origin = object_world_location(base_object) if base_object else Vector((0.0, 0.0, 0.0))
+
     collection.simple_export_selected = True
     if prop.collection_color != 'NONE':
         collection.color_tag = prop.collection_color
     if prop.collection_instance_offset and hasattr(collection, 'instance_offset'):
-        collection.instance_offset = base_object.location if base_object else (0, 0, 0)
+        collection.instance_offset = origin
     if getattr(prop, 'create_empty_root', False) and hasattr(collection, 'use_root_object'):
+        discard_unlinked_root_object(collection)
         if not (collection.use_root_object and collection.root_object):
-            from ..operators.collection_offset_ops import create_root_empty_for_collection
-            from mathutils import Vector
+            from ..operators.collection_offset_ops import (
+                create_root_empty_for_collection,
+                scene_root_empty_style,
+            )
             import bpy as _bpy
-            from .. import __package__ as base_package
-            _prefs = _bpy.context.preferences.addons[base_package].preferences
-            location = base_object.location.copy() if base_object else Vector((0.0, 0.0, 0.0))
+            location = origin
             collection_objects_set = set(collection.objects)
             top_level_objects = [
                 obj for obj in collection.objects
@@ -36,9 +63,8 @@ def setup_collection_properties(prop, collection, base_object=None):
             else:
                 create_root_empty_for_collection(
                     collection, location, top_level_objects,
-                    display_type=_prefs.root_empty_display_type,
-                    display_size=_prefs.root_empty_display_size,
                     suffix=getattr(prop, 'root_empty_suffix', '_root'),
+                    **scene_root_empty_style(_bpy.context.scene),
                 )
     elif prop.use_root_object and hasattr(collection, 'use_root_object'):
         collection.use_root_object = prop.use_root_object

@@ -5,7 +5,7 @@ Run with:
     blender --background --python tests/blender/test_preset_application.py
 
 These tests exercise assign_preset() and format_preset_has_changes() against
-real Blender collection exporters rather than MagicMock stand-ins.
+real Blender collection exporters.
 
 Unlike test_export_pipeline.py (which needs the full addon registered to access
 addon preferences), these tests register only the minimal set of Blender types

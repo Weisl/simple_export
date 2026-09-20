@@ -4,9 +4,8 @@ Headless Blender tests for path-building utilities.
 Run with:
     blender --background --python tests/blender/test_export_path.py
 
-Replaces the MagicMock-based test_export_path_funcs.py with tests that use
-real bpy.data.filepath (set by saving a .blend to a temp directory) and real
-bpy.path.abspath / bpy.path.relpath rather than mock return values.
+These tests use real bpy.data.filepath (set by saving a .blend to a temp
+directory) and real bpy.path.abspath / bpy.path.relpath.
 
 Covers:
   generate_base_name

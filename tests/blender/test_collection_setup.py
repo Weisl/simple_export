@@ -4,9 +4,9 @@ Headless Blender tests for ensure_collection_properties() migration logic.
 Run with:
     blender --background --python tests/blender/test_collection_setup.py
 
-Unlike the MagicMock version these tests use real bpy.types.Collection
-PropertyGroup instances, real bpy.context.scene, and real Blender property
-semantics (type enforcement, default values from RNA metadata).
+These tests use real bpy.types.Collection PropertyGroup instances, the real
+bpy.context.scene, and real Blender property semantics (type enforcement,
+default values from RNA metadata).
 
 Covers:
   - Registered defaults match the values declared in _PRE_EXPORT_BOOL_DEFAULTS
