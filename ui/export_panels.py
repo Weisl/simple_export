@@ -114,14 +114,13 @@ def draw_collection_settings(layout, context, collection):
         op = col.operator("object.set_collection_offset_object", text="Set Offset from Object")
         op.collection_name = collection.name
 
-        # Per-collection pre-export operations
+        # Per-collection pre-export operations. Always expanded and drawn as a plain
+        # box (like Root Object above): a layout panel body adds padding under its
+        # header, which made the toggles look detached from their title.
         if hasattr(collection, 'pre_export_ops'):
-            ops_header, ops_body = box.panel(idname="COL_PRE_EXPORT_OPS", default_closed=True)
-            ops_header.label(text="Pre-Export Operations")
-            if ops_body:
-                draw_pre_export_operations(ops_body, collection.pre_export_ops)
-
-            box.separator()
+            ops_box = box.box()
+            ops_box.label(text="Pre-Export Operations")
+            draw_pre_export_operations(ops_box, collection.pre_export_ops)
 
             ops_header, ops_body = box.panel(idname="COL_EXPORT_SETTINGS", default_closed=True)
             ops_header.label(text="Exporter Settings")

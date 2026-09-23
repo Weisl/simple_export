@@ -70,6 +70,11 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
   switched off in the dialog) but never the file path. A target that uses a
   different export format, or has no exporter yet, is converted to the
   source's format and keeps its folder and file name with the new extension.
+- Collection settings (the per-row edit popup and the Active Collection panel):
+  **Pre-Export Operations** is now always expanded and drawn as a box like
+  Root Object, so **Move to Origin** and **Triangulate Meshes** sit directly
+  under their title instead of behind a dropdown with a gap between header
+  and content.
 
 ### Bug Fixes
 
