@@ -9,6 +9,7 @@ import re
 BUILTIN_ADDON_PRESET_CATEGORIES = {
     "Godot-default": "Godot",
     "Godot-animation": "Godot",
+    "Godot-wind": "Godot",
     "UE-default": "Unreal",
     "UE-animation": "Unreal",
     "Unity-default": "Unity",
