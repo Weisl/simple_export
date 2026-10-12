@@ -97,6 +97,14 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
   and "Collection Offset" pre-export operations silently do nothing to the
   nested meshes. Validation, warnings, and all pre-export operations now walk
   the full collection hierarchy.
+- [#327](https://github.com/Weisl/simple_export/issues/327): **Add Exporter to
+  Collection** now applies the chosen addon preset's pre-export operations
+  (Collection Offset, Triangulate, Keep Normals, Apply Scale/Rotation/Transform,
+  Pre-Rotate Objects). Previously the
+  operator had no pre-export properties, so these values were silently taken
+  from the scene's panel instead of the selected preset. The preset's
+  **Pre-Rotation** angle is now also applied, both here and in
+  **Create Export Collections**, where it was likewise taken from the scene.
 - Export collections whose only objects are **collection-instance empties**
   (Object > Instancing > Collection) no longer get a bogus "No mesh objects
   (types present: EMPTY)" error - the check now also resolves mesh content

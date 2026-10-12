@@ -4,7 +4,7 @@ import bpy
 
 from .shared_properties import (
     SharedPathProps, SharedFilenameProps, SharedPathAssignmentProps, SharedPresetAssignmentProps, CollectionNamingProps,
-    CollectionOriginProps, CollectionSettingsProps, SharedFormatProps
+    CollectionOriginProps, CollectionSettingsProps, SharedFormatProps, CollectionPreExportProps
 )
 from ..core.export_path_func import assign_exporter_path
 from ..functions.outliner_func import get_outliner_collections
@@ -23,6 +23,7 @@ class EXPORT_OT_AddSettingsToCollections(
     CollectionNamingProps,
     CollectionOriginProps,
     CollectionSettingsProps,
+    CollectionPreExportProps,
     SharedPathProps,
     SharedFilenameProps,
     bpy.types.Operator

@@ -234,6 +234,12 @@ class CollectionPreExportProps:
         description=PROPERTY_METADATA["pre_rotate_objects"]["description"],
         default=PROPERTY_METADATA["pre_rotate_objects"]["default"],
     )
+    pre_rotate_euler: bpy.props.FloatVectorProperty(
+        name="Pre-Rotation",
+        description="Rotation offset (Euler XYZ) applied to objects before export.",
+        subtype='EULER',
+        default=(0.0, 0.0, 0.0),
+    )
 
 
 class CollectionSettingsProps:

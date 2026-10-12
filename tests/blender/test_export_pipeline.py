@@ -41,6 +41,10 @@ Covers:
     - triangulate_before_export=True does not prevent file creation
     - move_by_collection_offset=True does not prevent file creation
 
+  TestAddonPresetPreExportOps
+    - Both collection operators expose every pre-export value an addon preset stores
+    - add_settings_to_collections seeds pre_export_ops from its own values, not the scene
+
   Each per-format test is individually skipped when bpy.ops.collection.exporter_add()
   is unavailable for that format in the running Blender build.
 """
@@ -630,6 +634,97 @@ class TestLinkedCollectionExclusion(_ExportTestBase):
         from simple_export.functions.collection_selection import get_export_collection_list
         export_list = get_export_collection_list(bpy.context)
         self.assertNotIn(linked, export_list)
+
+
+# ---------------------------------------------------------------------------
+# 6. Addon-preset pre-export ops reach the collection
+# ---------------------------------------------------------------------------
+
+_PRE_EXPORT_PRESET_KEYS = (
+    "move_by_collection_offset",
+    "triangulate_before_export",
+    "triangulate_keep_normals",
+    "apply_scale_before_export",
+    "apply_rotation_before_export",
+    "apply_transform_before_export",
+    "pre_rotate_objects",
+    "pre_rotate_euler",
+)
+
+
+class TestAddonPresetPreExportOps(_ExportTestBase):
+    """
+    The operator dialogs apply an addon preset by setting each scene.* value on
+    the operator itself (_apply_addon_preset_to_self skips names the operator
+    lacks). setup_collection_properties then seeds collection.pre_export_ops from
+    the operator, falling back to the scene panel only for missing names.
+
+    Regression: "Add Exporter to Collection" had no pre-export properties, so a
+    preset's pre-export ops were silently replaced by the scene's values.
+    """
+
+    # Values opposite to the scene values set in setUp, as a preset would carry.
+    _PRESET_VALUES = {
+        "move_by_collection_offset": False,
+        "triangulate_before_export": True,
+        "triangulate_keep_normals": False,
+        "apply_scale_before_export": True,
+        "apply_rotation_before_export": True,
+        "apply_transform_before_export": True,
+        "pre_rotate_objects": True,
+        "pre_rotate_euler": (0.5, 0.0, -0.25),
+    }
+
+    def setUp(self):
+        super().setUp()
+        scene = bpy.context.scene
+        self._scene_backup = {k: getattr(scene, k) for k in _PRE_EXPORT_PRESET_KEYS}
+        if "pre_rotate_euler" in self._scene_backup:
+            self._scene_backup["pre_rotate_euler"] = tuple(self._scene_backup["pre_rotate_euler"])
+        for key, value in self._PRESET_VALUES.items():
+            if key == "pre_rotate_euler":
+                scene.pre_rotate_euler = (0.0, 0.0, 0.0)
+            else:
+                setattr(scene, key, not value)
+
+    def tearDown(self):
+        scene = bpy.context.scene
+        for key, value in self._scene_backup.items():
+            setattr(scene, key, value)
+        super().tearDown()
+
+    def test_preset_pre_export_keys_are_operator_properties(self):
+        """Every pre-export value an addon preset stores must be settable on both operators."""
+        from simple_export.presets_addon.exporter_preset import BaseExportPreset
+        preset_keys = {v.split(".", 1)[1] for v in BaseExportPreset.preset_values}
+        for op_name in ("add_settings_to_collections", "create_export_collections"):
+            rna_props = getattr(bpy.ops.simple_export, op_name).get_rna_type().properties
+            for key in _PRE_EXPORT_PRESET_KEYS:
+                with self.subTest(operator=op_name, prop=key):
+                    self.assertIn(key, preset_keys, f"Addon preset no longer stores {key}")
+                    self.assertIn(key, rna_props, f"{op_name} cannot receive preset value {key}")
+
+    def test_add_exporter_applies_operator_values_not_scene(self):
+        """add_settings_to_collections must seed pre_export_ops from its own (preset) values."""
+        result = bpy.ops.simple_export.add_settings_to_collections(
+            "EXEC_DEFAULT",
+            collection_name=self.col.name,
+            export_format="FBX",
+            set_export_path=False,
+            assign_preset=False,
+            **self._PRESET_VALUES,
+        )
+        self.assertEqual(result, {"FINISHED"})
+
+        ops = self.col.pre_export_ops
+        for key, expected in self._PRESET_VALUES.items():
+            with self.subTest(prop=key):
+                if key == "pre_rotate_euler":
+                    for got, want in zip(ops.pre_rotate_euler, expected):
+                        self.assertAlmostEqual(got, want, places=5)
+                else:
+                    self.assertEqual(getattr(ops, key), expected,
+                                     f"{key} was taken from the scene, not the preset")
 
 
 # ---------------------------------------------------------------------------
