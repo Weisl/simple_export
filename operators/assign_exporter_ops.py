@@ -110,6 +110,7 @@ class EXPORT_OT_AddSettingsToCollections(
         return changed
 
     def invoke(self, context, event):
+        self.folder_fallback_confirmed = True
         if self.outliner:
             cols = get_outliner_collections(context)
             self.outliner_collection_names = ','.join(c.name for c in cols)
@@ -221,7 +222,10 @@ class EXPORT_OT_AddSettingsToCollections(
 
         # Assign filepath to exporter
         if self.set_export_path and hasattr(exporter, 'export_properties'):
-            assign_exporter_path(self, collection.name, exporter)
+            if not assign_exporter_path(self, collection.name, exporter):
+                return {'name': collection.name, 'success': False,
+                        'message': f"Exporter added to '{collection.name}', but no export folder: "
+                                   f"the blend file is not under the Mirror Search Path. Pick a folder."}
 
         return {'name': collection.name, 'success': True,
                 'message': f"Settings applied to collection '{collection.name}'."}

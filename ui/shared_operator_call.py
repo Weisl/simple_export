@@ -36,6 +36,8 @@ def call_simple_add_exporter_to_collection(context, collection, layout, outliner
     op.folder_path_relative = filepath_settings.folder_path_relative
     op.folder_path_search = filepath_settings.folder_path_search
     op.folder_path_replace = filepath_settings.folder_path_replace
+    op.folder_path_mirror_depth = filepath_settings.folder_path_mirror_depth
+    op.folder_path_subfolder = filepath_settings.folder_path_subfolder
 
     # Filename settings
     filename_settings = scene
@@ -109,6 +111,8 @@ def call_create_export_collection_op(scene, layout, icon='COLLECTION_NEW', text=
     op.folder_path_relative = filepath_settings.folder_path_relative
     op.folder_path_search = filepath_settings.folder_path_search
     op.folder_path_replace = filepath_settings.folder_path_replace
+    op.folder_path_mirror_depth = filepath_settings.folder_path_mirror_depth
+    op.folder_path_subfolder = filepath_settings.folder_path_subfolder
     # Filename settings
     filename_settings = scene
     op.filename_prefix = filename_settings.filename_prefix

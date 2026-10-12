@@ -90,6 +90,19 @@ PROPERTY_METADATA = {
         "default": "sourcedata",
     },
 
+    "folder_path_mirror_depth": {
+        "name": "Mirror Depth",
+        "description": "Number of folders below the Search Path that are mirrored. 0 mirrors the full folder, "
+                       "2 turns <search>/level/zone/assets into <replace>/level/zone",
+        "default": 0,
+    },
+
+    "folder_path_subfolder": {
+        "name": "Subfolder",
+        "description": "Folder appended to the export folder, e.g. 'characters'. Leave empty for none.",
+        "default": "",
+    },
+
     # Filename Naming Props
 
     "filename_prefix": {
@@ -330,19 +343,22 @@ def update_mirror_preview(self, context):
 
 
 def compute_mirror_preview(settings):
-    """Compute the final mirrored path and return it for display."""
-    blend_path = bpy.path.abspath("//")  # Get the blend file directory
+    """Compute the final mirrored folder for display. Returns (text, is_valid)."""
+    from ..core.export_path_func import get_export_folder_path
 
-    # Ensure search path is valid
+    if not bpy.data.filepath:
+        return "Blend file not saved", False
     if not settings.folder_path_search or not settings.folder_path_replace:
-        return "Invalid search/replacement paths"
+        return "Invalid search/replacement paths", False
 
-    # Ensure blend file path contains the search path before replacing
-    if settings.folder_path_search in blend_path:
-        export_path = blend_path.replace(settings.folder_path_search, settings.folder_path_replace)
-        return bpy.path.relpath(export_path) if "//" in export_path else export_path
-
-    return "Search Path not found in current blend file path"
+    export_dir, _ = get_export_folder_path(
+        'MIRROR', '', '', settings.folder_path_search, settings.folder_path_replace,
+        mirror_depth=getattr(settings, "folder_path_mirror_depth", 0),
+        subfolder=getattr(settings, "folder_path_subfolder", ""),
+    )
+    if export_dir is None:
+        return "Search Path not found in current blend file path", False
+    return export_dir, True
 
 
 def get_relative_path_prefs(self):
@@ -620,6 +636,19 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         description=PROPERTY_METADATA["folder_path_replace"]["description"],
         default=PROPERTY_METADATA["folder_path_replace"]["default"],
         update=update_mirror_preview,
+    )
+
+    folder_path_mirror_depth: bpy.props.IntProperty(
+        name=PROPERTY_METADATA["folder_path_mirror_depth"]["name"],
+        description=PROPERTY_METADATA["folder_path_mirror_depth"]["description"],
+        default=PROPERTY_METADATA["folder_path_mirror_depth"]["default"],
+        min=0,
+    )
+
+    folder_path_subfolder: bpy.props.StringProperty(
+        name=PROPERTY_METADATA["folder_path_subfolder"]["name"],
+        description=PROPERTY_METADATA["folder_path_subfolder"]["description"],
+        default=PROPERTY_METADATA["folder_path_subfolder"]["default"],
     )
 
     ########################################
@@ -1486,6 +1515,17 @@ def initialize_properties_file_path():
         subtype='DIR_PATH',
         options={'PATH_SUPPORTS_BLEND_RELATIVE'}  # Add this option
     )
+    bpy.types.Scene.folder_path_mirror_depth = bpy.props.IntProperty(
+        name=PROPERTY_METADATA["folder_path_mirror_depth"]["name"],
+        description=PROPERTY_METADATA["folder_path_mirror_depth"]["description"],
+        default=prefs.folder_path_mirror_depth,
+        min=0,
+    )
+    bpy.types.Scene.folder_path_subfolder = bpy.props.StringProperty(
+        name=PROPERTY_METADATA["folder_path_subfolder"]["name"],
+        description=PROPERTY_METADATA["folder_path_subfolder"]["description"],
+        default=prefs.folder_path_subfolder,
+    )
     bpy.types.Scene.export_folder_mode = bpy.props.EnumProperty(
         name=PROPERTY_METADATA["export_folder_mode"]["name"],
         items=PROPERTY_METADATA["export_folder_mode"]["items"],
@@ -1634,6 +1674,8 @@ def unregister():
     # filepath
     del bpy.types.Scene.folder_path_search
     del bpy.types.Scene.folder_path_replace
+    del bpy.types.Scene.folder_path_mirror_depth
+    del bpy.types.Scene.folder_path_subfolder
     del bpy.types.Scene.export_folder_mode
     del bpy.types.Scene.folder_path_absolute
     del bpy.types.Scene.folder_path_relative

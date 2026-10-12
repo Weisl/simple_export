@@ -48,6 +48,8 @@ from simple_export.core.export_path_func import (  # noqa: E402
     get_export_folder_path,
     generate_export_path,
     assign_collection_exporter_path,
+    mirror_folder,
+    resolve_export_folder,
 )
 from simple_export.core.export_formats import ExportFormats  # noqa: E402
 
@@ -285,19 +287,53 @@ class TestGetExportFolderPath(unittest.TestCase):
             shutil.rmtree(work_root, ignore_errors=True)
             shutil.rmtree(tmpdir, ignore_errors=True)
 
-    def test_mirror_search_no_match_returns_blend_dir_unchanged(self):
+    def test_mirror_search_no_match_returns_none(self):
+        """A file outside the Search Path has no mirrored folder (it used to export next to the blend)."""
         tmpdir, path = _save_blend_to_tmp("scene")
         bpy.ops.wm.save_as_mainfile(filepath=path)
         try:
             export_dir, is_relative = get_export_folder_path(
                 "MIRROR", "", "", "nonexistent_token", "replacement"
             )
-            self.assertEqual(export_dir, tmpdir)
+            self.assertIsNone(export_dir)
             self.assertFalse(is_relative)
         finally:
             bpy.ops.wm.read_homefile(use_empty=True)
             import shutil
             shutil.rmtree(tmpdir, ignore_errors=True)
+
+    def test_mirror_depth_and_subfolder_with_saved_file(self):
+        import shutil
+        root = tempfile.mkdtemp()
+        blend_dir = os.path.join(root, "levels", "crete", "skull", "props")
+        os.makedirs(blend_dir)
+        bpy.ops.wm.save_as_mainfile(filepath=os.path.join(blend_dir, "skull.blend"))
+        try:
+            export_dir, is_relative = get_export_folder_path(
+                "MIRROR", "", "", os.path.join(root, "levels"), os.path.join(root, "Maps"),
+                mirror_depth=2, subfolder="npcs",
+            )
+            self.assertEqual(export_dir, os.path.join(root, "Maps", "crete", "skull", "npcs"))
+            self.assertFalse(is_relative)
+        finally:
+            bpy.ops.wm.read_homefile(use_empty=True)
+            shutil.rmtree(root, ignore_errors=True)
+
+    # -- Subfolder in the other modes ----------------------------------------
+
+    def test_absolute_subfolder_appended(self):
+        export_dir, _ = get_export_folder_path("ABSOLUTE", os.path.join("C:", os.sep, "export"), "", "", "",
+                                               subfolder="npcs")
+        self.assertEqual(export_dir, os.path.join("C:", os.sep, "export", "npcs"))
+
+    def test_relative_subfolder_stays_blend_relative(self):
+        export_dir, is_relative = get_export_folder_path("RELATIVE", "", "//export/", "", "", subfolder="/npcs/")
+        self.assertEqual(export_dir, "//export/npcs")
+        self.assertTrue(is_relative)
+
+    def test_empty_subfolder_changes_nothing(self):
+        export_dir, _ = get_export_folder_path("RELATIVE", "", "//export", "", "", subfolder="")
+        self.assertEqual(export_dir, "//export")
 
     # -- Unknown mode --------------------------------------------------------
 
@@ -311,6 +347,105 @@ class TestGetExportFolderPath(unittest.TestCase):
         )
         self.assertEqual(export_dir, "./")
         self.assertTrue(is_relative)
+
+
+# ---------------------------------------------------------------------------
+# 2b. mirror_folder — pure path mirroring
+# ---------------------------------------------------------------------------
+
+class TestMirrorFolder(unittest.TestCase):
+    """mirror_folder replaces the Search Path by whole folders and can cut the depth."""
+
+    ROOT = os.path.join("C:" + os.sep, "project")
+
+    def _p(self, *parts):
+        return os.path.join(self.ROOT, *parts)
+
+    def test_full_mirror(self):
+        self.assertEqual(
+            mirror_folder(self._p("levels", "crete", "skull"), self._p("levels"), self._p("Maps")),
+            self._p("Maps", "crete", "skull"))
+
+    def test_depth_cuts_deeper_folders(self):
+        self.assertEqual(
+            mirror_folder(self._p("levels", "crete", "global", "landscape", "terrain"),
+                          self._p("levels"), self._p("Maps"), mirror_depth=2),
+            self._p("Maps", "crete", "global"))
+
+    def test_depth_larger_than_path_keeps_all(self):
+        self.assertEqual(
+            mirror_folder(self._p("levels", "crete"), self._p("levels"), self._p("Maps"), mirror_depth=5),
+            self._p("Maps", "crete"))
+
+    def test_file_in_search_root(self):
+        self.assertEqual(mirror_folder(self._p("levels"), self._p("levels"), self._p("Maps")), self._p("Maps"))
+
+    def test_partial_folder_name_does_not_match(self):
+        """'levels' must not match 'levels_cache'."""
+        self.assertIsNone(
+            mirror_folder(self._p("levels_cache", "crete"), self._p("levels"), self._p("Maps")))
+
+    def test_no_match_returns_none(self):
+        self.assertIsNone(mirror_folder(self._p("scratch"), self._p("levels"), self._p("Maps")))
+
+    def test_trailing_separator_and_slashes_ignored(self):
+        search = self._p("levels").replace(os.sep, "/") + "/"
+        self.assertEqual(
+            mirror_folder(self._p("levels", "crete"), search, self._p("Maps") + os.sep),
+            self._p("Maps", "crete"))
+
+    @unittest.skipUnless(os.name == "nt", "case-insensitive paths are Windows-only")
+    def test_case_insensitive_on_windows(self):
+        self.assertEqual(
+            mirror_folder(self._p("Levels", "Crete"), self._p("levels").upper(), self._p("Maps")),
+            self._p("Maps", "Crete"))
+
+    def test_folder_name_token_keeps_prefix(self):
+        """A plain folder name (legacy 'work' -> 'source') only replaces the matched folder."""
+        self.assertEqual(
+            mirror_folder(self._p("work", "chars"), "work", "source"),
+            self._p("source", "chars"))
+
+
+# ---------------------------------------------------------------------------
+# 2c. resolve_export_folder — MIRROR fallback to a picked folder
+# ---------------------------------------------------------------------------
+
+class TestResolveExportFolder(unittest.TestCase):
+    """Outside the Search Path, only a folder confirmed in a dialog is used."""
+
+    def setUp(self):
+        import shutil
+        self._shutil = shutil
+        self.root = tempfile.mkdtemp()
+        scratch = os.path.join(self.root, "scratch")
+        os.makedirs(scratch)
+        bpy.ops.wm.save_as_mainfile(filepath=os.path.join(scratch, "scene.blend"))
+
+    def tearDown(self):
+        bpy.ops.wm.read_homefile(use_empty=True)
+        self._shutil.rmtree(self.root, ignore_errors=True)
+
+    def _props(self, **overrides):
+        from types import SimpleNamespace
+        values = dict(export_folder_mode='MIRROR', folder_path_absolute=os.path.join(self.root, "picked"),
+                      folder_path_relative='', folder_path_search=os.path.join(self.root, "levels"),
+                      folder_path_replace=os.path.join(self.root, "Maps"), folder_path_mirror_depth=2,
+                      folder_path_subfolder="npcs", folder_fallback_confirmed=False)
+        values.update(overrides)
+        return SimpleNamespace(**values)
+
+    def test_unconfirmed_fallback_gives_no_folder(self):
+        self.assertEqual(resolve_export_folder(self._props()), (None, False))
+
+    def test_confirmed_fallback_uses_picked_folder_with_subfolder(self):
+        export_dir, is_relative = resolve_export_folder(self._props(folder_fallback_confirmed=True))
+        self.assertEqual(export_dir, os.path.join(self.root, "picked", "npcs"))
+        self.assertFalse(is_relative)
+
+    def test_confirmed_but_empty_folder_gives_no_folder(self):
+        props = self._props(folder_fallback_confirmed=True, folder_path_absolute="")
+        self.assertEqual(resolve_export_folder(props), (None, False))
 
 
 # ---------------------------------------------------------------------------
