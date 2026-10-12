@@ -54,8 +54,6 @@ class BaseExportPreset(AddPresetBase, Operator):
         "scene.folder_path_relative",
         "scene.folder_path_search",
         "scene.folder_path_replace",
-        "scene.folder_path_mirror_depth",
-        "scene.folder_path_subfolder",
         # File name
         "scene.filename_prefix",
         "scene.filename_suffix",

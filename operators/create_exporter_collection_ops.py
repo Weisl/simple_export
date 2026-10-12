@@ -130,7 +130,6 @@ class EXPORT_OT_CreateExportCollections(
         return changed
 
     def invoke(self, context, event):
-        self.folder_fallback_confirmed = True
         self.applied_preset_category_tracker = ""
         self.applied_preset_tracker = ""
 
@@ -199,9 +198,7 @@ class EXPORT_OT_CreateExportCollections(
                     export_collection.simple_export_addon_preset = self.addon_preset_selection
 
                 if exporter and hasattr(exporter, 'export_properties'):
-                    if not assign_exporter_path(self, export_collection.name, exporter):
-                        self.report({'WARNING'}, f"'{export_collection.name}' has no export folder: the blend "
-                                                 f"file is not under the Mirror Search Path. Pick a folder.")
+                    assign_exporter_path(self, export_collection.name, exporter)
             else:
                 self.report({'ERROR'}, "Failed to create export collection.")
 

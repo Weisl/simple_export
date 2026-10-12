@@ -7,39 +7,12 @@ from ..core.export_formats import ExportFormats
 from ..functions.path_utils import ensure_export_folder_exists
 
 
-def resolve_export_folder(properties):
-    """Export folder for an operator/scene/prefs holding the shared path properties.
-
-    In MIRROR mode a blend file outside the Search Path has no mirrored folder. The
-    Export Folder (folder_path_absolute) is then used as a fallback, but only when the
-    user confirmed it in an operator dialog (folder_fallback_confirmed) -- scripted
-    calls get None instead of a silent guess.
-
-    :return: Tuple (export_dir: str or None, is_relative_path: bool)
-    """
-    mirror_depth = getattr(properties, "folder_path_mirror_depth", 0)
-    subfolder = getattr(properties, "folder_path_subfolder", "")
+def assign_exporter_path(properties, collection_name, exporter):
     export_folder, is_relative_path = get_export_folder_path(properties.export_folder_mode,
                                                              properties.folder_path_absolute,
                                                              properties.folder_path_relative,
                                                              properties.folder_path_search,
-                                                             properties.folder_path_replace,
-                                                             mirror_depth=mirror_depth,
-                                                             subfolder=subfolder)
-
-    if (export_folder is None and properties.export_folder_mode == 'MIRROR' and bpy.data.filepath
-            and getattr(properties, "folder_fallback_confirmed", False) and properties.folder_path_absolute):
-        export_folder = append_subfolder(properties.folder_path_absolute, subfolder)
-        is_relative_path = False
-
-    return export_folder, is_relative_path
-
-
-def assign_exporter_path(properties, collection_name, exporter):
-    """Assign the export path to *exporter*. Returns False when no export folder could be resolved."""
-    export_folder, is_relative_path = resolve_export_folder(properties)
-    if not export_folder:
-        return False
+                                                             properties.folder_path_replace)
 
     filename = generate_base_name(collection_name, properties.filename_prefix, properties.filename_suffix,
                                   properties.filename_blend_prefix, properties.filename_separator)
@@ -51,7 +24,6 @@ def assign_exporter_path(properties, collection_name, exporter):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message=".*does not support blend relative.*", category=RuntimeWarning)
             exporter.export_properties.filepath = export_path
-    return bool(export_path)
 
 
 def generate_export_path(export_dir, base_name, export_format_key, is_relative_path=False):
@@ -152,60 +124,8 @@ def assign_collection_exporter_path(exporter, export_path, is_relative_path):
     return True, None
 
 
-def _normalize_mirror_path(path):
-    """Absolute-ize a blend-relative path ("//...") and normalize separators."""
-    if path.startswith("//"):
-        path = bpy.path.abspath(path)
-    return os.path.normpath(path)
-
-
-def mirror_folder(blend_dir, folder_path_search, folder_path_replace, mirror_depth=0):
-    """Mirror *blend_dir* by replacing the Search Path with the Replacement Path.
-
-    The Search Path must match whole folders (``levels`` doesn't match ``levels_cache``),
-    case-insensitively on Windows. With mirror_depth > 0, only that many folders below the
-    Search Path are kept (depth 2: ``levels/crete/skull/props`` -> ``<replace>/crete/skull``).
-
-    :return: The mirrored folder, or None when the Search Path isn't part of *blend_dir*.
-    """
-    search = _normalize_mirror_path(folder_path_search)
-    replace = _normalize_mirror_path(folder_path_replace)
-    source = os.path.normpath(blend_dir)
-    haystack = os.path.normcase(source)
-    needle = os.path.normcase(search)
-
-    index = haystack.find(needle)
-    while index != -1:
-        end = index + len(needle)
-        starts_on_folder = index == 0 or haystack[index - 1] == os.sep or needle.startswith(os.sep)
-        ends_on_folder = end == len(haystack) or haystack[end] == os.sep or needle.endswith(os.sep)
-        if starts_on_folder and ends_on_folder:
-            break
-        index = haystack.find(needle, index + 1)
-    if index == -1:
-        return None
-
-    kept = [part for part in source[index + len(needle):].split(os.sep) if part]
-    if mirror_depth > 0:
-        kept = kept[:mirror_depth]
-
-    # An absolute Replacement Path replaces everything up to the match, a plain folder name only the match.
-    base = replace if os.path.isabs(replace) else source[:index] + replace
-    return os.path.join(base, *kept) if kept else base
-
-
-def append_subfolder(export_dir, subfolder):
-    """Append *subfolder* to *export_dir*, keeping Blender-relative ("//") folders relative."""
-    subfolder = (subfolder or "").strip("/\\")
-    if not subfolder:
-        return export_dir
-    if export_dir.startswith("//"):
-        return export_dir.rstrip("/\\") + "/" + subfolder
-    return os.path.join(export_dir, subfolder)
-
-
 def get_export_folder_path(export_folder_mode, folder_path_absolute, folder_path_relative, folder_path_search,
-                           folder_path_replace, use_defaults=False, mirror_depth=0, subfolder=""):
+                           folder_path_replace, use_defaults=False):
     """
     Determines the correct export directory based on the user's settings.
 
@@ -217,10 +137,7 @@ def get_export_folder_path(export_folder_mode, folder_path_absolute, folder_path
     :param folder_path_search: The search folder path.
     :param folder_path_replace: The replace folder path.
     :param use_defaults: If True, uses fallback values instead of raising errors.
-    :param mirror_depth: MIRROR only: folders kept below the Search Path (0 = all).
-    :param subfolder: Folder appended to the resolved export folder (any mode).
-    :return: Tuple (export_dir: str or None, is_relative_path: bool). In MIRROR mode export_dir
-        is None when the blend file isn't under the Search Path.
+    :return: Tuple (export_dir: str, is_relative_path: bool)
     """
     export_dir = None
     is_relative_path = False
@@ -258,9 +175,10 @@ def get_export_folder_path(export_folder_mode, folder_path_absolute, folder_path
             export_dir = os.path.dirname(bpy.data.filepath)
             is_relative_path = False
 
-            # Without both paths there is nothing to mirror: export next to the blend file.
-            if folder_path_search and folder_path_replace:
-                export_dir = mirror_folder(export_dir, folder_path_search, folder_path_replace, mirror_depth)
+            # Apply mirror replacement if needed
+            if folder_path_search and folder_path_replace and folder_path_search in export_dir:
+                export_dir = export_dir.replace(folder_path_search,
+                                                folder_path_replace)
 
     else:
         if use_defaults:
@@ -268,9 +186,6 @@ def get_export_folder_path(export_folder_mode, folder_path_absolute, folder_path
             is_relative_path = True
         else:
             raise ValueError(f"Unknown export folder mode: {export_folder_mode}")
-
-    if export_dir is not None:
-        export_dir = append_subfolder(export_dir, subfolder)
 
     return export_dir, is_relative_path
 

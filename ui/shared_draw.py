@@ -148,21 +148,17 @@ def draw_export_folderpath_properties(layout, element):
     if element.export_folder_mode == 'MIRROR':
         layout.prop(element, "folder_path_search", text="Search Path")
         layout.prop(element, "folder_path_replace", text="Replacement Path")
-        layout.prop(element, "folder_path_mirror_depth")
-
-    layout.prop(element, "folder_path_subfolder")
-
-    if element.export_folder_mode == 'MIRROR':
-        from ..preferences.preferenecs import compute_mirror_preview
-        preview_text, is_valid = compute_mirror_preview(element)
-        layout.label(text="Export Folder Preview:")
-        row = layout.row(align=True)
-        row.alert = not is_valid
-        row.label(text=preview_text, icon='NONE' if is_valid else 'ERROR')
-        # Operator dialogs only: a file outside the Search Path exports to a folder the user picks here.
-        if not is_valid and bpy.data.filepath and context is None:
-            layout.label(text="Pick the export folder for this file:")
-            layout.prop(element, "folder_path_absolute", text="")
+        try:
+            from ..preferences.preferenecs import compute_mirror_preview
+            preview_path = compute_mirror_preview(element)
+            layout.label(text="Export Folder Preview:")
+            row = layout.row(align=True)
+            row.label(text=preview_path)
+            import os
+            if os.path.exists(preview_path):
+                bpy.ops.wm.path_open(filepath=preview_path)
+        except Exception:
+            pass
 
 
 def label_multiline(context, text, parent):

@@ -3,7 +3,7 @@ import os
 import bpy
 
 from .shared_properties import SharedPathProps, SharedFilenameProps
-from ..core.export_path_func import resolve_export_folder, generate_base_name, generate_export_path, \
+from ..core.export_path_func import get_export_folder_path, generate_base_name, generate_export_path, \
     assign_collection_exporter_path
 from ..functions.collection_layer import set_active_layer_Collection
 from ..functions.exporter_funcs import find_exporter
@@ -13,7 +13,7 @@ from ..functions.vallidate_func import validate_collection
 
 _PATH_PROPS = [
     'export_folder_mode', 'folder_path_absolute', 'folder_path_relative',
-    'folder_path_search', 'folder_path_replace', 'folder_path_mirror_depth', 'folder_path_subfolder',
+    'folder_path_search', 'folder_path_replace',
     'filename_prefix', 'filename_suffix', 'filename_blend_prefix',
 ]
 
@@ -50,7 +50,6 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
         draw_export_folderpath_properties(box, self)
 
     def invoke(self, context, event):
-        self.folder_fallback_confirmed = True
         if self.outliner:
             cols = get_outliner_collections(context)
             self.outliner_collection_names = ','.join(c.name for c in cols)
@@ -155,7 +154,11 @@ class SCENE_OT_SetExporterPathSelection(SharedPathProps, SharedFilenameProps, bp
 
                 collection_name = collection.name
 
-                export_folder, is_relative_path = resolve_export_folder(self)
+                export_folder, is_relative_path = get_export_folder_path(self.export_folder_mode,
+                                                                         self.folder_path_absolute,
+                                                                         self.folder_path_relative,
+                                                                         self.folder_path_search,
+                                                                         self.folder_path_replace)
 
                 # Check for empty paths
                 if not export_folder:

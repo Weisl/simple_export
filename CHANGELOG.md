@@ -11,35 +11,6 @@ are added as a new section above the previous one — existing entries are
 never overwritten, so this file (like the docs page) accumulates the full
 release history over time.
 
-## Simple Export v0.8.3 (Unreleased)
-
-This release makes the Mirror folder mode usable for mirrored project trees
-(work files → engine folders) and adds a Subfolder option to every folder mode.
-
-### Features & Improvements
-
-- **Mirror Depth** (Mirror mode): number of folders below the Search Path that
-  are mirrored. 0 mirrors the full folder (as before); 2 turns
-  `<search>/level/zone/assets` into `<replace>/level/zone`.
-- **Subfolder** (all folder modes): a folder appended to the export folder,
-  e.g. `characters`, so one preset can serve a whole asset type.
-- Mirror preview in the panels and dialogs shows the final folder including
-  depth and subfolder, and turns red when the file isn't under the Search Path.
-
-### Behaviour Changes
-
-- Mirror mode: a blend file **outside the Search Path** no longer exports
-  silently next to the blend file. The Add Exporter / Create Export
-  Collection / Assign Exporter Paths dialogs ask for the export folder
-  instead; scripted calls leave the path unset and report it.
-- Mirror mode matches the Search Path by whole folders (`levels` no longer
-  matches `levels_cache`), ignores trailing slashes and separator style, and
-  is case-insensitive on Windows.
-
-### Bug Fixes
-
-- The Mirror preview no longer calls `wm.path_open` from inside a panel draw.
-
 ## Simple Export v0.8.2 (Unreleased)
 
 This release adds a "Create Instance Collection" tool for grouping objects

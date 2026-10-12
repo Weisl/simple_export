@@ -34,19 +34,6 @@ class SharedPathProps:
         description=PROPERTY_METADATA["folder_path_replace"]["description"],
         default=PROPERTY_METADATA["folder_path_replace"]["default"]
     )
-    folder_path_mirror_depth: bpy.props.IntProperty(
-        name=PROPERTY_METADATA["folder_path_mirror_depth"]["name"],
-        description=PROPERTY_METADATA["folder_path_mirror_depth"]["description"],
-        default=PROPERTY_METADATA["folder_path_mirror_depth"]["default"],
-        min=0,
-    )
-    folder_path_subfolder: bpy.props.StringProperty(
-        name=PROPERTY_METADATA["folder_path_subfolder"]["name"],
-        description=PROPERTY_METADATA["folder_path_subfolder"]["description"],
-        default=PROPERTY_METADATA["folder_path_subfolder"]["default"]
-    )
-    # Set by invoke(): the dialog showed the Export Folder as the MIRROR fallback, so the user chose it.
-    folder_fallback_confirmed: bpy.props.BoolProperty(default=False, options={'HIDDEN', 'SKIP_SAVE'})
 
 
 class SharedFilenameProps:
