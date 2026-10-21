@@ -629,6 +629,31 @@ class TestCheckNoMeshObjects(unittest.TestCase):
             _remove_object(mesh_obj)
             _h.remove_collection(source)
 
+    def test_passes_when_only_marker_empties(self):
+        """A collection of plain empties is a deliberate marker export
+        (placeholders the engine swaps for assets) - not a mistake."""
+        marker_col = _h.make_collection("NoMesh_Test_Markers")
+        markers = [bpy.data.objects.new(f"NoMesh_Marker_{i}", None) for i in range(2)]
+        for marker in markers:
+            marker_col.objects.link(marker)
+        try:
+            self.assertIsNone(_checks.check_no_mesh_objects(marker_col))
+        finally:
+            for marker in markers:
+                _remove_object(marker)
+            _h.remove_collection(marker_col)
+
+    def test_flagged_when_empties_mixed_with_non_mesh(self):
+        marker = bpy.data.objects.new("NoMesh_Marker", None)
+        self.col.objects.link(marker)
+        try:
+            issue = _checks.check_no_mesh_objects(self.col)
+            self.assertIsNotNone(issue)
+            self.assertIn("EMPTY", issue.message)
+            self.assertIn("LIGHT", issue.message)
+        finally:
+            _remove_object(marker)
+
 
 class TestCheckMissingTextures(unittest.TestCase):
     def setUp(self):

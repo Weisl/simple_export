@@ -256,9 +256,13 @@ def check_no_mesh_objects(collection):
     Considers the whole collection hierarchy (all_objects): a collection whose
     only direct object is a root empty but whose sub-collections are full of
     meshes is fine. Collection-instance empties also count as mesh content
-    when the collection they instance contains meshes."""
+    when the collection they instance contains meshes. A collection made only
+    of empties is a deliberate marker export (e.g. placeholders swapped for
+    assets in the engine via custom properties) and is not flagged."""
     objects = collection.all_objects
-    if objects and not _has_mesh_content(collection):
+    if all(obj.type == 'EMPTY' for obj in objects):
+        return None
+    if not _has_mesh_content(collection):
         types = sorted({obj.type for obj in objects})
         return _issue('no_mesh_objects', collection, None, 'ERROR',
                       f"No mesh objects (types present: {', '.join(types)}).")
