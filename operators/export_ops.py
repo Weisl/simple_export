@@ -2,7 +2,9 @@ import bpy
 import os
 
 from .. import __package__ as base_package
-from ..functions.collection_layer import set_active_layer_Collection, ensure_layer_collection_included
+from ..functions.collection_layer import (
+    set_active_layer_Collection, ensure_layer_collection_included, ViewLayerIsolation,
+)
 from ..functions.collection_offset import apply_collection_offset
 from ..functions.pre_export_ops import (
     apply_triangulate_modifiers, remove_triangulate_modifiers,
@@ -11,7 +13,7 @@ from ..functions.pre_export_ops import (
     apply_transform_for_export, restore_transform_after_export,
     apply_pre_rotation, restore_pre_rotation,
 )
-from ..functions.exporter_funcs import find_exporter, get_exporter_id, add_extension
+from ..functions.exporter_funcs import find_exporter, get_exporter_id, add_extension, exporter_bakes_animation
 from ..functions.collection_selection import get_export_collection_list
 from ..functions.path_utils import clean_relative_path, ensure_export_folder_exists, make_folder_path_absolute
 from ..functions.vallidate_func import (
@@ -112,199 +114,220 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
 
         total = len(collection_list)
 
+        # Isolation state is captured on the first isolated collection and
+        # restored once after the loop (one full-scene re-evaluation, not one
+        # per collection).
+        isolation = ViewLayerIsolation(context.view_layer, scene)
+
         # Iterate over export collections
-        for i, collection in enumerate(collection_list):
-            print(f"[Simple Export] Exporting {i + 1}/{total}: {collection.name}")
-            # Declare backup state before try so finally block can always access them
-            scale_backup = {}
-            rotation_backup = {}
-            transform_backup = {}
-            triangulate_backup = {}
-            pre_rotate_backup = {}
-            ops = None  # per-collection pre-export ops; set inside try after validation
-            restore_layer_exclusion = None  # set inside try; re-applies view-layer exclude state
+        try:
+            for i, collection in enumerate(collection_list):
+                print(f"[Simple Export] Exporting {i + 1}/{total}: {collection.name}")
+                # Declare backup state before try so finally block can always access them
+                scale_backup = {}
+                rotation_backup = {}
+                transform_backup = {}
+                triangulate_backup = {}
+                pre_rotate_backup = {}
+                ops = None  # per-collection pre-export ops; set inside try after validation
+                restore_layer_exclusion = None  # set inside try; re-applies view-layer exclude state
 
-            try:
-                # Skip collections already flagged by the duplicate-path pre-pass
-                if collection.name in _skip_duplicates:
-                    continue
+                try:
+                    # Skip collections already flagged by the duplicate-path pre-pass
+                    if collection.name in _skip_duplicates:
+                        continue
 
-                if not collection.exporters:
-                    continue
+                    if not collection.exporters:
+                        continue
 
-                collection = validate_collection(collection.name)
-                if not collection:
-                    continue
+                    collection = validate_collection(collection.name)
+                    if not collection:
+                        continue
 
-                if not collection.all_objects:
-                    export_results.append(
-                        {'name': collection.name, 'success': False, 'filepath': '',
-                         'message': "Collection is empty. Nothing to export.", 'warnings': []})
+                    if not collection.all_objects:
+                        export_results.append(
+                            {'name': collection.name, 'success': False, 'filepath': '',
+                             'message': "Collection is empty. Nothing to export.", 'warnings': []})
+                        collection.last_export_failed = True
+                        error_count += 1
+                        continue
+
+                    # An excluded collection (Outliner checkbox unticked) is invisible
+                    # to Blender's collection exporters, which then silently write
+                    # nothing. Temporarily re-include it (and any excluded ancestor)
+                    # so its geometry exports; a warning is surfaced below.
+                    #
+                    # With isolation, only this collection stays in the view
+                    # layer so baked frames don't re-evaluate every other rig in
+                    # the scene; isolation re-includes it and restores after the loop.
+                    # Once isolating, keep isolating: the rest is already excluded.
+                    _isolate_exporter = find_exporter(collection)
+                    if _isolate_exporter and (
+                            isolation.active
+                            or prefs.isolate_during_export == 'ALWAYS'
+                            or (prefs.isolate_during_export == 'ANIMATED'
+                                and exporter_bakes_animation(_isolate_exporter))):
+                        layer_excluded = isolation.isolate(collection.name)
+                    else:
+                        layer_excluded, restore_layer_exclusion = ensure_layer_collection_included(collection.name)
+
+                    set_active_layer_Collection(collection.name)
+
+                    # bpy.ops.collection.exporter_export() runs against the active
+                    # layer collection by index - if the switch above did not take
+                    # (e.g. the collection is still not in the view layer), the
+                    # export would silently write to whatever collection *is* active.
+                    # Fail loudly instead.
+                    active_lc = context.view_layer.active_layer_collection
+                    if active_lc is None or active_lc.collection != collection:
+                        raise ValueError(
+                            f"Could not activate '{collection.name}' for export - it may not be "
+                            "linked to the current view layer. Link it to the scene and try again."
+                        )
+
+                    # Find and validate exporter
+                    exporter = find_exporter(collection)
+
+                    if not exporter:
+                        continue
+
+                    exporter_id = get_exporter_id(self, collection, exporter)
+
+                    # Pre-export checks
+                    raw_filepath = exporter.export_properties.filepath
+                    if not raw_filepath:
+                        raise ValueError(f"No export path set for '{collection.name}'. Please assign one before exporting.")
+
+                    # Catch relative paths when blend file is not saved
+                    if not bpy.data.filepath and raw_filepath.startswith("//"):
+                        raise ValueError(
+                            f"'{collection.name}' uses a relative export path but the .blend file has not been saved. "
+                            "Save the .blend file first, or switch to an absolute export path."
+                        )
+
+                    # TODO: Reaply extension based on exporter type
+                    export_path = add_extension(exporter)
+
+                    # Apply updates to exporter  (unfortunately necessary for the add extension to work)
+                    exporter.export_properties.filepath = export_path
+
+                    export_path = clean_relative_path(export_path)
+
+                    folder_ok, folder_msg = ensure_export_folder_exists(export_path)
+                    if not folder_ok:
+                        raise ValueError(folder_msg)
+
+                    # Non-blocking pre-export warnings (hidden objects, missing libraries, textures…)
+                    pre_export_warnings = check_collection_warnings(collection, exporter)
+
+                    # Optional object/material/UV-set breakdown, gated behind preferences
+                    # since it walks all_objects again and most users don't want it.
+                    statistics = get_collection_export_statistics(collection) if prefs.show_export_statistics else None
+
+                    if layer_excluded:
+                        pre_export_warnings.append({
+                            'severity': 'INFO',
+                            'message': (
+                                "Collection was excluded from the view layer (Outliner checkbox); "
+                                "it was temporarily re-enabled so its objects could be exported."
+                            ),
+                        })
+
+                    # Overwrite settings:
+                    # Having use_selection causes unpredictable behavior and is not exposed to the UI.
+                    if hasattr(exporter.export_properties, "use_selection"):
+                        exporter.export_properties.use_selection = False
+
+                    file_exists_before, file_timestamp_before = pre_export_checks(export_path)
+
+                    # Per-collection pre-export operations
+                    ops = collection.pre_export_ops
+
+                    # Apply transforms (apply_transform subsumes scale+rotation)
+                    if ops.apply_transform_before_export:
+                        transform_backup = apply_transform_for_export(collection)
+                    else:
+                        if ops.apply_scale_before_export:
+                            scale_backup = apply_scale_for_export(collection)
+                        if ops.apply_rotation_before_export:
+                            rotation_backup = apply_rotation_for_export(collection)
+
+                    # Triangulate (order-independent relative to transform baking)
+                    if ops.triangulate_before_export:
+                        triangulate_backup = apply_triangulate_modifiers(collection)
+
+                    # Apply collection offset after transform baking
+                    if ops.move_by_collection_offset:
+                        offset = collection.instance_offset.copy()
+                        apply_collection_offset(collection, offset)
+
+                    # Pre-rotate last (rotation offset over final position)
+                    if ops.pre_rotate_objects:
+                        pre_rotate_backup = apply_pre_rotation(collection, ops.pre_rotate_euler)
+
+                    export_collections.append(collection)
+
+                    # Bail out before calling the exporter if the target file is read-only,
+                    # so Blender's internal error popup is never triggered.
+                    # Use make_folder_path_absolute because clean_relative_path may leave
+                    # Blender-relative "//" prefixes that os.path.exists cannot resolve.
+                    _abs_export_path = make_folder_path_absolute(export_path)
+                    _abs_export_dir = os.path.dirname(_abs_export_path)
+                    if not os.path.exists(_abs_export_dir):
+                        raise FileNotFoundError(f"Export directory does not exist: '{_abs_export_dir}'.")
+                    if not os.access(_abs_export_dir, os.W_OK):
+                        raise PermissionError(f"Export directory is not writable: '{_abs_export_dir}'.")
+                    if os.path.exists(_abs_export_path) and not os.access(_abs_export_path, os.W_OK):
+                        raise PermissionError(f"Export file is read-only: '{_abs_export_path}'.")
+
+                    # Perform the export
+                    bpy.ops.collection.exporter_export(index=exporter_id)
+
+                    # Post-export validation
+                    success, message = post_export_checks(export_path, file_exists_before, file_timestamp_before)
+                    export_results.append({
+                        'name': collection.name, 'success': success, 'filepath': export_path,
+                        'message': message, 'warnings': pre_export_warnings, 'statistics': statistics,
+                    })
+                    collection.last_export_failed = not success
+                    if not success:
+                        error_count += 1
+                    else:
+                        success_count += 1
+
+
+                except Exception as e:
+                    # Handle errors in one place
+                    export_results.append({
+                        'name': collection.name or "Unknown Collection", 'success': False,
+                        'filepath': '', 'message': str(e), 'warnings': [],
+                    })
                     collection.last_export_failed = True
                     error_count += 1
-                    continue
 
-                # An excluded collection (Outliner checkbox unticked) is invisible
-                # to Blender's collection exporters, which then silently write
-                # nothing. Temporarily re-include it (and any excluded ancestor)
-                # so its geometry exports; a warning is surfaced below.
-                layer_excluded, restore_layer_exclusion = ensure_layer_collection_included(collection.name)
+                finally:
+                    # Restore in reverse order of application (ops may be None if we continued early)
+                    if ops and collection:
+                        if ops.pre_rotate_objects:
+                            restore_pre_rotation(collection, pre_rotate_backup)
+                        if ops.move_by_collection_offset:
+                            apply_collection_offset(collection, offset, inverse=True)
+                        if ops.triangulate_before_export:
+                            remove_triangulate_modifiers(collection, triangulate_backup)
+                        if ops.apply_transform_before_export:
+                            restore_transform_after_export(collection, transform_backup)
+                        else:
+                            if ops.apply_rotation_before_export:
+                                restore_rotation_after_export(collection, rotation_backup)
+                            if ops.apply_scale_before_export:
+                                restore_scale_after_export(collection, scale_backup)
 
-                set_active_layer_Collection(collection.name)
-
-                # bpy.ops.collection.exporter_export() runs against the active
-                # layer collection by index - if the switch above did not take
-                # (e.g. the collection is still not in the view layer), the
-                # export would silently write to whatever collection *is* active.
-                # Fail loudly instead.
-                active_lc = context.view_layer.active_layer_collection
-                if active_lc is None or active_lc.collection != collection:
-                    raise ValueError(
-                        f"Could not activate '{collection.name}' for export - it may not be "
-                        "linked to the current view layer. Link it to the scene and try again."
-                    )
-
-                # Find and validate exporter
-                exporter = find_exporter(collection)
-
-                if not exporter:
-                    continue
-
-                exporter_id = get_exporter_id(self, collection, exporter)
-
-                # Pre-export checks
-                raw_filepath = exporter.export_properties.filepath
-                if not raw_filepath:
-                    raise ValueError(f"No export path set for '{collection.name}'. Please assign one before exporting.")
-
-                # Catch relative paths when blend file is not saved
-                if not bpy.data.filepath and raw_filepath.startswith("//"):
-                    raise ValueError(
-                        f"'{collection.name}' uses a relative export path but the .blend file has not been saved. "
-                        "Save the .blend file first, or switch to an absolute export path."
-                    )
-
-                # TODO: Reaply extension based on exporter type
-                export_path = add_extension(exporter)
-
-                # Apply updates to exporter  (unfortunately necessary for the add extension to work)
-                exporter.export_properties.filepath = export_path
-
-                export_path = clean_relative_path(export_path)
-
-                folder_ok, folder_msg = ensure_export_folder_exists(export_path)
-                if not folder_ok:
-                    raise ValueError(folder_msg)
-
-                # Non-blocking pre-export warnings (hidden objects, missing libraries, textures…)
-                pre_export_warnings = check_collection_warnings(collection, exporter)
-
-                # Optional object/material/UV-set breakdown, gated behind preferences
-                # since it walks all_objects again and most users don't want it.
-                statistics = get_collection_export_statistics(collection) if prefs.show_export_statistics else None
-
-                if layer_excluded:
-                    pre_export_warnings.append({
-                        'severity': 'INFO',
-                        'message': (
-                            "Collection was excluded from the view layer (Outliner checkbox); "
-                            "it was temporarily re-enabled so its objects could be exported."
-                        ),
-                    })
-
-                # Overwrite settings:
-                # Having use_selection causes unpredictable behavior and is not exposed to the UI.
-                if hasattr(exporter.export_properties, "use_selection"):
-                    exporter.export_properties.use_selection = False
-
-                file_exists_before, file_timestamp_before = pre_export_checks(export_path)
-
-                # Per-collection pre-export operations
-                ops = collection.pre_export_ops
-
-                # Apply transforms (apply_transform subsumes scale+rotation)
-                if ops.apply_transform_before_export:
-                    transform_backup = apply_transform_for_export(collection)
-                else:
-                    if ops.apply_scale_before_export:
-                        scale_backup = apply_scale_for_export(collection)
-                    if ops.apply_rotation_before_export:
-                        rotation_backup = apply_rotation_for_export(collection)
-
-                # Triangulate (order-independent relative to transform baking)
-                if ops.triangulate_before_export:
-                    triangulate_backup = apply_triangulate_modifiers(collection)
-
-                # Apply collection offset after transform baking
-                if ops.move_by_collection_offset:
-                    offset = collection.instance_offset.copy()
-                    apply_collection_offset(collection, offset)
-
-                # Pre-rotate last (rotation offset over final position)
-                if ops.pre_rotate_objects:
-                    pre_rotate_backup = apply_pre_rotation(collection, ops.pre_rotate_euler)
-
-                export_collections.append(collection)
-
-                # Bail out before calling the exporter if the target file is read-only,
-                # so Blender's internal error popup is never triggered.
-                # Use make_folder_path_absolute because clean_relative_path may leave
-                # Blender-relative "//" prefixes that os.path.exists cannot resolve.
-                _abs_export_path = make_folder_path_absolute(export_path)
-                _abs_export_dir = os.path.dirname(_abs_export_path)
-                if not os.path.exists(_abs_export_dir):
-                    raise FileNotFoundError(f"Export directory does not exist: '{_abs_export_dir}'.")
-                if not os.access(_abs_export_dir, os.W_OK):
-                    raise PermissionError(f"Export directory is not writable: '{_abs_export_dir}'.")
-                if os.path.exists(_abs_export_path) and not os.access(_abs_export_path, os.W_OK):
-                    raise PermissionError(f"Export file is read-only: '{_abs_export_path}'.")
-
-                # Perform the export
-                bpy.ops.collection.exporter_export(index=exporter_id)
-
-                # Post-export validation
-                success, message = post_export_checks(export_path, file_exists_before, file_timestamp_before)
-                export_results.append({
-                    'name': collection.name, 'success': success, 'filepath': export_path,
-                    'message': message, 'warnings': pre_export_warnings, 'statistics': statistics,
-                })
-                collection.last_export_failed = not success
-                if not success:
-                    error_count += 1
-                else:
-                    success_count += 1
-
-
-            except Exception as e:
-                # Handle errors in one place
-                export_results.append({
-                    'name': collection.name or "Unknown Collection", 'success': False,
-                    'filepath': '', 'message': str(e), 'warnings': [],
-                })
-                collection.last_export_failed = True
-                error_count += 1
-
-            finally:
-                # Restore in reverse order of application (ops may be None if we continued early)
-                if ops and collection:
-                    if ops.pre_rotate_objects:
-                        restore_pre_rotation(collection, pre_rotate_backup)
-                    if ops.move_by_collection_offset:
-                        apply_collection_offset(collection, offset, inverse=True)
-                    if ops.triangulate_before_export:
-                        remove_triangulate_modifiers(collection, triangulate_backup)
-                    if ops.apply_transform_before_export:
-                        restore_transform_after_export(collection, transform_backup)
-                    else:
-                        if ops.apply_rotation_before_export:
-                            restore_rotation_after_export(collection, rotation_backup)
-                        if ops.apply_scale_before_export:
-                            restore_scale_after_export(collection, scale_backup)
-
-                # Re-apply the collection's original view-layer exclude state
-                # (done last, after any object/mesh restoration above).
-                if restore_layer_exclusion is not None:
-                    restore_layer_exclusion()
+                    # Re-apply the collection's original view-layer exclude state
+                    # (done last, after any object/mesh restoration above).
+                    if restore_layer_exclusion is not None:
+                        restore_layer_exclusion()
+        finally:
+            isolation.restore()
 
         if error_count == 0:
             self.report({'INFO'}, f"Exported {success_count}/{total} collections")

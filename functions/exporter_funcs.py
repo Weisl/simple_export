@@ -28,6 +28,21 @@ def add_extension(exporter):
     return path
 
 
+ALEMBIC_SCENE_RANGE = -2147483648  # Alembic start/end sentinel: use the scene frame range
+
+
+def exporter_bakes_animation(exporter):
+    """True if the exporter steps through frames (animation bake / frame range)."""
+    props = exporter.export_properties
+    export_format_key = ExportFormats.get_key_from_op_type(str(type(props)))
+
+    if export_format_key == "ABC":
+        return not (props.start == props.end != ALEMBIC_SCENE_RANGE)
+
+    # glTF: export_animations, FBX: bake_anim, USD/OBJ: export_animation
+    return any(getattr(props, name, False) for name in ("export_animations", "bake_anim", "export_animation"))
+
+
 def find_exporter(collection, format_filter=None):
     """
     Find the appropriate exporter for the given collection and format.

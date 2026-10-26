@@ -799,6 +799,20 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
                                                 default=False)
 
     ########################################
+    # Export
+    isolate_during_export: bpy.props.EnumProperty(
+        name="Isolate During Export",
+        description="Keep only the exported collection in the view layer while it exports. "
+                    "Animation exporters re-evaluate the whole view layer on every baked frame, "
+                    "so exporting one character from a level with many rigs gets much faster",
+        items=[
+            ('ANIMATED', "Animated Exports", "Isolate when the exporter bakes animation or a frame range"),
+            ('ALWAYS', "Always", "Isolate every export"),
+            ('NEVER', "Never", "Export with the view layer as it is"),
+        ],
+        default='ANIMATED')
+
+    ########################################
     # UI
     report_errors_only: bpy.props.BoolProperty(name="Show Errors Only",
                                                description="Show the result panel only when errors occur.",
@@ -1099,6 +1113,11 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
             col.prop(self, "enable_output_panel")
             col.prop(self, "enable_n_panel")
             col.prop(self, "panel_category")
+
+            box = layout.box()
+            box.label(text="Export")
+            col = box.column(align=True)
+            col.prop(self, "isolate_during_export")
 
             box = layout.box()
             box.label(text="Popups")
