@@ -56,13 +56,16 @@ class ViewLayerIsolation:
     """Keep only one collection in the active view layer while it exports.
 
     Animation exporters (glTF, FBX, USD, Alembic) step the scene once per baked
-    frame, and every step re-evaluates everything in the view layer. In a level
-    file with many rigs, exporting one character then re-evaluates all of them
-    on every frame (measured: 41 NPCs, 209 s together vs 35 s isolated).
+    frame, and every step re-evaluates everything in the view layer, and in
+    every other view layer of the scene. In a level file with many rigs,
+    exporting one character then re-evaluates the whole level on every frame
+    (measured on a level with 6 extra view layers: 289 ms per frame, 237 ms
+    with only the active view layer isolated, 1 ms with all of them isolated).
 
     ``isolate()`` excludes every LayerCollection that is neither the target, its
     subtree nor one of its ancestors, and disables loose scene-root objects in
-    viewports. It also re-includes an excluded target (the job
+    viewports. Every other view layer of the scene gets all its collections
+    excluded. It also re-includes an excluded target (the job
     ``ensure_layer_collection_included`` does without isolation). Objects the
     target depends on (armatures, modifier targets, drivers) are still
     evaluated, because the depsgraph pulls in dependencies regardless of
@@ -76,7 +79,7 @@ class ViewLayerIsolation:
     def __init__(self, view_layer, scene):
         self.view_layer = view_layer
         self.scene = scene
-        self._exclude_backup = None  # [(path of collection names, exclude)], pre-order
+        self._exclude_backup = None  # [(view layer name, path of collection names, exclude)], pre-order
         self._hidden_objects = []
 
     @property
@@ -94,6 +97,20 @@ class ViewLayerIsolation:
             yield child_path, child
             yield from self._walk(child, child_path)
 
+    def _other_view_layers(self):
+        return [vl for vl in self.scene.view_layers if vl != self.view_layer]
+
+    def _capture(self):
+        self._exclude_backup = [(self.view_layer.name, path, lc.exclude) for path, lc in self._walk()]
+        for vl in self._other_view_layers():
+            self._exclude_backup += [(vl.name, path, lc.exclude)
+                                     for path, lc in self._walk(vl.layer_collection)]
+            # Nothing in these view layers is needed for the export; excluding
+            # a top-level collection excludes its whole subtree.
+            for child in vl.layer_collection.children:
+                if not child.exclude:
+                    child.exclude = True
+
     def isolate(self, collection_name):
         """Isolate *collection_name*; return True if it (or an ancestor) was
         originally excluded from the view layer."""
@@ -101,8 +118,9 @@ class ViewLayerIsolation:
         if collection is None:
             return False
         if self._exclude_backup is None:
-            self._exclude_backup = [(path, lc.exclude) for path, lc in self._walk()]
-        original = dict(self._exclude_backup)
+            self._capture()
+        original = {path: exclude for vl_name, path, exclude in self._exclude_backup
+                    if vl_name == self.view_layer.name}
         self._restore_objects()
         was_excluded = False
 
@@ -153,8 +171,11 @@ class ViewLayerIsolation:
                 pass
         self._hidden_objects = []
 
-    def _find(self, path):
-        lc = self.view_layer.layer_collection
+    def _find(self, view_layer_name, path):
+        view_layer = self.scene.view_layers.get(view_layer_name)
+        if view_layer is None:
+            return None
+        lc = view_layer.layer_collection
         for name in path:
             lc = lc.children.get(name)
             if lc is None:
@@ -167,8 +188,8 @@ class ViewLayerIsolation:
             return
         # Parents first: setting ``exclude`` recurses into the children, which
         # then get their own original state back right after.
-        for path, exclude in self._exclude_backup:
-            lc = self._find(path)
+        for vl_name, path, exclude in self._exclude_backup:
+            lc = self._find(vl_name, path)
             if lc is not None and lc.exclude != exclude:
                 lc.exclude = exclude
         self._exclude_backup = None

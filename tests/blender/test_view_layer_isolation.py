@@ -24,6 +24,9 @@ Covers:
     - several isolate() calls in a row restore to the state before the first
     - root objects that were already hidden stay hidden
 
+  TestOtherViewLayers
+    - every collection of the other view layers is excluded, then restored
+
   TestExporterBakesAnimation
     - glTF / FBX / USD animation flags, the Alembic frame range, static STL
 """
@@ -289,6 +292,43 @@ class TestRestore(_SceneFixture):
         before = _exclude_state()
         self.isolation.restore()
         self.assertEqual(_exclude_state(), before)
+
+
+class TestOtherViewLayers(_SceneFixture):
+    """Frame steps also re-evaluate the other view layers of the scene."""
+
+    def setUp(self):
+        super().setUp()
+        self.preview = self.scene.view_layers.new("Preview")
+        self.preview.layer_collection.children["level"].children["props"].exclude = True
+
+    def preview_state(self):
+        state = {}
+
+        def walk(lc, path):
+            for child in lc.children:
+                state[path + (child.name,)] = child.exclude
+                walk(child, path + (child.name,))
+
+        walk(self.preview.layer_collection, ())
+        return state
+
+    def test_other_view_layer_fully_excluded(self):
+        self.isolation.isolate("npc_a")
+        for child in self.preview.layer_collection.children:
+            self.assertTrue(child.exclude, child.name)
+
+    def test_active_view_layer_unaffected_by_other(self):
+        self.isolation.isolate("npc_a")
+        self.assertEqual(self.evaluated_mesh_names(), {"npc_a_mesh"})
+
+    def test_other_view_layer_restored(self):
+        before = self.preview_state()
+        self.isolation.isolate("npc_a")
+        self.isolation.isolate("npc_b")
+        self.isolation.restore()
+        self.assertEqual(self.preview_state(), before)
+        self.assertTrue(before[("level", "props")])
 
 
 class TestExporterBakesAnimation(unittest.TestCase):
