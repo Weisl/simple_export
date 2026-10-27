@@ -121,6 +121,24 @@ class TestFetchRespectsCancelEvent(_VersionCheckTestBase):
 
 
 # ---------------------------------------------------------------------------
+# _parse_version() orders dev builds before their release
+# ---------------------------------------------------------------------------
+
+class TestParseVersion(unittest.TestCase):
+    def test_v_prefix_is_ignored(self):
+        self.assertEqual(vc._parse_version("v0.8.2"), vc._parse_version("0.8.2"))
+
+    def test_dev_build_sorts_before_its_release(self):
+        self.assertLess(vc._parse_version("0.8.2-dev.3"), vc._parse_version("v0.8.2"))
+
+    def test_dev_build_sorts_after_previous_release(self):
+        self.assertGreater(vc._parse_version("0.8.2-dev.1"), vc._parse_version("v0.8.1"))
+
+    def test_dev_builds_sort_numerically(self):
+        self.assertLess(vc._parse_version("0.8.2-dev.9"), vc._parse_version("0.8.2-dev.10"))
+
+
+# ---------------------------------------------------------------------------
 # start_version_check() / stop_version_check() wiring
 # ---------------------------------------------------------------------------
 

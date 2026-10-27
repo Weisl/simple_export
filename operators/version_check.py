@@ -15,8 +15,11 @@ _cancel_event = threading.Event()
 
 
 def _parse_version(version_str):
-    """Convert '2.1.4' or 'v2.1.4' to (2, 1, 4)."""
-    return tuple(int(x) for x in version_str.lstrip("v").split("."))
+    """Convert '2.1.4' or 'v2.1.4' to (2, 1, 4, 1, 0), and the dev build '2.1.4-dev.3' to
+    (2, 1, 4, 0, 3), so that a dev build sorts before its release."""
+    base, _, dev = version_str.lstrip("v").partition("-dev.")
+    release = tuple(int(x) for x in base.split("."))
+    return release + ((0, int(dev)) if dev else (1, 0))
 
 
 def _fetch(cancel_event):

@@ -222,6 +222,12 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
   respects `bpy.app.online_access` and uses the same warning style as the
   other Simple add-ons. The manifest declares the `network` and `files`
   permissions.
+- Private **dev builds**: pushing a tag `vX.Y.Z-dev.N` (created with
+  `.github/scripts/dev_version.py tag`) builds the zip as a workflow artifact
+  without a GitHub release, so the update check never offers it. The update
+  check sorts a dev build before its release (`0.8.2-dev.3` < `0.8.2`).
+- Fixed the Build Release and Test Build workflows, which a merge had left
+  as invalid YAML (every push to `develop` showed a failed Build Release run).
 
 ### Known limitations
 

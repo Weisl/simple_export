@@ -1,7 +1,13 @@
 name: Test Build
 
+# Private builds: run by hand, or push a dev tag (vX.Y.Z-dev.N, see
+# .github/scripts/dev_version.py). The zip is uploaded as a workflow artifact;
+# no GitHub release is created, so the add-on's update check never sees it.
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+-dev.[0-9]+"
 
 jobs:
   build:
@@ -36,6 +42,11 @@ jobs:
           chmod +x "$EXE"
           echo "executable=$EXE" >> "$GITHUB_OUTPUT"
 
+      - name: Stamp dev version into blender_manifest.toml
+        if: github.ref_type == 'tag'
+        run: python3 .github/scripts/dev_version.py stamp "${{ github.ref_name }}"
+        working-directory: ${{ github.event.repository.name }}
+
       - name: Read id and version from blender_manifest.toml
         id: manifest
         run: |
@@ -53,26 +64,27 @@ jobs:
 
       - name: Validate extension manifest
         run: |
-"${{ steps.blender.outputs.executable }}" --command extension validate ${{ github.event.repository.name }}
+          "${{ steps.blender.outputs.executable }}" --command extension validate ${{ github.event.repository.name }}
 
-- name: Build extension zip
-  run: |
-    mkdir -p dist
-    "${{ steps.blender.outputs.executable }}" --command extension build --source-dir ${{ github.event.repository.name }} --output-dir dist
+      - name: Build extension zip
+        run: |
+          mkdir -p dist
+          "${{ steps.blender.outputs.executable }}" --command extension build --source-dir ${{ github.event.repository.name }} --output-dir dist
 
-- name: Extract built zip for artifact upload
-  run: |
-    mkdir -p "staging/${{ steps.manifest.outputs.id }}"
-    ZIP=$(find dist -maxdepth 1 -type f -iname "*.zip" | head -n 1)
-    if [ -z "$ZIP" ]; then
-      echo "Could not find a built extension zip under dist/" >&2
-      exit 1
-    fi
-    unzip -q "$ZIP" -d "staging/${{ steps.manifest.outputs.id }}"
+      - name: Extract built zip for artifact upload
+        run: |
+          mkdir -p "staging/${{ steps.manifest.outputs.id }}"
+          ZIP=$(find dist -maxdepth 1 -type f -iname "*.zip" | head -n 1)
+          if [ -z "$ZIP" ]; then
+            echo "Could not find a built extension zip under dist/" >&2
+            exit 1
+          fi
+          unzip -q "$ZIP" -d "staging/${{ steps.manifest.outputs.id }}"
 
       - name: Upload zip as artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.manifest.outputs.id }}_${{ steps.manifest.outputs.version }}_${{ steps.vars.outputs.short_sha }}
           path: staging/
-          retention-days: 7
+          # Dev tag builds are kept for the maximum; manual test builds for a week.
+          retention-days: ${{ github.ref_type == 'tag' && 90 || 7 }}
