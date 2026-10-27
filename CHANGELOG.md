@@ -69,7 +69,8 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
   **Revert** and **Update** (or **Save as Copy...** for built-in presets, which
   stay locked). The name dialogs suggest a free name and explain a rejected one.
   Editing in this tab never applies a preset to the scene.
-- **Copy Export Settings** — new Outliner entry (right-click > Simple Export)
+- [#326](https://github.com/Weisl/simple_export/issues/326): **Copy Export
+  Settings** — new Outliner entry (right-click > Simple Export)
   that copies the export setup of one collection to the other selected
   collections, like "Copy from Active" does for objects. Select the target
   collections, then right-click the collection to copy from. It copies the
@@ -88,6 +89,38 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
   objects the scene holds directly, so objects hidden for render inside an
   instanced collection (Simple Collider `UBX_` boxes, boolean cutters) were
   still exported as visible meshes.
+- [#328](https://github.com/Weisl/simple_export/issues/328): **Faster
+  animated exports** from scenes with many rigs. Animation exporters step
+  the scene once per baked frame and re-evaluate the whole view layer (and
+  every other view layer of the scene) each time, so exporting one character
+  re-evaluated every other rig on every frame. While a collection exports,
+  only that collection now stays in the view layer; the other view layers
+  are excluded too, and everything is restored once after the batch.
+  Dependencies (armatures, modifier targets, drivers) are still evaluated.
+  Measured on a level with 41 NPCs: 209 s → 35 s. Controlled by the new
+  preference **Isolate During Export** (General › Export): *Animated
+  Exports* (default, when the exporter bakes animation or a frame range),
+  *Always* or *Never*.
+- [#316](https://github.com/Weisl/simple_export/issues/316): **Add Exporter
+  to Collection** in the Outliner now applies to all selected collections,
+  not only the one that was right-clicked. The Outliner menu shows the
+  export entries if any selected collection has an exporter, and the add
+  entry if any has none.
+- [#317](https://github.com/Weisl/simple_export/issues/317): New default USD
+  export presets (`Default-usd`, `Default-animation-usd`) for every
+  supported Blender version (4.2, 4.5, 5.0, 5.1, 5.2). Only the 5.2 values
+  were checked against a running Blender so far.
+- [#323](https://github.com/Weisl/simple_export/issues/323): Preset
+  categories renamed (`Poly` → `Bake`, `UE` → `Unreal`, `User` → `Custom`)
+  and a new **Basic** category with plain, engine-agnostic presets:
+  `Basic-fbx-default`, `Basic-usd-default` and `Basic-abc-default`.
+  Alembic is now supported as an export format preset.
+- [#324](https://github.com/Weisl/simple_export/issues/324): The **Active
+  Collection** panel now starts collapsed, and each row of the collection
+  list has an edit button that opens that collection's settings in a popup.
+- [#325](https://github.com/Weisl/simple_export/issues/325): **Move to
+  Origin** and **Triangulate** in the export popup's collection list are
+  now toggle buttons that are always shown, instead of read-only icons.
 
 ### Bug Fixes
 
@@ -169,12 +202,26 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
   position. **Export Collections** created in *Single* mode put the root empty
   at the world origin; it now goes to the centre of the selection, as it
   already did for Instance Collections.
+- [#320](https://github.com/Weisl/simple_export/issues/320): Collections
+  **linked from another .blend file** no longer show up in the exporter list
+  or get validated/exported. Their export settings come along from the
+  source file, but they aren't local data.
+- [#322](https://github.com/Weisl/simple_export/issues/322): **Assign Export
+  Format Presets** from the Outliner now applies to every selected
+  collection. The selection is captured before the dialog opens, and
+  collections selected in the Outliner no longer need to be ticked in the
+  addon's own list.
 
 ### Internal
 
 - Restructured the test suite — Blender-dependent tests moved into
   `tests/blender/`, the magic-mock-based `bpy` stub was removed, and a
   dedicated preset-application test module was added.
+- [#312](https://github.com/Weisl/simple_export/issues/312): Removed the
+  unused duplicate `operators/reload_addon.py`. The update checker now
+  respects `bpy.app.online_access` and uses the same warning style as the
+  other Simple add-ons. The manifest declares the `network` and `files`
+  permissions.
 
 ### Known limitations
 
