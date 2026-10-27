@@ -336,6 +336,7 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
             row.scale_x = POPUP_OPS_TOGGLE_SCALE_X
             row.prop(pre_ops, 'move_by_collection_offset', text='', icon='OBJECT_ORIGIN', toggle=True)
             row.prop(pre_ops, 'triangulate_before_export', text='', icon='MOD_TRIANGULATE', toggle=True)
+            row.prop(pre_ops, 'skip_render_hidden_objects', text='', icon='RESTRICT_RENDER_ON', toggle=True)
 
             ########## Name
             row = col_name.row(align=True)
@@ -502,6 +503,8 @@ class SCENE_UL_CollectionList(bpy.types.UIList):
                     row.label(text='', icon='OBJECT_ORIGIN')
                 if col_ops.triangulate_before_export:
                     row.label(text='', icon='MOD_TRIANGULATE')
+                if col_ops.skip_render_hidden_objects:
+                    row.label(text='', icon='RESTRICT_RENDER_ON')
                 # if col_ops.apply_transform_before_export or col_ops.apply_scale_before_export or col_ops.apply_rotation_before_export:
                 #     row.label(text='', icon='OBJECT_DATA')
                 # if col_ops.pre_rotate_objects:

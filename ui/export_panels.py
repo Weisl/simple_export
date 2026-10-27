@@ -17,6 +17,9 @@ def draw_pre_export_operations(layout, target):
     # Triangulate
     col.prop(target, 'triangulate_before_export')
 
+    # Skip hidden-for-render objects (glTF)
+    col.prop(target, 'skip_render_hidden_objects')
+
     # col.separator(factor=0.5)
 
     # Apply Transformation (subsumes scale + rotation when enabled)

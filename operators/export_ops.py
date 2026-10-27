@@ -1,3 +1,5 @@
+import contextlib
+
 import bpy
 import os
 
@@ -14,6 +16,7 @@ from ..functions.pre_export_ops import (
     apply_pre_rotation, restore_pre_rotation,
 )
 from ..functions.exporter_funcs import find_exporter, get_exporter_id, add_extension, exporter_bakes_animation
+from ..functions.gltf_instance_filter import skip_render_hidden_objects
 from ..functions.collection_selection import get_export_collection_list
 from ..functions.path_utils import clean_relative_path, ensure_export_folder_exists, make_folder_path_absolute
 from ..functions.vallidate_func import (
@@ -281,7 +284,8 @@ class SCENE_OT_ExportCollectionsSelection(bpy.types.Operator):
                         raise PermissionError(f"Export file is read-only: '{_abs_export_path}'.")
 
                     # Perform the export
-                    bpy.ops.collection.exporter_export(index=exporter_id)
+                    with skip_render_hidden_objects() if ops.skip_render_hidden_objects else contextlib.nullcontext():
+                        bpy.ops.collection.exporter_export(index=exporter_id)
 
                     # Post-export validation
                     success, message = post_export_checks(export_path, file_exists_before, file_timestamp_before)

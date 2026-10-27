@@ -4,6 +4,7 @@ _PRE_EXPORT_BOOL_PROPS = [
     'move_by_collection_offset',
     'triangulate_before_export',
     'triangulate_keep_normals',
+    'skip_render_hidden_objects',
     'apply_scale_before_export',
     'apply_rotation_before_export',
     'apply_transform_before_export',

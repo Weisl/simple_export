@@ -442,6 +442,7 @@ class SIMPLE_EXPORT_OT_EditPreExportOps(bpy.types.Operator):
         col = layout.column(align=True)
         col.prop(collection.pre_export_ops, 'move_by_collection_offset')
         col.prop(collection.pre_export_ops, 'triangulate_before_export')
+        col.prop(collection.pre_export_ops, 'skip_render_hidden_objects')
 
     def execute(self, context):
         return {'FINISHED'}
@@ -489,6 +490,11 @@ class SIMPLE_EXPORT_OT_BatchAssignPreExportOps(bpy.types.Operator):
         description="Add a triangulate modifier before exporting",
         default=False,
     )
+    skip_render_hidden_objects: bpy.props.BoolProperty(
+        name="Skip Render-Hidden Objects",
+        description="glTF only: leave out objects disabled for render, also inside collection instances",
+        default=False,
+    )
 
     def invoke(self, context, event):
         # Pre-fill from the first selected collection
@@ -496,6 +502,7 @@ class SIMPLE_EXPORT_OT_BatchAssignPreExportOps(bpy.types.Operator):
             if getattr(col, 'simple_export_selected', False) and hasattr(col, 'pre_export_ops'):
                 self.move_by_collection_offset = col.pre_export_ops.move_by_collection_offset
                 self.triangulate_before_export = col.pre_export_ops.triangulate_before_export
+                self.skip_render_hidden_objects = col.pre_export_ops.skip_render_hidden_objects
                 break
 
         wm = context.window_manager
@@ -518,6 +525,7 @@ class SIMPLE_EXPORT_OT_BatchAssignPreExportOps(bpy.types.Operator):
         col.separator(factor=0.5)
         col.prop(self, 'move_by_collection_offset')
         col.prop(self, 'triangulate_before_export')
+        col.prop(self, 'skip_render_hidden_objects')
 
     def execute(self, context):
         selected = [c for c in bpy.data.collections if getattr(c, 'simple_export_selected', False)]
@@ -531,6 +539,7 @@ class SIMPLE_EXPORT_OT_BatchAssignPreExportOps(bpy.types.Operator):
                 continue
             collection.pre_export_ops.move_by_collection_offset = self.move_by_collection_offset
             collection.pre_export_ops.triangulate_before_export = self.triangulate_before_export
+            collection.pre_export_ops.skip_render_hidden_objects = self.skip_render_hidden_objects
             updated += 1
 
         self.report({'INFO'}, f"Pre-export operations updated for {updated} collection{'s' if updated != 1 else ''}.")

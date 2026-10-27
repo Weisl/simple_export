@@ -87,6 +87,7 @@ class BaseExportPreset(AddPresetBase, Operator):
         "scene.move_by_collection_offset",
         "scene.triangulate_before_export",
         "scene.triangulate_keep_normals",
+        "scene.skip_render_hidden_objects",
         "scene.apply_scale_before_export",
         "scene.apply_rotation_before_export",
         "scene.apply_transform_before_export",

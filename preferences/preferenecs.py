@@ -198,6 +198,12 @@ PROPERTY_METADATA = {
         "description": "Preserve custom split normals when triangulating.",
         "default": True,
     },
+    "skip_render_hidden_objects": {
+        "name": "Skip Render-Hidden Objects",
+        "description": "glTF only: leave out objects disabled for render, also inside collection instances "
+                       "(colliders, boolean cutters), which the exporter's Renderable Objects option misses.",
+        "default": False,
+    },
     "apply_scale_before_export": {
         "name": "Apply Scale",
         "description": "Bake object scale into mesh data before export and restore afterwards.",
@@ -539,6 +545,12 @@ class SIMPLE_EXPORT_preferences(bpy.types.AddonPreferences):
         name=PROPERTY_METADATA["triangulate_keep_normals"]["name"],
         description=PROPERTY_METADATA["triangulate_keep_normals"]["description"],
         default=PROPERTY_METADATA["triangulate_keep_normals"]["default"],
+    )
+
+    skip_render_hidden_objects: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["skip_render_hidden_objects"]["name"],
+        description=PROPERTY_METADATA["skip_render_hidden_objects"]["description"],
+        default=PROPERTY_METADATA["skip_render_hidden_objects"]["default"],
     )
 
     apply_scale_before_export: bpy.props.BoolProperty(
@@ -1451,6 +1463,12 @@ def initialize_properties_collection_generation():
         default=prefs.triangulate_keep_normals,
     )
 
+    bpy.types.Scene.skip_render_hidden_objects = bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["skip_render_hidden_objects"]["name"],
+        description=PROPERTY_METADATA["skip_render_hidden_objects"]["description"],
+        default=prefs.skip_render_hidden_objects,
+    )
+
     bpy.types.Scene.apply_scale_before_export = bpy.props.BoolProperty(
         name=PROPERTY_METADATA["apply_scale_before_export"]["name"],
         description=PROPERTY_METADATA["apply_scale_before_export"]["description"],
@@ -1661,6 +1679,7 @@ def unregister():
     del bpy.types.Scene.move_by_collection_offset
     del bpy.types.Scene.triangulate_before_export
     del bpy.types.Scene.triangulate_keep_normals
+    del bpy.types.Scene.skip_render_hidden_objects
     del bpy.types.Scene.apply_scale_before_export
     del bpy.types.Scene.apply_rotation_before_export
     del bpy.types.Scene.apply_transform_before_export

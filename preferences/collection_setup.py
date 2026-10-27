@@ -20,6 +20,11 @@ class CollectionPreExportOps(bpy.types.PropertyGroup):
         description="Preserve custom normals when triangulating meshes before export",
         default=True,
     )
+    skip_render_hidden_objects: BoolProperty(
+        name="Skip Render-Hidden Objects",
+        description="glTF only: leave out objects disabled for render, also inside collection instances",
+        default=False,
+    )
     apply_scale_before_export: BoolProperty(
         name="Apply Scale",
         description="Bake object scale into mesh data before export",
@@ -69,6 +74,7 @@ _PRE_EXPORT_BOOL_DEFAULTS = {
     'move_by_collection_offset': False,
     'triangulate_before_export': False,
     'triangulate_keep_normals': True,
+    'skip_render_hidden_objects': False,
     'apply_scale_before_export': False,
     'apply_rotation_before_export': False,
     'apply_transform_before_export': False,

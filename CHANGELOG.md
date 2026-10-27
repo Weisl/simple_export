@@ -82,6 +82,12 @@ hardens the pre-export transform-baking pipeline against mesh corruption.
   Root Object, so **Move to Origin** and **Triangulate Meshes** sit directly
   under their title instead of behind a dropdown with a gap between header
   and content.
+- New pre-export operation **Skip Render-Hidden Objects** (glTF only, off by
+  default): leaves out every object disabled for render, also inside
+  collection instances. Blender's glTF option Renderable Objects checks only
+  objects the scene holds directly, so objects hidden for render inside an
+  instanced collection (Simple Collider `UBX_` boxes, boolean cutters) were
+  still exported as visible meshes.
 
 ### Bug Fixes
 

@@ -214,6 +214,11 @@ class CollectionPreExportProps:
         description=PROPERTY_METADATA["triangulate_keep_normals"]["description"],
         default=PROPERTY_METADATA["triangulate_keep_normals"]["default"],
     )
+    skip_render_hidden_objects: bpy.props.BoolProperty(
+        name=PROPERTY_METADATA["skip_render_hidden_objects"]["name"],
+        description=PROPERTY_METADATA["skip_render_hidden_objects"]["description"],
+        default=PROPERTY_METADATA["skip_render_hidden_objects"]["default"],
+    )
     apply_scale_before_export: bpy.props.BoolProperty(
         name=PROPERTY_METADATA["apply_scale_before_export"]["name"],
         description=PROPERTY_METADATA["apply_scale_before_export"]["description"],
